@@ -1,0 +1,13 @@
+<resources>
+
+    <string name="push_sender_id">1023997258979</string>
+    <string name="app_name">WonderPush</string>
+    <string name="wonderpush_close">Close</string>
+    <string name="wonderpush_cancel">Cancel</string>
+    <string name="wonderpush_retry">Retry</string>
+    <string name="wonderpush_open">Open</string>
+    <string name="wonderpush_view">View</string>
+    <string name="wonderpush_network_error">Could not load this page, please check your Internet connectivity.</string>
+    <string name="wonderpush_could_not_open_location">Could not open location. Do you have Google Maps installed?</string>
+
+</resources>
