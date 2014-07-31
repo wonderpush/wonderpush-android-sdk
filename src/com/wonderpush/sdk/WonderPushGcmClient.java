@@ -68,7 +68,7 @@ class WonderPushGcmClient {
         }
 
         int registeredVersion = prefs.getInt(GCM_REGISTRATION_APP_VERSION_PREF_NAME, Integer.MIN_VALUE);
-        int currentVersion = getAppVersion(WonderPush.getApplicationContext());
+        int currentVersion = getAppVersion(c);
         if (registeredVersion != currentVersion) {
             return "";
         }
