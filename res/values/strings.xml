@@ -1,6 +1,6 @@
 <resources>
 
-    <string name="push_sender_id">1023997258979</string>
+    <string name="push_sender_ids">1023997258979</string>
     <string name="app_name">WonderPush</string>
     <string name="wonderpush_close">Close</string>
     <string name="wonderpush_cancel">Cancel</string>

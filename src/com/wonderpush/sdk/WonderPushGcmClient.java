@@ -158,7 +158,7 @@ class WonderPushGcmClient {
         if (mGcm == null) {
             mGcm = GoogleCloudMessaging.getInstance(context);
         }
-        return mGcm.register(senderId);
+        return mGcm.register(senderId.split(","));
     }
 
     private static void registerInBackground(final String senderId, final Context activity) {
@@ -202,9 +202,9 @@ class WonderPushGcmClient {
             Bundle bundle = ai.metaData;
             pushSenderId = bundle.getString("GCMSenderId");
         } catch (NameNotFoundException e) {
-            Log.e(TAG, "Could not get GCMSenderId meta data from your manifest. Did you add: <meta-data android:name=\"GCMSenderId\" android:value=\"@string/push_sender_id\"/> under <application> in your AndroidManifest.xml?");
+            Log.e(TAG, "Could not get GCMSenderId meta data from your manifest. Did you add: <meta-data android:name=\"GCMSenderId\" android:value=\"@string/push_sender_ids\"/> under <application> in your AndroidManifest.xml?");
         } catch (NullPointerException e) {
-            Log.e(TAG, "Could not get GCMSenderId meta data from your manifest. Did you add: <meta-data android:name=\"GCMSenderId\" android:value=\"@string/push_sender_id\"/> under <application> in your AndroidManifest.xml?");
+            Log.e(TAG, "Could not get GCMSenderId meta data from your manifest. Did you add: <meta-data android:name=\"GCMSenderId\" android:value=\"@string/push_sender_ids\"/> under <application> in your AndroidManifest.xml?");
         }
 
         if (pushSenderId == null) {

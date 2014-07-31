@@ -111,7 +111,7 @@ All versions of the libraries must be the same at this time.</pre>
             android:value="@integer/google_play_services_version" /&gt;
         &lt;meta-data
             android:name="GCMSenderId"
-            android:value="@string/push_sender_id" /&gt;
+            android:value="@string/push_sender_ids" /&gt;
 
         &lt;!-- Required configuration for WonderPush to properly receive and handle push notification --&gt;
         &lt;receiver
@@ -155,7 +155,7 @@ All versions of the libraries must be the same at this time.</pre>
 </dl>
 
 <p>
-  The WonderPush SDK defines the <tt>@string/push_sender_id</tt> resource to <tt>1023997258979</tt>, which is the sender ID that WonderPush uses.<br/>
+  The WonderPush SDK defines the <tt>@string/push_sender_ids</tt> resource to <tt>1023997258979</tt>, which is the sender ID that WonderPush uses.<br/>
 </p>
 
 <p>
@@ -166,13 +166,14 @@ All versions of the libraries must be the same at this time.</pre>
 
 <p>
   Sticking with the WonderPush sender ID is the simplest approach. However, you would not be able to send your own push notifications.<br/>
-  If you want to use another sender ID, you can change it by adding the following in the <tt>res/values/string.xml</tt> file inside your own application:
+  If you want to use another sender ID, you can change it by adding the following in the <tt>res/values/string.xml</tt> file inside <em>your own application</em>:
 </p>
-<pre><code>&lt;string name="push_sender_id"&gt;<b>[YOUR_OWN_SENDER_ID]</b>&lt;/string&gt;</code></pre>
+<pre><code>&lt;string name="push_sender_ids"&gt;1023997258979,<b>[YOUR_OWN_SENDER_ID]</b>&lt;/string&gt;</code></pre>
 
 <p>
   You can get your own sender ID by following instructions in: <a href="http://developer.android.com/google/gcm/gs.html">Getting Started with Google Cloud Messaging</a>.<br/>
-  Don't forget to give us your sender ID and API key in your WonderPush dashboard, under <tt>Settings / Keys</tt>, so we can push notifications on your behalf.
+  If you do not include our sender ID in the application, don't forget to give us your API key, also known as Sender Auth Token, in your WonderPush dashboard, under <tt>Settings / Keys</tt>, so we can push notifications on your behalf.
+  Otherwise, if you include our sender ID as recommended, you don't have to take any action, your application to be able to receive our push notifications as well as yours.
 </p>
 
 <h4 id="installing-sdk--configuring-sdk--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h4>
