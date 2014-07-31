@@ -119,9 +119,9 @@ public class WonderPush {
     protected static final String NOTIFICATION_EXTRA_KEY = "_wpNotification";
 
     static enum NotificationType {
-        ALERT("alert"),
-        IN_APP("inApp"),
-        PLAIN("plain"),
+        SIMPLE("simple"),
+        DATA("data"),
+        TEXT("text"),
         HTML("html"),
         MAP("map"),
         URL("url"),
@@ -228,14 +228,14 @@ public class WonderPush {
             return;
         }
         switch (type) {
-            case ALERT:
-            case IN_APP:
+            case SIMPLE:
+            case DATA:
                 // Nothing to do
                 break;
             case URL:
                 handleURLNotification(activity, data);
                 break;
-            case PLAIN:
+            case TEXT:
                 handleDialogNotification(activity, data);
                 break;
             case MAP:
