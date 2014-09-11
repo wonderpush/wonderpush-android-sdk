@@ -821,7 +821,7 @@ public class WonderPush {
             device.put("name", getDeviceName());
             device.put("screenWidth", getScreenWidth(activity));
             device.put("screenHeight", getScreenHeight(activity));
-            device.put("screenDensity", "" + getScreenDensity(activity));
+            device.put("screenDensity", getScreenDensity(activity));
 
             JSONObject configuration = new JSONObject();
             configuration.put("timeZone", getUserTimezone());
