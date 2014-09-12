@@ -479,38 +479,47 @@ public class WonderPush {
 
         LocationManager locationManager = (LocationManager) applicationContext.getSystemService(Context.LOCATION_SERVICE);
         try {
-            Location locations[] = {
-                    locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER),
-                    locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER),
-                    locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER),
-            };
-
             Location best = null;
-            for (int i = 0 ; i < locations.length ; i++) {
-                // If this location is null, discard
-                if (null == locations[i])
+            for (String provider : locationManager.getAllProviders()) {
+                Location location;
+                try {
+                    location = locationManager.getLastKnownLocation(provider);
+                } catch (SecurityException ex) {
                     continue;
+                }
+                // If this location is null, discard
+                if (null == location) {
+                    continue;
+                }
+
+                // If broken accuracy, discard
+                if (location.getAccuracy() < 0) {
+                    continue;
+                }
 
                 // If we have no best yet, use this first location
                 if (null == best) {
-                    best = locations[i];
+                    best = location;
                     continue;
                 }
 
                 // If this location is significantly older, discard
-                long timeDelta = locations[i].getTime() - best.getTime();
-                if (timeDelta < -1000 * 60 * 2)
+                long timeDelta = location.getTime() - best.getTime();
+                if (timeDelta < -1000 * 60 * 2) {
                     continue;
+                }
 
                 // If we have no accuracy, discard
-                if (0 == locations[i].getAccuracy())
+                if (0 == location.getAccuracy()) {
                     continue;
+                }
 
                 // If this location is less accurate, discard
-                if (best.getAccuracy() < locations[i].getAccuracy())
+                if (best.getAccuracy() < location.getAccuracy()) {
                     continue;
+                }
 
-                best = locations[i];
+                best = location;
             }
 
             return best;
