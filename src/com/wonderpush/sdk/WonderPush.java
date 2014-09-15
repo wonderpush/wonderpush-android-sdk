@@ -912,6 +912,16 @@ public class WonderPush {
      * @param type
      *            The event type, or name.
      *            Event types starting with an {@code @} character are reserved.
+     */
+    public static void trackEvent(String type) {
+        trackEvent(type, null);
+    }
+
+    /**
+     * Send an event to be tracked to WonderPush.
+     * @param type
+     *            The event type, or name.
+     *            Event types starting with an {@code @} character are reserved.
      * @param customData
      *            A JSON object containing custom properties to be attached to the event.
      *            Prefer using a few custom properties over a plethora of event type variants.
@@ -920,23 +930,42 @@ public class WonderPush {
         if (type == null || type.length() == 0 || type.charAt(0) == '@') {
             throw new IllegalArgumentException("Bad event type");
         }
-        sendEvent(type, customData);
+        sendEvent(type, null, customData);
     }
 
-    protected static void trackInternalEvent(String type, JSONObject customData) {
+    protected static void trackInternalEvent(String type, JSONObject eventData) {
+        trackInternalEvent(type, eventData, null);
+    }
+
+    protected static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
         if (type.charAt(0) != '@') {
             throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
         }
-        sendEvent(type, customData);
+        sendEvent(type, eventData, customData);
     }
 
-    private static void sendEvent(String type, JSONObject customData) {
+    private static void sendEvent(String type, JSONObject eventData, JSONObject customData) {
         String eventEndpoint = "/events/";
 
         JSONObject event = new JSONObject();
+        if (eventData != null && eventData.length() > 0) {
+            @SuppressWarnings("unchecked")
+            Iterator<String> keys = eventData.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                Object value = eventData.opt(key);
+                try {
+                    event.putOpt(key, value);
+                } catch (JSONException ex) {
+                    Log.e(TAG, "Error building event object body", ex);
+                }
+            }
+        }
         try {
             event.put("type", type);
-            event.put("custom", customData);
+            if (customData != null && customData.length() > 0) {
+                event.put("custom", customData);
+            }
             // Fill some pieces of information at the time of tracking,
             // instead of using the automatically injected location at request time,
             // which can be wrong in case of network problems
