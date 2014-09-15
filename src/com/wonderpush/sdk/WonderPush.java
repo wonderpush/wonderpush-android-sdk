@@ -281,7 +281,7 @@ public class WonderPush {
                 JSONObject trackData = new JSONObject();
                 trackData.put("campaignId", notification.optString("c"));
                 trackData.put("notificationId", notification.optString("n"));
-                WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+                WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
                 if (sIsInitialized) {
                     handleReceivedNotification(activity, notification);

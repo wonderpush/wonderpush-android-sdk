@@ -140,6 +140,12 @@ class WonderPushGcmClient {
                 Log.d(TAG, "Received notification is not targetted at the current installation (" + targetInstallationId + " does not match current installation " + loggedInstallationId + ")");
                 return false;
             }
+
+            JSONObject trackData = new JSONObject();
+            trackData.put("campaignId", wpData.optString("c"));
+            trackData.put("notificationId", wpData.optString("n"));
+            WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+
             WonderPush.logDebug("Building notification");
             PendingIntent pendingIntent = buildPendingIntent(wpData, context, activity);
             Notification notification = buildNotification(extras.getString("alert"), context, iconResource, pendingIntent);
