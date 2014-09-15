@@ -50,40 +50,58 @@
 
 <h4 id="installing-sdk--setup-workspace--eclipse">Using Eclipse ADT</h4>
 
-<p>The WonderPush SDK shipping resources, it must be added as a project reference rather than a mere library dependency.</p>
+<ol>
+  <li>
+    <p>The WonderPush SDK shipping resources, it must be added as a project reference rather than a mere library dependency.</p>
 
-<p>Import the WonderPush SDK project in your Eclipse workspace by doing:</p>
-<ul>
-  <li>Click on <tt>File &gt; New &gt; Other</tt></li>
-  <li>Select <tt>Android / Android project from existing code</tt>.</li>
-</ul>
+    <p>Checkout the source of <tt>wonderpush-android-sdk</tt>:</p>
+    <pre><code>cd <b>/path/to/your/workspace</b>
+    git clone https://github.com/wonderpush/wonderpush-android-sdk.git</code></pre>
 
-<p>The <tt>wonderpush-android-sdk</tt> project should now be listed in the <tt>Package Explorer</tt>.</p>
+    <p>Import the WonderPush SDK project in your Eclipse workspace by doing:</p>
+    <ul>
+      <li>Click on <tt>File &gt; New &gt; Other</tt></li>
+      <li>Select <tt>Android / Android Project from Existing Code</tt>.</li>
+      <li>Click <tt>Browse</tt> and select the checked out folder <tt><b>/path/to/your/workspace/</b>wonderpush-android-sdk</tt>.</li>
+      <li>Click <tt>Finish</tt>.</li>
+    </ul>
 
-<p>Now Add the WonderPush SDK to your project build path:</p>
-<ul>
-  <li>Right click on your project in the <tt>Package Explorer</tt>, and select <tt>Properties</tt>.</li>
-  <li>Choose <tt>Project References</tt> in the left list, then check <tt>wonderpush-android-sdk</tt>.</li>
-  <li>Now choose <tt>Java Build Path</tt> in the left list, select the <tt>Projects</tt> tab, click <tt>Add</tt> on the right, then check <tt>wonderpush-android-sdk</tt> in the popup and click <tt>OK</tt>.</li>
-</ul>
+    <p>The <tt>wonderpush-android-sdk</tt> project should now be listed in the <tt>Package Explorer</tt>.</p>
+  </li>
 
-<p>Update the Android support library in the <tt>wonderpush-android-sdk</tt> project:</p>
-<ul>
-</ul>
+  <li>
+    <p>Now Add the WonderPush SDK to your project build path:</p>
+    <ul>
+      <li>Right click on your project in the <tt>Package Explorer</tt>, and select <tt>Properties</tt>.</li>
+      <li>Choose <tt>Project References</tt> in the left list, then check <tt>wonderpush-android-sdk</tt>.</li>
+      <li>Now choose <tt>Java Build Path</tt> in the left list, select the <tt>Projects</tt> tab, click <tt>Add</tt> on the right, then check <tt>wonderpush-android-sdk</tt> in the popup and click <tt>OK</tt>.</li>
+    </ul>
+  </li>
 
-<p>
-  Repeat the same step to your own application too, to make sure that they both have the exact same JAR dependency,
-  you would otherwise get the following build error:
-</p>
-<pre>Found 2 versions of android-support-v4.jar in the dependency list,
-but not all the versions are identical (check is based on SHA-1 only at this time).
-All versions of the libraries must be the same at this time.</pre>
+  <li>
+    <p>Update the Android support library in the <tt>wonderpush-android-sdk</tt> project:</p>
+    <ul>
+      <li>Right click on the <tt>wonderpush-android-sdk</tt> project in the <tt>Package Explorer</tt>, and under <tt>Android Tools</tt> choose <tt>Add Support Library...</tt>.</li>
+      <li>Click <tt>Accept License</tt> then <tt>Install</tt>.</li>
+    </ul>
 
-<p>
-  You will now have to link the WonderPush SDK (not your own application) with the Google Play Service library.<br/>
-  Follow the first step of the following guide:
-  <a href="http://developer.android.com/google/play-services/setup.html#Setup">Setting Up Google Play Services</a>.
-</p>
+    <p>
+      Repeat the same step to your own application too, to make sure that they both have the exact same JAR dependency,
+      you would otherwise get the following build error:
+    </p>
+    <pre>Found 2 versions of android-support-v4.jar in the dependency list,
+    but not all the versions are identical (check is based on SHA-1 only at this time).
+    All versions of the libraries must be the same at this time.</pre>
+  </li>
+
+  <li>
+    <p>
+      You will now have to link the WonderPush SDK (not your own application) with the Google Play Service library.<br/>
+      Follow the first step of the following guide:
+      <a href="http://developer.android.com/google/play-services/setup.html#Setup">Setting Up Google Play Services</a>.
+    </p>
+  </li>
+</ol>
 
 <h4 id="installing-sdk--setup-workspace--eclipse">Using Android Studio</h4>
 
@@ -243,7 +261,9 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
   The <tt>initialize()</tt> method must be called before any use of the SDK.<br/>
   A good place for initialization is in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.
 </p>
-<pre><code>public class YourMainActivity extends Activity {
+<pre><code>import com.wonderpush.sdk.WonderPush;
+
+public class YourMainActivity extends Activity {
 
     &#64;Override
     protected void onCreate(Bundle savedInstance) {
