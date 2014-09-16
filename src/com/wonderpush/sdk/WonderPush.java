@@ -1194,11 +1194,11 @@ public class WonderPush {
     protected static void handleDialogNotification(final Activity activity, final JSONObject data) {
         WonderPushDialogBuilder builder = createDialogNotificationBase(activity, data);
 
-        String text = data.optString("text");
-        if (text == null) {
-            Log.w(TAG, "Got no text to display for a plain notification");
+        String message = data.optString("message");
+        if (message == null) {
+            Log.w(TAG, "Got no message to display for a plain notification");
         } else {
-            builder.setMessage(text);
+            builder.setMessage(message);
         }
 
         createDefaultCloseButtonIfNeeded(builder);
@@ -1221,9 +1221,9 @@ public class WonderPush {
         final JSONObject point = place.optJSONObject("point");
         final View dialogView = activity.getLayoutInflater().inflate(R.layout.wonderpush_notification_map_dialog, null, false);
         final TextView text = (TextView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_text);
-        if (data.has("text")) {
+        if (data.has("message")) {
             text.setVisibility(View.VISIBLE);
-            text.setText(data.optString("text"));
+            text.setText(data.optString("message"));
             text.setMovementMethod(new ScrollingMovementMethod());
         }
         final ImageView map = (ImageView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_map);
