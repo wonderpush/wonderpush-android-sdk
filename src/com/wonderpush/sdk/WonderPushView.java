@@ -79,7 +79,7 @@ class WonderPushView extends FrameLayout {
     private void init() {
         // Create the error layout
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mErrorLayout = (ViewGroup) inflater.inflate(R.layout.wonderpush_error_layout, this);
+        mErrorLayout = (ViewGroup) inflater.inflate(R.layout.wonderpush_error_layout, this, false);
         if (mErrorLayout != null) {
             // Configure refresh button
             Button refreshButton = (Button) mErrorLayout.findViewById(R.id.wonderpush_retry_button);
