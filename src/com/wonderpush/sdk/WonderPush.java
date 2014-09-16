@@ -984,6 +984,16 @@ public class WonderPush {
     }
 
     /**
+     * Whether {@link #initialize(Activity, String, String, String)} has been called.
+     * Different from having fetched an access token,
+     * and hence from {@link #INTENT_INTIALIZED} being dispatched.
+     * @return
+     */
+    static boolean isInitialized() {
+        return sIsInitialized;
+    }
+
+    /**
      * Initialize WonderPush. Call this method before using WonderPush.
      * A good place to initialize WonderPush is in your main activity's
      * <a href="http://developer.android.com/reference/android/app/Activity.html#onCreate(android.os.Bundle)">

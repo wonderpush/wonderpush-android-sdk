@@ -9,8 +9,10 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -22,6 +24,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -141,10 +144,22 @@ class WonderPushGcmClient {
                 return false;
             }
 
-            JSONObject trackData = new JSONObject();
+            final JSONObject trackData = new JSONObject();
             trackData.put("campaignId", wpData.optString("c"));
             trackData.put("notificationId", wpData.optString("n"));
-            WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+            if (WonderPush.isInitialized()) {
+                WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+            } else {
+                BroadcastReceiver receiver = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+                        LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
+                    }
+                };
+                IntentFilter filter = new IntentFilter(WonderPush.INTENT_INTIALIZED);
+                LocalBroadcastManager.getInstance(context).registerReceiver(receiver, filter);
+            }
 
             WonderPush.logDebug("Building notification");
             PendingIntent pendingIntent = buildPendingIntent(wpData, context, activity);
