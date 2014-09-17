@@ -65,17 +65,7 @@ class WonderPushDialogBuilder {
     }
 
     private void commonSetup() {
-        // On dismiss, handle chosen button, if any
-        DialogInterface.OnDismissListener dismissListener = new DialogInterface.OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialog) {
-                WonderPush.logDebug("Dialog dismissed");
-                if (listener != null) {
-                    listener.onChoice(WonderPushDialogBuilder.this, choice.get());
-                }
-            }
-        };
-        builder.setOnDismissListener(dismissListener);
+        // onDismissListener has moved to show() for backward compatibility
     }
 
     public Activity getActivity() {
@@ -174,6 +164,17 @@ class WonderPushDialogBuilder {
     public void show() {
         if (dialog == null) {
             dialog = builder.create();
+            // On dismiss, handle chosen button, if any
+            DialogInterface.OnDismissListener dismissListener = new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    WonderPush.logDebug("Dialog dismissed");
+                    if (listener != null) {
+                        listener.onChoice(WonderPushDialogBuilder.this, choice.get());
+                    }
+                }
+            };
+            dialog.setOnDismissListener(dismissListener);
         }
         dialog.show();
     }
