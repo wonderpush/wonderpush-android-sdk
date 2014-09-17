@@ -116,7 +116,10 @@ class WonderPushGcmClient {
 
         mBuilder.setContentIntent(pendingIntent);
         Notification notification = mBuilder.build();
-        notification.defaults = Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE;
+        notification.defaults = Notification.DEFAULT_SOUND;
+        if (context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
+            notification.defaults |= Notification.DEFAULT_VIBRATE;
+        }
         notification.flags = Notification.FLAG_AUTO_CANCEL;
         return notification;
     }
