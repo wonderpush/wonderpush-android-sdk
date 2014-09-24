@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.util.Log;
 import android.view.View;
@@ -27,7 +27,7 @@ class WonderPushDialogBuilder {
         public void onChoice(WonderPushDialogBuilder dialog, Button which);
     }
 
-    final Activity activity;
+    final Context activity;
     final JSONObject data;
     final AlertDialog.Builder builder;
     final OnChoice listener;
@@ -38,7 +38,7 @@ class WonderPushDialogBuilder {
     final AtomicReference<Button> choice = new AtomicReference<Button>();
     final List<Button> buttons;
 
-    public WonderPushDialogBuilder(Activity activity, JSONObject data, OnChoice listener) {
+    public WonderPushDialogBuilder(Context activity, JSONObject data, OnChoice listener) {
         this.activity = activity;
         this.data = data;
         builder = new AlertDialog.Builder(activity);
@@ -68,7 +68,7 @@ class WonderPushDialogBuilder {
         // onDismissListener has moved to show() for backward compatibility
     }
 
-    public Activity getActivity() {
+    public Context getContext() {
         return activity;
     }
 

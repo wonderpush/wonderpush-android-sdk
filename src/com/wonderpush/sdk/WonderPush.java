@@ -44,7 +44,9 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
@@ -174,14 +176,18 @@ public class WonderPush {
         return WonderPushRestClient.getUserId();
     }
 
-    private static boolean checkPlayService(Activity activity) {
+    private static boolean checkPlayService(Context context) {
         try {
             Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
             int resultCode = GooglePlayServicesUtil
-                    .isGooglePlayServicesAvailable(activity);
+                    .isGooglePlayServicesAvailable(context);
             if (resultCode != ConnectionResult.SUCCESS) {
                 if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                    GooglePlayServicesUtil.getErrorDialog(resultCode, activity, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+                    if (context instanceof Activity) {
+                        GooglePlayServicesUtil.getErrorDialog(resultCode, (Activity) context, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+                    } else {
+                        GooglePlayServicesUtil.showErrorNotification(resultCode, context);
+                    }
                 } else {
                     Log.w(TAG, "This device does not support google play service no push notification will be received");
                 }
@@ -199,12 +205,12 @@ public class WonderPush {
      * notification and register the device token to WonderPush. This method is
      * called within {@link #initialize(Activity, String, String, String)}.
      *
-     * @param activity
-     *            The current activity.
+     * @param context
+     *            The current {@link Activity} (preferred) or {@link Application} context.
      */
-    protected static void registerForPushNotification(Activity activity) {
-        if (checkPlayService(activity)) {
-            WonderPushGcmClient.registerForPushNotification(activity);
+    protected static void registerForPushNotification(Context context) {
+        if (checkPlayService(context)) {
+            WonderPushGcmClient.registerForPushNotification(context);
         } else {
             Log.w(TAG, "Google Play Services not present. Check your setup.");
         }
@@ -216,7 +222,7 @@ public class WonderPush {
         }
     }
 
-    private static void handleReceivedNotification(Activity activity, JSONObject data) {
+    private static void handleReceivedNotification(Context context, JSONObject data) {
         NotificationType type = null;
         try {
             type = NotificationType.fromString(data.optString("type"));
@@ -233,16 +239,16 @@ public class WonderPush {
                 // Nothing to do
                 break;
             case URL:
-                handleURLNotification(activity, data);
+                handleURLNotification(context, data);
                 break;
             case TEXT:
-                handleDialogNotification(activity, data);
+                handleDialogNotification(context, data);
                 break;
             case MAP:
-                handleMapNotification(activity, data);
+                handleMapNotification(context, data);
                 break;
             case HTML:
-                handleHTMLNotification(activity, data);
+                handleHTMLNotification(context, data);
                 break;
             default:
                 Log.w(TAG, "TODO: built-in action for type " + type);
@@ -265,14 +271,14 @@ public class WonderPush {
      * </code>
      * </pre>
      *
-     * @param activity
-     *            The current activity.
+     * @param context
+     *            The current {@link Activity} (preferred) or {@link Application}.
      * @param intent
      *            The intent the activity received.
      *
      * @return <code>true</code> if handled, <code>false</code> otherwise.
      */
-    private static boolean onCreateMainActivity(final Activity activity, Intent intent) {
+    private static boolean onCreateMainActivity(final Context context, Intent intent) {
         if (intent.hasExtra(WonderPush.NOTIFICATION_EXTRA_KEY)) {
             String notificationString = intent.getStringExtra(WonderPush.NOTIFICATION_EXTRA_KEY);
             logDebug("Handling notification at main activity creation: " + notificationString);
@@ -284,18 +290,18 @@ public class WonderPush {
                 WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
                 if (sIsInitialized) {
-                    handleReceivedNotification(activity, notification);
+                    handleReceivedNotification(context, notification);
                 } else {
                     BroadcastReceiver receiver = new BroadcastReceiver() {
                         @Override
                         public void onReceive(Context context, Intent intent) {
-                            handleReceivedNotification(activity, notification);
-                            LocalBroadcastManager.getInstance(activity).unregisterReceiver(this);
+                            handleReceivedNotification(context, notification);
+                            LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
                         }
                     };
 
                     IntentFilter filter = new IntentFilter(WonderPush.INTENT_INTIALIZED);
-                    LocalBroadcastManager.getInstance(activity).registerReceiver(receiver, filter);
+                    LocalBroadcastManager.getInstance(context).registerReceiver(receiver, filter);
                 }
 
                 return true;
@@ -612,208 +618,208 @@ public class WonderPush {
         return SDK_VERSION;
     }
 
-    protected static int getScreenDensity(Activity activity) {
-        Display display = activity.getWindowManager().getDefaultDisplay();
+    protected static int getScreenDensity(Context context) {
+        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
         return metrics.densityDpi;
     }
 
-    protected static String getScreenSize(Activity activity) {
-        return getScreenWidth(activity) + "x" + getScreenHeight(activity);
+    protected static String getScreenSize(Context context) {
+        return getScreenWidth(context) + "x" + getScreenHeight(context);
     }
 
-    protected static int getScreenWidth(Activity activity) {
-        Display display = activity.getWindowManager().getDefaultDisplay();
+    protected static int getScreenWidth(Context context) {
+        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
         return metrics.widthPixels;
     }
 
-    protected static int getScreenHeight(Activity activity) {
-        Display display = activity.getWindowManager().getDefaultDisplay();
+    protected static int getScreenHeight(Context context) {
+        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
         return metrics.heightPixels;
     }
 
-    protected static boolean getBluetoothSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
+    protected static boolean getBluetoothSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    protected static boolean getBluetoothLESupported(Activity activity) {
+    protected static boolean getBluetoothLESupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
         }
         return false;
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    protected static boolean getNFCSupported(Activity activity) {
+    protected static boolean getNFCSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC);
         }
         return false;
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
-    protected static boolean getIRSupported(Activity activity) {
+    protected static boolean getIRSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CONSUMER_IR);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CONSUMER_IR);
         }
         return false;
     }
 
-    protected static boolean getTelephonySupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY);
+    protected static boolean getTelephonySupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY);
     }
 
-    protected static boolean getTelephonyGSMSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_GSM);
+    protected static boolean getTelephonyGSMSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_GSM);
     }
 
-    protected static boolean getTelephonyCDMASupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_CDMA);
+    protected static boolean getTelephonyCDMASupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_CDMA);
     }
 
-    protected static boolean getWifiSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI);
+    protected static boolean getWifiSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI);
     }
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    protected static boolean getWifiDirectSupported(Activity activity) {
+    protected static boolean getWifiDirectSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT);
         }
         return false;
     }
 
-    protected static boolean getGPSSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+    protected static boolean getGPSSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
     }
 
-    protected static boolean getNetworkLocationSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
+    protected static boolean getNetworkLocationSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
     }
 
-    protected static boolean getCameraSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
+    protected static boolean getCameraSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    protected static boolean getFrontCameraSupported(Activity activity) {
+    protected static boolean getFrontCameraSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
         }
         return false;
     }
 
-    protected static boolean getMicrophoneSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
+    protected static boolean getMicrophoneSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
     }
 
-    protected static boolean getSensorAccelerometerSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER);
+    protected static boolean getSensorAccelerometerSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER);
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    protected static boolean getSensorBarometerSupported(Activity activity) {
+    protected static boolean getSensorBarometerSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_BAROMETER);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_BAROMETER);
         }
         return false;
     }
 
-    protected static boolean getSensorCompassSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_COMPASS);
+    protected static boolean getSensorCompassSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_COMPASS);
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    protected static boolean getSensorGyroscopeSupported(Activity activity) {
+    protected static boolean getSensorGyroscopeSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
         }
         return false;
     }
 
-    protected static boolean getSensorLightSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_LIGHT);
+    protected static boolean getSensorLightSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_LIGHT);
     }
 
-    protected static boolean getSensorProximitySupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_PROXIMITY);
+    protected static boolean getSensorProximitySupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_PROXIMITY);
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
-    protected static boolean getSensorStepCounterSupported(Activity activity) {
+    protected static boolean getSensorStepCounterSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_COUNTER);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_COUNTER);
         }
         return false;
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
-    protected static boolean getSensorStepDetectorSupported(Activity activity) {
+    protected static boolean getSensorStepDetectorSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_DETECTOR);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_DETECTOR);
         }
         return false;
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    protected static boolean getSIPSupported(Activity activity) {
+    protected static boolean getSIPSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP);
         }
         return false;
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    protected static boolean getSIPVOIPSupported(Activity activity) {
+    protected static boolean getSIPVOIPSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP_VOIP);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP_VOIP);
         }
         return false;
     }
 
-    protected static boolean getTouchscreenSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN);
+    protected static boolean getTouchscreenSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN);
     }
 
-    protected static boolean getTouchscreenTwoFingersSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH);
+    protected static boolean getTouchscreenTwoFingersSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH);
     }
 
-    protected static boolean getTouchscreenDistinctSupported(Activity activity) {
-        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_DISTINCT);
+    protected static boolean getTouchscreenDistinctSupported(Context context) {
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_DISTINCT);
     }
 
     @TargetApi(Build.VERSION_CODES.GINGERBREAD)
-    protected static boolean getTouchscreenFullHandSupported(Activity activity) {
+    protected static boolean getTouchscreenFullHandSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_JAZZHAND);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_JAZZHAND);
         }
         return false;
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
-    protected static boolean getUSBAccessorySupported(Activity activity) {
+    protected static boolean getUSBAccessorySupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_ACCESSORY);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_ACCESSORY);
         }
         return false;
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
-    protected static boolean getUSBHostSupported(Activity activity) {
+    protected static boolean getUSBHostSupported(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
-            return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
         }
         return false;
     }
 
-    protected static void updateInstallationCoreProperties(Activity activity) {
+    protected static void updateInstallationCoreProperties(Context context) {
         JSONObject properties = new JSONObject();
         try {
             JSONObject application = new JSONObject();
@@ -828,9 +834,9 @@ public class WonderPush {
             device.put("brand", getDeviceBrand());
             device.put("model", getDeviceModel());
             device.put("name", getDeviceName());
-            device.put("screenWidth", getScreenWidth(activity));
-            device.put("screenHeight", getScreenHeight(activity));
-            device.put("screenDensity", getScreenDensity(activity));
+            device.put("screenWidth", getScreenWidth(context));
+            device.put("screenHeight", getScreenHeight(context));
+            device.put("screenDensity", getScreenDensity(context));
 
             JSONObject configuration = new JSONObject();
             configuration.put("timeZone", getUserTimezone());
@@ -839,36 +845,36 @@ public class WonderPush {
             device.put("configuration", configuration);
 
             JSONObject capabilities = new JSONObject();
-            capabilities.put("bluetooth", getBluetoothSupported(activity));
-            capabilities.put("bluetoothLe", getBluetoothLESupported(activity));
-            capabilities.put("nfc", getNFCSupported(activity));
-            capabilities.put("ir", getIRSupported(activity));
-            capabilities.put("telephony", getTelephonySupported(activity));
-            capabilities.put("telephonyGsm", getTelephonyGSMSupported(activity));
-            capabilities.put("telephonyCdma", getTelephonyCDMASupported(activity));
-            capabilities.put("wifi", getWifiSupported(activity));
-            capabilities.put("wifiDirect", getWifiDirectSupported(activity));
-            capabilities.put("gps", getGPSSupported(activity));
-            capabilities.put("networkLocation", getNetworkLocationSupported(activity));
-            capabilities.put("camera", getCameraSupported(activity));
-            capabilities.put("frontCamera", getFrontCameraSupported(activity));
-            capabilities.put("microphone", getMicrophoneSupported(activity));
-            capabilities.put("sensorAccelerometer", getSensorAccelerometerSupported(activity));
-            capabilities.put("sensorBarometer", getSensorBarometerSupported(activity));
-            capabilities.put("sensorCompass", getSensorCompassSupported(activity));
-            capabilities.put("sensorGyroscope", getSensorGyroscopeSupported(activity));
-            capabilities.put("sensorLight", getSensorLightSupported(activity));
-            capabilities.put("sensorProximity", getSensorProximitySupported(activity));
-            capabilities.put("sensorStepCounter", getSensorStepCounterSupported(activity));
-            capabilities.put("sensorStepDetector", getSensorStepDetectorSupported(activity));
-            capabilities.put("sip", getSIPSupported(activity));
-            capabilities.put("sipVoip", getSIPVOIPSupported(activity));
-            capabilities.put("touchscreen", getTouchscreenSupported(activity));
-            capabilities.put("touchscreenTwoFingers", getTouchscreenTwoFingersSupported(activity));
-            capabilities.put("touchscreenDistinct", getTouchscreenDistinctSupported(activity));
-            capabilities.put("touchscreenFullHand", getTouchscreenFullHandSupported(activity));
-            capabilities.put("usbAccessory", getUSBAccessorySupported(activity));
-            capabilities.put("usbHost", getUSBHostSupported(activity));
+            capabilities.put("bluetooth", getBluetoothSupported(context));
+            capabilities.put("bluetoothLe", getBluetoothLESupported(context));
+            capabilities.put("nfc", getNFCSupported(context));
+            capabilities.put("ir", getIRSupported(context));
+            capabilities.put("telephony", getTelephonySupported(context));
+            capabilities.put("telephonyGsm", getTelephonyGSMSupported(context));
+            capabilities.put("telephonyCdma", getTelephonyCDMASupported(context));
+            capabilities.put("wifi", getWifiSupported(context));
+            capabilities.put("wifiDirect", getWifiDirectSupported(context));
+            capabilities.put("gps", getGPSSupported(context));
+            capabilities.put("networkLocation", getNetworkLocationSupported(context));
+            capabilities.put("camera", getCameraSupported(context));
+            capabilities.put("frontCamera", getFrontCameraSupported(context));
+            capabilities.put("microphone", getMicrophoneSupported(context));
+            capabilities.put("sensorAccelerometer", getSensorAccelerometerSupported(context));
+            capabilities.put("sensorBarometer", getSensorBarometerSupported(context));
+            capabilities.put("sensorCompass", getSensorCompassSupported(context));
+            capabilities.put("sensorGyroscope", getSensorGyroscopeSupported(context));
+            capabilities.put("sensorLight", getSensorLightSupported(context));
+            capabilities.put("sensorProximity", getSensorProximitySupported(context));
+            capabilities.put("sensorStepCounter", getSensorStepCounterSupported(context));
+            capabilities.put("sensorStepDetector", getSensorStepDetectorSupported(context));
+            capabilities.put("sip", getSIPSupported(context));
+            capabilities.put("sipVoip", getSIPVOIPSupported(context));
+            capabilities.put("touchscreen", getTouchscreenSupported(context));
+            capabilities.put("touchscreenTwoFingers", getTouchscreenTwoFingersSupported(context));
+            capabilities.put("touchscreenDistinct", getTouchscreenDistinctSupported(context));
+            capabilities.put("touchscreenFullHand", getTouchscreenFullHandSupported(context));
+            capabilities.put("usbAccessory", getUSBAccessorySupported(context));
+            capabilities.put("usbHost", getUSBHostSupported(context));
             device.put("capabilities", capabilities);
 
             properties.put("device", device);
@@ -1004,7 +1010,7 @@ public class WonderPush {
      * }</code></pre>
      *
      * @param context
-     *            The main activity of your application.
+     *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
      *            It must be the same activity that you declared in the {@code <meta-data>} tag
      *            under the WonderPush {@code <receiver>} tag in your {@code AndroidManifest.xml}.
      * @param clientId
@@ -1014,7 +1020,7 @@ public class WonderPush {
      * @param userId
      *            The id of the user in your application, or {@code null}.
      */
-    public static void initialize(final Activity context, final String clientId, String clientSecret, final String userId) {
+    public static void initialize(final Context context, final String clientId, String clientSecret, final String userId) {
         setNetworkAvailable(false);
         sApplicationContext = context.getApplicationContext();
         sClientId = clientId;
@@ -1035,7 +1041,9 @@ public class WonderPush {
 
         // Initialize OpenUDID
         OpenUDID_manager.sync(sApplicationContext);
-        onCreateMainActivity(context, context.getIntent());
+        if (context instanceof Activity) {
+            onCreateMainActivity(context, ((Activity) context).getIntent());
+        }
 
         // Wait for UDID to be ready and fetch anonymous token if needed.
         new Runnable() {
@@ -1150,8 +1158,8 @@ public class WonderPush {
         return c.getSharedPreferences(PREF_FILE, 0);
     }
 
-    protected static WonderPushDialogBuilder createDialogNotificationBase(final Activity activity, final JSONObject data) {
-        WonderPushDialogBuilder builder = new WonderPushDialogBuilder(activity, data, new WonderPushDialogBuilder.OnChoice() {
+    protected static WonderPushDialogBuilder createDialogNotificationBase(final Context context, final JSONObject data) {
+        WonderPushDialogBuilder builder = new WonderPushDialogBuilder(context, data, new WonderPushDialogBuilder.OnChoice() {
             @Override
             public void onChoice(WonderPushDialogBuilder dialog, Button which) {
                 handleDialogButtonAction(dialog, which);
@@ -1166,7 +1174,7 @@ public class WonderPush {
         List<WonderPushDialogBuilder.Button> buttons = builder.getButtons();
         if (buttons.isEmpty()) {
             Button defaultButton = new Button();
-            defaultButton.label = builder.getActivity().getResources().getString(R.string.wonderpush_close);
+            defaultButton.label = builder.getContext().getResources().getString(R.string.wonderpush_close);
             buttons.add(defaultButton);
         }
     }
@@ -1191,8 +1199,8 @@ public class WonderPush {
         }
     }
 
-    protected static void handleDialogNotification(final Activity activity, final JSONObject data) {
-        WonderPushDialogBuilder builder = createDialogNotificationBase(activity, data);
+    protected static void handleDialogNotification(final Context context, final JSONObject data) {
+        WonderPushDialogBuilder builder = createDialogNotificationBase(context, data);
 
         String message = data.optString("message");
         if (message == null) {
@@ -1208,8 +1216,8 @@ public class WonderPush {
     }
 
     @SuppressLint("InflateParams")
-    protected static void handleMapNotification(final Activity activity, final JSONObject data) {
-        WonderPushDialogBuilder builder = createDialogNotificationBase(activity, data);
+    protected static void handleMapNotification(final Context context, final JSONObject data) {
+        WonderPushDialogBuilder builder = createDialogNotificationBase(context, data);
 
         final JSONObject place;
         try {
@@ -1219,7 +1227,7 @@ public class WonderPush {
             return;
         }
         final JSONObject point = place.optJSONObject("point");
-        final View dialogView = activity.getLayoutInflater().inflate(R.layout.wonderpush_notification_map_dialog, null, false);
+        final View dialogView = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.wonderpush_notification_map_dialog, null, false);
         final TextView text = (TextView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_text);
         if (data.has("message")) {
             text.setVisibility(View.VISIBLE);
@@ -1233,14 +1241,14 @@ public class WonderPush {
         if (buttons.isEmpty()) {
             // Close button
             Button closeButton = new Button();
-            closeButton.label = activity.getResources().getString(R.string.wonderpush_close);
+            closeButton.label = context.getResources().getString(R.string.wonderpush_close);
             Action closeAction = new Action();
             closeAction.setType(Action.Type.CLOSE);
             closeButton.actions.add(closeAction);
             buttons.add(closeButton);
             // Open button
             Button openButton = new Button();
-            openButton.label = activity.getResources().getString(R.string.wonderpush_open);
+            openButton.label = context.getResources().getString(R.string.wonderpush_open);
             Action openAction = new Action();
             openAction.setType(Action.Type.MAP_OPEN);
             openButton.actions.add(openAction);
@@ -1260,13 +1268,13 @@ public class WonderPush {
                     } else {
                         loc = place.optString("name", place.optString("query"));
                     }
-                    int screenWidth = getScreenWidth(activity);
-                    int screenHeight = getScreenHeight(activity);
+                    int screenWidth = getScreenWidth(context);
+                    int screenHeight = getScreenHeight(context);
                     double ratio = screenWidth / (double)screenHeight;
                     int width = ratio >= 1 ? Math.min(640, screenWidth) : (int)Math.floor(ratio * Math.min(640, screenHeight));
                     int height = ratio <= 1 ? Math.min(640, screenHeight) : (int)Math.floor(Math.min(640, screenWidth) / ratio);
                     String size = width + "x" + height;
-                    int scale = getScreenDensity(activity) >= 192 ? 2 : 1;
+                    int scale = getScreenDensity(context) >= 192 ? 2 : 1;
                     URL url = new URL("https://maps.google.com/maps/api/staticmap"
                             + "?center=" + loc
                             + "&zoom=" + place.optInt("zoom", 13)
@@ -1298,7 +1306,7 @@ public class WonderPush {
     }
 
     protected static void handleMapOpenButtonAction(WonderPushDialogBuilder dialog, Button button) {
-        Activity activity = dialog.getActivity();
+        Context context = dialog.getContext();
         JSONObject data = dialog.getData();
         try {
             JSONObject place;
@@ -1328,9 +1336,9 @@ public class WonderPush {
             }
             Intent open = new Intent(Intent.ACTION_VIEW);
             open.setData(geo.build());
-            if (open.resolveActivity(activity.getPackageManager()) != null) {
+            if (open.resolveActivity(context.getPackageManager()) != null) {
                 logDebug("Will open location " + open.getDataString());
-                activity.startActivity(open);
+                context.startActivity(open);
             } else {
                 Log.d(TAG, "No activity can open location " + open.getDataString());
                 Log.d(TAG, "Falling back to regular URL");
@@ -1350,23 +1358,23 @@ public class WonderPush {
                 }
                 open = new Intent(Intent.ACTION_VIEW);
                 open.setData(geo.build());
-                if (open.resolveActivity(activity.getPackageManager()) != null) {
+                if (open.resolveActivity(context.getPackageManager()) != null) {
                     logDebug("Opening URL " + open.getDataString());
-                    activity.startActivity(open);
+                    context.startActivity(open);
                 } else {
                     Log.d(TAG, "No activity can open URL " + open.getDataString());
                     Log.w(TAG, "Cannot open map!");
-                    Toast.makeText(activity, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
                 }
             }
         } catch (JSONException e) {
             Log.e(TAG, "Failed to open map", e);
-            Toast.makeText(activity, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
         }
     }
 
-    protected static WonderPushDialogBuilder createWebNotificationBasePre(final Activity activity, final JSONObject data, WonderPushView webView) {
-        final WonderPushDialogBuilder builder = createDialogNotificationBase(activity, data);
+    protected static WonderPushDialogBuilder createWebNotificationBasePre(final Context context, final JSONObject data, WonderPushView webView) {
+        final WonderPushDialogBuilder builder = createDialogNotificationBase(context, data);
         builder.setupButtons();
 
         JSONArray buttons = data.optJSONArray("buttons");
@@ -1396,15 +1404,15 @@ public class WonderPush {
         return builder;
     }
 
-    protected static void handleHTMLNotification(final Activity activity, final JSONObject data) {
+    protected static void handleHTMLNotification(final Context context, final JSONObject data) {
         if (!data.has("message")) {
             Log.w(TAG, "Did not have any HTML content to display in the notification!");
             return;
         }
 
         // Build the dialog
-        WonderPushView webView = new WonderPushView(activity);
-        final WonderPushDialogBuilder builder = createWebNotificationBasePre(activity, data, webView);
+        WonderPushView webView = new WonderPushView(context);
+        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, data, webView);
         builder.setupButtons();
 
         // Set content
@@ -1414,14 +1422,14 @@ public class WonderPush {
         builder.show();
     }
 
-    protected static void handleURLNotification(Activity activity, JSONObject data) {
+    protected static void handleURLNotification(Context context, JSONObject data) {
         if (!data.has("url")) {
             Log.w(TAG, "Did not have any URL to display in the notification!");
             return;
         }
 
-        WonderPushView webView = new WonderPushView(activity);
-        final WonderPushDialogBuilder builder = createWebNotificationBasePre(activity, data, webView);
+        WonderPushView webView = new WonderPushView(context);
+        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, data, webView);
         builder.setupButtons();
 
         // Set content
