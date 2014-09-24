@@ -39,6 +39,7 @@ class WonderPushGcmClient {
 
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
+    private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
     private static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
     private static GoogleCloudMessaging mGcm;
 
@@ -75,7 +76,19 @@ class WonderPushGcmClient {
         if (registeredVersion != currentVersion) {
             return "";
         }
+
+        // This function deliberately does not check for cases that should cause unregistration (senderIds change)
+
         return registrationId;
+    }
+
+    protected static boolean checkForUnregistrationNeed(Context c, String pushSenderIds) {
+        final SharedPreferences prefs = WonderPush.getSharedPreferences(c);
+        String registeredSenderIds = prefs.getString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME, "");
+        return !(
+                "".equals(registeredSenderIds) // there is no previous pushToken to unregister
+                || registeredSenderIds.equals(pushSenderIds) // change of senderIds
+        );
     }
 
     protected static void storeRegistrationId(String registrationId, Context c) {
@@ -178,6 +191,13 @@ class WonderPushGcmClient {
         return false;
     }
 
+    private static void unregister(Context context) throws IOException {
+        if (mGcm == null) {
+            mGcm = GoogleCloudMessaging.getInstance(context);
+        }
+        mGcm.unregister();
+    }
+
     private static String register(Context context, String senderId) throws IOException {
         if (mGcm == null) {
             mGcm = GoogleCloudMessaging.getInstance(context);
@@ -185,7 +205,7 @@ class WonderPushGcmClient {
         return mGcm.register(senderId.split(","));
     }
 
-    private static void registerInBackground(final String senderId, final Context activity) {
+    private static void registerInBackground(final String senderIds, final Context activity) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
@@ -193,7 +213,10 @@ class WonderPushGcmClient {
                     @Override
                     protected Object doInBackground(Object... arg0) {
                         try {
-                            String regid = register(activity, senderId);
+                            if (checkForUnregistrationNeed(activity, senderIds)) {
+                                unregister(activity);
+                            }
+                            String regid = register(activity, senderIds);
                             if (regid == null) {
                                 return null;
                             }
@@ -219,7 +242,6 @@ class WonderPushGcmClient {
      *            A valid context
      */
     static void registerForPushNotification(Context context) {
-        String regid = getRegistrationId(context);
         String pushSenderId = null;
         try {
             ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
@@ -235,7 +257,9 @@ class WonderPushGcmClient {
             return;
         }
 
-        if (TextUtils.isEmpty(regid)) {
+        String regid = getRegistrationId(context);
+
+        if (checkForUnregistrationNeed(context, pushSenderId) || TextUtils.isEmpty(regid)) {
             registerInBackground(pushSenderId, context);
         } else {
             storeRegistrationIdToWonderPush(regid);
