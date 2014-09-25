@@ -20,7 +20,7 @@ class WonderPushRequestParamsDecorator {
 
         // Add the SID for web resources
         if (resource.startsWith("/web"))
-            params.put("sid", WonderPushRestClient.getSID());
+            params.put("sid", WonderPushConfiguration.getSID());
     }
 
     private static void addParameterIfAbsent(WonderPush.RequestParams params, String paramName, String paramValue) {

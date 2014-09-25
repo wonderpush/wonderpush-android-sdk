@@ -105,7 +105,7 @@ class WonderPushJobQueue {
                     jsonArray.put(jobs[i].toJSON());
                 }
 
-                SharedPreferences prefs = WonderPush.getSharedPreferences();
+                SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putString(getPrefName(), jsonArray.toString());
                 editor.commit();
@@ -122,7 +122,7 @@ class WonderPushJobQueue {
     protected void restore() {
         synchronized (mMutex) {
             try {
-                SharedPreferences prefs = WonderPush.getSharedPreferences();
+                SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
                 String jsonString = prefs.getString(getPrefName(), "[]");
                 JSONArray jsonArray = new JSONArray(jsonString);
 

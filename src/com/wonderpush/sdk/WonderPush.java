@@ -24,7 +24,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -96,7 +95,6 @@ public class WonderPush {
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
     protected static final String SDK_VERSION = "Android-" + API_INT + ".0.9.1"; // reset to .1.0.0 when bumping API_INT
-    private static final String PREF_FILE = "wonderpush";
     protected static final int ERROR_INVALID_SID = 12017;
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
@@ -165,15 +163,6 @@ public class WonderPush {
     };
 
     protected WonderPush() {
-    }
-
-    /**
-     * Gets the current player id from the local cache.
-     *
-     * @return The current player id from the local cache.
-     */
-    protected static String getUserId() {
-        return WonderPushRestClient.getUserId();
     }
 
     private static boolean checkPlayService(Context context) {
@@ -1021,6 +1010,7 @@ public class WonderPush {
      *            The id of the user in your application, or {@code null}.
      */
     public static void initialize(final Context context, final String clientId, String clientSecret, final String userId) {
+        WonderPushConfiguration.initialize(context);
         setNetworkAvailable(false);
         sApplicationContext = context.getApplicationContext();
         sClientId = clientId;
@@ -1050,7 +1040,6 @@ public class WonderPush {
             @Override
             public void run() {
                 if (OpenUDID_manager.isInitialized()) {
-                    WonderPushRestClient.setUserId(userId);
                     boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
                         @Override
                         public void onFailure(Throwable e, Response errorResponse) {
@@ -1140,22 +1129,6 @@ public class WonderPush {
         if (null == sApplicationContext)
             Log.e(TAG, "Application context is null, did you call WonderPush.initialize ?");
         return sApplicationContext;
-    }
-
-    /**
-     * Gets the WonderPush shared preferences for that application.
-     */
-    protected static SharedPreferences getSharedPreferences() {
-        if (null == getApplicationContext())
-            return null;
-        return getApplicationContext().getSharedPreferences(PREF_FILE, 0);
-    }
-
-    protected static SharedPreferences getSharedPreferences(Context c) {
-        if (null == c)
-            throw new IllegalArgumentException("Context must be set");
-
-        return c.getSharedPreferences(PREF_FILE, 0);
     }
 
     protected static WonderPushDialogBuilder createDialogNotificationBase(final Context context, final JSONObject data) {

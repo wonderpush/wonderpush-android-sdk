@@ -18,8 +18,6 @@ import org.apache.http.message.BasicHeader;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Base64;
@@ -43,10 +41,6 @@ class WonderPushRestClient {
     private static final int RETRY_INTERVAL_BAD_AUTH = 1 * 1000; // in milliseconds
     private static final int RETRY_INTERVAL = 30 * 1000; // in milliseconds
     private static final int RETRY_INTERVAL_NETWORK_ISSUE = 60 * 1000; // in milliseconds
-    private static final String ACCESS_TOKEN_PREF_NAME = "__wonderpush_access_token";
-    private static final String SID_PREF_NAME = "__wonderpush_sid";
-    private static final String INSTALLATION_ID_PREF_NAME = "__installation_id";
-    private static final String USER_ID_PREF_NAME = "__user_id";
     private static boolean sIsFetchingAnonymousAccessToken = false;
     private static List<WonderPush.ResponseHandler> sPendingHandlers = new ArrayList<WonderPush.ResponseHandler>();
 
@@ -179,7 +173,7 @@ class WonderPushRestClient {
      *         access token (true fetching, false retrived from local cache)
      */
     protected static boolean fetchAnonymousAccessTokenIfNeeded(WonderPush.ResponseHandler onFetchedHandler) {
-        if (null == getAccessToken()) {
+        if (null == WonderPushConfiguration.getAccessToken()) {
             fetchAnonymousAccessToken(onFetchedHandler);
             return true;
         }
@@ -205,7 +199,7 @@ class WonderPushRestClient {
             return;
         }
 
-        String accessToken = getAccessToken();
+        String accessToken = WonderPushConfiguration.getAccessToken();
 
         // User is authenticated
         if (accessToken == null) {
@@ -238,9 +232,9 @@ class WonderPushRestClient {
                 Log.e(TAG, "Request failed", e);
                 if (errorResponse != null && WonderPush.ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
-                    setAccessToken(null);
-                    setSID(null);
-                    setInstallationId(null);
+                    WonderPushConfiguration.setAccessToken(null);
+                    WonderPushConfiguration.setSID(null);
+                    WonderPushConfiguration.setInstallationId(null);
 
                     // retry later now
                     new Handler().postDelayed(new Runnable() {
@@ -372,7 +366,7 @@ class WonderPushRestClient {
         if (null != udid) {
             authParams.put("deviceId", udid);
         }
-        String userId = WonderPush.getUserId();
+        String userId = WonderPushConfiguration.getUserId();
         if (null != userId) {
             authParams.put("userId", userId);
         }
@@ -422,10 +416,10 @@ class WonderPushRestClient {
                                 String userId = data.optString("userId");
 
                                 // Store access token
-                                setAccessToken(token);
-                                setSID(sid);
-                                setInstallationId(installationId);
-                                setUserId(userId);
+                                WonderPushConfiguration.setAccessToken(token);
+                                WonderPushConfiguration.setSID(sid);
+                                WonderPushConfiguration.setInstallationId(installationId);
+                                WonderPushConfiguration.setUserId(userId);
                                 sIsFetchingAnonymousAccessToken = false;
 
                                 // call handlers
@@ -491,113 +485,6 @@ class WonderPushRestClient {
             }
         }
         return handler;
-    }
-
-    /**
-     * Get the access token stored in the user's shared preferences.
-     */
-    protected static String getAccessToken() {
-        SharedPreferences prefs = WonderPush.getSharedPreferences();
-        if (null == prefs) {
-            return null;
-        }
-        String token = prefs.getString(ACCESS_TOKEN_PREF_NAME, null);
-        return token;
-    }
-
-    /**
-     * Set the SID stored in the user's shared preferences.
-     *
-     * @param accessToken
-     *            The access token to be stored
-     */
-    protected static void setSID(String sid) {
-        SharedPreferences preferences = WonderPush.getSharedPreferences();
-        SharedPreferences.Editor editor = preferences.edit();
-        if (sid == null) {
-            editor.remove(SID_PREF_NAME);
-        } else {
-            editor.putString(SID_PREF_NAME, sid);
-        }
-        editor.commit();
-    }
-
-    protected static void setInstallationId(String installationId) {
-        SharedPreferences preferences = WonderPush.getSharedPreferences();
-        SharedPreferences.Editor editor = preferences.edit();
-        if (null == installationId) {
-            editor.remove(INSTALLATION_ID_PREF_NAME);
-        } else {
-            editor.putString(INSTALLATION_ID_PREF_NAME, installationId);
-        }
-        editor.commit();
-    }
-
-    protected static String getInstallationId(Context applicationContext) {
-        SharedPreferences prefs = WonderPush.getSharedPreferences(applicationContext);
-        if (prefs == null) {
-            return null;
-        }
-        String installationId = prefs.getString(INSTALLATION_ID_PREF_NAME, null);
-        return installationId;
-    }
-
-    protected static String getUserId() {
-        SharedPreferences prefs = WonderPush.getSharedPreferences();
-        if (prefs == null) {
-            return null;
-        }
-        String userId = prefs.getString(USER_ID_PREF_NAME, null);
-        return userId;
-    }
-
-    protected static void setUserId(String userId) {
-        SharedPreferences preferences = WonderPush.getSharedPreferences();
-        if (!sIsFetchingAnonymousAccessToken) {
-            String oldUserId = preferences.getString(USER_ID_PREF_NAME, null);
-            if (userId == null && oldUserId == null
-                    || userId != null && userId.equals(oldUserId)) {
-                return;
-            }
-            // The user id changed, we must reset the access token
-            setAccessToken(null);
-        }
-        SharedPreferences.Editor editor = preferences.edit();
-        if (null == userId) {
-            editor.remove(USER_ID_PREF_NAME);
-        } else {
-            editor.putString(USER_ID_PREF_NAME, userId);
-        }
-        editor.commit();
-    }
-
-    /**
-     * Get the access token stored in the user's shared preferences.
-     */
-    protected static String getSID() {
-        SharedPreferences prefs = WonderPush.getSharedPreferences();
-        if (null == prefs) {
-            return null;
-        }
-        String sid = prefs.getString(SID_PREF_NAME, null);
-        return sid;
-    }
-
-    /**
-     * Set the access token stored in the user's shared preferences.
-     *
-     * @param accessToken
-     *            The access token to be stored
-     */
-    protected static void setAccessToken(String accessToken) {
-        SharedPreferences preferences = WonderPush.getSharedPreferences();
-        SharedPreferences.Editor editor = preferences.edit();
-        if (null == accessToken) {
-            editor.remove(ACCESS_TOKEN_PREF_NAME);
-        } else {
-            editor.putString(ACCESS_TOKEN_PREF_NAME, accessToken);
-        }
-        editor.commit();
     }
 
     /**

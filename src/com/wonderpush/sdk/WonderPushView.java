@@ -448,11 +448,8 @@ class WonderPushView extends FrameLayout {
                 return false;
             }
 
-            // Invalidate access token
-            WonderPushRestClient.setAccessToken(null);
-
-            // Invalidate SID
-            WonderPushRestClient.setSID(null);
+            // Invalidate credentials
+            WonderPushConfiguration.invalidateCredentials();
 
             // Request a new anonymous access token
             WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded();

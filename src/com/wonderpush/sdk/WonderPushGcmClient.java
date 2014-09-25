@@ -13,7 +13,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -37,9 +36,6 @@ class WonderPushGcmClient {
 
     private static final String TAG = WonderPush.TAG;
 
-    private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
-    private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
-    private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
     private static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
     private static GoogleCloudMessaging mGcm;
 
@@ -65,16 +61,15 @@ class WonderPushGcmClient {
     }
 
     protected static String getRegistrationId(Context c) {
-        final SharedPreferences prefs = WonderPush.getSharedPreferences(c);
-        String registrationId = prefs.getString(GCM_REGISTRATION_ID_PREF_NAME, "");
-        if (registrationId == null || registrationId.length() == 0) {
-            return "";
+        String registrationId = WonderPushConfiguration.getGCMRegistrationId();
+        if (TextUtils.isEmpty(registrationId)) {
+            return null;
         }
 
-        int registeredVersion = prefs.getInt(GCM_REGISTRATION_APP_VERSION_PREF_NAME, Integer.MIN_VALUE);
+        int registeredVersion = WonderPushConfiguration.getGCMRegistrationAppVersion();
         int currentVersion = getAppVersion(c);
         if (registeredVersion != currentVersion) {
-            return "";
+            return null;
         }
 
         // This function deliberately does not check for cases that should cause unregistration (senderIds change)
@@ -83,21 +78,17 @@ class WonderPushGcmClient {
     }
 
     protected static boolean checkForUnregistrationNeed(Context c, String pushSenderIds) {
-        final SharedPreferences prefs = WonderPush.getSharedPreferences(c);
-        String registeredSenderIds = prefs.getString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME, "");
+        String registeredSenderIds = WonderPushConfiguration.getGCMRegistrationSenderIds();
         return !(
-                "".equals(registeredSenderIds) // there is no previous pushToken to unregister
+                registeredSenderIds == null // there is no previous pushToken to unregister
                 || registeredSenderIds.equals(pushSenderIds) // change of senderIds
         );
     }
 
-    protected static void storeRegistrationId(String registrationId, Context c) {
-        final SharedPreferences prefs = WonderPush.getSharedPreferences(c);
-        int appVersion = getAppVersion(c);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(GCM_REGISTRATION_ID_PREF_NAME, registrationId);
-        editor.putInt(GCM_REGISTRATION_APP_VERSION_PREF_NAME, appVersion);
-        editor.commit();
+    protected static void storeRegistrationId(String senderIds, String registrationId, Context context) {
+        WonderPushConfiguration.setGCMRegistrationId(registrationId);
+        WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
+        WonderPushConfiguration.setGCMRegistrationAppVersion(getAppVersion(context));
     }
 
     protected static PendingIntent buildPendingIntent(JSONObject wonderpushData, Context context,
@@ -154,7 +145,7 @@ class WonderPushGcmClient {
             WonderPush.logDebug("Received broadcasted intent WonderPush data: " + wpDataJson);
             JSONObject wpData = new JSONObject(wpDataJson);
             String targetInstallationId = wpData.optString("@");
-            String loggedInstallationId = WonderPushRestClient.getInstallationId(context);
+            String loggedInstallationId = WonderPushConfiguration.getInstallationId();
             if (targetInstallationId != null && !targetInstallationId.equals(loggedInstallationId)) {
                 Log.d(TAG, "Received notification is not targetted at the current installation (" + targetInstallationId + " does not match current installation " + loggedInstallationId + ")");
                 return false;
@@ -220,7 +211,7 @@ class WonderPushGcmClient {
                             if (regid == null) {
                                 return null;
                             }
-                            storeRegistrationId(regid, activity);
+                            storeRegistrationId(senderIds, regid, activity);
                             storeRegistrationIdToWonderPush(regid);
                             WonderPush.logDebug("Device registered, registration ID=" + regid);
                         } catch (IOException ex) {
