@@ -11,7 +11,6 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.AttributeSet;
@@ -32,8 +31,6 @@ import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.wonderpush.sdk.R;
 
 /**
  * An Android view that displays WonderPush content.
@@ -117,7 +114,7 @@ class WonderPushView extends FrameLayout {
         FrameLayout.LayoutParams closeButtonLayoutParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.RIGHT);
+                Gravity.TOP | WonderPushCompatibilityHelper.getGravityEnd());
         closeButtonLayoutParams.setMargins(0, closeButtonMargin, closeButtonMargin, 0);
         mCloseButton.setLayoutParams(closeButtonLayoutParams);
         mCloseButton.setImageDrawable(closeButtonDrawable);
