@@ -17,12 +17,12 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -94,13 +94,19 @@ class WonderPushGcmClient {
     protected static PendingIntent buildPendingIntent(JSONObject wonderpushData, Context context,
             Class<? extends Activity> activity) {
         Intent resultIntent = new Intent(context, activity);
+        resultIntent.setAction(Intent.ACTION_MAIN);
+        resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
 
-        resultIntent.putExtra(WonderPush.NOTIFICATION_EXTRA_KEY, wonderpushData.toString());
+        Uri dataUri = new Uri.Builder()
+                .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
+                .authority(WonderPush.INTENT_NOTIFICATION_AUTHORITY)
+                .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER, wonderpushData.toString())
+                .build();
+        resultIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
 
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-        stackBuilder.addParentStack(activity);
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent resultPendingIntent = PendingIntent.getActivity(context, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+
         return resultPendingIntent;
     }
 

@@ -114,9 +114,24 @@ public class WonderPush {
     protected static final String INTENT_RESOURCE_PRELOADED_EXTRA_PATH = "wonderpushResourcePreloadedPath";
 
     /**
-     * Intent extra key for GCM notification data when the user clicks the notification.
+     * Intent scheme for GCM notification data when the user clicks the notification.
      */
-    protected static final String NOTIFICATION_EXTRA_KEY = "_wpNotification";
+    protected static final String INTENT_NOTIFICATION_SCHEME = "wonderpush";
+
+    /**
+     * Intent authority for GCM notification data when the user clicks the notification.
+     */
+    protected static final String INTENT_NOTIFICATION_AUTHORITY = "notification";
+
+    /**
+     * Intent data type for GCM notification data when the user clicks the notification.
+     */
+    protected static final String INTENT_NOTIFICATION_TYPE = "x-wonderpush/notification";
+
+    /**
+     * Intent query parameter key for GCM notification data when the user clicks the notification.
+     */
+    protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER = "body";
 
     static enum NotificationType {
         SIMPLE("simple"),
@@ -268,8 +283,12 @@ public class WonderPush {
      * @return <code>true</code> if handled, <code>false</code> otherwise.
      */
     private static boolean onCreateMainActivity(final Context context, Intent intent) {
-        if (intent.hasExtra(WonderPush.NOTIFICATION_EXTRA_KEY)) {
-            String notificationString = intent.getStringExtra(WonderPush.NOTIFICATION_EXTRA_KEY);
+        if (INTENT_NOTIFICATION_TYPE.equals(intent.getType())
+                && intent.getData() != null
+                && INTENT_NOTIFICATION_SCHEME.equals(intent.getData().getScheme())
+                && INTENT_NOTIFICATION_AUTHORITY.equals(intent.getData().getAuthority())
+        ) {
+            String notificationString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
             logDebug("Handling notification at main activity creation: " + notificationString);
             try {
                 final JSONObject notification = new JSONObject(notificationString);
