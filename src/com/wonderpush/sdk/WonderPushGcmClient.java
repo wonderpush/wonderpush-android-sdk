@@ -160,19 +160,8 @@ class WonderPushGcmClient {
             final JSONObject trackData = new JSONObject();
             trackData.put("campaignId", wpData.optString("c"));
             trackData.put("notificationId", wpData.optString("n"));
-            if (WonderPush.isInitialized()) {
-                WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
-            } else {
-                BroadcastReceiver receiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
-                        LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
-                    }
-                };
-                IntentFilter filter = new IntentFilter(WonderPush.INTENT_INTIALIZED);
-                LocalBroadcastManager.getInstance(context).registerReceiver(receiver, filter);
-            }
+            WonderPush.ensureInitialized(context);
+            WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
 
             WonderPush.logDebug("Building notification");
             PendingIntent pendingIntent = buildPendingIntent(wpData, context, activity);
