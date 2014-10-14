@@ -169,6 +169,15 @@
 
         &lt;/receiver&gt;
 
+        &lt;!-- Required configuration for WonderPush to refresh push tokens,
+             as they are not guaranteed to work after an update --&gt;
+        &lt;receiver android:name="com.wonderpush.sdk.WonderPushOnUpgradeReceiver"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.PACKAGE_REPLACED" /&gt;
+                &lt;data android:scheme="package" android:path="&lt;b&gt;[YOUR_APPLICATION_PACKAGE]&lt;/b&gt;" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/receiver&gt;
+
     &lt;/application&gt;
 
 &lt;/manifest&gt;</code></pre>
