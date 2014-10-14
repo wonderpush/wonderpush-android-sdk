@@ -3,60 +3,49 @@
 
 <h1 id="wonderpush-android-sdk-guide">WonderPush Android SDK Guide</h1>
 
-<p>Before starting with the SDK, please:</p>
-<ul>
-  <li>Create an account on <a href="http://www.wonderpush.com/">WonderPush</a>.</li>
-  <li>Create your application.</li>
-  <li>Grab your <strong>client id</strong> and <strong>client secret</strong> under the <tt>Settings / Keys</tt> menu.</li>
-</ul>
 
-<nav role="navigation" class="table-of-contents" style="background-color: #DDD; border-radius: 1em; display: inline-block; padding: 0 1em;">
-<div style="margin: 1em;">
-  <ul style="padding-left: 0; list-style-type: none;">
-    <li>
-      <a href="#installing-sdk">Install the SDK in your Android application</a>
-      <ul>
-        <li>
-          <a href="#installing-sdk--setup-workspace">Setup the workspace</a>
-          <ul>
-            <li><a href="#installing-sdk--setup-workspace--eclipse">Using Eclipse ADT</a></li>
-            <li><a href="#installing-sdk--setup-workspace--eclipse">Using Android Studio</a></li>
-          </ul>
-        </li>
-        <li>
-          <a href="#installing-sdk--configuring-sdk">Configuring the SDK</a>
-          <ul>
-            <li><a href="#installing-sdk--configuring-sdk--using-own-account">Using your own account</a></li>
-            <li><a href="#installing-sdk--configuring-sdk--handling-own-notifications">Handling your own notifications</a></li>
-          </ul>
-        </li>
-      </ul>
-    </li>
-    <li>
-      <a href="#using-sdk">Using the SDK in your Android application</a>
-      <ul>
-        <li><a href="#using-sdk--initialize">Initialize the SDK</a></li>
-        <li><a href="#using-sdk--get-started">Get started</a></li>
-      </ul>
-    </li>
-  </ul>
-  <p>Jump to the <a href="#package-index">Package index</a>.</p>
-</div>
-</nav>
 
-<h2 id="installing-sdk">Install the SDK in your Android application</h2>
+<h2 id="">1. Register your application in WonderPush</h2>
 
-<h3 id="installing-sdk--setup-workspace">Setup the workspace</h3>
+<p>
+  Log in or sign up on <a href="http://www.wonderpush.com/">WonderPush</a>.
+</p>
 
-<h4 id="installing-sdk--setup-workspace--eclipse">Using Eclipse ADT</h4>
+<p>
+  Create your application.<br/>
+  Make sure to check <tt>Android</tt> under the <tt>Platforms</tt> section.
+</p>
+
+<p>
+  Grab your <strong>client id</strong> and <strong>client secret</strong> under the <tt>Settings / Keys</tt> menu.
+</p>
+
+
+
+<h2 id="">2. Download the latest WonderPush SDK for Android</h2>
+
+<p>
+  Download the project <a href="https://github.com/wonderpush/wonderpush-android-sdk/releases/latest">on GitHub</a>.<br/>
+  Extract the sources in your workspace.
+</p>
+
+<p>
+  You can also directly checkout the sources from git:
+</p>
+
+<pre><code>cd <b>/path/to/your/workspace</b>
+git clone https://github.com/wonderpush/wonderpush-android-sdk.git
+git checkout latest</code></pre>
+
+
+
+<h2 id="installing-sdk--setup-workspace">3. Setup the workspace</h2>
+
+<h3 id="installing-sdk--setup-workspace--eclipse">Using Eclipse ADT</h3>
 
 <ol>
   <li>
     <p>The WonderPush SDK shipping resources, it must be added as a project reference rather than a mere library dependency.</p>
-
-    <p>Checkout the source of <tt>wonderpush-android-sdk</tt>:</p>
-    <pre><code>cd <b>/path/to/your/workspace</b>
-    git clone https://github.com/wonderpush/wonderpush-android-sdk.git</code></pre>
 
     <p>Import the WonderPush SDK project in your Eclipse workspace by doing:</p>
     <ul>
@@ -107,11 +96,13 @@
   </li>
 </ol>
 
-<h4 id="installing-sdk--setup-workspace--eclipse">Using Android Studio</h4>
+<h3 id="installing-sdk--setup-workspace--eclipse">Using Android Studio</h3>
 
 <p><em>Coming soon...</em></p>
 
-<h3 id="installing-sdk--configuring-sdk">Configuring the SDK</h3>
+
+
+<h2 id="installing-sdk--configuring-sdk">4. Configuring the SDK</h2>
 
 <p>Add the following to your <tt>AndroidManifest.xml</tt> to receive push notifications:</p>
 <pre><code>&lt;manifest&gt;
@@ -199,11 +190,84 @@
   The WonderPush SDK defines the <tt>@string/push_sender_ids</tt> resource to <tt>1023997258979</tt>, which is the sender ID that WonderPush uses.<br/>
 </p>
 
+
+
+<h2 id="using-sdk--initialize">5. Initialize the SDK</h2>
+
 <p>
-  You're ready to start using the SDK, you can skip right to: <a href="#using-sdk">Using the SDK in your Android application</a>.
+  First you must initialize the SDK.
+  The <tt>initialize()</tt> method must be called before any use of the SDK.<br/>
+  A good place for initialization is in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.
+</p>
+<pre><code>import com.wonderpush.sdk.WonderPush;
+
+public class YourMainActivity extends Activity {
+
+    &#64;Override
+    protected void onCreate(Bundle savedInstance) {
+        String loggedUserId; // assumed to be the id of the currently logged user, or null
+        WonderPush.setUserId(loggedUserId);
+        WonderPush.initialize(this);
+    }
+
+}</code></pre>
+
+<p>
+  Then you will need to implement the WonderPushInitializerImpl class referenced earlier in the <code>AndroidManifest.xml</code>.<br/>
+  This class is used under the hood by the simpler <code>WonderPush.initialize(this)</code> call above.
+  It is used in multiple places inside the SDK so it can initialize itself on some key events, without additional complexity for you.
 </p>
 
-<h4 id="installing-sdk--configuring-sdk--using-own-account">Using your own account <em style="font-weight: normal;">(optional)</em></h4>
+<pre><code>package <b>[YOUR_APPLICATION_PACKAGE]</b>;
+
+import android.content.Context;
+
+import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.WonderPushInitializer;
+
+public class WonderPushInitializerImpl implements WonderPushInitializer {
+
+    public void initialize(Context context) {
+        WonderPush.initialize(context, "<b>[YOUR_CLIENT_ID]</b>", "<b>[YOUR_CLIENT_SECRET]</b>");
+    }
+
+}</code></pre>
+
+<dl>
+  <legend>Replace:</legend>
+  <dt><b><tt>[YOUR_APPLICATION_PACKAGE]</tt></b></dt>
+  <dd>with your application package name.<br/>
+    Eg.: <tt>com.your.package</tt>.</dd>
+  <dt><b><tt>[YOUR_CLIENT_ID]</tt></b></dt>
+  <dd>with your client id found in your WonderPush dashboard, under the <tt>Settings / Keys</tt> menu.<br/>
+    Eg.: <tt>0123456789abcdef0123456789abcdef01234567</tt>.</dd>
+  <dt><b><tt>[YOUR_CLIENT_SECRET]</tt></b></dt>
+  <dd>with your client secret found in your WonderPush dashboard, next to the client id described above.<br/>
+    Eg.: <tt>0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef</tt>.</dd>
+</dl>
+
+
+
+<h2 id="using-sdk">6. Using the SDK in your Android application</h2>
+
+<h3 id="using-sdk--get-started">Track your first event</h3>
+
+<p>
+  You are now ready to start tracking your first events.
+  Take a look at the functions exposed by the <a href="com/wonderpush/sdk/WonderPush.html"><tt>WonderPush</tt></a> class in the reference.
+</p>
+
+
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+
+
+<h2 id="optional">Optional steps</h2>
+
+<h3 id="installing-sdk--configuring-sdk--using-own-account">Using your own account <em style="font-weight: normal;">(optional)</em></h3>
 
 <p>
   Sticking with the WonderPush sender ID is the simplest approach. However, you would not be able to send your own push notifications.<br/>
@@ -217,7 +281,9 @@
   Otherwise, if you include our sender ID as recommended, you don't have to take any action, your application to be able to receive our push notifications as well as yours.
 </p>
 
-<h4 id="installing-sdk--configuring-sdk--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h4>
+
+
+<h3 id="installing-sdk--configuring-sdk--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
 
 <p>
   If you want to handle some notifications yourself, you will have to first create your own
@@ -275,69 +341,10 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
   however, you must pass their values as parameters when calling <tt>WonderPush.onBroadcastReceived()</tt>.
 </p>
 
-<h2 id="using-sdk">Using the SDK in your Android application</h2>
 
-<h3 id="using-sdk--initialize">Initialize the SDK</h3>
 
-<p>
-  First you must initialize the SDK.
-  The <tt>initialize()</tt> method must be called before any use of the SDK.<br/>
-  A good place for initialization is in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.
-</p>
-<pre><code>import com.wonderpush.sdk.WonderPush;
-
-public class YourMainActivity extends Activity {
-
-    &#64;Override
-    protected void onCreate(Bundle savedInstance) {
-        String loggedUserId; // assumed to be the id of the currently logged user, or null
-        WonderPush.setUserId(loggedUserId);
-        WonderPush.initialize(this);
-    }
-
-}</code></pre>
-
-<p>
-  Then you will need to implement the WonderPushInitializerImpl class referenced earlier in the <code>AndroidManifest.xml</code>.<br/>
-  This class is used under the hood by the simpler <code>WonderPush.initialize(this)</code> call above.
-  It is used in multiple places inside the SDK so it can initialize itself on some key events, without additional complexity for you.
-</p>
-
-<pre><code>package <b>[YOUR_APPLICATION_PACKAGE]</b>;
-
-import android.content.Context;
-
-import com.wonderpush.sdk.WonderPush;
-import com.wonderpush.sdk.WonderPushInitializer;
-
-public class WonderPushInitializerImpl implements WonderPushInitializer {
-
-    public void initialize(Context context) {
-        WonderPush.initialize(context, "<b>[YOUR_CLIENT_ID]</b>", "<b>[YOUR_CLIENT_SECRET]</b>");
-    }
-
-}</code></pre>
-
-<dl>
-  <legend>Replace:</legend>
-  <dt><b><tt>[YOUR_APPLICATION_PACKAGE]</tt></b></dt>
-  <dd>with your application package name.<br/>
-    Eg.: <tt>com.your.package</tt>.</dd>
-  <dt><b><tt>[YOUR_CLIENT_ID]</tt></b></dt>
-  <dd>with your client id found in your WonderPush dashboard, under the <tt>Settings / Keys</tt> menu.<br/>
-    Eg.: <tt>0123456789abcdef0123456789abcdef01234567</tt>.</dd>
-  <dt><b><tt>[YOUR_CLIENT_SECRET]</tt></b></dt>
-  <dd>with your client secret found in your WonderPush dashboard, next to the client id described above.<br/>
-    Eg.: <tt>0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef</tt>.</dd>
-</dl>
-
-<h3 id="using-sdk--get-started">Get started</h3>
-
-<p>
-  You are now ready to start tracking your first events.
-  Take a look at the functions exposed by the <a href="com/wonderpush/sdk/WonderPush.html"><tt>WonderPush</tt></a> class in the reference.
-</p>
-
+<p>&nbsp;</p>
+<p>&nbsp;</p>
 <p>&nbsp;</p>
 
 <h1 id="package-index">Package index</h1>
