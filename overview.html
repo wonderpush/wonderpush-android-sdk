@@ -291,13 +291,38 @@ public class YourMainActivity extends Activity {
     &#64;Override
     protected void onCreate(Bundle savedInstance) {
         String loggedUserId; // assumed to be the id of the currently logged user, or null
-        WonderPush.initialize(this, "<b>[YOUR_CLIENT_ID]</b>", "<b>[YOUR_CLIENT_SECRET]</b>", loggedUserId);
+        WonderPush.setUserId(loggedUserId);
+        WonderPush.initialize(this);
+    }
+
+}</code></pre>
+
+<p>
+  Then you will need to implement the WonderPushInitializerImpl class referenced earlier in the <code>AndroidManifest.xml</code>.<br/>
+  This class is used under the hood by the simpler <code>WonderPush.initialize(this)</code> call above.
+  It is used in multiple places inside the SDK so it can initialize itself on some key events, without additional complexity for you.
+</p>
+
+<pre><code>package <b>[YOUR_APPLICATION_PACKAGE]</b>;
+
+import android.content.Context;
+
+import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.WonderPushInitializer;
+
+public class WonderPushInitializerImpl implements WonderPushInitializer {
+
+    public void initialize(Context context) {
+        WonderPush.initialize(context, "<b>[YOUR_CLIENT_ID]</b>", "<b>[YOUR_CLIENT_SECRET]</b>");
     }
 
 }</code></pre>
 
 <dl>
   <legend>Replace:</legend>
+  <dt><b><tt>[YOUR_APPLICATION_PACKAGE]</tt></b></dt>
+  <dd>with your application package name.<br/>
+    Eg.: <tt>com.your.package</tt>.</dd>
   <dt><b><tt>[YOUR_CLIENT_ID]</tt></b></dt>
   <dd>with your client id found in your WonderPush dashboard, under the <tt>Settings / Keys</tt> menu.<br/>
     Eg.: <tt>0123456789abcdef0123456789abcdef01234567</tt>.</dd>
