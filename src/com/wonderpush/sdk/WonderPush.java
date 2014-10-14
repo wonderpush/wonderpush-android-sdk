@@ -91,6 +91,9 @@ public class WonderPush {
     private static boolean sIsInitialized = false;
     private static boolean sIsReachable = false;
 
+    private static boolean sBeforeInitializationUserIdSet = false;
+    private static String sBeforeInitializationUserId;
+
     /**
      * The timeout for WebView requests
      */
@@ -1070,6 +1073,9 @@ public class WonderPush {
         sBaseURL = PRODUCTION_API_URL;
         sIsInitialized = true;
         WonderPushConfiguration.initialize(getApplicationContext());
+        if (sBeforeInitializationUserIdSet) {
+            setUserId(sBeforeInitializationUserId);
+        }
 
         // Permission checks
         if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
@@ -1107,9 +1113,7 @@ public class WonderPush {
                         }
                     });
                     if (!isFetchingToken) {
-                        // even if we have an access token, we need to ensure
-                        // connectivity
-                        // state
+                        // even if we have an access token, we need to ensure connectivity state
                         get("/network/ping", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
@@ -1171,16 +1175,13 @@ public class WonderPush {
      * Sets the user id, used to identify a single identity across multiple devices,
      * and to correctly identify multiple users on a single device.
      *
-     * <p>
-     *   You must call {@link #initialize(Context)} before calling this method.
-     *   It would otherwise be silently ignored.
-     * </p>
-     *
      * <p>If not called, the last used user id it assumed. Defaulting to {@code null} if none is known.</p>
      *
+     * <p>Prefer calling this method just before calling {@link #initialize(Context)}, rather than just after.</p>
+     *
      * <p>
-     *   Upon changing userId, the access token is wiped, so avoid calling with {@code null} just
-     *   before calling with a user id.
+     *   Upon changing userId, the access token is wiped, so avoid unnecessary calls, like calling with {@code null}
+     *   just before calling with a user id.
      * </p>
      *
      * @param userId
@@ -1188,11 +1189,15 @@ public class WonderPush {
      *            Use {@code null} for anonymous users.<br />
      *            You are strongly encouraged to use your own unique internal identifier.
      */
-    public void setUserId(String userId) {
+    public static void setUserId(String userId) {
         // Do nothing if not initialized
         if (!isInitialized()) {
+            sBeforeInitializationUserIdSet = true;
+            sBeforeInitializationUserId = userId;
             return;
         }
+        sBeforeInitializationUserIdSet = false;
+        sBeforeInitializationUserId = null;
 
         String oldUserId = WonderPushConfiguration.getUserId();
         if (userId == null && oldUserId == null
@@ -1202,6 +1207,7 @@ public class WonderPush {
             // The user id changed, we must reset the access token
             WonderPushConfiguration.invalidateCredentials();
             WonderPushConfiguration.setUserId(userId);
+            // DO NOT fetch another access token now, or beware the possible callback from initialize()
         }
     }
 
