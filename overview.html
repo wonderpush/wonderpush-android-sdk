@@ -132,6 +132,11 @@
 
     &lt;application&gt;
 
+        &lt;!-- Permits the SDK to initialize itself whenever needed, without need for your application to launch --&gt;
+        &lt;meta-data
+            android:name="wonderpushInitializerClass"
+            android:value="[YOUR_APPLICATION_PACKAGE].WonderPushInitializerImpl" /&gt;
+
         &lt;!-- Required for configuring Google Play Services for push notifications --&gt;
         &lt;meta-data
             android:name="com.google.android.gms.version"

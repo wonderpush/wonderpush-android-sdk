@@ -19,11 +19,13 @@ import org.json.JSONObject;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -34,6 +36,7 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -66,7 +69,7 @@ import com.wonderpush.sdk.WonderPushDialogBuilder.Button.Action;
  *   <a href="../../../packages.html">the guide</a>.
  * </p>
  *
- * <p>You must call {@link #initialize(Activity, String, String, String)} before using any other function.</p>
+ * <p>You must call {@link #initialize(Context)} before using any other function.</p>
  *
  * <p>
  *   Troubleshooting tip:
@@ -97,6 +100,8 @@ public class WonderPush {
     protected static final String SDK_VERSION = "Android-" + API_INT + ".0.9.1"; // reset to .1.0.0 when bumping API_INT
     protected static final int ERROR_INVALID_SID = 12017;
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+
+    private static final String METADATA_INITIALIZER_CLASS = "wonderpushInitializerClass";
 
     /**
      * Local intent broadcasted when the WonderPush SDK has been initialized and network is reachable.
@@ -1008,14 +1013,45 @@ public class WonderPush {
     }
 
     /**
-     * Initialize WonderPush. Call this method before using WonderPush.
-     * A good place to initialize WonderPush is in your main activity's
-     * <a href="http://developer.android.com/reference/android/app/Activity.html#onCreate(android.os.Bundle)">
-     * {@code onCreate(Bundle)}</a> method as follows:
+     * Initialize WonderPush.<br />
+     * <b>Call this method before using WonderPush.</b>
      *
+     * <p>
+     *   A good place to initialize WonderPush is in your main activity's
+     *   <a href="http://developer.android.com/reference/android/app/Activity.html#onCreate(android.os.Bundle)">
+     *   {@code onCreate(Bundle)}</a> method as follows:
+     * </p>
      * <pre><code>protected void onCreate(Bundle savedInstance) {
-     *     WonderPush.initialize(this, "clientId", "clientSecret");
-     * }</code></pre>
+     *    WonderPush.initialize(this);
+     *}</code></pre>
+     *
+     * <p>
+     *   This function will instantiate the {@link WonderPushInitializer} implementation you provided in your
+     *   {@code AndroidManifest.xml}.<br />
+     *   <i>Please look at that interface documentation for detailed instruction.</i>
+     * </p>
+     *
+     * @param context
+     *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
+     *            It must be the same activity that you declared in the {@code <meta-data>} tag
+     *            under the WonderPush {@code <receiver>} tag in your {@code AndroidManifest.xml}.
+     */
+    public static void initialize(final Context context) {
+        if (!isInitialized()) {
+            ensureInitialized(context);
+        } else if (context instanceof Activity) {
+            onCreateMainActivity(context, ((Activity) context).getIntent());
+        }
+    }
+
+    /**
+     * Initialize WonderPush from your {@link WonderPushInitializer} implementation.
+     *
+     * <p>
+     *   Prefer calling the simpler {@link WonderPush#initialize(Context)} function directly, as it will
+     *   instantiate your {@link WonderPushInitializer} implementation which will in turn call this function.
+     *   This way you concentrate the retrieval of your credentials from secure storage in a single location.
+     * </p>
      *
      * @param context
      *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
@@ -1025,17 +1061,15 @@ public class WonderPush {
      *            The clientId of your application.
      * @param clientSecret
      *            The clientSecret of your application.
-     * @param userId
-     *            The id of the user in your application, or {@code null}.
      */
-    public static void initialize(final Context context, final String clientId, String clientSecret, final String userId) {
-        WonderPushConfiguration.initialize(context);
+    public static void initialize(final Context context, final String clientId, String clientSecret) {
         setNetworkAvailable(false);
         sApplicationContext = context.getApplicationContext();
         sClientId = clientId;
         sClientSecret = clientSecret;
         sBaseURL = PRODUCTION_API_URL;
         sIsInitialized = true;
+        WonderPushConfiguration.initialize(getApplicationContext());
 
         // Permission checks
         if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
@@ -1049,7 +1083,7 @@ public class WonderPush {
         }
 
         // Initialize OpenUDID
-        OpenUDID_manager.sync(sApplicationContext);
+        OpenUDID_manager.sync(getApplicationContext());
         if (context instanceof Activity) {
             onCreateMainActivity(context, ((Activity) context).getIntent());
         }
@@ -1068,7 +1102,7 @@ public class WonderPush {
                         public void onSuccess(Response response) {
                             registerForPushNotification(context);
                             Intent broadcast = new Intent(INTENT_INTIALIZED);
-                            LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(broadcast);
+                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                             updateInstallationCoreProperties(context);
                         }
                     });
@@ -1076,7 +1110,7 @@ public class WonderPush {
                         // even if we have an access token, we need to ensure
                         // connectivity
                         // state
-                        WonderPush.get("/network/ping", null, new ResponseHandler() {
+                        get("/network/ping", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                             }
@@ -1085,8 +1119,7 @@ public class WonderPush {
                             public void onSuccess(Response response) {
                                 registerForPushNotification(context);
                                 Intent broadcast = new Intent(INTENT_INTIALIZED);
-                                LocalBroadcastManager.getInstance(WonderPush.getApplicationContext())
-                                        .sendBroadcast(broadcast);
+                                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                                 updateInstallationCoreProperties(context);
                             }
                         });
@@ -1098,6 +1131,78 @@ public class WonderPush {
         }.run();
 
         WonderPushRequestVault.initialize();
+    }
+
+    /**
+     * Instantiate the {@link WonderPushInitializer} interface configured in the {@code AndroidManifest.xml},
+     * and calls it if the SDK is not initialized yet.
+     * @param context
+     * @return
+     */
+    protected static boolean ensureInitialized(Context context) {
+        if (!isInitialized()) {
+            String initializerClassName = null;
+            try {
+                ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+                Bundle bundle = ai.metaData;
+                initializerClassName = bundle.getString(METADATA_INITIALIZER_CLASS);
+                if (initializerClassName == null) {
+                    Log.e(TAG, "Failed to load initializer class. Did you add: <meta-data android:name=\"" + METADATA_INITIALIZER_CLASS + "\" android:value=\"com.package.YourWonderPushInitializerImpl\"/> under <application> in your AndroidManifest.xml");
+                }
+                Class<? extends WonderPushInitializer> initializerClass = Class.forName(initializerClassName).asSubclass(WonderPushInitializer.class);
+                WonderPushInitializer initializer = initializerClass.newInstance();
+                initializer.initialize(context);
+            } catch (NameNotFoundException e) {
+                Log.e(TAG, "Failed to load initializer class, NameNotFound: " + e.getMessage());
+            } catch (NullPointerException e) {
+                Log.e(TAG, "Failed to load initializer class, NullPointer: " + e.getMessage());
+            } catch (ClassNotFoundException e) {
+                Log.e(TAG, "Failed to load initializer class. Check your <meta-data android:name=\"" + METADATA_INITIALIZER_CLASS + "\" android:value=\"com.package.YourWonderPushInitializerImpl\"/> entry under <application> in your AndroidManifest.xml", e);
+            } catch (InstantiationException e) {
+                Log.e(TAG, "Failed to intantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
+            } catch (IllegalAccessException e) {
+                Log.e(TAG, "Failed to intantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
+            }
+        }
+        return isInitialized();
+    }
+
+    /**
+     * Sets the user id, used to identify a single identity across multiple devices,
+     * and to correctly identify multiple users on a single device.
+     *
+     * <p>
+     *   You must call {@link #initialize(Context)} before calling this method.
+     *   It would otherwise be silently ignored.
+     * </p>
+     *
+     * <p>If not called, the last used user id it assumed. Defaulting to {@code null} if none is known.</p>
+     *
+     * <p>
+     *   Upon changing userId, the access token is wiped, so avoid calling with {@code null} just
+     *   before calling with a user id.
+     * </p>
+     *
+     * @param userId
+     *            The user id, unique to your application.
+     *            Use {@code null} for anonymous users.<br />
+     *            You are strongly encouraged to use your own unique internal identifier.
+     */
+    public void setUserId(String userId) {
+        // Do nothing if not initialized
+        if (!isInitialized()) {
+            return;
+        }
+
+        String oldUserId = WonderPushConfiguration.getUserId();
+        if (userId == null && oldUserId == null
+                || userId != null && userId.equals(oldUserId)) {
+            // User id is the same as before, nothing needs to be done
+        } else {
+            // The user id changed, we must reset the access token
+            WonderPushConfiguration.invalidateCredentials();
+            WonderPushConfiguration.setUserId(userId);
+        }
     }
 
     /**
@@ -1115,11 +1220,11 @@ public class WonderPush {
      *   method as follows:
      * </p>
      * <pre><code>public void onReceive(Context context, Intent intent) {
-     *     if (WonderPush.onBroadcastReceived(context, intent, R.drawable.icon, YourMainActivity.class)) {
-     *         return;
-     *     }
-     *     // Do your own handling here
-     * }</code></pre>
+     *    if (WonderPush.onBroadcastReceived(context, intent, R.drawable.icon, YourMainActivity.class)) {
+     *        return;
+     *    }
+     *    // Do your own handling here
+     *}</code></pre>
      *
      * <p>
      *   For more information about Google Cloud Messaging visit:
@@ -1146,7 +1251,7 @@ public class WonderPush {
      */
     protected static Context getApplicationContext() {
         if (null == sApplicationContext)
-            Log.e(TAG, "Application context is null, did you call WonderPush.initialize ?");
+            Log.e(TAG, "Application context is null, did you call WonderPush.initialize()?");
         return sApplicationContext;
     }
 
