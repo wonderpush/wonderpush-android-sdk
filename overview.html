@@ -41,6 +41,7 @@ git checkout latest</code></pre>
 
 <h2 id="setup-workspace" style="border-top: none;">3. Setup the workspace</h2>
 
+
 <h3 id="setup-workspace--eclipse">Using Eclipse ADT</h3>
 
 <ol>
@@ -95,6 +96,7 @@ git checkout latest</code></pre>
     </p>
   </li>
 </ol>
+
 
 <h3 id="setup-workspace--eclipse">Using Android Studio</h3>
 
@@ -250,11 +252,92 @@ public class WonderPushInitializerImpl implements WonderPushInitializer {
 
 <h2 id="using-sdk" style="border-top: none;">6. Using the SDK in your Android application</h2>
 
+
 <h3 id="using-sdk--track-event">Track your first event</h3>
 
 <p>
-  You are now ready to start tracking your first events.
-  Take a look at the functions exposed by the <a href="com/wonderpush/sdk/WonderPush.html"><tt>WonderPush</tt></a> class in the reference.
+  The SDK automatically tracks generic events. This is probably insufficient to help you analyze, segment
+  and notify users properly.<br/>
+  You will want to track events that make sense for your business, here is an simple example:
+</p>
+
+<pre><code>WonderPush.trackEvent("customized_interests");</code></pre>
+
+<p>
+  This would permit you to know easily whether a user kept the default set of "topics of interests",
+  say in a newsstand application, or if they already chose a topics that represents well their center of interest.<br/>
+  Your notification strategy could be to incite to customization for the lazy users,
+  whereas you could engage in a more personalized communication with the users you performed the <code>customized_interests</code> event.
+</p>
+
+
+<h3 id="using-sdk--track-event-custom">Enriching the events</h3>
+
+<p>
+  Events can host a rich set of properties that WonderPush indexes to permit you to filter users based on finer criteria.<br/>
+  To do so, simply give a JSON object as second parameter. Here is an example:
+</p>
+
+<pre><code>JSONObject custom = new JSONObject();
+custom.put("string_category", "fashion");
+WonderPush.trackEvent("browse_catalog", custom);</code></pre>
+
+<p>
+  Using this information, you could notify customers on new items for the categories that matters most to them.
+</p>
+
+<p>
+  Here is another example:
+</p>
+
+<pre><code>JSONObject custom = new JSONObject();
+custom.put("int_items", 3);
+custom.put("float_amount", 59.98);
+WonderPush.trackEvent("purchase", custom);</code></pre>
+
+<p>
+  You could choose to thank customer for every purchase, or you could take advantage of the purchase amount to give
+  differentiated coupons to best buyers.
+</p>
+
+<h3 id="using-sdk--installation-properties">Tagging users</h3>
+
+<p>
+  Some information are better represented as properties on a user, rather than discrete events in a timeline.<br/>
+  Here is an example:
+</p>
+
+<pre><code>private void didAddItemToCart(String item, double price) {
+  // Variables managed by your application
+  cartItems += 1;
+  cartAmount += price;
+  // ...
+
+  // Update this information in WonderPush
+  JSONObject custom = new JSONObject();
+  custom.put("int_itemsInCart", cartItems);
+  custom.put("float_cartAmount", cartAmount);
+  WonderPush.putInstallationCustomProperties(custom);
+}
+
+private void didPurchase() {
+  // Empty the information in WonderPush
+  JSONObject custom = new JSONObject();
+  custom.put("int_itemsInCart", JSONObject.NULL);
+  custom.put("float_cartAmount", JSONObject.NULL);
+  WonderPush.putInstallationCustomProperties(custom);
+}</pre></code>
+
+<p>
+  Inactive users with non-empty carts could then easily be notified.
+  Combined with a free delivery coupon for carts above a given amount, your conversion rate will improve still!
+</p>
+
+
+<h3 id="reference">API Reference</h3>
+
+<p>
+  Take a look at the functions exposed by the <a href="com/wonderpush/sdk/WonderPush.html"><tt>WonderPush</tt></a> class.
 </p>
 
 
@@ -266,6 +349,7 @@ public class WonderPushInitializerImpl implements WonderPushInitializer {
 
 
 <h2 id="optional" style="border-top: 2px solid #ccc;">Optional steps</h2>
+
 
 <h3 id="optional--using-own-account">Using your own account <em style="font-weight: normal;">(optional)</em></h3>
 
@@ -280,7 +364,6 @@ public class WonderPushInitializerImpl implements WonderPushInitializer {
   If you do not include our sender ID in the application, don't forget to give us your API key, also known as Sender Auth Token, in your WonderPush dashboard, under <tt>Settings / Keys</tt>, so we can push notifications on your behalf.
   Otherwise, if you include our sender ID as recommended, you don't have to take any action, your application to be able to receive our push notifications as well as yours.
 </p>
-
 
 
 <h3 id="optional--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
@@ -340,6 +423,7 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
   Note that the two <tt>&lt;meta-data&gt;</tt> tags are no longer required inside <tt>&lt;receiver&gt;</tt>,
   however, you must pass their values as parameters when calling <tt>WonderPush.onBroadcastReceived()</tt>.
 </p>
+
 
 
 
