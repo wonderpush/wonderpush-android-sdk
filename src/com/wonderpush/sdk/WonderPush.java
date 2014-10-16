@@ -176,6 +176,7 @@ public class WonderPush {
 
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
     protected static boolean SHOW_DEBUG = true;
+    protected static final int ERROR_INVALID_CREDENTIALS = 11000;
     protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
     protected static final String DEFAULT_LANGUAGE_CODE = "en";
     protected static final String[] VALID_LANGUAGE_CODES = {

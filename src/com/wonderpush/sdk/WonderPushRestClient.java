@@ -379,6 +379,9 @@ class WonderPushRestClient {
                     public void onFailure(Throwable e, Response errorResponse) {
                         if (nbRetries <= 0) {
                             Log.e(TAG, "Error request anonymous access token (aborting): " + (errorResponse != null ? errorResponse.getJSONObject().toString() : "null error response, aborting"), e);
+                            if (errorResponse != null && WonderPush.ERROR_INVALID_CREDENTIALS == errorResponse.getErrorCode()) {
+                                Log.e(TAG, "Check your clientId/clientSecret couple");
+                            }
 
                             sIsFetchingAnonymousAccessToken = false;
                             if (null != handler) {
