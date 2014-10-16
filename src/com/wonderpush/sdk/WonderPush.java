@@ -1041,11 +1041,7 @@ public class WonderPush {
      *            under the WonderPush {@code <receiver>} tag in your {@code AndroidManifest.xml}.
      */
     public static void initialize(final Context context) {
-        if (!isInitialized()) {
-            ensureInitialized(context);
-        } else if (context instanceof Activity) {
-            onCreateMainActivity(context, ((Activity) context).getIntent());
-        }
+        ensureInitialized(context);
     }
 
     /**
@@ -1067,55 +1063,47 @@ public class WonderPush {
      *            The clientSecret of your application.
      */
     public static void initialize(final Context context, final String clientId, String clientSecret) {
-        setNetworkAvailable(false);
-        sApplicationContext = context.getApplicationContext();
-        sClientId = clientId;
-        sClientSecret = clientSecret;
-        sBaseURL = PRODUCTION_API_URL;
-        sIsInitialized = true;
-        WonderPushConfiguration.initialize(getApplicationContext());
-        if (sBeforeInitializationUserIdSet) {
-            setUserId(sBeforeInitializationUserId);
-        }
+        if (!sIsInitialized || (
+                clientId != null && clientSecret != null && (!clientId.equals(sClientId) || !clientSecret.equals(sClientSecret))
+        )) {
 
-        // Permission checks
-        if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
-        };
-        if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED
-                && context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG, "Missing ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION permission. Add <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both)");
-        } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
-        }
+            sIsInitialized = false;
+            setNetworkAvailable(false);
 
-        // Initialize OpenUDID
-        OpenUDID_manager.sync(getApplicationContext());
-        if (context instanceof Activity) {
-            onCreateMainActivity(context, ((Activity) context).getIntent());
-        }
+            sApplicationContext = context.getApplicationContext();
+            sClientId = clientId;
+            sClientSecret = clientSecret;
+            sBaseURL = PRODUCTION_API_URL;
 
-        // Wait for UDID to be ready and fetch anonymous token if needed.
-        new Runnable() {
-            @Override
-            public void run() {
-                if (OpenUDID_manager.isInitialized()) {
-                    boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
-                        @Override
-                        public void onFailure(Throwable e, Response errorResponse) {
-                        }
+            WonderPushConfiguration.initialize(getApplicationContext());
+            if (sBeforeInitializationUserIdSet) {
+                setUserId(sBeforeInitializationUserId);
+            }
 
-                        @Override
-                        public void onSuccess(Response response) {
-                            registerForPushNotification(context);
-                            Intent broadcast = new Intent(INTENT_INTIALIZED);
-                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
-                            updateInstallationCoreProperties(context);
-                        }
-                    });
-                    if (!isFetchingToken) {
-                        // even if we have an access token, we need to ensure connectivity state
-                        get("/network/ping", null, new ResponseHandler() {
+            WonderPushRequestVault.initialize();
+
+            // Initialize OpenUDID
+            OpenUDID_manager.sync(getApplicationContext());
+
+            // Permission checks
+            if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
+            };
+            if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED
+                    && context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Missing ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION permission. Add <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both)");
+            } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
+            }
+
+            sIsInitialized = true;
+
+            // Wait for UDID to be ready and fetch anonymous token if needed.
+            new Runnable() {
+                @Override
+                public void run() {
+                    if (OpenUDID_manager.isInitialized()) {
+                        boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                             }
@@ -1128,39 +1116,70 @@ public class WonderPush {
                                 updateInstallationCoreProperties(context);
                             }
                         });
-                    }
-                } else {
-                    new Handler().postDelayed(this, 100);
-                }
-            }
-        }.run();
+                        if (!isFetchingToken) {
+                            // even if we have an access token, we need to ensure connectivity state
+                            get("/network/ping", null, new ResponseHandler() {
+                                @Override
+                                public void onFailure(Throwable e, Response errorResponse) {
+                                }
 
-        WonderPushRequestVault.initialize();
+                                @Override
+                                public void onSuccess(Response response) {
+                                    registerForPushNotification(context);
+                                    Intent broadcast = new Intent(INTENT_INTIALIZED);
+                                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
+                                    updateInstallationCoreProperties(context);
+                                }
+                            });
+                        }
+                    } else {
+                        new Handler().postDelayed(this, 100);
+                    }
+                }
+            }.run();
+
+        }
+
+        initializeForActivity(context);
+    }
+
+    protected static void initializeForActivity(Context context) {
+        if (!(context instanceof Activity)) {
+            return;
+        }
+        Activity activity = (Activity) context;
+
+        onCreateMainActivity(context, activity.getIntent());
     }
 
     /**
      * Instantiate the {@link WonderPushInitializer} interface configured in the {@code AndroidManifest.xml},
      * and calls it if the SDK is not initialized yet.
      * @param context
-     * @return
+     * @return {@code true} if no error happened, {@code false} otherwise
      */
     protected static boolean ensureInitialized(Context context) {
         if (!isInitialized()) {
+
             String initializerClassName = null;
             try {
+
                 ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
                 Bundle bundle = ai.metaData;
                 initializerClassName = bundle.getString(METADATA_INITIALIZER_CLASS);
                 if (initializerClassName == null) {
                     Log.e(TAG, "Failed to load initializer class. Did you add: <meta-data android:name=\"" + METADATA_INITIALIZER_CLASS + "\" android:value=\"com.package.YourWonderPushInitializerImpl\"/> under <application> in your AndroidManifest.xml");
                 }
+
                 Class<? extends WonderPushInitializer> initializerClass = Class.forName(initializerClassName).asSubclass(WonderPushInitializer.class);
                 WonderPushInitializer initializer = initializerClass.newInstance();
+
                 initializer.initialize(context);
+
             } catch (NameNotFoundException e) {
-                Log.e(TAG, "Failed to load initializer class, NameNotFound: " + e.getMessage());
+                Log.e(TAG, "Failed to load initializer class", e);
             } catch (NullPointerException e) {
-                Log.e(TAG, "Failed to load initializer class, NullPointer: " + e.getMessage());
+                Log.e(TAG, "Failed to load initializer class", e);
             } catch (ClassNotFoundException e) {
                 Log.e(TAG, "Failed to load initializer class. Check your <meta-data android:name=\"" + METADATA_INITIALIZER_CLASS + "\" android:value=\"com.package.YourWonderPushInitializerImpl\"/> entry under <application> in your AndroidManifest.xml", e);
             } catch (InstantiationException e) {
@@ -1168,7 +1187,15 @@ public class WonderPush {
             } catch (IllegalAccessException e) {
                 Log.e(TAG, "Failed to intantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
             }
+
+        } else {
+
+            // No need to get clientId/clientSecret once again
+            // we only need to re-run the Activity-related initialization
+            initialize(context, null, null);
+
         }
+
         return isInitialized();
     }
 
