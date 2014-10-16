@@ -160,8 +160,11 @@ class WonderPushGcmClient {
             final JSONObject trackData = new JSONObject();
             trackData.put("campaignId", wpData.optString("c"));
             trackData.put("notificationId", wpData.optString("n"));
+            trackData.put("actionDate", WonderPush.getTime());
             WonderPush.ensureInitialized(context);
             WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+
+            WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
             WonderPush.logDebug("Building notification");
             PendingIntent pendingIntent = buildPendingIntent(wpData, context, activity);

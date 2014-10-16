@@ -1,7 +1,11 @@
 package com.wonderpush.sdk;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 class WonderPushConfiguration {
 
@@ -15,6 +19,14 @@ class WonderPushConfiguration {
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
     private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
+
+    private static final String LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME = "__last_received_notification_info_json";
+    private static final String LAST_OPENED_NOTIFICATION_INFO_JSON_PREF_NAME = "__last_opened_notification_info_json";
+
+    private static final String LAST_INTERACTION_DATE_PREF_NAME = "__last_interaction_date";
+    private static final String LAST_APPOPEN_DATE_PREF_NAME = "__last_appopen_date";
+    private static final String LAST_APPOPEN_INFO_PREF_NAME = "__last_appopen_info_json";
+    private static final String LAST_APPCLOSE_DATE_PREF_NAME = "__last_appclose_date";
 
     private static Context sContext;
 
@@ -51,7 +63,7 @@ class WonderPushConfiguration {
         return prefs.getString(key, defaultValue);
     }
 
-    protected static void putString(String key, String value) {
+    private static void putString(String key, String value) {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         if (null == value) {
             editor.remove(key);
@@ -59,6 +71,22 @@ class WonderPushConfiguration {
             editor.putString(key, value);
         }
         editor.commit();
+    }
+
+    private static JSONObject getJSONObject(String key) {
+        String json = getString(key);
+        if (json != null) {
+            try {
+                return new JSONObject(json);
+            } catch (JSONException e) {
+                Log.w(WonderPush.TAG, "Failed to decode json from preferences", e);
+            }
+        }
+        return null;
+    }
+
+    private static void putJSONObject(String key, JSONObject value) {
+        putString(key, value == null ? null : value.toString());
     }
 
     @SuppressWarnings("unused")
@@ -74,9 +102,23 @@ class WonderPushConfiguration {
         return prefs.getInt(key, defaultValue);
     }
 
-    protected static void putInt(String key, int value) {
+    private static void putInt(String key, int value) {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         editor.putInt(key, value);
+        editor.commit();
+    }
+
+    private static long getLong(String key, long defaultValue) {
+        SharedPreferences prefs = getSharedPreferences();
+        if (prefs == null) {
+            return defaultValue;
+        }
+        return prefs.getLong(key, defaultValue);
+    }
+
+    private static void putLong(String key, long value) {
+        SharedPreferences.Editor editor = getSharedPreferences().edit();
+        editor.putLong(key, value);
         editor.commit();
     }
 
@@ -208,6 +250,104 @@ class WonderPushConfiguration {
      */
     protected static void setGCMRegistrationSenderIds(String senderIds) {
         putString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME, senderIds);
+    }
+
+    /**
+     * Get the last received notification information stored in the user's shared preferences.
+     */
+    protected static JSONObject getLastReceivedNotificationInfoJson() {
+        return getJSONObject(LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME);
+    }
+
+    /**
+     * Set the last received notification information stored in the user's shared preferences.
+     *
+     * @param info
+     *            The last received notification information to be stored
+     */
+    protected static void setLastReceivedNotificationInfoJson(JSONObject info) {
+        putJSONObject(LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME, info);
+    }
+
+    /**
+     * Get the last opened notification information stored in the user's shared preferences.
+     */
+    protected static JSONObject getLastOpenedNotificationInfoJson() {
+        return getJSONObject(LAST_OPENED_NOTIFICATION_INFO_JSON_PREF_NAME);
+    }
+
+    /**
+     * Set the last opened notification information stored in the user's shared preferences.
+     *
+     * @param info
+     *            The last opened notification information to be stored
+     */
+    protected static void setLastOpenedNotificationInfoJson(JSONObject info) {
+        putJSONObject(LAST_OPENED_NOTIFICATION_INFO_JSON_PREF_NAME, info);
+    }
+
+    /**
+     * Get the last interaction date timestamp in milliseconds stored in the user's shared preferences.
+     */
+    protected static long getLastInteractionDate() {
+        return getLong(LAST_INTERACTION_DATE_PREF_NAME, 0);
+    }
+
+    /**
+     * Set the last interaction date timestamp in milliseconds stored in the user's shared preferences.
+     * @param date
+     *            The last interaction date to be stored
+     */
+    protected static void setLastInteractionDate(long date) {
+        putLong(LAST_INTERACTION_DATE_PREF_NAME, date);
+    }
+
+    /**
+     * Get the last app-open date timestamp in milliseconds stored in the user's shared preferences.
+     */
+    protected static long getLastAppOpenDate() {
+        return getLong(LAST_APPOPEN_DATE_PREF_NAME, 0);
+    }
+
+    /**
+     * Set the last app-open date timestamp in milliseconds stored in the user's shared preferences.
+     * @param date
+     *            The last app-open date to be stored
+     */
+    protected static void setLastAppOpenDate(long date) {
+        putLong(LAST_APPOPEN_DATE_PREF_NAME, date);
+    }
+
+    /**
+     * Get the last app-open information stored in the user's shared preferences.
+     */
+    protected static JSONObject getLastAppOpenInfoJson() {
+        return getJSONObject(LAST_APPOPEN_INFO_PREF_NAME);
+    }
+
+    /**
+     * Set the last app-open information in milliseconds stored in the user's shared preferences.
+     * @param info
+     *            The last app-open information to be stored
+     */
+    protected static void setLastAppOpenInfoJson(JSONObject info) {
+        putJSONObject(LAST_APPOPEN_INFO_PREF_NAME, info);
+    }
+
+    /**
+     * Get the last app-close date timestamp in milliseconds stored in the user's shared preferences.
+     */
+    protected static long getLastAppCloseDate() {
+        return getLong(LAST_APPCLOSE_DATE_PREF_NAME, 0);
+    }
+
+    /**
+     * Set the last app-close date timestamp in milliseconds stored in the user's shared preferences.
+     * @param date
+     *            The last app-close date to be stored
+     */
+    protected static void setLastAppCloseDate(long date) {
+        putLong(LAST_APPCLOSE_DATE_PREF_NAME, date);
     }
 
 }
