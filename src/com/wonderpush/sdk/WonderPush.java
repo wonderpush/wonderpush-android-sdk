@@ -20,6 +20,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
+import android.app.Application.ActivityLifecycleCallbacks;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -83,6 +84,9 @@ public class WonderPush {
     static final String TAG = WonderPush.class.getSimpleName();
 
     private static Context sApplicationContext;
+    private static Application sApplication;
+    private static ActivityLifecycleCallbacks sActivityLifecycleCallbacks;
+    private static boolean sActivityLifecycleCallbacksRegistered;
     private static String sClientId;
     private static String sClientSecret;
     private static Location sLocation;
@@ -203,7 +207,14 @@ public class WonderPush {
             "ta", "th", "tl", "tr", "uk", "vi", "zh", "zh_CN", "zh_TW", "zh_HK",
     };
 
+    static {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            sActivityLifecycleCallbacks = new ActivityLifecycleMonitor();
+        }
+    }
+
     protected WonderPush() {
+        throw new IllegalAccessError("You should not instantiate this class!");
     }
 
     private static boolean checkPlayService(Context context) {
@@ -1051,8 +1062,13 @@ public class WonderPush {
         long lastOpenedNotificationDate = lastOpenedNotificationInfo.optLong("actionDate", Long.MAX_VALUE);
         long now = getTime();
 
-        if (now - lastReceivedNotificationDate >= DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP
-                || now - lastInteractionDate >= DIFFERENT_SESSION_REGULAR_MIN_TIME_GAP) {
+        if (
+                now - lastInteractionDate >= DIFFERENT_SESSION_REGULAR_MIN_TIME_GAP
+                || (
+                        lastReceivedNotificationDate > lastInteractionDate
+                        && now - lastReceivedNotificationDate >= DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP
+                )
+        ) {
             // We will track a new app open event
 
             // We must first close the possibly still-open previous session
@@ -1096,6 +1112,13 @@ public class WonderPush {
         }
 
         WonderPushConfiguration.setLastInteractionDate(now);
+    }
+
+    protected static void monitorActivitiesLifecycle() {
+        if (!sActivityLifecycleCallbacksRegistered && sActivityLifecycleCallbacks != null && sApplication != null) {
+            WonderPushCompatibilityHelper.ApplicationRegisterActivityLifecycleCallbacks(sApplication, sActivityLifecycleCallbacks);
+            sActivityLifecycleCallbacksRegistered = true;
+        }
     }
 
     /**
@@ -1240,6 +1263,11 @@ public class WonderPush {
             return;
         }
         Activity activity = (Activity) context;
+
+        if (sApplication == null) {
+            sApplication = activity.getApplication();
+            monitorActivitiesLifecycle();
+        }
 
         onCreateMainActivity(context, activity.getIntent());
         onInteraction(); // keep after onCreateMainActivity() as a possible received notification's information is needed
@@ -1661,6 +1689,122 @@ public class WonderPush {
 
         // Show time!
         builder.show();
+    }
+
+    /**
+     * Monitors activities lifecycle operations, which are evidences of user interactions.
+     * @see http://www.mjbshaw.com/2012/12/determining-if-your-android-application.html
+     */
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+    protected static class ActivityLifecycleMonitor implements ActivityLifecycleCallbacks {
+
+        private int createCount;
+        private int startCount;
+        private int resumeCount;
+        private int pausedCount;
+        private int stopCount;
+        private int destroyCount;
+
+        private long createFirstDate;
+        private long startFirstDate;
+        private long resumeFirstDate;
+        private long pausedLastDate;
+        private long stopLastDate;
+        private long destroyLastDate;
+
+        @Override
+        public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+            if (!hasCreatedActivities()) {
+                createFirstDate = WonderPush.getTime();
+            }
+            ++createCount;
+        }
+
+        @Override
+        public void onActivityStarted(Activity activity) {
+            if (!hasStartedActivities()) {
+                startFirstDate = WonderPush.getTime();
+            }
+            ++startCount;
+            onInteraction();
+        }
+
+        @Override
+        public void onActivityResumed(Activity activity) {
+            if (!hasResumedActivities()) {
+                resumeFirstDate = WonderPush.getTime();
+            }
+            ++resumeCount;
+            onInteraction();
+        }
+
+        @Override
+        public void onActivityPaused(Activity activity) {
+            ++pausedCount;
+            if (!hasResumedActivities()) {
+                pausedLastDate = WonderPush.getTime();
+            }
+            onInteraction();
+        }
+
+        @Override
+        public void onActivityStopped(Activity activity) {
+            ++stopCount;
+            if (!hasStartedActivities()) {
+                stopLastDate = WonderPush.getTime();
+            }
+            onInteraction();
+        }
+
+        @Override
+        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+        }
+
+        @Override
+        public void onActivityDestroyed(Activity activity) {
+            ++destroyCount;
+            if (!hasCreatedActivities()) {
+                destroyLastDate = WonderPush.getTime();
+            }
+            onInteraction();
+        }
+
+        protected boolean hasResumedActivities() {
+            return resumeCount > pausedCount;
+        }
+
+        protected boolean hasStartedActivities() {
+            return startCount > stopCount;
+        }
+
+        protected boolean hasCreatedActivities() {
+            return createCount > destroyCount;
+        }
+
+        protected long getCreateFirstDate() {
+            return createFirstDate;
+        }
+
+        protected long getStartFirstDate() {
+            return startFirstDate;
+        }
+
+        protected long getResumeFirstDate() {
+            return resumeFirstDate;
+        }
+
+        protected long getPausedLastDate() {
+            return pausedLastDate;
+        }
+
+        protected long getStopLastDate() {
+            return stopLastDate;
+        }
+
+        protected long getDestroyLastDate() {
+            return destroyLastDate;
+        }
+
     }
 
     /**
