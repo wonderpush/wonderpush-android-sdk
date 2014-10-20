@@ -28,6 +28,9 @@ class WonderPushConfiguration {
     private static final String LAST_APPOPEN_INFO_PREF_NAME = "__last_appopen_info_json";
     private static final String LAST_APPCLOSE_DATE_PREF_NAME = "__last_appclose_date";
 
+    private static final String DEVICE_DATE_SYNC_OFFSET_PREF_NAME = "__device_date_sync_offset";
+    private static final String DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME = "__device_date_sync_uncertainty";
+
     private static Context sContext;
 
     protected static void initialize(Context context) {
@@ -348,6 +351,38 @@ class WonderPushConfiguration {
      */
     protected static void setLastAppCloseDate(long date) {
         putLong(LAST_APPCLOSE_DATE_PREF_NAME, date);
+    }
+
+    /**
+     * Get the last known device date to WonderPush time offset in milliseconds stored in the user's shared preferences.
+     */
+    protected static long getDeviceDateSyncOffset() {
+        return getLong(DEVICE_DATE_SYNC_OFFSET_PREF_NAME, 0);
+    }
+
+    /**
+     * Set the last known device date to WonderPush time offset in milliseconds stored in the user's shared preferences.
+     * @param date
+     *            The last known device date to WonderPush time offset to be stored
+     */
+    protected static void setDeviceDateSyncOffset(long offset) {
+        putLong(DEVICE_DATE_SYNC_OFFSET_PREF_NAME, offset);
+    }
+
+    /**
+     * Get the last known device date to WonderPush time uncertainty in milliseconds stored in the user's shared preferences.
+     */
+    protected static long getDeviceDateSyncUncertainty() {
+        return getLong(DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME, Long.MAX_VALUE);
+    }
+
+    /**
+     * Set the last known device date to WonderPush time uncertainty in milliseconds stored in the user's shared preferences.
+     * @param date
+     *            The last known device date to WonderPush time uncertainty to be stored
+     */
+    protected static void setDeviceDateSyncUncertainty(long uncertainty) {
+        putLong(DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME, uncertainty);
     }
 
 }

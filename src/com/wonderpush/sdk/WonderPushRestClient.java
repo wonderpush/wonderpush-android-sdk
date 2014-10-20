@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -18,14 +19,17 @@ import org.apache.http.message.BasicHeader;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.MutableContextWrapper;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.util.Base64;
 import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.wonderpush.sdk.WonderPush.Response;
+import com.wonderpush.sdk.WonderPush.ResponseHandler;
 
 /**
  * A REST client that lets you hit the WonderPush REST server.
@@ -296,40 +300,58 @@ class WonderPushRestClient {
             headers[0] = authorizationHeader;
         }
 
-        // Handler
-        JsonHttpResponseHandler jsonHandler = null;
-        if (null != request.getHandler()) {
-            jsonHandler = new JsonHttpResponseHandler() {
-                @Override
-                public void onFailure(Throwable e, JSONObject data) {
-                    if (data != null) {
-                        WonderPush.logDebug("Requesting Error: " + data);
-                        WonderPush.setNetworkAvailable(true);
-                        request.getHandler().onFailure(e, new WonderPush.Response(data));
-                    } else {
-                        WonderPush.setNetworkAvailable(false);
-                        request.getHandler().onFailure(e, null);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable e, String data) {
-                    WonderPush.setNetworkAvailable(false);
-                    request.getHandler().onFailure(e, null);
-                }
-
-                @Override
-                public void onSuccess(int statusCode, JSONObject data) {
-                    WonderPush.setNetworkAvailable(true);
-                    request.getHandler().onSuccess(statusCode, new WonderPush.Response(data));
-                }
-            };
-        }
-
         String url = WonderPushUriHelper.getAbsoluteUrl(request.getResource());
         WonderPush.logDebug("requesting url: " + request.getMethod() + " " + url + "?" + request.getParams().getURLEncodedString());
         // TODO: support other contentTypes such as "application/json"
         String contentType = "application/x-www-form-urlencoded";
+
+        // Handler
+        final ResponseHandler handler = request.getHandler();
+        final long sendDate = SystemClock.elapsedRealtime();
+        JsonHttpResponseHandler jsonHandler = new JsonHttpResponseHandler() {
+            @Override
+            public void onFailure(Throwable e, JSONObject data) {
+                syncTime(data);
+                if (data != null) {
+                    WonderPush.logDebug("Requesting Error: " + data);
+                    WonderPush.setNetworkAvailable(true);
+                    if (handler != null) {
+                        handler.onFailure(e, new WonderPush.Response(data));
+                    }
+                } else {
+                    WonderPush.setNetworkAvailable(false);
+                    if (handler != null) {
+                        handler.onFailure(e, null);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable e, String data) {
+                WonderPush.setNetworkAvailable(false);
+                if (handler != null) {
+                    handler.onFailure(e, null);
+                }
+            }
+
+            @Override
+            public void onSuccess(int statusCode, JSONObject data) {
+                syncTime(data);
+                WonderPush.setNetworkAvailable(true);
+                if (handler != null) {
+                    handler.onSuccess(statusCode, new WonderPush.Response(data));
+                }
+            }
+
+            private void syncTime(JSONObject data) {
+                long recvDate = SystemClock.elapsedRealtime();
+                if (data == null || !data.has("_serverTime")) {
+                    return;
+                }
+                WonderPush.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"));
+            }
+        };
+        // NO UNNECESSARY WORK HERE, because of timed request
         switch (request.getMethod()) {
             case GET:
                 sClient.get(null, url, headers, request.getParams(), jsonHandler);
