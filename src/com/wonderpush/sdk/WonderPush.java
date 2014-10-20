@@ -1011,9 +1011,11 @@ public class WonderPush {
      * @param elapsedRealtimeReceive
      *            The time at which the response was received.
      * @param serverDate
-     *            The server time read in the response.
+     *            The time at which the server received the request, as read in the response.
+     * @param serverTook
+     *            The time the server took to process the request, as read in the response.
      */
-    protected static void syncTimeWithServer(long elapsedRealtimeSend, long elapsedRealtimeReceive, long serverDate) {
+    protected static void syncTimeWithServer(long elapsedRealtimeSend, long elapsedRealtimeReceive, long serverDate, long serverTook) {
         if (serverDate == 0) {
             return;
         }
@@ -1038,8 +1040,8 @@ public class WonderPush {
             startupDateToDeviceDateOffset = startupToDeviceOffset;
         }
 
-        long uncertainty = (elapsedRealtimeReceive - elapsedRealtimeSend) / 2;
-        long offset = serverDate - (elapsedRealtimeSend + uncertainty);
+        long uncertainty = (elapsedRealtimeReceive - elapsedRealtimeSend - serverTook) / 2;
+        long offset = serverDate + serverTook / 2 - (elapsedRealtimeSend + elapsedRealtimeReceive) / 2;
 
         // We must improve the quality of the "startup" sync. We can trust elaspedRealtime() based measures.
         if (
