@@ -1186,7 +1186,7 @@ public class WonderPush {
                 long appCloseDate = lastInteractionDate;
                 try {
                     closeInfo.put("actionDate", appCloseDate);
-                    closeInfo.put("openDuration", appCloseDate - lastAppOpenDate);
+                    closeInfo.put("openedTime", appCloseDate - lastAppOpenDate);
                 } catch (JSONException e) {
                     Log.d(TAG, "Failed to fill @APP_CLOSE information", e);
                 }
