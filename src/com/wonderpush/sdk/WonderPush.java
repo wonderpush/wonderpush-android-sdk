@@ -105,7 +105,7 @@ public class WonderPush {
     protected static final int WEBVIEW_REQUEST_TOTAL_TIMEOUT = 10000;
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
-    protected static final String SDK_VERSION = "Android-" + API_INT + ".0.9.1"; // reset to .1.0.0 when bumping API_INT
+    protected static final String SDK_VERSION = "Android-" + API_INT + ".0.9.2"; // reset to .1.0.0 when bumping API_INT
     protected static final int ERROR_INVALID_SID = 12017;
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
