@@ -1543,6 +1543,10 @@ public class WonderPush {
             return;
         }
         for (WonderPushDialogBuilder.Button.Action action : buttonClicked.actions) {
+            if (action.getType() == null) {
+                // Skip unrecognized action types
+                continue;
+            }
             switch (action.getType()) {
                 case CLOSE:
                     // Noop
