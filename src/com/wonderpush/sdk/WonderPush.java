@@ -1338,20 +1338,10 @@ public class WonderPush {
                             }
                         });
                         if (!isFetchingToken) {
-                            // even if we have an access token, we need to ensure connectivity state
-                            get("/network/ping", null, new ResponseHandler() {
-                                @Override
-                                public void onFailure(Throwable e, Response errorResponse) {
-                                }
-
-                                @Override
-                                public void onSuccess(Response response) {
-                                    registerForPushNotification(context);
-                                    Intent broadcast = new Intent(INTENT_INTIALIZED);
-                                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
-                                    updateInstallationCoreProperties(context);
-                                }
-                            });
+                            registerForPushNotification(context);
+                            Intent broadcast = new Intent(INTENT_INTIALIZED);
+                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
+                            updateInstallationCoreProperties(context);
                         }
                     } else {
                         new Handler().postDelayed(this, 100);
