@@ -1542,10 +1542,13 @@ public class WonderPush {
                     // Noop
                     break;
                 case MAP_OPEN:
-                    handleMapOpenButtonAction(dialog, buttonClicked);
+                    handleMapOpenButtonAction(dialog, buttonClicked, action);
+                    break;
+                case LINK:
+                    handleLinkButtonAction(dialog, buttonClicked, action);
                     break;
                 default:
-                    Log.w(TAG, "TODO: build-in button action " + action.getType());
+                    Log.w(TAG, "TODO: build-in button action \"" + action.getType() + "\"");
                     break;
             }
         }
@@ -1661,7 +1664,8 @@ public class WonderPush {
         }.execute();
     }
 
-    protected static void handleMapOpenButtonAction(WonderPushDialogBuilder dialog, Button button) {
+    protected static void handleMapOpenButtonAction(WonderPushDialogBuilder dialog, Button button,
+            WonderPushDialogBuilder.Button.Action action) {
         Context context = dialog.getContext();
         JSONObject data = dialog.getData();
         try {
@@ -1793,6 +1797,28 @@ public class WonderPush {
 
         // Show time!
         builder.show();
+    }
+
+    protected static void handleLinkButtonAction(WonderPushDialogBuilder dialog, Button button,
+            WonderPushDialogBuilder.Button.Action action) {
+        Context context = dialog.getContext();
+        try {
+            String url = action.getUrl();
+            Log.e(TAG, "URL = \"" + url + "\"");
+            if (url == null) {
+                Log.e(TAG, "No url in a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action!");
+                return;
+            }
+            Uri uri = Uri.parse(url);
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+            } else {
+                Log.e(TAG, "No service for intent " + intent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to perform a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action", e);
+        }
     }
 
     /**
