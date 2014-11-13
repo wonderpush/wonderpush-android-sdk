@@ -1547,6 +1547,9 @@ public class WonderPush {
                 case LINK:
                     handleLinkButtonAction(dialog, buttonClicked, action);
                     break;
+                case RATING:
+                    handleRatingButtonAction(dialog, buttonClicked, action);
+                    break;
                 default:
                     Log.w(TAG, "TODO: build-in button action \"" + action.getType() + "\"");
                     break;
@@ -1810,6 +1813,22 @@ public class WonderPush {
                 return;
             }
             Uri uri = Uri.parse(url);
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+            } else {
+                Log.e(TAG, "No service for intent " + intent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to perform a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action", e);
+        }
+    }
+
+    protected static void handleRatingButtonAction(WonderPushDialogBuilder dialog, Button button,
+            WonderPushDialogBuilder.Button.Action action) {
+        Context context = dialog.getContext();
+        try {
+            Uri uri = Uri.parse("market://details?id=" + context.getPackageName());
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             if (intent.resolveActivity(context.getPackageManager()) != null) {
                 context.startActivity(intent);
