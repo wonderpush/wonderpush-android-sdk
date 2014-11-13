@@ -273,12 +273,12 @@ public class WonderPush {
     private static void handleReceivedNotification(Context context, JSONObject data) {
         NotificationType type = null;
         try {
-            type = NotificationType.fromString(data.optString("type"));
+            type = NotificationType.fromString(data.optString("type", null));
         } catch (NullPointerException e) {
         } catch (IllegalArgumentException e) {
         }
         if (type == null) {
-            Log.w(TAG, "No built-in action for type " + data.optString("type"));
+            Log.w(TAG, "No built-in action for type " + data.optString("type", null));
             return;
         }
         switch (type) {
@@ -337,8 +337,8 @@ public class WonderPush {
             try {
                 final JSONObject notification = new JSONObject(notificationString);
                 JSONObject trackData = new JSONObject();
-                trackData.put("campaignId", notification.optString("c"));
-                trackData.put("notificationId", notification.optString("n"));
+                trackData.put("campaignId", notification.optString("c", null));
+                trackData.put("notificationId", notification.optString("n", null));
                 trackData.put("actionDate", getTime());
                 WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
@@ -1554,7 +1554,7 @@ public class WonderPush {
     protected static void handleDialogNotification(final Context context, final JSONObject data) {
         WonderPushDialogBuilder builder = createDialogNotificationBase(context, data);
 
-        String message = data.optString("message");
+        String message = data.optString("message", null);
         if (message == null) {
             Log.w(TAG, "Got no message to display for a plain notification");
         } else {
@@ -1581,7 +1581,7 @@ public class WonderPush {
         final JSONObject point = place.optJSONObject("point");
         final View dialogView = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.wonderpush_notification_map_dialog, null, false);
         final TextView text = (TextView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_text);
-        if (data.has("message")) {
+        if (data.has("message") && data.opt("message") != null) {
             text.setVisibility(View.VISIBLE);
             text.setText(data.optString("message"));
             text.setMovementMethod(new ScrollingMovementMethod());
@@ -1618,7 +1618,11 @@ public class WonderPush {
                     if (point != null && point.has("lat") && point.has("lon")) {
                         loc = point.optDouble("lat", 0.0) + "," + point.optDouble("lon", 0.0);
                     } else {
-                        loc = place.optString("name", place.optString("query"));
+                        loc = place.optString("name", place.optString("query", null));
+                    }
+                    if (loc == null) {
+                        Log.e(TAG, "No location for map");
+                        return null;
                     }
                     int screenWidth = getScreenWidth(context);
                     int screenHeight = getScreenHeight(context);
@@ -1698,7 +1702,7 @@ public class WonderPush {
                 geo.scheme("http");
                 geo.authority("maps.google.com");
                 geo.path("maps");
-                if (point.has("lat") && point.has("lon")) {
+                if (point != null && point.has("lat") && point.has("lon")) {
                     geo.appendQueryParameter("q", point.getDouble("lat") + "," + point.getDouble("lon"));
                     if (place.has("zoom")) {
                         geo.appendQueryParameter("z", Integer.toString(place.getInt("zoom")));
@@ -1757,7 +1761,7 @@ public class WonderPush {
     }
 
     protected static void handleHTMLNotification(final Context context, final JSONObject data) {
-        if (!data.has("message")) {
+        if (!data.has("message") || data.opt("message") == null) {
             Log.w(TAG, "Did not have any HTML content to display in the notification!");
             return;
         }
@@ -1768,14 +1772,14 @@ public class WonderPush {
         builder.setupButtons();
 
         // Set content
-        webView.loadDataWithBaseURL(data.optString("baseUrl"), data.optString("message"), "text/html", "utf-8", null);
+        webView.loadDataWithBaseURL(data.optString("baseUrl", null), data.optString("message"), "text/html", "utf-8", null);
 
         // Show time!
         builder.show();
     }
 
     protected static void handleURLNotification(Context context, JSONObject data) {
-        if (!data.has("url")) {
+        if (!data.has("url") || data.opt("url") == null) {
             Log.w(TAG, "Did not have any URL to display in the notification!");
             return;
         }
@@ -2081,21 +2085,33 @@ public class WonderPush {
             if (!isError())
                 return null;
 
-            return mJson.optJSONObject("error").optString("message");
+            JSONObject error = mJson.optJSONObject("error");
+            if (error == null) {
+                return null;
+            }
+            return error.optString("message", null);
         }
 
         public int getErrorStatus() {
             if (!isError())
                 return 0;
 
-            return mJson.optJSONObject("error").optInt("status");
+            JSONObject error = mJson.optJSONObject("error");
+            if (error == null) {
+                return 0;
+            }
+            return error.optInt("status", 0);
         }
 
         public int getErrorCode() {
             if (!isError())
                 return 0;
 
-            return mJson.optJSONObject("error").optInt("code");
+            JSONObject error = mJson.optJSONObject("error");
+            if (error == null) {
+                return 0;
+            }
+            return error.optInt("code", 0);
         }
 
         public JSONObject getJSONObject() {

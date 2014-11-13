@@ -150,7 +150,7 @@ class WonderPushGcmClient {
         try {
             WonderPush.logDebug("Received broadcasted intent WonderPush data: " + wpDataJson);
             JSONObject wpData = new JSONObject(wpDataJson);
-            String targetInstallationId = wpData.optString("@");
+            String targetInstallationId = wpData.optString("@", null);
             String loggedInstallationId = WonderPushConfiguration.getInstallationId();
             if (targetInstallationId != null && !targetInstallationId.equals(loggedInstallationId)) {
                 Log.d(TAG, "Received notification is not targetted at the current installation (" + targetInstallationId + " does not match current installation " + loggedInstallationId + ")");
@@ -158,8 +158,8 @@ class WonderPushGcmClient {
             }
 
             final JSONObject trackData = new JSONObject();
-            trackData.put("campaignId", wpData.optString("c"));
-            trackData.put("notificationId", wpData.optString("n"));
+            trackData.put("campaignId", wpData.optString("c", null));
+            trackData.put("notificationId", wpData.optString("n", null));
             trackData.put("actionDate", WonderPush.getTime());
             WonderPush.ensureInitialized(context);
             WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);

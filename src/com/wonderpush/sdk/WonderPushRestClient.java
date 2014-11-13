@@ -433,12 +433,12 @@ class WonderPushRestClient {
                         // Parse response
                         JSONObject json = response.getJSONObject();
                         if (json.has("token") && json.has("data")) {
-                            String token = json.optString("token");
+                            String token = json.optString("token", null);
                             JSONObject data = json.optJSONObject("data");
-                            if (data.has("installationId")) {
-                                String sid = data.optString("sid");
-                                String installationId = data.optString("installationId");
-                                String userId = data.optString("userId");
+                            if (data != null && data.has("installationId")) {
+                                String sid = data.optString("sid", null);
+                                String installationId = data.optString("installationId", null);
+                                String userId = data.optString("userId", null);
 
                                 // Store access token
                                 WonderPushConfiguration.setAccessToken(token);

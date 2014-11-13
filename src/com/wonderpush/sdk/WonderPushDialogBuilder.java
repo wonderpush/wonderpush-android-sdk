@@ -58,7 +58,11 @@ class WonderPushDialogBuilder {
         }
         this.buttons = new ArrayList<Button>(buttonCount);
         for (int i = 0 ; i < buttonCount ; ++i) {
-            this.buttons.add(new Button(buttons.optJSONObject(i)));
+            JSONObject button = buttons.optJSONObject(i);
+            if (button == null) {
+                continue;
+            }
+            this.buttons.add(new Button(button));
         }
 
         commonSetup();
@@ -202,7 +206,8 @@ class WonderPushDialogBuilder {
             int actionCount = actions != null ? actions.length() : 0;
             this.actions = new ArrayList<Action>(actionCount);
             for (int i = 0 ; i < actionCount ; ++i) {
-                this.actions.add(new Action(actions.optJSONObject(i)));
+                JSONObject action = actions.optJSONObject(i);
+                this.actions.add(new Action(action));
             }
         }
 
@@ -253,13 +258,13 @@ class WonderPushDialogBuilder {
                 }
 
                 try {
-                    type = Type.fromString(data.optString("type"));
+                    type = Type.fromString(data.optString("type", null));
                 } catch (IllegalArgumentException e) {
                     Log.w(TAG, "Unknown button action", e);
                     type = null;
                 }
-                tag = data.optString("tag");
-                url = data.optString("url");
+                tag = data.optString("tag", null);
+                url = data.optString("url", null);
             }
 
             public Type getType() {
