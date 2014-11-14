@@ -1550,6 +1550,9 @@ public class WonderPush {
                 case RATING:
                     handleRatingButtonAction(dialog, buttonClicked, action);
                     break;
+                case TRACK_EVENT:
+                    handleTrackEventButtonAction(dialog, buttonClicked, action);
+                    break;
                 default:
                     Log.w(TAG, "TODO: build-in button action \"" + action.getType() + "\"");
                     break;
@@ -1838,6 +1841,20 @@ public class WonderPush {
         } catch (Exception e) {
             Log.e(TAG, "Failed to perform a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action", e);
         }
+    }
+
+    protected static void handleTrackEventButtonAction(WonderPushDialogBuilder dialog, Button button,
+            WonderPushDialogBuilder.Button.Action action) {
+        JSONObject event = action.getEvent();
+        if (event == null) {
+            Log.e(TAG, "Got no event to track for a " + WonderPushDialogBuilder.Button.Action.Type.TRACK_EVENT + " action");
+            return;
+        }
+        if (!event.has("type") || event.optString("type", null) == null) {
+            Log.e(TAG, "Got no type in the event to track for a " + WonderPushDialogBuilder.Button.Action.Type.TRACK_EVENT + " action");
+            return;
+        }
+        trackEvent(event.optString("type", null), event.optJSONObject("custom"));
     }
 
     /**

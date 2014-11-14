@@ -215,7 +215,7 @@ class WonderPushDialogBuilder {
 
             public enum Type {
                 CLOSE("close"),
-                TAG("tag"),
+                TRACK_EVENT("trackEvent"),
                 LINK("link"),
                 RATING("rating"),
                 MAP_OPEN("mapOpen"),
@@ -248,6 +248,7 @@ class WonderPushDialogBuilder {
             private Type type;
             private String tag;
             private String url;
+            private JSONObject event; // has "type" and optionally "custom" keys
 
             public Action() {
             }
@@ -265,6 +266,7 @@ class WonderPushDialogBuilder {
                 }
                 tag = data.optString("tag", null);
                 url = data.optString("url", null);
+                event = data.optJSONObject("event");
             }
 
             public Type getType() {
@@ -289,6 +291,14 @@ class WonderPushDialogBuilder {
 
             public void setUrl(String url) {
                 this.url = url;
+            }
+
+            protected JSONObject getEvent() {
+                return event;
+            }
+
+            protected void setEvent(JSONObject event) {
+                this.event = event;
             }
 
         }
