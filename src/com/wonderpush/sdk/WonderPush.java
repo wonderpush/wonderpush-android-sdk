@@ -162,7 +162,7 @@ public class WonderPush {
     /**
      * Intent data type for GCM notification data when the user clicks the notification.
      */
-    protected static final String INTENT_NOTIFICATION_TYPE = "x-wonderpush/notification";
+    protected static final String INTENT_NOTIFICATION_TYPE = "application/vnd.wonderpush.notification";
 
     /**
      * Intent query parameter key for GCM notification data when the user clicks the notification.
