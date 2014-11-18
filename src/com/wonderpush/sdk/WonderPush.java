@@ -94,6 +94,7 @@ public class WonderPush {
     private static String sBaseURL;
     private static String sLang;
     private static boolean sIsInitialized = false;
+    private static boolean sIsReady = false;
     private static boolean sIsReachable = false;
 
     private static boolean sBeforeInitializationUserIdSet = false;
@@ -1253,13 +1254,24 @@ public class WonderPush {
     }
 
     /**
-     * Whether {@link #initialize(Activity, String, String, String)} has been called.
+     * Whether {@link #initialize(Activity, String, String)} has been called.
      * Different from having fetched an access token,
      * and hence from {@link #INTENT_INTIALIZED} being dispatched.
      * @return
      */
     static boolean isInitialized() {
         return sIsInitialized;
+    }
+
+    /**
+     * Whether the SDK is ready to operate and
+     * the {@link #INTENT_INTIALIZED} intent has been dispatched.
+     *
+     * The SDK is ready when it is initialized and has fetched an access token.
+     * @return
+     */
+    public static boolean isReady() {
+        return sIsReady;
     }
 
     /**
@@ -1357,6 +1369,7 @@ public class WonderPush {
                             @Override
                             public void onSuccess(Response response) {
                                 registerForPushNotification(context);
+                                sIsReady = true;
                                 Intent broadcast = new Intent(INTENT_INTIALIZED);
                                 LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                                 updateInstallationCoreProperties(context);
@@ -1364,6 +1377,7 @@ public class WonderPush {
                         });
                         if (!isFetchingToken) {
                             registerForPushNotification(context);
+                            sIsReady = true;
                             Intent broadcast = new Intent(INTENT_INTIALIZED);
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                             updateInstallationCoreProperties(context);
