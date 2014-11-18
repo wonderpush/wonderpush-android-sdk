@@ -169,6 +169,31 @@ public class WonderPush {
      */
     protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER = "body";
 
+    /**
+     * Intent action for notification button action `method`.
+     */
+    public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_ACTION = "com.wonderpush.action.method";
+
+    /**
+     * Intent scheme for notification button action `method`.
+     */
+    public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_SCHEME = "wonderpush";
+
+    /**
+     * Intent authority for notification button action `method`.
+     */
+    public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_AUTHORITY = "action.method";
+
+    /**
+     * Intent query parameter key for the notification button action `method` method name.
+     */
+    public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_METHOD = "com.wonderpush.action.method.extra_method";
+
+    /**
+     * Intent query parameter key for the notification button action `method` argument.
+     */
+    public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG = "com.wonderpush.action.method.extra_arg";
+
     static enum NotificationType {
         SIMPLE("simple"),
         DATA("data"),
@@ -1553,6 +1578,9 @@ public class WonderPush {
                 case TRACK_EVENT:
                     handleTrackEventButtonAction(dialog, buttonClicked, action);
                     break;
+                case METHOD:
+                    handleMethodButtonAction(dialog, buttonClicked, action);
+                    break;
                 default:
                     Log.w(TAG, "TODO: build-in button action \"" + action.getType() + "\"");
                     break;
@@ -1855,6 +1883,27 @@ public class WonderPush {
             return;
         }
         trackEvent(event.optString("type", null), event.optJSONObject("custom"));
+    }
+
+    protected static void handleMethodButtonAction(WonderPushDialogBuilder dialog, Button button,
+            WonderPushDialogBuilder.Button.Action action) {
+        String method = action.getMethod();
+        String arg = action.getMethodArg();
+        if (method == null) {
+            Log.e(TAG, "Got no method to call for a " + WonderPushDialogBuilder.Button.Action.Type.METHOD + " action");
+            return;
+        }
+        Intent intent = new Intent();
+        intent.setPackage(getApplicationContext().getPackageName());
+        intent.setAction(INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_ACTION);
+        intent.setData(new Uri.Builder()
+                .scheme(INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_SCHEME)
+                .authority(INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_AUTHORITY)
+                .appendPath(method)
+                .build());
+        intent.putExtra(INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_METHOD, method);
+        intent.putExtra(INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG, arg);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
     }
 
     /**
