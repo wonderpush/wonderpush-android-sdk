@@ -96,7 +96,7 @@ class WonderPushGcmClient {
         Intent resultIntent = new Intent(context, activity);
         resultIntent.setAction(Intent.ACTION_MAIN);
         resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
 
         Uri dataUri = new Uri.Builder()
                 .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
