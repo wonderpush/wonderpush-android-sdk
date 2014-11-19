@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 
@@ -32,6 +33,9 @@ class WonderPushDialogBuilder {
     final AlertDialog.Builder builder;
     final OnChoice listener;
     AlertDialog dialog;
+    long shownAtElapsedRealtime;
+    long endedAtElapsedRealtime;
+    JSONObject interactionEventCustom;
 
     String defaultTitle;
     int defaultIcon;
@@ -166,12 +170,14 @@ class WonderPushDialogBuilder {
     }
 
     public void show() {
+        shownAtElapsedRealtime = SystemClock.elapsedRealtime();
         if (dialog == null) {
             dialog = builder.create();
             // On dismiss, handle chosen button, if any
             DialogInterface.OnDismissListener dismissListener = new DialogInterface.OnDismissListener() {
                 @Override
                 public void onDismiss(DialogInterface dialog) {
+                    endedAtElapsedRealtime = SystemClock.elapsedRealtime();
                     WonderPush.logDebug("Dialog dismissed");
                     if (listener != null) {
                         listener.onChoice(WonderPushDialogBuilder.this, choice.get());
@@ -185,6 +191,18 @@ class WonderPushDialogBuilder {
 
     public void dismiss() {
         dialog.dismiss();
+    }
+
+    public long getShownDuration() {
+        return endedAtElapsedRealtime - shownAtElapsedRealtime;
+    }
+
+    protected JSONObject getInteractionEventCustom() {
+        return interactionEventCustom;
+    }
+
+    protected void setInteractionEventCustom(JSONObject interactionEventCustom) {
+        this.interactionEventCustom = interactionEventCustom;
     }
 
     static class Button {

@@ -1567,6 +1567,16 @@ public class WonderPush {
     }
 
     protected static void handleDialogButtonAction(WonderPushDialogBuilder dialog, WonderPushDialogBuilder.Button buttonClicked) {
+        JSONObject eventData = new JSONObject();
+        try {
+            eventData.put("buttonLabel", buttonClicked == null ? null : buttonClicked.label);
+            eventData.put("reactionTime", dialog.getShownDuration());
+            eventData.putOpt("custom", dialog.getInteractionEventCustom());
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to fill the @NOTIFICATION_ACTION event");
+        }
+        trackInternalEvent("@NOTIFICATION_ACTION", eventData);
+
         if (buttonClicked == null) {
             logDebug("User cancelled the dialog");
             return;
