@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -19,7 +18,6 @@ import org.apache.http.message.BasicHeader;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.content.MutableContextWrapper;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.SystemClock;

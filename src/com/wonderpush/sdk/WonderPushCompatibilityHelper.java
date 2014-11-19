@@ -6,7 +6,6 @@ import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.webkit.WebView;
