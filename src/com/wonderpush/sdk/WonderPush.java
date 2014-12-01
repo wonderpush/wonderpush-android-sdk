@@ -1407,7 +1407,18 @@ public class WonderPush {
 
         }
 
+        initializeForApplication(context);
         initializeForActivity(context);
+    }
+
+    protected static void initializeForApplication(Context context) {
+        if (sApplication != null || !(context instanceof Application)) {
+            return;
+        }
+        Application application = (Application) context;
+
+        sApplication = application;
+        monitorActivitiesLifecycle();
     }
 
     protected static void initializeForActivity(Context context) {
@@ -1416,10 +1427,7 @@ public class WonderPush {
         }
         Activity activity = (Activity) context;
 
-        if (sApplication == null) {
-            sApplication = activity.getApplication();
-            monitorActivitiesLifecycle();
-        }
+        sTrackedActivities.put(activity, null);
 
         onCreateMainActivity(context, activity.getIntent());
         onInteraction(); // keep after onCreateMainActivity() as a possible received notification's information is needed

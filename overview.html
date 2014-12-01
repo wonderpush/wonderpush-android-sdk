@@ -199,14 +199,17 @@ git checkout latest</code></pre>
 <p>
   First you must initialize the SDK.
   The <tt>initialize()</tt> method must be called before any use of the SDK.<br/>
-  A good place for initialization is in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.
+  The best place for initialization is in the <tt>onCreate()</tt> method of your <tt>Application</tt>.
 </p>
+
 <pre><code>import com.wonderpush.sdk.WonderPush;
 
-public class YourMainActivity extends Activity {
+public class YourApplication extends Application {
 
     &#64;Override
-    protected void onCreate(Bundle savedInstance) {
+    public void onCreate() {
+        super.onCreate();
+
         String loggedUserId; // assumed to be the id of the currently logged user, or null
         WonderPush.setUserId(loggedUserId);
         WonderPush.initialize(this);
@@ -214,8 +217,32 @@ public class YourMainActivity extends Activity {
 
 }</code></pre>
 
+<blockquote>
+  <p>
+    <b>Tip:</b><br/>
+    If you do not already use a custom <tt>Application</tt> class for your project, you can switch very easily.
+    An <tt>Application</tt> class is the prefered way to initialize many SDKs.<br/>
+    If you cannot, maybe because you use a framework that does not enable you to do so,
+    you can also initialize the WonderPush SDK in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.<br/>
+    If you target API < 14 (pre-Android 4), you should also initialize the WonderPush SDK in the <tt>onCreate()</tt> method
+    of each of your activities, so that notifications can be displayed in-app over any activity of your application.
+  </p>
+  <p>
+    Adding an <tt>Application</tt> class is two-step:
+  </p>
+  <ul>
+    <li>
+      Create the <tt>YourApplication</tt> class, inheriting <tt>android.app.Application</tt>, like shown in the previous code snippet.
+    </li>
+    <li>
+      You now have to point Android to it. Add the following attribute to the <tt>&lt;application&gt;</tt> tag of your <tt>AndroidManifest.xml</tt>:
+      <pre><code>&lt;application android:name=".MyApplication"&gt;</code></pre>
+    </li>
+  </ul>
+</blockquote>
+
 <p>
-  Then you will need to implement the WonderPushInitializerImpl class referenced earlier in the <code>AndroidManifest.xml</code>.<br/>
+  Then you will need to implement the <tt>WonderPushInitializerImpl</tt> class referenced earlier in the <tt>AndroidManifest.xml</tt>.<br/>
   This class is used under the hood by the simpler <code>WonderPush.initialize(this)</code> call above.
   It is used in multiple places inside the SDK so it can initialize itself on some key events, without additional complexity for you.
 </p>
