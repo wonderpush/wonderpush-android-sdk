@@ -18,6 +18,7 @@ class WonderPushConfiguration {
 
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
+    private static final String GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME = "__wonderpush_gcm_registration_app_version_for_update_receiver";
     private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
 
     private static final String LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME = "__last_received_notification_info_json";
@@ -236,6 +237,23 @@ class WonderPushConfiguration {
      */
     protected static void setGCMRegistrationAppVersion(int appVersion) {
         putInt(GCM_REGISTRATION_APP_VERSION_PREF_NAME, appVersion);
+    }
+
+    /**
+     * Get the application version for the update receiver stored in the user's shared preferences.
+     */
+    protected static int getGCMRegistrationAppVersionForUpdateReceiver() {
+        return getInt(GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME, Integer.MIN_VALUE);
+    }
+
+    /**
+     * Set the application version for the update receiver stored in the user's shared preferences.
+     *
+     * @param appVersion
+     *            The application version for the update receiver to be stored
+     */
+    protected static void setGCMRegistrationAppVersionForUpdateReceiver(int appVersion) {
+        putInt(GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME, appVersion);
     }
 
     /**

@@ -664,15 +664,25 @@ public class WonderPush {
     }
 
     protected static String getApplicationVersion() {
-        PackageInfo pInfo;
         String versionName = null;
         try {
-            pInfo = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), 0);
-            versionName = pInfo.versionName;
+            PackageInfo packageInfo = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), 0);
+            versionName = packageInfo.versionName;
         } catch (NameNotFoundException e) {
             logDebug("Could not retreive version name");
         }
         return versionName;
+    }
+
+    protected static int getApplicationVersionCode() {
+        int versionCode = -1;
+        try {
+            PackageInfo packageInfo = getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), 0);
+            versionCode = packageInfo.versionCode;
+        } catch (NameNotFoundException e) {
+            logDebug("Could not retreive version code");
+        }
+        return versionCode;
     }
 
     protected static String getOsVersion() {

@@ -12,7 +12,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
@@ -36,16 +35,6 @@ class WonderPushGcmClient {
     private static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
     private static GoogleCloudMessaging mGcm;
 
-    private static int getAppVersion(Context context) {
-        try {
-            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            return packageInfo.versionCode;
-        } catch (NameNotFoundException e) {
-            // should never happen
-            throw new RuntimeException("Could not get package name: " + e);
-        }
-    }
-
     private static void storeRegistrationIdToWonderPush(String registrationId) {
         JSONObject properties = new JSONObject();
         try {
@@ -57,14 +46,14 @@ class WonderPushGcmClient {
         WonderPush.updateInstallation(properties, false, null);
     }
 
-    protected static String getRegistrationId(Context c) {
+    protected static String getRegistrationId() {
         String registrationId = WonderPushConfiguration.getGCMRegistrationId();
         if (TextUtils.isEmpty(registrationId)) {
             return null;
         }
 
         int registeredVersion = WonderPushConfiguration.getGCMRegistrationAppVersion();
-        int currentVersion = getAppVersion(c);
+        int currentVersion = WonderPush.getApplicationVersionCode();
         if (registeredVersion != currentVersion) {
             return null;
         }
@@ -82,10 +71,10 @@ class WonderPushGcmClient {
         );
     }
 
-    protected static void storeRegistrationId(String senderIds, String registrationId, Context context) {
+    protected static void storeRegistrationId(String senderIds, String registrationId) {
         WonderPushConfiguration.setGCMRegistrationId(registrationId);
         WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
-        WonderPushConfiguration.setGCMRegistrationAppVersion(getAppVersion(context));
+        WonderPushConfiguration.setGCMRegistrationAppVersion(WonderPush.getApplicationVersionCode());
     }
 
     protected static PendingIntent buildPendingIntent(JSONObject wonderpushData, Context context,
@@ -206,7 +195,7 @@ class WonderPushGcmClient {
                             if (regid == null) {
                                 return null;
                             }
-                            storeRegistrationId(senderIds, regid, activity);
+                            storeRegistrationId(senderIds, regid);
                             storeRegistrationIdToWonderPush(regid);
                             WonderPush.logDebug("Device registered, registration ID=" + regid);
                         } catch (IOException ex) {
@@ -243,7 +232,7 @@ class WonderPushGcmClient {
             return;
         }
 
-        String regid = getRegistrationId(context);
+        String regid = getRegistrationId();
 
         if (checkForUnregistrationNeed(context, pushSenderId) || TextUtils.isEmpty(regid)) {
             registerInBackground(pushSenderId, context);
