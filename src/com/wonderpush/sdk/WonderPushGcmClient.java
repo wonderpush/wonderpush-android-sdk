@@ -236,9 +236,7 @@ class WonderPushGcmClient {
 
         if (checkForUnregistrationNeed(context, pushSenderId) || TextUtils.isEmpty(regid)) {
             registerInBackground(pushSenderId, context);
-        } else {
-            storeRegistrationIdToWonderPush(regid);
-        }
+        } // already pushed by WonderPush.updateInstallationCoreProperties()
         return;
     }
 

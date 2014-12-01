@@ -918,6 +918,13 @@ public class WonderPush {
             application.put("sdkVersion", SDK_VERSION);
             properties.put("application", application);
 
+            String registrationId = WonderPushGcmClient.getRegistrationId();
+            if (registrationId != null) {
+                JSONObject pushToken = new JSONObject();
+                pushToken.put("data", registrationId);
+                properties.put("pushToken", pushToken);
+            } // otherwise, let another (possibly concurrent) call to registerForPushNotification() perform the update
+
             JSONObject device = new JSONObject();
             device.put("id", getUDID());
             device.put("platform", "Android");
@@ -1353,6 +1360,8 @@ public class WonderPush {
             // Initialize OpenUDID
             OpenUDID_manager.sync(getApplicationContext());
 
+            sIsInitialized = true;
+
             // Permission checks
             if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
                 Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
@@ -1363,8 +1372,6 @@ public class WonderPush {
             } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
                 Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
             }
-
-            sIsInitialized = true;
 
             // Wait for UDID to be ready and fetch anonymous token if needed.
             new Runnable() {
@@ -1378,19 +1385,19 @@ public class WonderPush {
 
                             @Override
                             public void onSuccess(Response response) {
+                                updateInstallationCoreProperties(context);
                                 registerForPushNotification(context);
                                 sIsReady = true;
                                 Intent broadcast = new Intent(INTENT_INTIALIZED);
                                 LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
-                                updateInstallationCoreProperties(context);
                             }
                         });
                         if (!isFetchingToken) {
+                            updateInstallationCoreProperties(context);
                             registerForPushNotification(context);
                             sIsReady = true;
                             Intent broadcast = new Intent(INTENT_INTIALIZED);
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
-                            updateInstallationCoreProperties(context);
                         }
                     } else {
                         new Handler().postDelayed(this, 100);
