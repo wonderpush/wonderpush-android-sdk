@@ -390,6 +390,28 @@ private void didPurchase() {
 </p>
 
 
+<h3 id="using-sdk--reading-custom-key-value-payload">Reading custom key-value payload</h3>
+
+<p>
+  A notification can be added custom key-value pairs to it.
+  To read them you will need to <a href="#optional--handling-own-notifications">setup your own BroadcastReceiver</a>.
+  You would them simply use the following line of code:
+</p>
+
+<pre><code>&#64;Override
+public void onReceive(Context context, Intent intent) {
+    // ...
+    if (intent.hasExtra("custom")) {
+        try {
+            JSONObject custom = new JSONObject(intent.getExtras().getString("custom"));
+            // Process your custom payload
+        } catch (JSONException e) {
+            // This notification certainly does not come from the WonderPush push notification service
+        }
+    }
+    // ...
+}</code></pre>
+
 <h3 id="reference">API Reference</h3>
 
 <p>
