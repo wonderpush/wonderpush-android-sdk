@@ -1,6 +1,7 @@
 package com.wonderpush.sdk;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,6 +10,7 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.PendingIntent.CanceledException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -79,10 +81,19 @@ class WonderPushGcmClient {
 
     protected static PendingIntent buildPendingIntent(JSONObject wonderpushData, Context context,
             Class<? extends Activity> activity) {
-        Intent resultIntent = new Intent(context, activity);
+        Intent resultIntent = new Intent();
+        if (WonderPushService.isProperlySetup()) {
+            resultIntent.setClass(context, WonderPushService.class);
+        } else {
+            // Fallback to blindly launching the configured activity
+            resultIntent.setClass(context, activity);
+            resultIntent = new Intent(context, activity);
+        }
+        resultIntent.putExtra("activity", activity.getCanonicalName());
+
         resultIntent.setAction(Intent.ACTION_MAIN);
         resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         Uri dataUri = new Uri.Builder()
                 .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
@@ -91,7 +102,14 @@ class WonderPushGcmClient {
                 .build();
         resultIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
 
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(context, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent resultPendingIntent;
+        if (WonderPushService.isProperlySetup()) {
+            resultPendingIntent = PendingIntent.getService(context, 0, resultIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        } else {
+            resultPendingIntent = PendingIntent.getActivity(context, 0, resultIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        }
 
         return resultPendingIntent;
     }
@@ -122,12 +140,18 @@ class WonderPushGcmClient {
 
     protected static boolean onBroadcastReceived(Context context, Intent intent, int iconResource, Class<? extends Activity> activity) {
         Bundle extras = intent.getExtras();
+        Log.wtf(TAG, "Received push notification: " + intent);
+        Log.wtf(TAG, "Received push notification (extras):");
+        for (String key : extras.keySet()) {
+            Log.wtf(TAG, "- \"" + key + "\" = (" + (extras.get(key) == null ? "null" : extras.get(key).getClass().getSimpleName()) + ") " + extras.get(key));
+        }
 
         if (extras.isEmpty()) { // has effect of unparcelling Bundle
             WonderPush.logDebug("Received broadcasted intent has no extra");
             return false;
         }
         String wpDataJson = extras.getString(WONDERPUSH_NOTIFICATION_EXTRA_KEY);
+        intent.removeExtra(WONDERPUSH_NOTIFICATION_EXTRA_KEY);
         if (null == wpDataJson) {
             WonderPush.logDebug("Received broadcasted intent has no data for WonderPush");
             return false;
@@ -140,7 +164,7 @@ class WonderPushGcmClient {
             String loggedInstallationId = WonderPushConfiguration.getInstallationId();
             if (targetInstallationId != null && !targetInstallationId.equals(loggedInstallationId)) {
                 Log.d(TAG, "Received notification is not targetted at the current installation (" + targetInstallationId + " does not match current installation " + loggedInstallationId + ")");
-                return false;
+                return true;
             }
 
             final JSONObject trackData = new JSONObject();
@@ -152,14 +176,26 @@ class WonderPushGcmClient {
 
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
-            WonderPush.logDebug("Building notification");
+            Activity currentActivity = WonderPush.getCurrentActivity();
             PendingIntent pendingIntent = buildPendingIntent(wpData, context, activity);
-            Notification notification = buildNotification(extras.getString("alert"), context, iconResource, pendingIntent);
+            if (currentActivity != null && !currentActivity.isFinishing()) {
+                // We can show the notification (send the pending intent) right away
+                try {
+                    pendingIntent.send();
+                } catch (CanceledException e) {
+                    Log.e(WonderPush.TAG, "Could not show notification", e);
+                }
+            } else {
+                // We should use a notification to warn the user, and wait for him to click it
+                // before showing the notification (i.e.: the pending intent being sent)
+                WonderPush.logDebug("Building notification");
+                Notification notification = buildNotification(extras.getString("alert"), context, iconResource, pendingIntent);
 
-            int localNotificationId = wpData.optString("c", "MISSING CAMPAIGN ID").hashCode();
-            NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationManager.notify(localNotificationId, notification);
-            intent.removeExtra(WONDERPUSH_NOTIFICATION_EXTRA_KEY);
+                int localNotificationId = wpData.optString("c", "MISSING CAMPAIGN ID").hashCode();
+                NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                mNotificationManager.notify(localNotificationId, notification);
+            }
+
         } catch (JSONException e) {
             Log.d(TAG, "data is not a well-formed JSON object", e);
         }

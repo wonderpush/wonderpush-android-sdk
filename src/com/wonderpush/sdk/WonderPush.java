@@ -1,6 +1,7 @@
 package com.wonderpush.sdk;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
@@ -10,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.WeakHashMap;
 
 import org.OpenUDID.OpenUDID_manager;
 import org.json.JSONArray;
@@ -86,8 +88,11 @@ public class WonderPush {
 
     private static Context sApplicationContext;
     private static Application sApplication;
-    private static ActivityLifecycleCallbacks sActivityLifecycleCallbacks;
+    private static ActivityLifecycleMonitor sActivityLifecycleCallbacks;
     private static boolean sActivityLifecycleCallbacksRegistered;
+    private static WeakReference<Intent> sLastHandledIntentRef;
+    private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<Activity, Object>();
+
     private static String sClientId;
     private static String sClientSecret;
     private static Location sLocation;
@@ -330,34 +335,58 @@ public class WonderPush {
         }
     }
 
+    protected static boolean containsNotification(Intent intent) {
+        return  intent != null
+                && (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0
+                && (sLastHandledIntentRef == null || intent != sLastHandledIntentRef.get())
+                && INTENT_NOTIFICATION_TYPE.equals(intent.getType())
+                && intent.getData() != null
+                && INTENT_NOTIFICATION_SCHEME.equals(intent.getData().getScheme())
+                && INTENT_NOTIFICATION_AUTHORITY.equals(intent.getData().getAuthority())
+                ;
+    }
+
     /**
-     * Method to call on your {@code onCreate()} method to handle the WonderPush notification.
-     * Must be added to the {@link Activity} implementation of the class you gave to
-     * {@link #onBroadcastReceived(Context, Intent, int, Class)}
-     * (will be called within {@link WonderPush#initialize(Activity, String, String)}).
-     * Example:
+     * Method to call on your {@code onNewIntent()} and {@code onCreate()} methods to handle the WonderPush notification.
      *
+     * <p>Starting from API 14, there is no need to call this method, but it won't hurt if you do.</p>
+     *
+     * <p>
+     *   This method is automatically called from within {@link WonderPush#initialize(Context)},
+     *   so calling this method after calling {@link WonderPush#initialize(Context)} is useless.
+     * </p>
+     *
+     * <p>Example:</p>
      * <pre>
      * <code>
+     * &#64;Override
      * protected void onCreate(Bundle savedInstance) {
-     *     WonderPush.onCreateMainActivity(this, getIntent());
+     *     // In case you call WonderPush.initialize() from your custom Application class,
+     *     // and you target API < 14, you can either call WonderPush.initialize() once again here
+     *     // or call this method instead.
+     *     WonderPush.showPotentialNotification(this, getIntent());
+     * }
+     *
+     * &#64;Override
+     * protected void onNewIntent(Intent intent) {
+     *     WonderPush.showPotentialNotification(this, intent);
      * }
      * </code>
      * </pre>
      *
-     * @param context
-     *            The current {@link Activity} (preferred) or {@link Application}.
+     * @param activity
+     *            The current {@link Activity}.
+     *            Just give {@code this}.
      * @param intent
      *            The intent the activity received.
+     *            Just give the {@code intent} you received in parameter, or give {@code getIntent()}.
      *
      * @return <code>true</code> if handled, <code>false</code> otherwise.
      */
-    private static boolean onCreateMainActivity(final Context context, Intent intent) {
-        if (INTENT_NOTIFICATION_TYPE.equals(intent.getType())
-                && intent.getData() != null
-                && INTENT_NOTIFICATION_SCHEME.equals(intent.getData().getScheme())
-                && INTENT_NOTIFICATION_AUTHORITY.equals(intent.getData().getAuthority())
-        ) {
+    public static boolean showPotentialNotification(final Activity activity, Intent intent) {
+        if (containsNotification(intent)) {
+            activity.setIntent(null);
+            sLastHandledIntentRef = new WeakReference<Intent>(intent);
             String notificationString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
             logDebug("Handling notification at main activity creation: " + notificationString);
             try {
@@ -371,7 +400,7 @@ public class WonderPush {
                 WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
 
                 if (sIsInitialized) {
-                    handleReceivedNotification(context, notification);
+                    handleReceivedNotification(activity, notification);
                 } else {
                     BroadcastReceiver receiver = new BroadcastReceiver() {
                         @Override
@@ -382,7 +411,7 @@ public class WonderPush {
                     };
 
                     IntentFilter filter = new IntentFilter(WonderPush.INTENT_INTIALIZED);
-                    LocalBroadcastManager.getInstance(context).registerReceiver(receiver, filter);
+                    LocalBroadcastManager.getInstance(activity).registerReceiver(receiver, filter);
                 }
 
                 return true;
@@ -1270,6 +1299,23 @@ public class WonderPush {
         }
     }
 
+    protected static Activity getCurrentActivity() {
+        Activity candidate = null;
+        if (sActivityLifecycleCallbacksRegistered
+                && sActivityLifecycleCallbacks.hasResumedActivities()) {
+            candidate = sActivityLifecycleCallbacks.getLastResumedActivity();
+        }
+        if (candidate == null) {
+            for (Activity activity : sTrackedActivities.keySet()) {
+                if (activity.hasWindowFocus() && !activity.isFinishing()) {
+                    candidate = activity;
+                    break;
+                }
+            }
+        }
+        return candidate;
+    }
+
     /**
      * Whether {@link #initialize(Activity, String, String)} has been called.
      * Different from having fetched an access token,
@@ -1429,7 +1475,7 @@ public class WonderPush {
 
         sTrackedActivities.put(activity, null);
 
-        onCreateMainActivity(context, activity.getIntent());
+        showPotentialNotification(activity, activity.getIntent());
         onInteraction(); // keep after onCreateMainActivity() as a possible received notification's information is needed
     }
 
@@ -1976,16 +2022,23 @@ public class WonderPush {
         private long stopLastDate;
         private long destroyLastDate;
 
+        private Activity lastResumedActivity;
+
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
             if (!hasCreatedActivities()) {
                 createFirstDate = WonderPush.getTime();
             }
             ++createCount;
+            WonderPush.showPotentialNotification(activity, activity.getIntent());
         }
 
         @Override
         public void onActivityStarted(Activity activity) {
+            if (createCount == 0) {
+                // The monitor was probably setup inside a Activity.onCreate() call
+                this.onActivityCreated(activity, null);
+            }
             if (!hasStartedActivities()) {
                 startFirstDate = WonderPush.getTime();
             }
@@ -1998,6 +2051,7 @@ public class WonderPush {
             if (!hasResumedActivities()) {
                 resumeFirstDate = WonderPush.getTime();
             }
+            lastResumedActivity = activity;
             ++resumeCount;
             onInteraction();
         }
@@ -2067,6 +2121,10 @@ public class WonderPush {
 
         protected long getDestroyLastDate() {
             return destroyLastDate;
+        }
+
+        protected Activity getLastResumedActivity() {
+            return lastResumedActivity;
         }
 
     }

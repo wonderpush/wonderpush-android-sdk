@@ -162,6 +162,14 @@ git checkout latest</code></pre>
 
         &lt;/receiver&gt;
 
+        &lt;!-- Required to properly hand notifications to the application while opened --&gt;
+        &lt;service
+            android:name="com.wonderpush.sdk.WonderPushService"
+            android:enabled="true"
+            android:exported="false"
+            android:label="Push Notification service"&gt;
+        &lt;/service&gt;
+
         &lt;!-- Required configuration for WonderPush to refresh push tokens,
              as they are not guaranteed to work after an update --&gt;
         &lt;receiver android:name="com.wonderpush.sdk.WonderPushOnUpgradeReceiver"&gt;
@@ -223,9 +231,7 @@ public class YourApplication extends Application {
     If you do not already use a custom <tt>Application</tt> class for your project, you can switch very easily.
     An <tt>Application</tt> class is the prefered way to initialize many SDKs.<br/>
     If you cannot, maybe because you use a framework that does not enable you to do so,
-    you can also initialize the WonderPush SDK in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.<br/>
-    If you target API < 14 (pre-Android 4), you should also initialize the WonderPush SDK in the <tt>onCreate()</tt> method
-    of each of your activities, so that notifications can be displayed in-app over any activity of your application.
+    you can also initialize the WonderPush SDK in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.
   </p>
   <p>
     Adding an <tt>Application</tt> class is two-step:
@@ -274,6 +280,29 @@ public class WonderPushInitializerImpl implements WonderPushInitializer {
   <dd>with your client secret found in your WonderPush dashboard, next to the client id described above.<br/>
     Eg.: <tt>0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef</tt>.</dd>
 </dl>
+
+<h3 id="initialize-sdk--android-pre-4">Special considerations for Android &lt; 4</h3>
+
+<p>
+    If you target API &lt; 14 (pre-Android 4), you should also initialize the WonderPush SDK in the <tt>onCreate()</tt> method
+    of each of your activities, so that notifications can be displayed in-app over any activity of your application:
+</p>
+
+<pre><code>&#64;Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_foo);
+    // ...
+
+    WonderPush.initialize(this);
+}</code></pre>
+
+<p>You should also add the following method to the main activity pointed to by manifest inside the broadcast receiver tag:</p>
+
+<pre><code>&#64;Override
+protected void onNewIntent(Intent intent) {
+    WonderPush.showPotentialNotification(this, intent);
+}</code></pre>
 
 
 
