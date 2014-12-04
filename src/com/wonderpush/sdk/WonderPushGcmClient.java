@@ -140,12 +140,6 @@ class WonderPushGcmClient {
 
     protected static boolean onBroadcastReceived(Context context, Intent intent, int iconResource, Class<? extends Activity> activity) {
         Bundle extras = intent.getExtras();
-        Log.wtf(TAG, "Received push notification: " + intent);
-        Log.wtf(TAG, "Received push notification (extras):");
-        for (String key : extras.keySet()) {
-            Log.wtf(TAG, "- \"" + key + "\" = (" + (extras.get(key) == null ? "null" : extras.get(key).getClass().getSimpleName()) + ") " + extras.get(key));
-        }
-
         if (extras.isEmpty()) { // has effect of unparcelling Bundle
             WonderPush.logDebug("Received broadcasted intent has no extra");
             return false;
