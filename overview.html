@@ -432,16 +432,22 @@ public void onReceive(Context context, Intent intent) {
 <h3 id="optional--using-own-account">Using your own account <em style="font-weight: normal;">(optional)</em></h3>
 
 <p>
-  Sticking with the WonderPush sender ID is the simplest approach. However, you would not be able to send your own push notifications.<br/>
+  Sticking with the WonderPush sender ID is the simplest approach. However, you would not be able to send push notifications by other means than WonderPush.<br/>
   If you want to use another sender ID, you can change it by adding the following in the <tt>res/values/string.xml</tt> file inside <em>your own application</em>:
 </p>
 <pre><code>&lt;string name="push_sender_ids"&gt;1023997258979,<b>[YOUR_OWN_SENDER_ID]</b>&lt;/string&gt;</code></pre>
 
 <p>
-  You can get your own sender ID by following instructions in: <a href="http://developer.android.com/google/gcm/gs.html">Getting Started with Google Cloud Messaging</a>.<br/>
-  If you do not include our sender ID in the application, don't forget to give us your API key, also known as Sender Auth Token, in your WonderPush dashboard, under <tt>Settings / Keys</tt>, so we can push notifications on your behalf.
-  Otherwise, if you include our sender ID as recommended, you don't have to take any action, your application to be able to receive our push notifications as well as yours.
+  You can get your own sender ID by following instructions in: <a href="http://developer.android.com/google/gcm/gs.html">Getting Started with Google Cloud Messaging</a>.
 </p>
+<p>
+  If you do not include WonderPush's sender ID in the application, don't forget to give us your browser or server API key, also known as Sender Auth Token, via the WonderPush dashboard, under <tt>Settings / Keys</tt>, so we can push notifications on your behalf.
+  Otherwise, if you include our sender ID as recommended, you don't have to take any action. Your application to be able to receive WonderPush notifications as well as notifications from other providers.
+</p>
+<blockquote>
+  Note: Updating this value will require to unregister the device, prior to re-registering it, and the resulting registration id will be different.
+  This is handled automatically by the SDK.
+</blockquote>
 
 
 <h3 id="optional--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
