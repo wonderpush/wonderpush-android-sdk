@@ -231,7 +231,7 @@ class WonderPushRestClient {
 
             @Override
             public void onFailure(Throwable e, WonderPush.Response errorResponse) {
-                Log.e(TAG, "Request failed", e);
+                WonderPush.logError("Request failed", e);
                 if (errorResponse != null && WonderPush.ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
                     WonderPushConfiguration.setAccessToken(null);
@@ -281,7 +281,7 @@ class WonderPushRestClient {
      */
     private static void request(final Request request) {
         if (null == request) {
-            Log.e(TAG, "Request with null request.");
+            WonderPush.logError("Request with null request.");
             return;
         }
 

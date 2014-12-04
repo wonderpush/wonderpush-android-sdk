@@ -106,7 +106,7 @@ class WonderPushDialogBuilder {
 
     public WonderPushDialogBuilder setupButtons() {
         if (listener == null) {
-            Log.e(TAG, "Calling WonderPushDialogBuilder.setupButtons() without OnChoice listener, ignoring!");
+            WonderPush.logError("Calling WonderPushDialogBuilder.setupButtons() without OnChoice listener, ignoring!");
             if (buttons.size() > 0) {
                 builder.setNegativeButton(R.string.wonderpush_close, null);
             }

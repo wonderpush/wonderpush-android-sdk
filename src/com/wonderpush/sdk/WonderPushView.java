@@ -239,7 +239,7 @@ class WonderPushView extends FrameLayout {
      */
     public void setResource(String resource, WonderPush.RequestParams params) {
         if (null == resource) {
-            Log.e(TAG, "null resource provided to WonderPushView");
+            WonderPush.logError("null resource provided to WonderPushView");
             return;
         }
         mInitialResource = resource;
@@ -411,7 +411,7 @@ class WonderPushView extends FrameLayout {
                 status = Integer.parseInt(statusString);
                 code = Integer.parseInt(codeString);
             } catch (NumberFormatException e) {
-                Log.e(TAG, String.format("Invalid status or code (should be an int): %s %s",
+                WonderPush.logError(String.format("Invalid status or code (should be an int): %s %s",
                         statusString, codeString), e);
                 return false;
             }

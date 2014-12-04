@@ -68,7 +68,7 @@ class WonderPushRequestVault {
                         try {
                             request = new WonderPushRestClient.Request(job.getJobDescription());
                         } catch (JSONException e) {
-                            Log.e(TAG, "Could not restore request", e);
+                            WonderPush.logError("Could not restore request", e);
                             continue;
                         }
 

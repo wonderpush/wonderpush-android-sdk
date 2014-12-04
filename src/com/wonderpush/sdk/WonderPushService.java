@@ -48,7 +48,9 @@ public class WonderPushService extends Service {
                 sIsProperlySetup = true;
             }
         }
-        Log.w(WonderPush.TAG, "Falling back to degraded mode");
+        if (!sIsProperlySetup) {
+            WonderPush.logDebug("Falling back to degraded mode");
+        }
         return sIsProperlySetup;
     }
 

@@ -85,6 +85,7 @@ import com.wonderpush.sdk.WonderPushDialogBuilder.Button.Action;
 public class WonderPush {
 
     static final String TAG = WonderPush.class.getSimpleName();
+    protected static boolean SHOW_DEBUG = false;
 
     private static Context sApplicationContext;
     private static Application sApplication;
@@ -234,7 +235,6 @@ public class WonderPush {
     }
 
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
-    protected static boolean SHOW_DEBUG = true;
     protected static final int ERROR_INVALID_CREDENTIALS = 11000;
     protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
     protected static final String DEFAULT_LANGUAGE_CODE = "en";
@@ -298,6 +298,24 @@ public class WonderPush {
     protected static void logDebug(String debug) {
         if (WonderPush.SHOW_DEBUG) {
             Log.d(TAG, debug);
+        }
+    }
+
+    protected static void logDebug(String debug, Throwable tr) {
+        if (WonderPush.SHOW_DEBUG) {
+            Log.d(TAG, debug, tr);
+        }
+    }
+
+    protected static void logError(String msg) {
+        if (WonderPush.SHOW_DEBUG) {
+            Log.e(TAG, msg);
+        }
+    }
+
+    protected static void logError(String msg, Throwable tr) {
+        if (WonderPush.SHOW_DEBUG) {
+            Log.e(TAG, msg, tr);
         }
     }
 
@@ -1200,7 +1218,7 @@ public class WonderPush {
                 try {
                     event.putOpt(key, value);
                 } catch (JSONException ex) {
-                    Log.e(TAG, "Error building event object body", ex);
+                    WonderPush.logError("Error building event object body", ex);
                 }
             }
         }
@@ -1220,7 +1238,7 @@ public class WonderPush {
                 event.put("actionDate", getTime());
             }
         } catch (JSONException ex) {
-            Log.e(TAG, "Error building event object body", ex);
+            WonderPush.logError("Error building event object body", ex);
         }
 
         RequestParams parameters = new RequestParams();
@@ -1260,7 +1278,7 @@ public class WonderPush {
                     closeInfo.put("actionDate", appCloseDate);
                     closeInfo.put("openedTime", appCloseDate - lastAppOpenDate);
                 } catch (JSONException e) {
-                    Log.d(TAG, "Failed to fill @APP_CLOSE information", e);
+                    logDebug("Failed to fill @APP_CLOSE information", e);
                 }
                 trackInternalEvent("@APP_CLOSE", closeInfo);
                 WonderPushConfiguration.setLastAppCloseDate(appCloseDate);
@@ -1273,7 +1291,7 @@ public class WonderPush {
                 try {
                     openInfo.put("lastReceivedNotificationTime", now - lastReceivedNotificationDate);
                 } catch (JSONException e) {
-                    Log.d(TAG, "Failed to fill @APP_OPEN previous notification information", e);
+                    logDebug("Failed to fill @APP_OPEN previous notification information", e);
                 }
             }
             // Add the information of the clicked notification
@@ -1282,7 +1300,7 @@ public class WonderPush {
                     openInfo.putOpt("notificationId", lastOpenedNotificationInfo.opt("notificationId"));
                     openInfo.putOpt("campaignId", lastOpenedNotificationInfo.opt("campaignId"));
                 } catch (JSONException e) {
-                    Log.d(TAG, "Failed to fill @APP_OPEN opened notification information", e);
+                    logDebug("Failed to fill @APP_OPEN opened notification information", e);
                 }
             }
             trackInternalEvent("@APP_OPEN", openInfo);
@@ -1644,7 +1662,7 @@ public class WonderPush {
             eventData.put("reactionTime", dialog.getShownDuration());
             eventData.putOpt("custom", dialog.getInteractionEventCustom());
         } catch (JSONException e) {
-            Log.e(TAG, "Failed to fill the @NOTIFICATION_ACTION event");
+            WonderPush.logError("Failed to fill the @NOTIFICATION_ACTION event");
         }
         trackInternalEvent("@NOTIFICATION_ACTION", eventData);
 
@@ -1829,8 +1847,8 @@ public class WonderPush {
                 logDebug("Will open location " + open.getDataString());
                 context.startActivity(open);
             } else {
-                Log.d(TAG, "No activity can open location " + open.getDataString());
-                Log.d(TAG, "Falling back to regular URL");
+                logDebug("No activity can open location " + open.getDataString());
+                logDebug("Falling back to regular URL");
                 geo = new Uri.Builder();
                 geo.scheme("http");
                 geo.authority("maps.google.com");
@@ -1851,7 +1869,7 @@ public class WonderPush {
                     logDebug("Opening URL " + open.getDataString());
                     context.startActivity(open);
                 } else {
-                    Log.d(TAG, "No activity can open URL " + open.getDataString());
+                    logDebug("No activity can open URL " + open.getDataString());
                     Log.w(TAG, "Cannot open map!");
                     Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
                 }
@@ -1933,7 +1951,6 @@ public class WonderPush {
         Context context = dialog.getContext();
         try {
             String url = action.getUrl();
-            Log.e(TAG, "URL = \"" + url + "\"");
             if (url == null) {
                 Log.e(TAG, "No url in a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action!");
                 return;
@@ -2265,7 +2282,7 @@ public class WonderPush {
                 try {
                     return new RequestParams(in);
                 } catch (JSONException e) {
-                    Log.e(TAG, "Error while unserializing JSON from a WonderPush.RequestParams", e);
+                    WonderPush.logError("Error while unserializing JSON from a WonderPush.RequestParams", e);
                     return null;
                 }
             }

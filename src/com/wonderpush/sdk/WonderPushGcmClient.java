@@ -157,7 +157,7 @@ class WonderPushGcmClient {
             String targetInstallationId = wpData.optString("@", null);
             String loggedInstallationId = WonderPushConfiguration.getInstallationId();
             if (targetInstallationId != null && !targetInstallationId.equals(loggedInstallationId)) {
-                Log.d(TAG, "Received notification is not targetted at the current installation (" + targetInstallationId + " does not match current installation " + loggedInstallationId + ")");
+                WonderPush.logDebug("Received notification is not targetted at the current installation (" + targetInstallationId + " does not match current installation " + loggedInstallationId + ")");
                 return true;
             }
 
@@ -191,7 +191,7 @@ class WonderPushGcmClient {
             }
 
         } catch (JSONException e) {
-            Log.d(TAG, "data is not a well-formed JSON object", e);
+            WonderPush.logDebug("data is not a well-formed JSON object", e);
         }
         return false;
     }
