@@ -1,7 +1,6 @@
 package com.wonderpush.sdk;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;

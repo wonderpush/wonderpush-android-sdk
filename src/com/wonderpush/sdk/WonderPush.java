@@ -402,41 +402,45 @@ public class WonderPush {
      * @return <code>true</code> if handled, <code>false</code> otherwise.
      */
     public static boolean showPotentialNotification(final Activity activity, Intent intent) {
-        if (containsNotification(intent)) {
-            activity.setIntent(null);
-            sLastHandledIntentRef = new WeakReference<Intent>(intent);
-            String notificationString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
-            logDebug("Handling notification at main activity creation: " + notificationString);
-            try {
-                final JSONObject notification = new JSONObject(notificationString);
-                JSONObject trackData = new JSONObject();
-                trackData.put("campaignId", notification.optString("c", null));
-                trackData.put("notificationId", notification.optString("n", null));
-                trackData.put("actionDate", getTime());
-                WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
+        try {
+            if (containsNotification(intent)) {
+                activity.setIntent(null);
+                sLastHandledIntentRef = new WeakReference<Intent>(intent);
+                String notificationString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
+                logDebug("Handling notification at main activity creation: " + notificationString);
+                try {
+                    final JSONObject notification = new JSONObject(notificationString);
+                    JSONObject trackData = new JSONObject();
+                    trackData.put("campaignId", notification.optString("c", null));
+                    trackData.put("notificationId", notification.optString("n", null));
+                    trackData.put("actionDate", getTime());
+                    WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
-                WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
+                    WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
 
-                if (sIsInitialized) {
-                    handleReceivedNotification(activity, notification);
-                } else {
-                    BroadcastReceiver receiver = new BroadcastReceiver() {
-                        @Override
-                        public void onReceive(Context context, Intent intent) {
-                            handleReceivedNotification(context, notification);
-                            LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
-                        }
-                    };
+                    if (sIsInitialized) {
+                        handleReceivedNotification(activity, notification);
+                    } else {
+                        BroadcastReceiver receiver = new BroadcastReceiver() {
+                            @Override
+                            public void onReceive(Context context, Intent intent) {
+                                handleReceivedNotification(context, notification);
+                                LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
+                            }
+                        };
 
-                    IntentFilter filter = new IntentFilter(WonderPush.INTENT_INTIALIZED);
-                    LocalBroadcastManager.getInstance(activity).registerReceiver(receiver, filter);
+                        IntentFilter filter = new IntentFilter(WonderPush.INTENT_INTIALIZED);
+                        LocalBroadcastManager.getInstance(activity).registerReceiver(receiver, filter);
+                    }
+
+                    return true;
+                } catch (JSONException e) {
+                    Log.e(TAG, "Failed to parse notification JSON object", e);
                 }
 
-                return true;
-            } catch (JSONException e) {
-                Log.e(TAG, "Failed to parse notification JSON object", e);
             }
-
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
         }
         return false;
     }
@@ -1042,13 +1046,17 @@ public class WonderPush {
      *            The partial object containing only the properties to update.
      */
     public static void putInstallationCustomProperties(JSONObject customProperties) {
-        JSONObject properties = new JSONObject();
         try {
-            properties.put("custom", customProperties);
-        } catch (JSONException e) {
+            JSONObject properties = new JSONObject();
+            try {
+                properties.put("custom", customProperties);
+            } catch (JSONException e) {
+            }
+            updateInstallation(properties, false, null);
+            onInteraction();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
         }
-        updateInstallation(properties, false, null);
-        onInteraction();
     }
 
     static void updateInstallation(JSONObject properties, boolean overwrite, ResponseHandler handler) {
@@ -1174,7 +1182,11 @@ public class WonderPush {
      *            Event types starting with an {@code @} character are reserved.
      */
     public static void trackEvent(String type) {
-        trackEvent(type, null);
+        try {
+            trackEvent(type, null);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
+        }
     }
 
     /**
@@ -1187,11 +1199,15 @@ public class WonderPush {
      *            Prefer using a few custom properties over a plethora of event type variants.
      */
     public static void trackEvent(String type, JSONObject customData) {
-        if (type == null || type.length() == 0 || type.charAt(0) == '@') {
-            throw new IllegalArgumentException("Bad event type");
+        try {
+            if (type == null || type.length() == 0 || type.charAt(0) == '@') {
+                throw new IllegalArgumentException("Bad event type");
+            }
+            sendEvent(type, null, customData);
+            onInteraction();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
         }
-        sendEvent(type, null, customData);
-        onInteraction();
     }
 
     protected static void trackInternalEvent(String type, JSONObject eventData) {
@@ -1380,7 +1396,11 @@ public class WonderPush {
      *            under the WonderPush {@code <receiver>} tag in your {@code AndroidManifest.xml}.
      */
     public static void initialize(final Context context) {
-        ensureInitialized(context);
+        try {
+            ensureInitialized(context);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
+        }
     }
 
     /**
@@ -1402,77 +1422,81 @@ public class WonderPush {
      *            The clientSecret of your application.
      */
     public static void initialize(final Context context, final String clientId, String clientSecret) {
-        if (!sIsInitialized || (
-                clientId != null && clientSecret != null && (!clientId.equals(sClientId) || !clientSecret.equals(sClientSecret))
-        )) {
+        try {
+            if (!sIsInitialized || (
+                    clientId != null && clientSecret != null && (!clientId.equals(sClientId) || !clientSecret.equals(sClientSecret))
+            )) {
 
-            sIsInitialized = false;
-            setNetworkAvailable(false);
+                sIsInitialized = false;
+                setNetworkAvailable(false);
 
-            sApplicationContext = context.getApplicationContext();
-            sClientId = clientId;
-            sClientSecret = clientSecret;
-            sBaseURL = PRODUCTION_API_URL;
+                sApplicationContext = context.getApplicationContext();
+                sClientId = clientId;
+                sClientSecret = clientSecret;
+                sBaseURL = PRODUCTION_API_URL;
 
-            WonderPushConfiguration.initialize(getApplicationContext());
-            if (sBeforeInitializationUserIdSet) {
-                setUserId(sBeforeInitializationUserId);
-            }
+                WonderPushConfiguration.initialize(getApplicationContext());
+                if (sBeforeInitializationUserIdSet) {
+                    setUserId(sBeforeInitializationUserId);
+                }
 
-            WonderPushRequestVault.initialize();
+                WonderPushRequestVault.initialize();
 
-            // Initialize OpenUDID
-            OpenUDID_manager.sync(getApplicationContext());
+                // Initialize OpenUDID
+                OpenUDID_manager.sync(getApplicationContext());
 
-            sIsInitialized = true;
+                sIsInitialized = true;
 
-            // Permission checks
-            if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
-            };
-            if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED
-                    && context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "Missing ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION permission. Add <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both)");
-            } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
-            }
+                // Permission checks
+                if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
+                };
+                if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED
+                        && context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(TAG, "Missing ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION permission. Add <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both)");
+                } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
+                }
 
-            // Wait for UDID to be ready and fetch anonymous token if needed.
-            new Runnable() {
-                @Override
-                public void run() {
-                    if (OpenUDID_manager.isInitialized()) {
-                        boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
-                            @Override
-                            public void onFailure(Throwable e, Response errorResponse) {
-                            }
+                // Wait for UDID to be ready and fetch anonymous token if needed.
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (OpenUDID_manager.isInitialized()) {
+                            boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
+                                @Override
+                                public void onFailure(Throwable e, Response errorResponse) {
+                                }
 
-                            @Override
-                            public void onSuccess(Response response) {
+                                @Override
+                                public void onSuccess(Response response) {
+                                    updateInstallationCoreProperties(context);
+                                    registerForPushNotification(context);
+                                    sIsReady = true;
+                                    Intent broadcast = new Intent(INTENT_INTIALIZED);
+                                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
+                                }
+                            });
+                            if (!isFetchingToken) {
                                 updateInstallationCoreProperties(context);
                                 registerForPushNotification(context);
                                 sIsReady = true;
                                 Intent broadcast = new Intent(INTENT_INTIALIZED);
                                 LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                             }
-                        });
-                        if (!isFetchingToken) {
-                            updateInstallationCoreProperties(context);
-                            registerForPushNotification(context);
-                            sIsReady = true;
-                            Intent broadcast = new Intent(INTENT_INTIALIZED);
-                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
+                        } else {
+                            new Handler().postDelayed(this, 100);
                         }
-                    } else {
-                        new Handler().postDelayed(this, 100);
                     }
-                }
-            }.run();
+                }.run();
 
+            }
+
+            initializeForApplication(context);
+            initializeForActivity(context);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
         }
-
-        initializeForApplication(context);
-        initializeForActivity(context);
     }
 
     protected static void initializeForApplication(Context context) {
@@ -1563,24 +1587,28 @@ public class WonderPush {
      *            You are strongly encouraged to use your own unique internal identifier.
      */
     public static void setUserId(String userId) {
-        // Do nothing if not initialized
-        if (!isInitialized()) {
-            sBeforeInitializationUserIdSet = true;
-            sBeforeInitializationUserId = userId;
-            return;
-        }
-        sBeforeInitializationUserIdSet = false;
-        sBeforeInitializationUserId = null;
+        try {
+            // Do nothing if not initialized
+            if (!isInitialized()) {
+                sBeforeInitializationUserIdSet = true;
+                sBeforeInitializationUserId = userId;
+                return;
+            }
+            sBeforeInitializationUserIdSet = false;
+            sBeforeInitializationUserId = null;
 
-        String oldUserId = WonderPushConfiguration.getUserId();
-        if (userId == null && oldUserId == null
-                || userId != null && userId.equals(oldUserId)) {
-            // User id is the same as before, nothing needs to be done
-        } else {
-            // The user id changed, we must reset the access token
-            WonderPushConfiguration.invalidateCredentials();
-            WonderPushConfiguration.setUserId(userId);
-            // DO NOT fetch another access token now, or beware the possible callback from initialize()
+            String oldUserId = WonderPushConfiguration.getUserId();
+            if (userId == null && oldUserId == null
+                    || userId != null && userId.equals(oldUserId)) {
+                // User id is the same as before, nothing needs to be done
+            } else {
+                // The user id changed, we must reset the access token
+                WonderPushConfiguration.invalidateCredentials();
+                WonderPushConfiguration.setUserId(userId);
+                // DO NOT fetch another access token now, or beware the possible callback from initialize()
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
         }
     }
 
@@ -1621,7 +1649,12 @@ public class WonderPush {
      * @return {@code true} if handled, {@code false} otherwise.
      */
     public static boolean onBroadcastReceived(Context context, Intent intent, int iconResource, Class<? extends Activity> activityClass) {
-        return WonderPushGcmClient.onBroadcastReceived(context, intent, iconResource, activityClass);
+        try {
+            return WonderPushGcmClient.onBroadcastReceived(context, intent, iconResource, activityClass);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
+        }
+        return false;
     }
 
     /**

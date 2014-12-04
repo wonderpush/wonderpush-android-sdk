@@ -38,31 +38,35 @@ public class WonderPushBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        WonderPush.logDebug("Received a push notification!");
-        ComponentName receiver = new ComponentName(context, this.getClass());
         try {
-            Bundle metaData = context.getPackageManager().getReceiverInfo(receiver, PackageManager.GET_META_DATA).metaData;
-            int iconId = metaData.getInt(METADATA_ICON_KEYNAME, -1);
-            String activityName = metaData.getString(METADATA_ACTIVITY_KEYNAME);
-            if (iconId == -1) {
-                Log.e(TAG, "You should specify a <meta-data android:name=\"notificationIcon\" android:resource=\"@drawable/YourApplicationIcon\"/> in your Receiver definition of your AndroidManifest.xml");
-                return;
+            WonderPush.logDebug("Received a push notification!");
+            ComponentName receiver = new ComponentName(context, this.getClass());
+            try {
+                Bundle metaData = context.getPackageManager().getReceiverInfo(receiver, PackageManager.GET_META_DATA).metaData;
+                int iconId = metaData.getInt(METADATA_ICON_KEYNAME, -1);
+                String activityName = metaData.getString(METADATA_ACTIVITY_KEYNAME);
+                if (iconId == -1) {
+                    Log.e(TAG, "You should specify a <meta-data android:name=\"notificationIcon\" android:resource=\"@drawable/YourApplicationIcon\"/> in your Receiver definition of your AndroidManifest.xml");
+                    return;
+                }
+                if (activityName == null) {
+                    Log.e(TAG, "You should specify a <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml");
+                    return;
+                }
+                WonderPushGcmClient.onBroadcastReceived(context, intent, iconId, Class.forName(activityName).asSubclass(Activity.class));
+            } catch (NameNotFoundException e) {
+                // If we are called, then at least
+                // <receiver android:name="com.wonderpush.sdk.WonderPushBroadcastReceiver"
+                //     android:permission="com.google.android.c2dm.permission.SEND" />
+                // has been added to the AndroidManifest.xml (or this function has been called manually)
+                Log.e(TAG, "Could not get the receiver meta-data", e);
+            } catch (ClassNotFoundException e) {
+                Log.e(TAG, "The activity provided in <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml doesn't exist", e);
+            } catch (ClassCastException e) {
+                Log.e(TAG, "The class provided in <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml is not an Activity", e);
             }
-            if (activityName == null) {
-                Log.e(TAG, "You should specify a <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml");
-                return;
-            }
-            WonderPushGcmClient.onBroadcastReceived(context, intent, iconId, Class.forName(activityName).asSubclass(Activity.class));
-        } catch (NameNotFoundException e) {
-            // If we are called, then at least
-            // <receiver android:name="com.wonderpush.sdk.WonderPushBroadcastReceiver"
-            //     android:permission="com.google.android.c2dm.permission.SEND" />
-            // has been added to the AndroidManifest.xml (or this function has been called manually)
-            Log.e(TAG, "Could not get the receiver meta-data", e);
-        } catch (ClassNotFoundException e) {
-            Log.e(TAG, "The activity provided in <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml doesn't exist", e);
-        } catch (ClassCastException e) {
-            Log.e(TAG, "The class provided in <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml is not an Activity", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error", e);
         }
     }
 
