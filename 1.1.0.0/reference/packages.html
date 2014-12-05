@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+  <meta name="description" content="Javadoc API documentation for WonderPush Android SDK Documentation." />
+
+<link rel="shortcut icon" type="image/x-icon" href="./favicon.ico" />
+<title>
+
+  Package Index
+
+
+| WonderPush Android SDK Documentation
+
+</title>
+<link href="./../assets/doclava-developer-docs.css" rel="stylesheet" type="text/css" />
+<link href="./../assets/customizations.css" rel="stylesheet" type="text/css" />
+<script src="./../assets/search_autocomplete.js" type="text/javascript"></script>
+<script src="./../assets/jquery-resizable.min.js" type="text/javascript"></script>
+<script src="./../assets/doclava-developer-docs.js" type="text/javascript"></script>
+<script src="./../assets/prettify.js" type="text/javascript"></script>
+<script type="text/javascript">
+  setToRoot("./", "./../assets/");
+</script>
+<script src="./../assets/doclava-developer-reference.js" type="text/javascript"></script>
+<script src="./../assets/navtree_data.js" type="text/javascript"></script>
+<script src="./../assets/customizations.js" type="text/javascript"></script>
+<noscript>
+  <style type="text/css">
+    html,body{overflow:auto;}
+    #body-content{position:relative; top:0;}
+    #doc-content{overflow:visible;border-left:3px solid #666;}
+    #side-nav{padding:0;}
+    #side-nav .toggle-list ul {display:block;}
+    #resize-packages-nav{border-bottom:3px solid #666;}
+  </style>
+</noscript>
+</head>
+
+<body class="gc-documentation">
+
+<div id="header">
+    <div id="headerLeft">
+    
+      <span id="masthead-title">WonderPush Android SDK Documentation</span>
+    
+    </div>
+    <div id="headerRight">
+      
+  <div id="search" >
+      <div id="searchForm">
+          <form accept-charset="utf-8" class="gsc-search-box" 
+                onsubmit="return submit_search()">
+            <table class="gsc-search-box" cellpadding="0" cellspacing="0"><tbody>
+                <tr>
+                  <td class="gsc-input">
+                    <input id="search_autocomplete" class="gsc-input" type="text" size="33" autocomplete="off"
+                      title="search developer docs" name="q"
+                      value="search developer docs"
+                      onFocus="search_focus_changed(this, true)"
+                      onBlur="search_focus_changed(this, false)"
+                      onkeydown="return search_changed(event, true, './')"
+                      onkeyup="return search_changed(event, false, './')" />
+                  <div id="search_filtered_div" class="no-display">
+                      <table id="search_filtered" cellspacing=0>
+                      </table>
+                  </div>
+                  </td>
+                  <td class="gsc-search-button">
+                    <input type="submit" value="Search" title="search" id="search-button" class="gsc-search-button" />
+                  </td>
+                  <td class="gsc-clear-button">
+                    <div title="clear results" class="gsc-clear-button">&nbsp;</div>
+                  </td>
+                </tr></tbody>
+              </table>
+          </form>
+      </div><!-- searchForm -->
+  </div><!-- search -->
+      
+    </div>
+</div><!-- header -->
+
+
+  <div class="g-section g-tpl-240" id="body-content">
+    <div class="g-unit g-first side-nav-resizable" id="side-nav">
+      <div id="swapper">
+        <div id="nav-panels">
+          <div id="resize-packages-nav">
+            <div id="packages-nav">
+              <div id="index-links">
+                <a href="./packages.html" class="selected" >Package Index</a> | 
+                <a href="./classes.html" >Class Index</a>
+              </div>
+              <ul>
+                
+    <li class="api apilevel-">
+  <a href="./com/wonderpush/sdk/package-summary.html">com.wonderpush.sdk</a></li>
+              </ul><br/>
+            </div> <!-- end packages -->
+          </div> <!-- end resize-packages -->
+          <div id="classes-nav">
+              <script>
+                /*addLoadEvent(maxPackageHeight);*/
+              </script>
+              <p style="padding:10px">Select a package to view its members</p><br/>
+          </div><!-- end classes -->
+        </div><!-- end nav-panels -->
+        <div id="nav-tree" style="display:none">
+          <div id="index-links">
+            <a href="./packages.html" class="selected" >Package Index</a> | 
+            <a href="./classes.html" >Class Index</a>
+          </div>
+        </div><!-- end nav-tree -->
+      </div><!-- end swapper -->
+    </div> <!-- end side-nav -->
+    <script>
+      if (!isMobile) {
+        $("<a href='#' id='nav-swap' onclick='swapNav();return false;' style='font-size:10px;line-height:9px;margin-left:1em;text-decoration:none;'><span id='tree-link'>Use Tree Navigation</span><span id='panel-link' style='display:none'>Use Panel Navigation</span></a>").appendTo("#side-nav");
+        chooseDefaultNav();
+        if ($("#nav-tree").is(':visible')) {
+          init_default_navtree("./");
+        } else {
+          addLoadEvent(function() {
+            scrollIntoView("packages-nav");
+            scrollIntoView("classes-nav");
+          });
+        }
+        $("#swapper").css({borderBottom:"2px solid #aaa"});
+      } else {
+        swapNav(); // tree view should be used on mobile
+      }
+    </script>
+
+
+
+<div class="g-unit" id="doc-content">
+
+<div id="jd-header">
+<h1>Package Index</h1>
+</div>
+
+<div id="jd-content">
+
+<div class="jd-descr">
+<p><h1 id="wonderpush-android-sdk-guide">WonderPush Android SDK Guide</h1>
+
+
+
+<h2 id="register-app-wonderpush" style="border-top: none;">1. Register your application in WonderPush</h2>
+
+<p>
+  Log in or sign up on <a href="http://www.wonderpush.com/">WonderPush</a>.
+</p>
+
+<p>
+  Create your application.<br/>
+  Make sure to check <tt>Android</tt> under the <tt>Platforms</tt> section.
+</p>
+
+<p>
+  Grab your <strong>client id</strong> and <strong>client secret</strong> under the <tt>Settings / Keys</tt> menu.
+</p>
+
+
+
+<h2 id="download-sdk" style="border-top: none;">2. Download the latest WonderPush SDK for Android</h2>
+
+<p>
+  Download the project <a href="https://github.com/wonderpush/wonderpush-android-sdk/releases/latest">on GitHub</a>.<br/>
+  Extract the sources in your workspace.
+</p>
+
+<p>
+  You can also directly checkout the sources from git:
+</p>
+
+<pre><code>cd <b>/path/to/your/workspace</b>
+git clone https://github.com/wonderpush/wonderpush-android-sdk.git
+git checkout latest</code></pre>
+
+
+
+<h2 id="setup-workspace" style="border-top: none;">3. Setup the workspace</h2>
+
+
+<h3 id="setup-workspace--eclipse">Using Eclipse ADT</h3>
+
+<ol>
+  <li>
+    <p>The WonderPush SDK shipping resources, it must be added as a project reference rather than a mere library dependency.</p>
+
+    <p>Import the WonderPush SDK project in your Eclipse workspace by doing:</p>
+    <ul>
+      <li>Click on <tt>File &gt; New &gt; Other</tt></li>
+      <li>Select <tt>Android / Android Project from Existing Code</tt>.</li>
+      <li>Click <tt>Browse</tt> and select the checked out folder <tt><b>/path/to/your/workspace/</b>wonderpush-android-sdk</tt>.</li>
+      <li>Click <tt>Finish</tt>.</li>
+    </ul>
+
+    <p>The <tt>wonderpush-android-sdk</tt> project should now be listed in the <tt>Package Explorer</tt>.</p>
+  </li>
+
+  <li>
+    <p>
+      You will now have to link the WonderPush SDK (not your own application) with the Google Play Service library.<br/>
+      Follow the first step of the following guide:
+      <a href="http://developer.android.com/google/play-services/setup.html#Setup">Setting Up Google Play Services</a>.
+    </p>
+  </li>
+
+  <li>
+    <p>Update the Android support library in the <tt>wonderpush-android-sdk</tt> project:</p>
+    <ul>
+      <li>Right click on the <tt>wonderpush-android-sdk</tt> project in the <tt>Package Explorer</tt>, and under <tt>Android Tools</tt> choose <tt>Add Support Library...</tt>.</li>
+      <li>Click <tt>Accept License</tt> then <tt>Install</tt>.</li>
+    </ul>
+  </li>
+
+  <li>
+    <p>Now Add the WonderPush SDK to your project:</p>
+    <ul>
+      <li>Right click on your project in the <tt>Package Explorer</tt>, and select <tt>Properties</tt>.</li>
+      <li>Choose <tt>Android</tt> in the left list, then under <tt>Library</tt> click <tt>Add</tt>, select <tt>wonderpush-android-sdk</tt>, click <tt>OK</tt> and <tt>Apply</tt>.</li>
+      <li>Choose <tt>Project References</tt> in the left list, then check <tt>wonderpush-android-sdk</tt>.</li>
+    </ul>
+  </li>
+
+  <li>
+    <p>
+      If you experience the following build error:
+    </p>
+    <pre>Found 2 versions of android-support-v4.jar in the dependency list,
+    but not all the versions are identical (check is based on SHA-1 only at this time).
+    All versions of the libraries must be the same at this time.</pre>
+    <p>
+      Repeat the third step in your application, to make sure that your application and the WonderPush SDK both have the exact same Android Support JAR dependency.
+    </p>
+  </li>
+</ol>
+
+
+<h3 id="setup-workspace--eclipse">Using Android Studio</h3>
+
+<p><em>Coming soon...</em></p>
+
+
+
+<h2 id="configuring-sdk" style="border-top: none;">4. Configuring the SDK</h2>
+
+<p>Add the following to your <tt>AndroidManifest.xml</tt> to receive push notifications:</p>
+<pre><code>&lt;manifest&gt;
+
+    &lt;!-- Required permissions for push notifications --&gt;
+    &lt;uses-permission
+        android:name="android.permission.INTERNET" /&gt;
+    &lt;uses-permission
+        android:name="android.permission.GET_ACCOUNTS"
+        android:maxSdkVersion="15" /&gt;
+    &lt;uses-permission
+        android:name="com.google.android.c2dm.permission.RECEIVE" /&gt;
+    &lt;permission
+        android:name="<b>[YOUR_APPLICATION_PACKAGE]</b>.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" /&gt;
+    &lt;uses-permission
+        android:name="<b>[YOUR_APPLICATION_PACKAGE]</b>.permission.C2D_MESSAGE" /&gt;
+
+    &lt;application&gt;
+
+        &lt;!-- Permits the SDK to initialize itself whenever needed, without need for your application to launch --&gt;
+        &lt;meta-data
+            android:name="wonderpushInitializerClass"
+            android:value="[YOUR_APPLICATION_PACKAGE].WonderPushInitializerImpl" /&gt;
+
+        &lt;!-- Required for configuring Google Play Services for push notifications --&gt;
+        &lt;meta-data
+            android:name="com.google.android.gms.version"
+            android:value="&#64;integer/google_play_services_version" /&gt;
+        &lt;meta-data
+            android:name="GCMSenderId"
+            android:value="&#64;string/push_sender_ids" /&gt;
+
+        &lt;!-- Required configuration for WonderPush to properly receive and handle push notification --&gt;
+        &lt;receiver
+            android:name="com.wonderpush.sdk.WonderPushBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND"&gt;
+
+            <b><i>&lt;!-- Put here the icon to be displayed in the notification --&gt;</i></b>
+            &lt;meta-data
+                android:name="notificationIcon"
+                android:resource="<b>[NOTIFICATION_ICON]</b>" /&gt;
+
+            <b><i>&lt;!-- Put here the activity to start when the user clicks the notification --&gt;</i></b>
+            &lt;meta-data
+                android:name="activityName"
+                android:value="<b>[YOUR_MAIN_ACTIVITY_CLASS]</b>" /&gt;
+
+            &lt;intent-filter&gt;
+                &lt;action
+                    android:name="com.google.android.c2dm.intent.RECEIVE" /&gt;
+                &lt;category
+                    android:name="<b>[YOUR_APPLICATION_PACKAGE]</b>" /&gt;
+            &lt;/intent-filter&gt;
+
+        &lt;/receiver&gt;
+
+        &lt;!-- Required to properly hand notifications to the application while opened --&gt;
+        &lt;service
+            android:name="com.wonderpush.sdk.WonderPushService"
+            android:enabled="true"
+            android:exported="false"
+            android:label="Push Notification service"&gt;
+        &lt;/service&gt;
+
+        &lt;!-- Required configuration for WonderPush to refresh push tokens,
+             as they are not guaranteed to work after an update --&gt;
+        &lt;receiver android:name="com.wonderpush.sdk.WonderPushOnUpgradeReceiver"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.PACKAGE_REPLACED" /&gt;
+                &lt;data android:scheme="package" android:path="<b>[YOUR_APPLICATION_PACKAGE]</b>" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/receiver&gt;
+
+    &lt;/application&gt;
+
+&lt;/manifest&gt;</code></pre>
+
+<dl>
+  <legend>Replace:</legend>
+  <dt><b><tt>[YOUR_APPLICATION_PACKAGE]</tt></b></dt>
+  <dd>with your application package name.<br/>
+    Eg.: <tt>com.your.package</tt>.</dd>
+  <dt><b><tt>[YOUR_MAIN_ACTIVITY_CLASS]</tt></b></dt>
+  <dd>with the fully qualified class name of your main activity.<br/>
+    Eg.: <tt>com.your.package.activities.MainActivity</tt>.</dd>
+  <dt><b><tt>[NOTIFICATION_ICON]</tt></b></dt>
+  <dd>with a drawable icon to be displayed in the notification.<br/>
+    Eg.: Your application launcher icon: <tt>@drawable/ic_launcher</tt>.</dd>
+</dl>
+
+<p>
+  The WonderPush SDK defines the <tt>@string/push_sender_ids</tt> resource to <tt>1023997258979</tt>, which is the sender ID that WonderPush uses.<br/>
+</p>
+
+
+
+<h2 id="initialize-sdk" style="border-top: none;">5. Initialize the SDK</h2>
+
+<p>
+  First you must initialize the SDK.
+  The <tt>initialize()</tt> method must be called before any use of the SDK.<br/>
+  The best place for initialization is in the <tt>onCreate()</tt> method of your <tt>Application</tt>.
+</p>
+
+<pre><code>import com.wonderpush.sdk.WonderPush;
+
+public class YourApplication extends Application {
+
+    &#64;Override
+    public void onCreate() {
+        super.onCreate();
+
+        String loggedUserId; // assumed to be the id of the currently logged user, or null
+        WonderPush.setUserId(loggedUserId);
+        WonderPush.initialize(this);
+    }
+
+}</code></pre>
+
+<blockquote>
+  <p>
+    <b>Tip:</b><br/>
+    If you do not already use a custom <tt>Application</tt> class for your project, you can switch very easily.
+    An <tt>Application</tt> class is the prefered way to initialize many SDKs.<br/>
+    If you cannot, maybe because you use a framework that does not enable you to do so,
+    you can also initialize the WonderPush SDK in the <tt>onCreate()</tt> method of your main <tt>Activity</tt>.
+  </p>
+  <p>
+    Adding an <tt>Application</tt> class is two-step:
+  </p>
+  <ul>
+    <li>
+      Create the <tt>YourApplication</tt> class, inheriting <tt>android.app.Application</tt>, like shown in the previous code snippet.
+    </li>
+    <li>
+      You now have to point Android to it. Add the following attribute to the <tt>&lt;application&gt;</tt> tag of your <tt>AndroidManifest.xml</tt>:
+      <pre><code>&lt;application android:name=".MyApplication"&gt;</code></pre>
+    </li>
+  </ul>
+</blockquote>
+
+<p>
+  Then you will need to implement the <tt>WonderPushInitializerImpl</tt> class referenced earlier in the <tt>AndroidManifest.xml</tt>.<br/>
+  This class is used under the hood by the simpler <code>WonderPush.initialize(this)</code> call above.
+  It is used in multiple places inside the SDK so it can initialize itself on some key events, without additional complexity for you.
+</p>
+
+<pre><code>package <b>[YOUR_APPLICATION_PACKAGE]</b>;
+
+import android.content.Context;
+
+import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.WonderPushInitializer;
+
+public class WonderPushInitializerImpl implements WonderPushInitializer {
+
+    public void initialize(Context context) {
+        WonderPush.initialize(context, "<b>[YOUR_CLIENT_ID]</b>", "<b>[YOUR_CLIENT_SECRET]</b>");
+    }
+
+}</code></pre>
+
+<dl>
+  <legend>Replace:</legend>
+  <dt><b><tt>[YOUR_APPLICATION_PACKAGE]</tt></b></dt>
+  <dd>with your application package name.<br/>
+    Eg.: <tt>com.your.package</tt>.</dd>
+  <dt><b><tt>[YOUR_CLIENT_ID]</tt></b></dt>
+  <dd>with your client id found in your WonderPush dashboard, under the <tt>Settings / Keys</tt> menu.<br/>
+    Eg.: <tt>0123456789abcdef0123456789abcdef01234567</tt>.</dd>
+  <dt><b><tt>[YOUR_CLIENT_SECRET]</tt></b></dt>
+  <dd>with your client secret found in your WonderPush dashboard, next to the client id described above.<br/>
+    Eg.: <tt>0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef</tt>.</dd>
+</dl>
+
+<h3 id="initialize-sdk--android-pre-4">Special considerations for Android &lt; 4</h3>
+
+<p>
+    If you target API &lt; 14 (pre-Android 4), you should also initialize the WonderPush SDK in the <tt>onCreate()</tt> method
+    of each of your activities, so that notifications can be displayed in-app over any activity of your application:
+</p>
+
+<pre><code>&#64;Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_foo);
+    // ...
+
+    WonderPush.initialize(this);
+}</code></pre>
+
+<p>You should also add the following method to the main activity pointed to by manifest inside the broadcast receiver tag:</p>
+
+<pre><code>&#64;Override
+protected void onNewIntent(Intent intent) {
+    WonderPush.showPotentialNotification(this, intent);
+}</code></pre>
+
+
+
+<h2 id="using-sdk" style="border-top: none;">6. Using the SDK in your Android application</h2>
+
+
+<h3 id="using-sdk--track-event">Track your first event</h3>
+
+<p>
+  The SDK automatically tracks generic events. This is probably insufficient to help you analyze, segment
+  and notify users properly.<br/>
+  You will want to track events that make sense for your business, here is an simple example:
+</p>
+
+<pre><code>WonderPush.trackEvent("customized_interests");</code></pre>
+
+<p>
+  This would permit you to know easily whether a user kept the default set of "topics of interests",
+  say in a newsstand application, or if they already chose a topics that represents well their center of interest.<br/>
+  Your notification strategy could be to incite to customization for the lazy users,
+  whereas you could engage in a more personalized communication with the users you performed the <code>customized_interests</code> event.
+</p>
+
+
+<h3 id="using-sdk--track-event-custom">Enriching the events</h3>
+
+<p>
+  Events can host a rich set of properties that WonderPush indexes to permit you to filter users based on finer criteria.<br/>
+  To do so, simply give a JSON object as second parameter. Here is an example:
+</p>
+
+<pre><code>JSONObject custom = new JSONObject();
+custom.put("string_category", "fashion");
+WonderPush.trackEvent("browse_catalog", custom);</code></pre>
+
+<p>
+  Using this information, you could notify customers on new items for the categories that matters most to them.
+</p>
+
+<p>
+  Here is another example:
+</p>
+
+<pre><code>JSONObject custom = new JSONObject();
+custom.put("int_items", 3);
+custom.put("float_amount", 59.98);
+WonderPush.trackEvent("purchase", custom);</code></pre>
+
+<p>
+  You could choose to thank customer for every purchase, or you could take advantage of the purchase amount to give
+  differentiated coupons to best buyers.
+</p>
+
+<h3 id="using-sdk--installation-properties">Tagging users</h3>
+
+<p>
+  Some information are better represented as properties on a user, rather than discrete events in a timeline.<br/>
+  Here is an example:
+</p>
+
+<pre><code>private void didAddItemToCart(String item, double price) {
+  // Variables managed by your application
+  cartItems += 1;
+  cartAmount += price;
+  // ...
+
+  // Update this information in WonderPush
+  JSONObject custom = new JSONObject();
+  custom.put("int_itemsInCart", cartItems);
+  custom.put("float_cartAmount", cartAmount);
+  WonderPush.putInstallationCustomProperties(custom);
+}
+
+private void didPurchase() {
+  // Empty the information in WonderPush
+  JSONObject custom = new JSONObject();
+  custom.put("int_itemsInCart", JSONObject.NULL);
+  custom.put("float_cartAmount", JSONObject.NULL);
+  WonderPush.putInstallationCustomProperties(custom);
+}</pre></code>
+
+<p>
+  Inactive users with non-empty carts could then easily be notified.
+  Combined with a free delivery coupon for carts above a given amount, your conversion rate will improve still!
+</p>
+
+
+<h3 id="reference">API Reference</h3>
+
+<p>
+  Take a look at the functions exposed by the <a href="com/wonderpush/sdk/WonderPush.html"><tt>WonderPush</tt></a> class.
+</p>
+
+
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+
+
+<h2 id="optional" style="border-top: 2px solid #ccc;">Optional steps</h2>
+
+
+<h3 id="optional--using-own-account">Using your own account <em style="font-weight: normal;">(optional)</em></h3>
+
+<p>
+  Sticking with the WonderPush sender ID is the simplest approach. However, you would not be able to send push notifications by other means than WonderPush.<br/>
+  If you want to use another sender ID, you can change it by adding the following in the <tt>res/values/string.xml</tt> file inside <em>your own application</em>:
+</p>
+<pre><code>&lt;string name="push_sender_ids"&gt;1023997258979,<b>[YOUR_OWN_SENDER_ID]</b>&lt;/string&gt;</code></pre>
+
+<p>
+  You can get your own sender ID by following instructions in: <a href="http://developer.android.com/google/gcm/gs.html">Getting Started with Google Cloud Messaging</a>.
+</p>
+<p>
+  If you do not include WonderPush's sender ID in the application, don't forget to give us your browser or server API key, also known as Sender Auth Token, via the WonderPush dashboard, under <tt>Settings / Keys</tt>, so we can push notifications on your behalf.
+  Otherwise, if you include our sender ID as recommended, you don't have to take any action. Your application to be able to receive WonderPush notifications as well as notifications from other providers.
+</p>
+<blockquote>
+  Note: Updating this value will require to unregister the device, prior to re-registering it, and the resulting registration id will be different.
+  This is handled automatically by the SDK.
+</blockquote>
+
+
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+
+
+<h2 id="advanced" style="border-top: 2px solid #ccc;">Advanced usage</h2>
+
+
+<h3 id="advanced--knowing-when-notification-opened">Knowing when a notification is opened</h3>
+
+<p>
+  Sometimes you need to take an action when the notification is opened.<br/>
+  The SDK broadcasts a local intent when the notification is opened.
+  It gives you the original received push notification intent, so you can possibly
+  <a href="#advanced--reading-custom-key-value-payload">read custom key-value payload</a>.
+  The SDK also tells you whether the notification has been opened after the user clicked it,
+  or if it was automatically opened because the application was already in foreground.
+</p>
+
+<pre><code>// Put the following call before you initialize the SDK, in your <code>Application</code> class for example
+LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    &#64;Override
+    public void onReceive(Context context, Intent intent) {
+        // Read whether the user clicked the notification (true) or if it was automatically opened (false)
+        boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, true);
+        // Get the original push notification received intent
+        Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+        if (pushNotif != null) {
+            // Perform desired action, like reading custom key-value payload
+        }
+    }
+}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_OPENED));
+</code></pre>
+
+<h3 id="advanced--reading-custom-key-value-payload">Reading custom key-value payload</h3>
+
+<p>
+  A notification can be added custom key-value pairs to it.
+  To read them you will need to get the received push notification intent.
+  You can either get it <a href="#advanced--handling-own-notifications">as soon as the the device receives it</a>,
+  or <a href="#advanced--knowing-when-notification-opened">as the notification is opened</a>.
+  You would them simply use the following line of code:
+</p>
+
+<pre><code>if (intent.hasExtra("custom")) {
+    try {
+        JSONObject custom = new JSONObject(intent.getExtras().getString("custom"));
+        // Process your custom payload
+    } catch (JSONException e) {
+        // This notification certainly does not come from the WonderPush push notification service
+    }
+}</code></pre>
+
+
+<h3 id="advanced--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
+
+<p>
+  If you want to handle some notifications yourself, you will have to first create your own
+  <a href="http://developer.android.com/reference/android/content/BroadcastReceiver.html"><tt>BroadcastReceiver</tt></a> as follows:
+</p>
+
+<blockquote>
+  Note that the broadcast receiver is called whenever a push notification is received.
+  You may instead be interested in <a href="advanced--knowing-when-notification-opened">knowing when a push notification is opened</a>.
+</blockquote>
+
+<pre><code>package com.your.package;
+
+import com.wonderpush.sdk.WonderPush;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+
+public class CustomBroadcastReceiver extends BroadcastReceiver {
+
+    // This function is called whenever a push notification is *received*.
+    &#64;Override
+    public void onReceive(Context context, Intent intent) {
+        // Call this function if you removed WonderPush's receiver in your AndroidManifest.xml
+        if (WonderPush.onBroadcastReceived(context, intent, R.drawable.icon, YourMainActivity.class)) {
+            // The notification was handled by WonderPush
+        } else {
+            // Hand the notification to others notification providers here
+        }
+    }
+
+}</pre></code>
+
+<p>Then setup your own <tt>BroadcastReceiver</tt> in your manifest:</p>
+<pre><code>&lt;manifest&gt;
+
+    &lt;application&gt;
+
+        &lt;!-- This registers your own receiver to receive push notifications.
+             Don't forget to call WonderPush.onBroadcastReceived() in your receiver
+             if you removed WonderPush's receiver. --&gt;
+        &lt;receiver
+            android:name="com.your.package.CustomBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND"&gt;
+
+            &lt;intent-filter&gt;
+                &lt;action android:name="com.google.android.c2dm.intent.RECEIVE" /&gt;
+                &lt;category android:name="<b>[YOUR_APPLICATION_PACKAGE]</b>" /&gt;
+            &lt;/intent-filter>
+
+        &lt;/receiver&gt;
+
+    &lt;/application&gt;
+
+&lt;/manifest&gt;</code></pre>
+
+<dl>
+  <legend>Replace:</legend>
+  <dt><b><tt>[YOUR_APPLICATION_PACKAGE]</tt></b></dt>
+  <dd>with your application package name.<br/>
+    Eg.: <tt>com.your.package</tt>.</dd>
+</dl>
+
+
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<h1 id="package-index" style="border-top: 2px solid #ccc; padding-top: .5em;">Package index</h1></p>
+</div>
+
+
+<table class="jd-sumtable">
+
+    <tr class="alt-color api apilevel-" >
+        <td class="jd-linkcol">
+  <a href="./com/wonderpush/sdk/package-summary.html">com.wonderpush.sdk</a></td>
+        <td class="jd-descrcol" width="100%">WonderPush SDK package.</td>
+    </tr>
+
+
+</table>
+
+<div id="footer">
+Generated by <a href="http://code.google.com/p/doclava/">Doclava</a>.
+</div> <!-- end footer -->
+
+</div><!-- end jd-content -->
+</div> <!-- end doc-content -->
+
+</div> <!-- end body-content --> 
+
+<script type="text/javascript">
+init(); /* initialize doclava-developer-docs.js */
+</script>
+
+</body>
+</html>

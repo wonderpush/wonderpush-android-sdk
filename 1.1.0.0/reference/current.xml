@@ -1,0 +1,357 @@
+<api>
+<package name="com.wonderpush.sdk"
+>
+<class name="WonderPush"
+ extends="java.lang.Object"
+ abstract="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<method name="initialize"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="context" type="android.content.Context">
+</parameter>
+</method>
+<method name="initialize"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="context" type="android.content.Context">
+</parameter>
+<parameter name="clientId" type="java.lang.String">
+</parameter>
+<parameter name="clientSecret" type="java.lang.String">
+</parameter>
+</method>
+<method name="isReady"
+ return="boolean"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</method>
+<method name="onBroadcastReceived"
+ return="boolean"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="context" type="android.content.Context">
+</parameter>
+<parameter name="intent" type="android.content.Intent">
+</parameter>
+<parameter name="iconResource" type="int">
+</parameter>
+<parameter name="activityClass" type="java.lang.Class&lt;? extends android.app.Activity&gt;">
+</parameter>
+</method>
+<method name="putInstallationCustomProperties"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="customProperties" type="org.json.JSONObject">
+</parameter>
+</method>
+<method name="setUserId"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="userId" type="java.lang.String">
+</parameter>
+</method>
+<method name="showPotentialNotification"
+ return="boolean"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="activity" type="android.app.Activity">
+</parameter>
+<parameter name="intent" type="android.content.Intent">
+</parameter>
+</method>
+<method name="trackEvent"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="type" type="java.lang.String">
+</parameter>
+</method>
+<method name="trackEvent"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="true"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="type" type="java.lang.String">
+</parameter>
+<parameter name="customData" type="org.json.JSONObject">
+</parameter>
+</method>
+<field name="INTENT_INTIALIZED"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;wonderpushInitialized&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_ACTION"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;com.wonderpush.action.method&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_AUTHORITY"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;action.method&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;com.wonderpush.action.method.extra_arg&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_METHOD"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;com.wonderpush.action.method.extra_method&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_SCHEME"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;wonderpush&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_OPENED"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;wonderpushNotificationOpened&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;wonderpushFromUserInteraction&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+<field name="INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION"
+ type="java.lang.String"
+ transient="false"
+ volatile="false"
+ value="&quot;wonderpushReceivedPushNotification&quot;"
+ static="true"
+ final="true"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</field>
+</class>
+<class name="WonderPushBroadcastReceiver"
+ extends="android.content.BroadcastReceiver"
+ abstract="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<constructor name="WonderPushBroadcastReceiver"
+ type="com.wonderpush.sdk.WonderPushBroadcastReceiver"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</constructor>
+<method name="onReceive"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="context" type="android.content.Context">
+</parameter>
+<parameter name="intent" type="android.content.Intent">
+</parameter>
+</method>
+</class>
+<interface name="WonderPushInitializer"
+ abstract="true"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<method name="initialize"
+ return="void"
+ abstract="true"
+ native="false"
+ synchronized="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="context" type="android.content.Context">
+</parameter>
+</method>
+</interface>
+<class name="WonderPushOnUpgradeReceiver"
+ extends="android.content.BroadcastReceiver"
+ abstract="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<constructor name="WonderPushOnUpgradeReceiver"
+ type="com.wonderpush.sdk.WonderPushOnUpgradeReceiver"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</constructor>
+<method name="onReceive"
+ return="void"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="context" type="android.content.Context">
+</parameter>
+<parameter name="intent" type="android.content.Intent">
+</parameter>
+</method>
+</class>
+<class name="WonderPushService"
+ extends="android.app.Service"
+ abstract="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<constructor name="WonderPushService"
+ type="com.wonderpush.sdk.WonderPushService"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+</constructor>
+<method name="onBind"
+ return="android.os.IBinder"
+ abstract="false"
+ native="false"
+ synchronized="false"
+ static="false"
+ final="false"
+ deprecated="not deprecated"
+ visibility="public"
+>
+<parameter name="intent" type="android.content.Intent">
+</parameter>
+</method>
+</class>
+</package>
+</api>
