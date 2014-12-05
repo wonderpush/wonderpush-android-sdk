@@ -390,56 +390,6 @@ private void didPurchase() {
 </p>
 
 
-<h3 id="using-sdk--knowing-when-notification-opened">Knowing when a notification is opened</h3>
-
-<p>
-  <a href="#optional--handling-own-notifications">Using your own BroadcastReceiver</a> helps you getting your hands
-  on push notifications as they are received by the device, but sometimes you need when the notification is actually
-  opened to take an action.<br/>
-  The SDK broadcasts a local intent when the notification is opened.
-  It gives you the original received push notification intent, so you can possibly
-  <a href="#using-sdk--reading-custom-key-value-payload">read custom key-value payload</a>.
-  The SDK also tells you whether the notification has been opened after the user clicked it,
-  or if it was automatically opened because the application was already in foreground.
-</p>
-
-<pre><code>// Put the following call before you initialize the SDK, in your <code>Application</code> class for example
-LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
-    &#64;Override
-    public void onReceive(Context context, Intent intent) {
-        // Read whether the user clicked the notification (true) or if it was automatically opened (false)
-        boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, true);
-        // Get the original push notification received intent
-        Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
-        if (pushNotif != null) {
-            // Perform desired action, like reading custom key-value payload
-        }
-    }
-}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_OPENED));
-</code></pre>
-
-<h3 id="using-sdk--reading-custom-key-value-payload">Reading custom key-value payload</h3>
-
-<p>
-  A notification can be added custom key-value pairs to it.
-  To read them you will need to <a href="#optional--handling-own-notifications">setup your own BroadcastReceiver</a>.
-  You would them simply use the following line of code:
-</p>
-
-<pre><code>&#64;Override
-public void onReceive(Context context, Intent intent) {
-    // ...
-    if (intent.hasExtra("custom")) {
-        try {
-            JSONObject custom = new JSONObject(intent.getExtras().getString("custom"));
-            // Process your custom payload
-        } catch (JSONException e) {
-            // This notification certainly does not come from the WonderPush push notification service
-        }
-    }
-    // ...
-}</code></pre>
-
 <h3 id="reference">API Reference</h3>
 
 <p>
@@ -478,12 +428,74 @@ public void onReceive(Context context, Intent intent) {
 </blockquote>
 
 
-<h3 id="optional--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+
+
+<h2 id="advanced" style="border-top: 2px solid #ccc;">Advanced usage</h2>
+
+
+<h3 id="advanced--knowing-when-notification-opened">Knowing when a notification is opened</h3>
+
+<p>
+  Sometimes you need to take an action when the notification is opened.<br/>
+  The SDK broadcasts a local intent when the notification is opened.
+  It gives you the original received push notification intent, so you can possibly
+  <a href="#advanced--reading-custom-key-value-payload">read custom key-value payload</a>.
+  The SDK also tells you whether the notification has been opened after the user clicked it,
+  or if it was automatically opened because the application was already in foreground.
+</p>
+
+<pre><code>// Put the following call before you initialize the SDK, in your <code>Application</code> class for example
+LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    &#64;Override
+    public void onReceive(Context context, Intent intent) {
+        // Read whether the user clicked the notification (true) or if it was automatically opened (false)
+        boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, true);
+        // Get the original push notification received intent
+        Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+        if (pushNotif != null) {
+            // Perform desired action, like reading custom key-value payload
+        }
+    }
+}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_OPENED));
+</code></pre>
+
+<h3 id="advanced--reading-custom-key-value-payload">Reading custom key-value payload</h3>
+
+<p>
+  A notification can be added custom key-value pairs to it.
+  To read them you will need to get the received push notification intent.
+  You can either get it <a href="#advanced--handling-own-notifications">as soon as the the device receives it</a>,
+  or <a href="#advanced--knowing-when-notification-opened">as the notification is opened</a>.
+  You would them simply use the following line of code:
+</p>
+
+<pre><code>if (intent.hasExtra("custom")) {
+    try {
+        JSONObject custom = new JSONObject(intent.getExtras().getString("custom"));
+        // Process your custom payload
+    } catch (JSONException e) {
+        // This notification certainly does not come from the WonderPush push notification service
+    }
+}</code></pre>
+
+
+<h3 id="advanced--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
 
 <p>
   If you want to handle some notifications yourself, you will have to first create your own
   <a href="http://developer.android.com/reference/android/content/BroadcastReceiver.html"><tt>BroadcastReceiver</tt></a> as follows:
 </p>
+
+<blockquote>
+  Note that the broadcast receiver is called whenever a push notification is received.
+  You may instead be interested in <a href="advanced--knowing-when-notification-opened">knowing when a push notification is opened</a>.
+</blockquote>
+
 <pre><code>package com.your.package;
 
 import com.wonderpush.sdk.WonderPush;
@@ -535,12 +547,6 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
   <dd>with your application package name.<br/>
     Eg.: <tt>com.your.package</tt>.</dd>
 </dl>
-
-<p>
-  Note that the two <tt>&lt;meta-data&gt;</tt> tags are no longer required inside <tt>&lt;receiver&gt;</tt>,
-  however, you must pass their values as parameters when calling <tt>WonderPush.onBroadcastReceived()</tt>.
-</p>
-
 
 
 
