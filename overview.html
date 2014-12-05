@@ -467,11 +467,12 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
 
     &#64;Override
     public void onReceive(Context context, Intent intent) {
+        // Call this function if you removed WonderPush's receiver in your AndroidManifest.xml
         if (WonderPush.onBroadcastReceived(context, intent, R.drawable.icon, YourMainActivity.class)) {
             // The notification was handled by WonderPush
-            return;
+        } else {
+            // Hand the notification to others notification providers here
         }
-        // Handle your custom notifications here
     }
 
 }</pre></code>
@@ -481,6 +482,9 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
 
     &lt;application&gt;
 
+        &lt;!-- This registers your own receiver to receive push notifications.
+             Don't forget to call WonderPush.onBroadcastReceived() in your receiver
+             if you removed WonderPush's receiver. --&gt;
         &lt;receiver
             android:name="com.your.package.CustomBroadcastReceiver"
             android:permission="com.google.android.c2dm.permission.SEND"&gt;
