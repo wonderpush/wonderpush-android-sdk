@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
@@ -57,6 +58,8 @@ class WonderPushView extends FrameLayout {
     WonderPush.RequestParams mInitialRequestParams;
     boolean mIsPreloading;
     protected boolean isLoginSource;
+    private int mTextColor;
+    private String mTextColorCSS;
 
     public WonderPushView(Context context) {
         super(context);
@@ -151,8 +154,13 @@ class WonderPushView extends FrameLayout {
         mWebView.getSettings().setDatabaseEnabled(true);
         WonderPushCompatibilityHelper.WebViewSettingsSetDatabasePath(mWebView, getContext().getDir("databases", Context.MODE_PRIVATE).getPath());
         // Set the medium font size that is normally used in dialogs
-        int[] attrs = new int[] { android.R.attr.textSize };
-        TypedArray ta = getContext().obtainStyledAttributes(null, attrs, android.R.attr.textAppearanceMedium, android.R.style.TextAppearance_Medium);
+        int[] attrs = new int[] { android.R.attr.textSize, android.R.attr.textColorPrimary };
+        TypedArray ta = WonderPushDialogBuilder.getDialogStyledAttributes(getContext(), attrs, android.R.attr.textAppearanceMedium, android.R.style.TextAppearance_Medium);
+        mTextColor = ta.getColor(1, 0);
+        if (mTextColor != 0) {
+            mTextColorCSS = String.format("#%06X", 0xFFFFFF & mTextColor);
+        }
+        attrs = new int[] { android.R.attr.textSize };
         int mediumFontSizePx = Math.round(36 * getContext().getResources().getDisplayMetrics().scaledDensity / getContext().getResources().getDisplayMetrics().density);
         mediumFontSizePx = ta.getDimensionPixelSize(0, mediumFontSizePx);
         ta.recycle();
@@ -365,6 +373,12 @@ class WonderPushView extends FrameLayout {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
+            if (mTextColorCSS != null) {
+                // If the page has no background color, as the webview background is transparent,
+                // the text may render in black (default) over black (if using a dark theme).
+                // Set the text color to the default text color of the current theme.
+                mWebView.loadUrl("javascript:(function(){if(!document.body.style.color&&!document.body.style.backgroundColor&&!document.body.bgColor){document.body.style.color=\"" + mTextColorCSS + "\";}})()");
+            }
             if (mWebviewTimer != null) {
                 mWebviewTimer.cancel();
             }

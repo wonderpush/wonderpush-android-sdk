@@ -7,9 +7,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.TypedArray;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
@@ -41,6 +43,25 @@ class WonderPushDialogBuilder {
     int defaultIcon;
     final AtomicReference<Button> choice = new AtomicReference<Button>();
     final List<Button> buttons;
+
+    /**
+     * Read styled attributes, they will defined in an AlertDialog shown by the given activity.
+     * You must call {@link TypedArray#recycle()} after having read the desired attributes.
+     * @see Context#obtainStyledAttributes(android.util.AttributeSet, int[], int, int)
+     * @param activity
+     * @param attrs
+     * @param defStyleAttr
+     * @param defStyleRef
+     * @return
+     */
+    @SuppressLint("Recycle")
+    public static TypedArray getDialogStyledAttributes(Context activity, int[] attrs, int defStyleAttr, int defStyleRef) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        AlertDialog dialog = builder.create();
+        TypedArray ta = dialog.getContext().obtainStyledAttributes(null, attrs, defStyleAttr, defStyleRef);
+        dialog.dismiss();
+        return ta;
+    }
 
     public WonderPushDialogBuilder(Context activity, JSONObject data, OnChoice listener) {
         this.activity = activity;
