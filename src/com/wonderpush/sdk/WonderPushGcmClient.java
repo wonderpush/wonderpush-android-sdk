@@ -78,8 +78,8 @@ class WonderPushGcmClient {
         WonderPushConfiguration.setGCMRegistrationAppVersion(WonderPush.getApplicationVersionCode());
     }
 
-    protected static PendingIntent buildPendingIntent(JSONObject wonderpushData, Context context,
-            Class<? extends Activity> activity) {
+    protected static PendingIntent buildPendingIntent(JSONObject wonderpushData, Intent pushIntent, boolean fromUserInteraction,
+            Context context, Class<? extends Activity> activity) {
         Intent resultIntent = new Intent();
         if (WonderPushService.isProperlySetup()) {
             resultIntent.setClass(context, WonderPushService.class);
@@ -89,6 +89,8 @@ class WonderPushGcmClient {
             resultIntent = new Intent(context, activity);
         }
         resultIntent.putExtra("activity", activity.getCanonicalName());
+        resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
+        resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
 
         resultIntent.setAction(Intent.ACTION_MAIN);
         resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -144,7 +146,6 @@ class WonderPushGcmClient {
             return false;
         }
         String wpDataJson = extras.getString(WONDERPUSH_NOTIFICATION_EXTRA_KEY);
-        intent.removeExtra(WONDERPUSH_NOTIFICATION_EXTRA_KEY);
         if (null == wpDataJson) {
             WonderPush.logDebug("Received broadcasted intent has no data for WonderPush");
             return false;
@@ -169,19 +170,23 @@ class WonderPushGcmClient {
 
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
+            boolean automaticallyOpened = false;
             Activity currentActivity = WonderPush.getCurrentActivity();
-            PendingIntent pendingIntent = buildPendingIntent(wpData, context, activity);
             if (currentActivity != null && !currentActivity.isFinishing()) {
                 // We can show the notification (send the pending intent) right away
                 try {
+                    PendingIntent pendingIntent = buildPendingIntent(wpData, intent, false, context, activity);
                     pendingIntent.send();
+                    automaticallyOpened = true;
                 } catch (CanceledException e) {
                     Log.e(WonderPush.TAG, "Could not show notification", e);
                 }
-            } else {
+            }
+            if (!automaticallyOpened) {
                 // We should use a notification to warn the user, and wait for him to click it
                 // before showing the notification (i.e.: the pending intent being sent)
                 WonderPush.logDebug("Building notification");
+                PendingIntent pendingIntent = buildPendingIntent(wpData, intent, true, context, activity);
                 Notification notification = buildNotification(extras.getString("alert"), context, iconResource, pendingIntent);
 
                 int localNotificationId = wpData.optString("c", "MISSING CAMPAIGN ID").hashCode();

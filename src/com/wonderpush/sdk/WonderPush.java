@@ -147,6 +147,22 @@ public class WonderPush {
     public static final String INTENT_INTIALIZED = "wonderpushInitialized";
 
     /**
+     * Local intent broadcasted when a push notification created by the WonderPush SDK has been opened.
+     */
+    public static final String INTENT_NOTIFICATION_OPENED = "wonderpushNotificationOpened";
+
+    /**
+     * The extra key for the original received push notification intent in a {@link #INTENT_NOTIFICATION_OPENED} intent.
+     */
+    public static final String INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION = "wonderpushReceivedPushNotification";
+
+    /**
+     * The extra key for whether the user clicked the notification or it was automatically opened by the SDK
+     * in a {@link #INTENT_NOTIFICATION_OPENED} intent.
+     */
+    public static final String INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION = "wonderpushFromUserInteraction";
+
+    /**
      * Local intent broadcasted when a resource has been successfully preloaded.
      */
     protected static final String INTENT_RESOURCE_PRELOADED = "wonderpushResourcePreloaded";
@@ -417,6 +433,14 @@ public class WonderPush {
                     WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
                     WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
+
+                    // Notify the application that the notification has been opened
+                    Intent notificationOpenedIntent = new Intent(INTENT_NOTIFICATION_OPENED);
+                    boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
+                    notificationOpenedIntent.putExtra(INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
+                    Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
+                    notificationOpenedIntent.putExtra(INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
+                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(notificationOpenedIntent);
 
                     if (sIsInitialized) {
                         handleReceivedNotification(activity, notification);

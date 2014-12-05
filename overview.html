@@ -390,6 +390,34 @@ private void didPurchase() {
 </p>
 
 
+<h3 id="using-sdk--knowing-when-notification-opened">Knowing when a notification is opened</h3>
+
+<p>
+  <a href="#optional--handling-own-notifications">Using your own BroadcastReceiver</a> helps you getting your hands
+  on push notifications as they are received by the device, but sometimes you need when the notification is actually
+  opened to take an action.<br/>
+  The SDK broadcasts a local intent when the notification is opened.
+  It gives you the original received push notification intent, so you can possibly
+  <a href="#using-sdk--reading-custom-key-value-payload">read custom key-value payload</a>.
+  The SDK also tells you whether the notification has been opened after the user clicked it,
+  or if it was automatically opened because the application was already in foreground.
+</p>
+
+<pre><code>// Put the following call before you initialize the SDK, in your <code>Application</code> class for example
+LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    &#64;Override
+    public void onReceive(Context context, Intent intent) {
+        // Read whether the user clicked the notification (true) or if it was automatically opened (false)
+        boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, true);
+        // Get the original push notification received intent
+        Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+        if (pushNotif != null) {
+            // Perform desired action, like reading custom key-value payload
+        }
+    }
+}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_OPENED));
+</code></pre>
+
 <h3 id="using-sdk--reading-custom-key-value-payload">Reading custom key-value payload</h3>
 
 <p>
@@ -465,6 +493,7 @@ import android.content.Intent;
 
 public class CustomBroadcastReceiver extends BroadcastReceiver {
 
+    // This function is called whenever a push notification is *received*.
     &#64;Override
     public void onReceive(Context context, Intent intent) {
         // Call this function if you removed WonderPush's receiver in your AndroidManifest.xml
