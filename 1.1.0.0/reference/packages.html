@@ -320,7 +320,7 @@ git checkout latest</code></pre>
         &lt;!-- Permits the SDK to initialize itself whenever needed, without need for your application to launch --&gt;
         &lt;meta-data
             android:name="wonderpushInitializerClass"
-            android:value="[YOUR_APPLICATION_PACKAGE].WonderPushInitializerImpl" /&gt;
+            android:value="<b>[YOUR_APPLICATION_PACKAGE]</b>.WonderPushInitializerImpl" /&gt;
 
         &lt;!-- Required for configuring Google Play Services for push notifications --&gt;
         &lt;meta-data
@@ -627,6 +627,13 @@ private void didPurchase() {
   If you want to use another sender ID, you can change it by adding the following in the <tt>res/values/string.xml</tt> file inside <em>your own application</em>:
 </p>
 <pre><code>&lt;string name="push_sender_ids"&gt;1023997258979,<b>[YOUR_OWN_SENDER_ID]</b>&lt;/string&gt;</code></pre>
+
+<dl>
+  <legend>Replace:</legend>
+  <dt><b><tt>[YOUR_OWN_SENDER_ID]</tt></b></dt>
+  <dd>with your own sender id (see next paragraph).<br/>
+    Eg.: <tt>1186135716819</tt>.</dd>
+</dl>
 
 <p>
   You can get your own sender ID by following instructions in: <a href="http://developer.android.com/google/gcm/gs.html">Getting Started with Google Cloud Messaging</a>.
