@@ -312,7 +312,122 @@ protected void onNewIntent(Intent intent) {
 
 
 
-<h2 id="using-sdk" style="border-top: none;">6. Using the SDK in your Android application</h2>
+<h2 id="check-setup" style="border-top: none;">6. Check your setup</h2>
+
+
+<h3 id="check-setup--watch-logs">Watch for error logs</h3>
+
+<p>
+  You can now test your WonderPush-enabled application, but as nobody's perfect, not even us, we know you may run into a few setup problems.<br/>
+  We advise you to look at your logs for any entry tagged <tt>WonderPush</tt> as the SDK will report setup issues this way.
+  Don't hesitate to create a logcat filter by log tag <tt>WonderPush</tt> to see them more easily.
+</p>
+
+<p>
+If you have any problem or wonder what the SDK is doing, you may temporarily make it verbose.<br/>
+  Simply open <tt>WonderPush.java</tt> in the SDK project, search the following variable at the beginning of the class,
+  and set it to <tt>true</tt> like shown below:
+</p>
+
+<pre><code>public class WonderPush {
+    protected static boolean SHOW_DEBUG = <b>true</b>; // &larr; only use true in development!</code></pre>
+
+<p>
+  You should not do this for a production build. Once done with the additional logs, turn verbosity off.
+</p>
+
+
+<h3 id="check-setup--google-play">Missing Google Play?</h3>
+
+<p>
+  If you see a message like &ldquo;<tt>Google Play Services not present.</tt>&rdquo;, then you are either using a wrong emulator system image,
+  a device that does not support Google Cloud Messaging or Google Play Services, or using a very old device.
+</p>
+
+<p>
+  If on the emulator, you should use a Google APIs system image.<br/>
+  You can install one using the Android SDK Manager, and under the folder matching the desired Android version,
+  check and install a system image whose name starts with &ldquo;Google APIs&rdquo;.<br/>
+  Then open the Android Virtual Device Manager, edit your AVD and choose a &ldquo;Google APIs&rdquo; target.
+  You may also increase your Internal storage size or SD card size if you still have some trouble.
+</p>
+
+<p>
+  If your device does not support Google Cloud Messaging or Google Play Services, like the Amazon Kindle Fire,
+  you should use an SDK adapted to such platform.
+</p>
+
+
+<h3 id="check-setup--registered-installation">Registered installation</h3>
+
+<p>
+  You should now see one installation in <a href="https://dashboard.wonderpush.com/">your WonderPush dashboard</a>.<br/>
+  Click <tt>Audience</tt>, choose <tt>All users</tt>, your installation should now be listed in the preview list.
+</p>
+
+<blockquote>
+  <p>
+    <b>Tip:</b><br/>
+    A few statistics may be cached, click <tt>Refresh now</tt> if necessary.
+  </p>
+</blockquote>
+
+<p>
+  Make sure your installation is displayed as pushable.
+  If not, you probably forgot one step of the above, look for the logs for pointers.
+</p>
+
+
+<h3 id="check-setup--push-notification-reception">Send your first push notifications</h3>
+
+<ul>
+  <li>
+    Log into <a href="https://dashboard.wonderpush.com/">your WonderPush dashboard</a>, click <tt>Notifications</tt>,
+    then under the <tt>Create notification</tt> menu choose <tt>Custom notification</tt>.
+  </li>
+  <li>Give it a name, enter a short push message, then click <tt>Save and continue</tt>.</li>
+  <li>Keep <tt>Send to all users</tt> selected, then click <tt>Save and continue</tt>.</li>
+  <li>Keep <tt>Once, when activated</tt> selected, then click <tt>Save</tt>.<br/></li>
+  <li>Now close your application in your device.</li>
+  <li>Click <tt>FIRE</tt> in the dashboard.</li>
+  <li>A notification should have appeared in the notification center.</li>
+</ul>
+
+<p>
+  To fire your notification again, simply click <tt>FIRE</tt> again.<br/>
+  Allow 2 minutes between each send, and feel free to refresh the page if necessary.
+</p>
+
+
+<h3 id="check-setup--no-push-notification-received">Some push notifications seem to never get received?</h3>
+
+<p>
+  Depending on the chosen scheduling, it may take up to 1 minute for our servers to process your notifications.
+  But the most likely scenario is that you are waiting for a simple push notification while the application is in foreground.<br/>
+  When push notifications are received, the WonderPush SDK automatically opens them if the application is running,
+  showing directly any rich message to the user. Simple push notifications have no such rich interaction by definition
+  and it seems that nothing happens.<br/>
+  Either background your application (imitating a real user that is not always using your application when push notifications are received),
+  or use any of the rich notification types WonderPush proposes!
+</p>
+
+<p>The logs you typically see in such situations are:</p>
+
+<pre><code>I/GCM     ( 1532): GCM message com.wonderpush.demo 0:1423658642093464%2ced406ff9fd7ecd
+W/GCM-DMM ( 1532): broadcast intent callback: result=CANCELLED forIntent { act=com.google.android.c2dm.intent.RECEIVE pkg=com.wonderpush.demo (has extras) }</code></pre>
+
+
+<h3 id="check-setup--support">Need support?</h3>
+
+<p>
+  If all else fails, don't hesitate to contact us by chat, using the &ldquo;<tt>Chat with us</tt>&rdquo; button
+  in the lower right corner of <a href="https://dashboard.wonderpush.com/">your WonderPush dashboard</a>,
+  or <a href="https://dashboard.wonderpush.com/contact">by email</a>.
+</p>
+
+
+
+<h2 id="using-sdk" style="border-top: none;">7. Using the SDK in your Android application</h2>
 
 
 <h3 id="using-sdk--track-event">Track your first event</h3>
@@ -361,6 +476,7 @@ WonderPush.trackEvent("purchase", custom);</code></pre>
   You could choose to thank customer for every purchase, or you could take advantage of the purchase amount to give
   differentiated coupons to best buyers.
 </p>
+
 
 <h3 id="using-sdk--installation-properties">Tagging users</h3>
 
