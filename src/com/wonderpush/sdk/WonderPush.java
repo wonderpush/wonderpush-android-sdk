@@ -307,7 +307,7 @@ public class WonderPush {
         if (checkPlayService(context)) {
             WonderPushGcmClient.registerForPushNotification(context);
         } else {
-            Log.w(TAG, "Google Play Services not present. Check your setup.");
+            Log.w(TAG, "Google Play Services not present. Check your setup. If on an emulator, use a Google APIs system image.");
         }
     }
 
