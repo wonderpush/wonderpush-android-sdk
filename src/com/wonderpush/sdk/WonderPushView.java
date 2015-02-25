@@ -138,6 +138,8 @@ class WonderPushView extends FrameLayout {
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         mWebView.setWebViewClient(new WonderPushWebViewClient());
         mWebView.setWebChromeClient(new WebChromeClient() {
+            // Besides any overriden functions, a WebChromeClient is necessary to support inline HTML5 videos,
+            // as well as hardware acceleration support.
             @Override
             public boolean onConsoleMessage(ConsoleMessage cm) {
                 Log.d(TAG, "javascript Error: " + String.format("%s @ %d: %s", cm.message(), cm.lineNumber(), cm.sourceId()));
@@ -227,6 +229,14 @@ class WonderPushView extends FrameLayout {
             mStateListener.onClose();
             mStateListener = null;
         }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        // Helps cleaning the hidden WebView,
+        // otherwise resource loading, JavaScript, media, etc. may still be running.
+        mWebView.destroy();
     }
 
     /**
