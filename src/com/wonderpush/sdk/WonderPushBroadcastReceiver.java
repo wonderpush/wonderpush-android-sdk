@@ -54,6 +54,7 @@ public class WonderPushBroadcastReceiver extends BroadcastReceiver {
                     return;
                 }
                 WonderPushGcmClient.onBroadcastReceived(context, intent, iconId, Class.forName(activityName).asSubclass(Activity.class));
+                setResultCode(Activity.RESULT_OK);
             } catch (NameNotFoundException e) {
                 // If we are called, then at least
                 // <receiver android:name="com.wonderpush.sdk.WonderPushBroadcastReceiver"
