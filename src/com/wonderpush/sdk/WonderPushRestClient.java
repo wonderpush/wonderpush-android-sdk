@@ -179,9 +179,13 @@ class WonderPushRestClient {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    if (!fetchAnonymousAccessTokenIfNeeded(onFetchedHandler)) {
-                        // Call the handler anyway
-                        onFetchedHandler.onSuccess(null);
+                    try {
+                        if (!fetchAnonymousAccessTokenIfNeeded(onFetchedHandler)) {
+                            // Call the handler anyway
+                            onFetchedHandler.onSuccess(null);
+                        }
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Unexpected error while deferred fetch of access token", ex);
                     }
                 }
             }, 100);
@@ -218,7 +222,11 @@ class WonderPushRestClient {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    requestAuthenticated(request);
+                    try {
+                        requestAuthenticated(request);
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Unexpected error while deferred request", ex);
+                    }
                 }
             }, 100);
             return;
@@ -418,10 +426,14 @@ class WonderPushRestClient {
         new Runnable() {
             @Override
             public void run() {
-                if (WonderPush.isUDIDReady()) {
-                    fetchAnonymousAccessToken_inner(handler, nbRetries);
-                } else {
-                    new Handler().postDelayed(this, 100);
+                try {
+                    if (WonderPush.isUDIDReady()) {
+                        fetchAnonymousAccessToken_inner(handler, nbRetries);
+                    } else {
+                        new Handler().postDelayed(this, 100);
+                    }
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while deferred fetch of access token", ex);
                 }
             }
         }.run();
