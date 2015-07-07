@@ -47,7 +47,7 @@ class WonderPushGcmClient {
         } catch (JSONException e) {
             Log.e(TAG, "Failed to update push token to WonderPush", e);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error whiel updating push token to WonderPush", e);
+            Log.e(TAG, "Unexpected error while updating push token to WonderPush", e);
         }
     }
 
