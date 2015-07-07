@@ -517,15 +517,21 @@ public class WonderPush {
         }
     }
 
+    protected static boolean isUDIDReady() {
+        return OpenUDID_manager.isInitialized();
+    }
+
     /**
      * Returns the UDID determined by OpenUDID.
      *
      * @return The UDID determined by OpenUDID or null if OpenUDID is not initialized.
      */
     protected static String getUDID() {
-        if (OpenUDID_manager.isInitialized())
-            return OpenUDID_manager.getOpenUDID();
-        return null;
+        if (!isUDIDReady()) {
+            Log.w(TAG, "Reading UDID before it is ready!");
+            return null;
+        }
+        return OpenUDID_manager.getOpenUDID();
     }
 
     protected static void setNetworkAvailable(boolean state) {
@@ -1501,7 +1507,7 @@ public class WonderPush {
                     @Override
                     public void run() {
                         try {
-                            if (OpenUDID_manager.isInitialized()) {
+                            if (isUDIDReady()) {
                                 boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
                                     @Override
                                     public void onFailure(Throwable e, Response errorResponse) {

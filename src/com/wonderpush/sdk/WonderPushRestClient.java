@@ -170,11 +170,24 @@ class WonderPushRestClient {
      *
      * @param onFetchedHandler
      *            A handler called if a request to fetch an access token has been
-     *            executed successfully, never called if retreived from cache
+     *            executed successfully, never called if retrieved from cache
      * @return Whether or not a request has been executed to fetch an anonymous
-     *         access token (true fetching, false retrived from local cache)
+     *         access token (true fetching, false retrieved from local cache)
      */
-    protected static boolean fetchAnonymousAccessTokenIfNeeded(WonderPush.ResponseHandler onFetchedHandler) {
+    protected static boolean fetchAnonymousAccessTokenIfNeeded(final WonderPush.ResponseHandler onFetchedHandler) {
+        if (!WonderPush.isUDIDReady()) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (!fetchAnonymousAccessTokenIfNeeded(onFetchedHandler)) {
+                        // Call the handler anyway
+                        onFetchedHandler.onSuccess(null);
+                    }
+                }
+            }, 100);
+            return true; // true: the handler will be called
+        }
+
         if (null == WonderPushConfiguration.getAccessToken()) {
             fetchAnonymousAccessToken(onFetchedHandler);
             return true;
@@ -198,6 +211,16 @@ class WonderPushRestClient {
      */
     protected static void requestAuthenticated(final Request request) {
         if (null == request) {
+            return;
+        }
+
+        if (!WonderPush.isUDIDReady()) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    requestAuthenticated(request);
+                }
+            }, 100);
             return;
         }
 
@@ -235,9 +258,7 @@ class WonderPushRestClient {
                 WonderPush.logError("Request failed", e);
                 if (errorResponse != null && WonderPush.ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
-                    WonderPushConfiguration.setAccessToken(null);
-                    WonderPushConfiguration.setSID(null);
-                    WonderPushConfiguration.setInstallationId(null);
+                    WonderPushConfiguration.invalidateCredentials();
 
                     // retry later now
                     new Handler().postDelayed(new Runnable() {
@@ -394,6 +415,19 @@ class WonderPushRestClient {
             return;
         }
         sIsFetchingAnonymousAccessToken = true;
+        new Runnable() {
+            @Override
+            public void run() {
+                if (WonderPush.isUDIDReady()) {
+                    fetchAnonymousAccessToken_inner(handler, nbRetries);
+                } else {
+                    new Handler().postDelayed(this, 100);
+                }
+            }
+        }.run();
+    }
+
+    private static void fetchAnonymousAccessToken_inner(final WonderPush.ResponseHandler handler, final int nbRetries) {
         WonderPush.RequestParams authParams = new WonderPush.RequestParams();
         authParams.put("clientId", WonderPush.getClientId());
         authParams.put("devicePlatform", "Android");

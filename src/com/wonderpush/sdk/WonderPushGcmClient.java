@@ -18,8 +18,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
@@ -223,33 +221,37 @@ class WonderPushGcmClient {
     }
 
     private static void registerInBackground(final String senderIds, final Context activity) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            public void run() {
-                new AsyncTask<Object, Object, Object>() {
-                    @Override
-                    protected Object doInBackground(Object... arg0) {
-                        try {
-                            if (checkForUnregistrationNeed(activity, senderIds)) {
-                                unregister(activity);
-                            }
-                            String regid = register(activity, senderIds);
-                            if (regid == null) {
-                                return null;
-                            }
-                            storeRegistrationId(senderIds, regid);
-                            storeRegistrationIdToWonderPush(regid);
-                            WonderPush.logDebug("Device registered, registration ID=" + regid);
-                        } catch (IOException ex) {
-                            Log.w(TAG, "Could not register for push notifications", ex);
-                        } catch (Exception ex) {
-                            Log.w(TAG, "Could not register for push notifications", ex);
-                        }
-                        return null;
+        // Get off the main UI thread for using GCM
+        new AsyncTask<Object, Object, String>() {
+            @Override
+            protected String doInBackground(Object... dummy) {
+                try {
+                    if (checkForUnregistrationNeed(activity, senderIds)) {
+                        unregister(activity);
                     }
-                }.execute(null, null, null);
+                    final String regid = register(activity, senderIds);
+                    if (regid == null) {
+                        WonderPush.logError("Device could not register");
+                    } else {
+                        WonderPush.logDebug("Device registered, registration ID=" + regid);
+                    }
+                    return regid;
+                } catch (IOException ex) {
+                    Log.w(TAG, "Could not register for push notifications", ex);
+                } catch (Exception ex) {
+                    Log.w(TAG, "Could not register for push notifications", ex);
+                }
+                return null;
             }
-        });
+            @Override
+            protected void onPostExecute(String regid) {
+                // We're back on the main thread, this is required for potential deferring due to OpenUDID not being ready
+                if (regid != null) {
+                    storeRegistrationId(senderIds, regid);
+                    storeRegistrationIdToWonderPush(regid);
+                }
+            }
+        }.execute();
     }
 
     /**
