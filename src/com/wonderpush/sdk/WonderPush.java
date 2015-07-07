@@ -311,6 +311,10 @@ public class WonderPush {
         }
     }
 
+    public static void setLogging(boolean enable) {
+        WonderPush.SHOW_DEBUG = enable;
+    }
+
     protected static void logDebug(String debug) {
         if (WonderPush.SHOW_DEBUG) {
             Log.d(TAG, debug);
