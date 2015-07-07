@@ -54,7 +54,7 @@ public class WonderPushService extends Service {
             }
             return sIsProperlySetup;
         } catch (Exception e) {
-            Log.e(WonderPush.TAG, "Unexpected error", e);
+            Log.e(WonderPush.TAG, "Unexpected error while checking proper setup", e);
         }
         return false;
     }
@@ -80,7 +80,7 @@ public class WonderPushService extends Service {
                 }
             }
         } catch (Exception e) {
-            Log.e(WonderPush.TAG, "Unexpected error", e);
+            Log.e(WonderPush.TAG, "Unexpected error while responding to command " + intent, e);
         }
         stopSelf(startId);
         return START_NOT_STICKY;

@@ -105,8 +105,8 @@ class WonderPushRestClient {
                         public void run() {
                             try {
                                 WonderPushRequestVault.getDefaultVault().put(request);
-                            } catch (JSONException e1) {
-                                Log.e(TAG, "Could not save request to vault", e1);
+                            } catch (Exception ex) {
+                                Log.e(TAG, "Could not save request to vault: " + request, ex);
                             }
                         }
                     }, RETRY_INTERVAL_NETWORK_ISSUE);
@@ -224,6 +224,7 @@ class WonderPushRestClient {
         WonderPush.ResponseHandler wrapperHandler = new WonderPush.ResponseHandler() {
             @Override
             public void onSuccess(int status, WonderPush.Response response) {
+                WonderPush.logDebug("Request successful: (" + status + ") " + response + " (for " + request + ")");
                 if (request.getHandler() != null) {
                     request.getHandler().onSuccess(status, response);
                 }
@@ -242,7 +243,11 @@ class WonderPushRestClient {
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            requestAuthenticated(request);
+                            try {
+                                requestAuthenticated(request);
+                            } catch (Exception ex) {
+                                Log.e(TAG, "Unexpected error while retrying request: " + request, ex);
+                            }
                         }
                     }, RETRY_INTERVAL_BAD_AUTH);
 //                } else if (e instanceof ConnectTimeoutException) {
@@ -250,7 +255,11 @@ class WonderPushRestClient {
 //                    new Handler().postDelayed(new Runnable() {
 //                        @Override
 //                        public void run() {
-//                            requestAuthenticated(request);
+//                            try {
+//                                requestAuthenticated(request);
+//                            } catch (Exception ex) {
+//                                Log.e(TAG, "Unexpected error while retrying request: " + request, ex);
+//                            }
 //                        }
 //                    }, RETRY_INTERVAL_NETWORK_ISSUE);
                 } else {
@@ -262,6 +271,7 @@ class WonderPushRestClient {
 
             @Override
             public void onSuccess(Response response) {
+                WonderPush.logDebug("Request successful: " + response + " (for " + request + ")");
                 if (request.getHandler() != null) {
                     request.getHandler().onSuccess(response);
                 }
@@ -285,86 +295,92 @@ class WonderPushRestClient {
             return;
         }
 
-        // Decorate parameters
-        WonderPushRequestParamsDecorator.decorate(request.getResource(), request.getParams());
+        try {
 
-        // Generate signature
-        Header authorizationHeader = request.getAuthorizationHeader();
+            // Decorate parameters
+            WonderPushRequestParamsDecorator.decorate(request.getResource(), request.getParams());
 
-        // Headers
-        Header[] headers = null;
-        if (null != authorizationHeader) {
-            headers = new Header[1];
-            headers[0] = authorizationHeader;
-        }
+            // Generate signature
+            Header authorizationHeader = request.getAuthorizationHeader();
 
-        String url = WonderPushUriHelper.getAbsoluteUrl(request.getResource());
-        WonderPush.logDebug("requesting url: " + request.getMethod() + " " + url + "?" + request.getParams().getURLEncodedString());
-        // TODO: support other contentTypes such as "application/json"
-        String contentType = "application/x-www-form-urlencoded";
+            // Headers
+            Header[] headers = null;
+            if (null != authorizationHeader) {
+                headers = new Header[1];
+                headers[0] = authorizationHeader;
+            }
 
-        // Handler
-        final ResponseHandler handler = request.getHandler();
-        final long sendDate = SystemClock.elapsedRealtime();
-        JsonHttpResponseHandler jsonHandler = new JsonHttpResponseHandler() {
-            @Override
-            public void onFailure(Throwable e, JSONObject data) {
-                syncTime(data);
-                if (data != null) {
-                    WonderPush.logDebug("Requesting Error: " + data);
-                    WonderPush.setNetworkAvailable(true);
-                    if (handler != null) {
-                        handler.onFailure(e, new WonderPush.Response(data));
+            String url = WonderPushUriHelper.getAbsoluteUrl(request.getResource());
+            WonderPush.logDebug("requesting url: " + request.getMethod() + " " + url + "?" + request.getParams().getURLEncodedString());
+            // TODO: support other contentTypes such as "application/json"
+            String contentType = "application/x-www-form-urlencoded";
+
+            // Handler
+            final ResponseHandler handler = request.getHandler();
+            final long sendDate = SystemClock.elapsedRealtime();
+            JsonHttpResponseHandler jsonHandler = new JsonHttpResponseHandler() {
+                @Override
+                public void onFailure(Throwable e, JSONObject data) {
+                    syncTime(data);
+                    if (data != null) {
+                        WonderPush.logDebug("Requesting Error: " + data);
+                        WonderPush.setNetworkAvailable(true);
+                        if (handler != null) {
+                            handler.onFailure(e, new WonderPush.Response(data));
+                        }
+                    } else {
+                        WonderPush.setNetworkAvailable(false);
+                        if (handler != null) {
+                            handler.onFailure(e, null);
+                        }
                     }
-                } else {
+                }
+
+                @Override
+                public void onFailure(Throwable e, String data) {
                     WonderPush.setNetworkAvailable(false);
                     if (handler != null) {
                         handler.onFailure(e, null);
                     }
                 }
+
+                @Override
+                public void onSuccess(int statusCode, JSONObject data) {
+                    syncTime(data);
+                    WonderPush.setNetworkAvailable(true);
+                    if (handler != null) {
+                        handler.onSuccess(statusCode, new WonderPush.Response(data));
+                    }
+                }
+
+                private void syncTime(JSONObject data) {
+                    long recvDate = SystemClock.elapsedRealtime();
+                    if (data == null || !data.has("_serverTime")) {
+                        return;
+                    }
+                    WonderPush.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"), data.optLong("_serverTook"));
+                }
+            };
+            // NO UNNECESSARY WORK HERE, because of timed request
+            switch (request.getMethod()) {
+                case GET:
+                    sClient.get(null, url, headers, request.getParams(), jsonHandler);
+                    break;
+                case PUT:
+                    sClient.put(null, url, headers,
+                            request.getParams() != null ? request.getParams().getEntity() : null,
+                            contentType, jsonHandler);
+                    break;
+                case POST:
+                    sClient.post(null, url, headers, request.getParams(), contentType, jsonHandler);
+                    break;
+                case DELETE:
+                    sClient.delete(null, url, headers, jsonHandler);
+                    break;
             }
 
-            @Override
-            public void onFailure(Throwable e, String data) {
-                WonderPush.setNetworkAvailable(false);
-                if (handler != null) {
-                    handler.onFailure(e, null);
-                }
-            }
-
-            @Override
-            public void onSuccess(int statusCode, JSONObject data) {
-                syncTime(data);
-                WonderPush.setNetworkAvailable(true);
-                if (handler != null) {
-                    handler.onSuccess(statusCode, new WonderPush.Response(data));
-                }
-            }
-
-            private void syncTime(JSONObject data) {
-                long recvDate = SystemClock.elapsedRealtime();
-                if (data == null || !data.has("_serverTime")) {
-                    return;
-                }
-                WonderPush.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"), data.optLong("_serverTook"));
-            }
-        };
-        // NO UNNECESSARY WORK HERE, because of timed request
-        switch (request.getMethod()) {
-            case GET:
-                sClient.get(null, url, headers, request.getParams(), jsonHandler);
-                break;
-            case PUT:
-                sClient.put(null, url, headers,
-                        request.getParams() != null ? request.getParams().getEntity() : null,
-                        contentType, jsonHandler);
-                break;
-            case POST:
-                sClient.post(null, url, headers, request.getParams(), contentType, jsonHandler);
-                break;
-            case DELETE:
-                sClient.delete(null, url, headers, jsonHandler);
-                break;
+        } catch (Exception ex) {
+            Log.e(TAG, "Unexpected error while performing request " + request, ex);
         }
     }
 
@@ -418,10 +434,14 @@ class WonderPushRestClient {
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                WonderPush.logDebug("re-requesting access token!");
+                                try {
+                                    WonderPush.logDebug("re-requesting access token!");
 
-                                sIsFetchingAnonymousAccessToken = false;
-                                fetchAnonymousAccessToken(handler, nbRetries - 1);
+                                    sIsFetchingAnonymousAccessToken = false;
+                                    fetchAnonymousAccessToken(handler, nbRetries - 1);
+                                } catch (Exception ex) {
+                                    Log.e(TAG, "Unexpected error while re-requesting access token", ex);
+                                }
                             }
                         }, RETRY_INTERVAL);
                     }
@@ -684,21 +704,7 @@ class WonderPushRestClient {
 
         @Override
         public String toString() {
-            String method = null;
-            switch (mMethod) {
-                case POST:
-                    method = "POST";
-                    break;
-                case PUT:
-                    method = "PUT";
-                    break;
-                case GET:
-                    method = "GET";
-                    break;
-                case DELETE:
-                    method = "DELETE";
-            }
-            return String.format("%s %s", method, mResource);
+            return "" + mMethod + " " + mResource + "?" + mParams;
         }
 
     }

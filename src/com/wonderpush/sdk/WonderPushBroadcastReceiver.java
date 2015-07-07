@@ -67,7 +67,7 @@ public class WonderPushBroadcastReceiver extends BroadcastReceiver {
                 Log.e(TAG, "The class provided in <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml is not an Activity", e);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while treating broadcast intent " + intent, e);
         }
     }
 
@@ -77,6 +77,9 @@ public class WonderPushBroadcastReceiver extends BroadcastReceiver {
             Bundle metaData = context.getPackageManager().getReceiverInfo(receiver, PackageManager.GET_META_DATA).metaData;
             return metaData.getInt(METADATA_ICON_KEYNAME, -1);
         } catch (NameNotFoundException e) {
+            return -1;
+        } catch (Exception e) {
+            WonderPush.logError("Unexpected error while getting notification icon", e);
             return -1;
         }
     }

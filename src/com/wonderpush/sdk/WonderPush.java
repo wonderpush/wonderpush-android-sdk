@@ -284,15 +284,17 @@ public class WonderPush {
                         GooglePlayServicesUtil.showErrorNotification(resultCode, context);
                     }
                 } else {
-                    Log.w(TAG, "This device does not support google play service no push notification will be received");
+                    Log.w(TAG, "This device does not support Google Play Services, push notification are not supported");
                 }
                 return false;
             }
             return true;
         } catch (ClassNotFoundException e) {
-            Log.w(TAG, "The Google Play Services have not been added to the application");
-            return false;
+            Log.w(TAG, "The Google Play Services have not been added to the application", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while checking the Google Play Services", e);
         }
+        return false;
     }
 
     /**
@@ -452,7 +454,11 @@ public class WonderPush {
                         BroadcastReceiver receiver = new BroadcastReceiver() {
                             @Override
                             public void onReceive(Context context, Intent intent) {
-                                handleReceivedNotification(context, notification);
+                                try {
+                                    handleReceivedNotification(context, notification);
+                                } catch (Exception ex) {
+                                    Log.e(TAG, "Unexpected error on deferred handling of received notification", ex);
+                                }
                                 LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
                             }
                         };
@@ -468,7 +474,7 @@ public class WonderPush {
 
             }
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while showing potential notification", e);
         }
         return false;
     }
@@ -1055,10 +1061,13 @@ public class WonderPush {
             device.put("capabilities", capabilities);
 
             properties.put("device", device);
-        } catch (JSONException e1) {
-        }
 
-        updateInstallation(properties, false, null);
+            updateInstallation(properties, false, null);
+        } catch (JSONException ex) {
+            Log.e(TAG, "Unexpected error while updating installation core properties", ex);
+        } catch (Exception ex) {
+            Log.e(TAG, "Unexpected error while updating installation core properties", ex);
+        }
     }
 
     /**
@@ -1079,11 +1088,12 @@ public class WonderPush {
             try {
                 properties.put("custom", customProperties);
             } catch (JSONException e) {
+                Log.e(TAG, "Unexpected error while updating installation core properties", e);
             }
             updateInstallation(properties, false, null);
             onInteraction();
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while putting installation custom properties", e);
         }
     }
 
@@ -1213,7 +1223,7 @@ public class WonderPush {
         try {
             trackEvent(type, null);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while tracking user event of type \"" + type + "\"", e);
         }
     }
 
@@ -1234,7 +1244,7 @@ public class WonderPush {
             sendEvent(type, null, customData);
             onInteraction();
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while tracking user event of type \"" + type + "\"", e);
         }
     }
 
@@ -1427,7 +1437,7 @@ public class WonderPush {
         try {
             ensureInitialized(context);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while initializing the SDK", e);
         }
     }
 
@@ -1490,30 +1500,34 @@ public class WonderPush {
                 new Runnable() {
                     @Override
                     public void run() {
-                        if (OpenUDID_manager.isInitialized()) {
-                            boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
-                                @Override
-                                public void onFailure(Throwable e, Response errorResponse) {
-                                }
+                        try {
+                            if (OpenUDID_manager.isInitialized()) {
+                                boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
+                                    @Override
+                                    public void onFailure(Throwable e, Response errorResponse) {
+                                    }
 
-                                @Override
-                                public void onSuccess(Response response) {
+                                    @Override
+                                    public void onSuccess(Response response) {
+                                        updateInstallationCoreProperties(context);
+                                        registerForPushNotification(context);
+                                        sIsReady = true;
+                                        Intent broadcast = new Intent(INTENT_INTIALIZED);
+                                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
+                                    }
+                                });
+                                if (!isFetchingToken) {
                                     updateInstallationCoreProperties(context);
                                     registerForPushNotification(context);
                                     sIsReady = true;
                                     Intent broadcast = new Intent(INTENT_INTIALIZED);
                                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                                 }
-                            });
-                            if (!isFetchingToken) {
-                                updateInstallationCoreProperties(context);
-                                registerForPushNotification(context);
-                                sIsReady = true;
-                                Intent broadcast = new Intent(INTENT_INTIALIZED);
-                                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
+                            } else {
+                                new Handler().postDelayed(this, 100);
                             }
-                        } else {
-                            new Handler().postDelayed(this, 100);
+                        } catch (Exception ex) {
+                            Log.e(TAG, "Unexpected error while initializing the SDK asynchronously", ex);
                         }
                     }
                 }.run();
@@ -1523,7 +1537,7 @@ public class WonderPush {
             initializeForApplication(context);
             initializeForActivity(context);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while initializing the SDK", e);
         }
     }
 
@@ -1583,6 +1597,8 @@ public class WonderPush {
                 Log.e(TAG, "Failed to intantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
             } catch (IllegalAccessException e) {
                 Log.e(TAG, "Failed to intantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected error while ensuring SDK initialization", e);
             }
 
         } else {
@@ -1636,7 +1652,7 @@ public class WonderPush {
                 // DO NOT fetch another access token now, or beware the possible callback from initialize()
             }
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while setting userId to \"" + userId + "\"", e);
         }
     }
 
@@ -1680,7 +1696,7 @@ public class WonderPush {
         try {
             return WonderPushGcmClient.onBroadcastReceived(context, intent, iconResource, activityClass);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while giving broadcast to the receiver", e);
         }
         return false;
     }
@@ -1723,7 +1739,7 @@ public class WonderPush {
             eventData.put("reactionTime", dialog.getShownDuration());
             eventData.putOpt("custom", dialog.getInteractionEventCustom());
         } catch (JSONException e) {
-            WonderPush.logError("Failed to fill the @NOTIFICATION_ACTION event");
+            WonderPush.logError("Failed to fill the @NOTIFICATION_ACTION event", e);
         }
         trackInternalEvent("@NOTIFICATION_ACTION", eventData);
 
@@ -1731,34 +1747,42 @@ public class WonderPush {
             logDebug("User cancelled the dialog");
             return;
         }
-        for (WonderPushDialogBuilder.Button.Action action : buttonClicked.actions) {
-            if (action.getType() == null) {
-                // Skip unrecognized action types
-                continue;
+        try {
+            for (WonderPushDialogBuilder.Button.Action action : buttonClicked.actions) {
+                try {
+                    if (action == null || action.getType() == null) {
+                        // Skip unrecognized action types
+                        continue;
+                    }
+                    switch (action.getType()) {
+                        case CLOSE:
+                            // Noop
+                            break;
+                        case MAP_OPEN:
+                            handleMapOpenButtonAction(dialog, buttonClicked, action);
+                            break;
+                        case LINK:
+                            handleLinkButtonAction(dialog, buttonClicked, action);
+                            break;
+                        case RATING:
+                            handleRatingButtonAction(dialog, buttonClicked, action);
+                            break;
+                        case TRACK_EVENT:
+                            handleTrackEventButtonAction(dialog, buttonClicked, action);
+                            break;
+                        case METHOD:
+                            handleMethodButtonAction(dialog, buttonClicked, action);
+                            break;
+                        default:
+                            Log.w(TAG, "TODO: build-in button action \"" + action.getType() + "\"");
+                            break;
+                    }
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while handling button action " + action, ex);
+                }
             }
-            switch (action.getType()) {
-                case CLOSE:
-                    // Noop
-                    break;
-                case MAP_OPEN:
-                    handleMapOpenButtonAction(dialog, buttonClicked, action);
-                    break;
-                case LINK:
-                    handleLinkButtonAction(dialog, buttonClicked, action);
-                    break;
-                case RATING:
-                    handleRatingButtonAction(dialog, buttonClicked, action);
-                    break;
-                case TRACK_EVENT:
-                    handleTrackEventButtonAction(dialog, buttonClicked, action);
-                    break;
-                case METHOD:
-                    handleMethodButtonAction(dialog, buttonClicked, action);
-                    break;
-                default:
-                    Log.w(TAG, "TODO: build-in button action \"" + action.getType() + "\"");
-                    break;
-            }
+        } catch (Exception ex) {
+            Log.e(TAG, "Unexpected error while handling button actions", ex);
         }
     }
 
@@ -1856,6 +1880,8 @@ public class WonderPush {
                     Log.e(TAG, "Malformed map URL", e);
                 } catch (IOException e) {
                     Log.e(TAG, "Could not load map image", e);
+                } catch (Exception e) {
+                    Log.e(TAG, "Unexpected error while loading map image", e);
                 }
                 return null;
             }
@@ -1937,6 +1963,9 @@ public class WonderPush {
             }
         } catch (JSONException e) {
             Log.e(TAG, "Failed to open map", e);
+            Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while opening map", e);
             Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
         }
     }
@@ -2040,7 +2069,7 @@ public class WonderPush {
                 Log.e(TAG, "No service for intent " + intent);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to perform a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action", e);
+            Log.e(TAG, "Failed to perform a " + WonderPushDialogBuilder.Button.Action.Type.RATING + " action", e);
         }
     }
 
@@ -2327,7 +2356,7 @@ public class WonderPush {
                 try {
                     result.put(parameter.getName(), parameter.getValue());
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    WonderPush.logError("Failed to add parameter " + parameter, e);
                 }
             }
             return result;
@@ -2342,8 +2371,8 @@ public class WonderPush {
             public RequestParams createFromParcel(Parcel in) {
                 try {
                     return new RequestParams(in);
-                } catch (JSONException e) {
-                    WonderPush.logError("Error while unserializing JSON from a WonderPush.RequestParams", e);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error while unserializing JSON from a WonderPush.RequestParams", e);
                     return null;
                 }
             }
@@ -2413,6 +2442,12 @@ public class WonderPush {
         public JSONObject getJSONObject() {
             return mJson;
         }
+
+        @Override
+        public String toString() {
+            return mJson.toString();
+        }
+
     }
 
     /**

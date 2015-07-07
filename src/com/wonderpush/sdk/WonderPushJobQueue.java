@@ -112,6 +112,8 @@ class WonderPushJobQueue {
 
             } catch (JSONException e) {
                 Log.e(TAG, "Could not save job queue", e);
+            } catch (Exception e) {
+                Log.e(TAG, "Could not save job queue", e);
             }
         }
     }
@@ -132,7 +134,9 @@ class WonderPushJobQueue {
                     mQueue.add(new InternalJob(jsonArray.getJSONObject(i)));
                 }
             } catch (JSONException e) {
-                Log.e(TAG, "Could not restore job queue");
+                Log.e(TAG, "Could not restore job queue", e);
+            } catch (Exception e) {
+                Log.e(TAG, "Could not restore job queue", e);
             }
         }
     }

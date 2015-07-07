@@ -19,6 +19,8 @@ import android.util.Log;
  */
 public class WonderPushOnUpgradeReceiver extends BroadcastReceiver {
 
+    private static final String TAG = WonderPush.TAG;
+
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
@@ -43,7 +45,7 @@ public class WonderPushOnUpgradeReceiver extends BroadcastReceiver {
                 WonderPushConfiguration.setGCMRegistrationAppVersionForUpdateReceiver(versionCode);
             }
         } catch (Exception e) {
-            Log.e(WonderPush.TAG, "Unexpected error", e);
+            Log.e(TAG, "Unexpected error while treating upgrade intent " + intent, e);
         }
     }
 

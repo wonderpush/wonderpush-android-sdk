@@ -37,14 +37,18 @@ class WonderPushGcmClient {
     private static GoogleCloudMessaging mGcm;
 
     private static void storeRegistrationIdToWonderPush(String registrationId) {
-        JSONObject properties = new JSONObject();
         try {
+            JSONObject properties = new JSONObject();
             JSONObject pushToken = new JSONObject();
             pushToken.put("data", registrationId);
             properties.put("pushToken", pushToken);
-        } catch (JSONException e1) {
+
+            WonderPush.updateInstallation(properties, false, null);
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to update push token to WonderPush", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error whiel updating push token to WonderPush", e);
         }
-        WonderPush.updateInstallation(properties, false, null);
     }
 
     protected static String getRegistrationId() {
@@ -121,7 +125,9 @@ class WonderPushGcmClient {
         ApplicationInfo ai;
         try {
             ai = pm.getApplicationInfo(context.getPackageName(), 0);
-        } catch (final NameNotFoundException e) {
+        } catch (NameNotFoundException e) {
+            ai = null;
+        } catch (NullPointerException e) {
             ai = null;
         }
         final String applicationName = (String) (ai != null ? pm.getApplicationLabel(ai) : "(unknown)");
@@ -196,6 +202,8 @@ class WonderPushGcmClient {
 
         } catch (JSONException e) {
             WonderPush.logDebug("data is not a well-formed JSON object", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while receiving a notification with intent " + intent, e);
         }
         return false;
     }

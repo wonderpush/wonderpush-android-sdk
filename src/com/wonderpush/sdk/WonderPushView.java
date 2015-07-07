@@ -352,13 +352,17 @@ class WonderPushView extends FrameLayout {
                     mMainThreadHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            view.stopLoading();
-                            mMessageView.setText(R.string.wonderpush_network_error);
-                            setUserInterfaceState(new ErrorState());
-                            // if we are preloading we must remove the preloaded view from the preloaded view pool
-                            // if (WonderPushView.this.mIsPreloading) {
-                            //     WonderPush.freePreloadedResources(WonderPushView.this.mInitialResource);
-                            // }
+                            try {
+                                view.stopLoading();
+                                mMessageView.setText(R.string.wonderpush_network_error);
+                                setUserInterfaceState(new ErrorState());
+                                // if we are preloading we must remove the preloaded view from the preloaded view pool
+                                // if (WonderPushView.this.mIsPreloading) {
+                                //     WonderPush.freePreloadedResources(WonderPushView.this.mInitialResource);
+                                // }
+                            } catch (Exception ex) {
+                                Log.e(TAG, "Unexpected error while running load timeout code", ex);
+                            }
                         }
                     });
                 }
