@@ -325,12 +325,10 @@ protected void onNewIntent(Intent intent) {
 
 <p>
 If you have any problem or wonder what the SDK is doing, you may temporarily make it verbose.<br/>
-  Simply open <tt>WonderPush.java</tt> in the SDK project, search the following variable at the beginning of the class,
-  and set it to <tt>true</tt> like shown below:
+  Simply do the following, preferably just before initializing the SDK, so as to get the most information:
 </p>
 
-<pre><code>public class WonderPush {
-    protected static boolean SHOW_DEBUG = <b>true</b>; // &larr; only use true in development!</code></pre>
+<pre><code>WonderPush.setLogging(true); // &larr; only use true in development!</code></pre>
 
 <p>
   You should not do this for a production build. Once done with the additional logs, turn verbosity off.
