@@ -137,6 +137,11 @@ public class WonderPush {
     private static final long DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP = 15 * 60 * 1000;
 
     /**
+     * How long in ms to skip updating the installation core properties if they did not change.
+     */
+    private static final long CACHED_INSTALLATION_CORE_PROPERTIES_DURATION = 7 * 24 * 60 * 60 * 1000;
+
+    /**
      * The metadata key name corresponding to the name of the WonderPushInitializer implementation.
      */
     private static final String METADATA_INITIALIZER_CLASS = "wonderpushInitializerClass";
@@ -1068,7 +1073,15 @@ public class WonderPush {
 
             properties.put("device", device);
 
-            updateInstallation(properties, false, null);
+            String propertiesString = properties.toString();
+            String cachedPropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
+            long cachedPropertiesDate = WonderPushConfiguration.getCachedInstallationCorePropertiesDate();
+            if (System.currentTimeMillis() - cachedPropertiesDate > CACHED_INSTALLATION_CORE_PROPERTIES_DURATION
+                    || !propertiesString.equals(cachedPropertiesString)) {
+                WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
+                WonderPushConfiguration.setCachedInstallationCoreProperties(propertiesString);
+                updateInstallation(properties, false, null);
+            }
         } catch (JSONException ex) {
             Log.e(TAG, "Unexpected error while updating installation core properties", ex);
         } catch (Exception ex) {

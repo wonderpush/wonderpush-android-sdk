@@ -16,7 +16,11 @@ class WonderPushConfiguration {
     private static final String INSTALLATION_ID_PREF_NAME = "__installation_id";
     private static final String USER_ID_PREF_NAME = "__user_id";
 
+    private static final String CACHED_INSTALLATION_CORE_PROPERTIES_NAME = "__cached_installation_core_properties";
+    private static final String CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME = "__cached_installation_core_properties_date";
+
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
+    private static final String CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME = "__wonderpush_gcm_registration_id_date";
     private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
     private static final String GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME = "__wonderpush_gcm_registration_app_version_for_update_receiver";
     private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
@@ -203,6 +207,40 @@ class WonderPushConfiguration {
      */
     protected static void setSID(String sid) {
         putString(SID_PREF_NAME, sid);
+    }
+
+    /**
+     * Get the cached installation core properties stored in the user's shared preferences.
+     */
+    protected static String getCachedInstallationCoreProperties() {
+        return getString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME);
+    }
+
+    /**
+     * Set the cached installation core properties stored in the user's shared preferences.
+     *
+     * @param cachedInstallationCoreProperties
+     *            The cached installation core properties to be stored
+     */
+    protected static void setCachedInstallationCoreProperties(String cachedInstallationCoreProperties) {
+        putString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, cachedInstallationCoreProperties);
+    }
+
+    /**
+     * Get the cached installation core properties date stored in the user's shared preferences.
+     */
+    protected static long getCachedInstallationCorePropertiesDate() {
+        return getLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, Long.MIN_VALUE);
+    }
+
+    /**
+     * Set the cached installation core properties date stored in the user's shared preferences.
+     *
+     * @param cachedInstallationCorePropertiesDate
+     *            The cached installation core properties date to be stored
+     */
+    protected static void setCachedInstallationCorePropertiesDate(long cachedInstallationCorePropertiesDate) {
+        putLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, cachedInstallationCorePropertiesDate);
     }
 
     /**
