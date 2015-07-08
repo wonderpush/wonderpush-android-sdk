@@ -261,6 +261,23 @@ class WonderPushConfiguration {
     }
 
     /**
+     * Get the cached registration id date stored in the user's shared preferences.
+     */
+    protected static long getCachedGCMRegistrationIdDate() {
+        return getLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, Long.MIN_VALUE);
+    }
+
+    /**
+     * Set the cached registration id date as stored in the user's shared preferences.
+     *
+     * @param date
+     *            The cached registration id date to be stored
+     */
+    protected static void setCachedGCMRegistrationIdDate(long cachedGCMRegistrationIdDate) {
+        putLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, cachedGCMRegistrationIdDate);
+    }
+
+    /**
      * Get the application version stored in the user's shared preferences.
      */
     protected static int getGCMRegistrationAppVersion() {

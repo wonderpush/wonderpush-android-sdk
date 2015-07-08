@@ -142,6 +142,11 @@ public class WonderPush {
     private static final long CACHED_INSTALLATION_CORE_PROPERTIES_DURATION = 7 * 24 * 60 * 60 * 1000;
 
     /**
+     * How long in ms to skip updating the registration id if it did not change.
+     */
+    protected static final long CACHED_REGISTRATION_ID_DURATION = 7 * 24 * 60 * 60 * 1000;
+
+    /**
      * The metadata key name corresponding to the name of the WonderPushInitializer implementation.
      */
     private static final String METADATA_INITIALIZER_CLASS = "wonderpushInitializerClass";

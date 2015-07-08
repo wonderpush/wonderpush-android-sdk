@@ -41,7 +41,11 @@ class WonderPushGcmClient {
             pushToken.put("data", registrationId);
             properties.put("pushToken", pushToken);
 
-            WonderPush.updateInstallation(properties, false, null);
+            if (System.currentTimeMillis() - WonderPushConfiguration.getCachedGCMRegistrationIdDate() > WonderPush.CACHED_REGISTRATION_ID_DURATION
+                    || registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
+                    || registrationId != null && !registrationId.equals(WonderPushConfiguration.getGCMRegistrationId())) {
+                WonderPush.updateInstallation(properties, false, null);
+            }
         } catch (JSONException e) {
             Log.e(TAG, "Failed to update push token to WonderPush", e);
         } catch (Exception e) {
@@ -278,7 +282,9 @@ class WonderPushGcmClient {
 
         String regid = getRegistrationId();
 
-        if (checkForUnregistrationNeed(context, pushSenderId) || TextUtils.isEmpty(regid)) {
+        if (checkForUnregistrationNeed(context, pushSenderId)
+                || TextUtils.isEmpty(regid)
+                || System.currentTimeMillis() - WonderPushConfiguration.getCachedGCMRegistrationIdDate() > WonderPush.CACHED_REGISTRATION_ID_DURATION) {
             registerInBackground(pushSenderId, context);
         } // already pushed by WonderPush.updateInstallationCoreProperties()
         return;
