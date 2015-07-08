@@ -79,7 +79,7 @@ class WonderPushRequestVault {
                                 if (e instanceof NoHttpResponseException
                                         || e instanceof UnknownHostException
                                         || e instanceof SocketException) {
-                                    job.repost();
+                                    mJobQueue.post(job);
                                     return;
                                 }
                             }

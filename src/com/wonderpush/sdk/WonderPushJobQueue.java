@@ -1,5 +1,6 @@
 package com.wonderpush.sdk;
 
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -29,8 +30,6 @@ class WonderPushJobQueue {
 
         public JSONObject getJobDescription();
 
-        public void repost();
-
     }
 
     private static WonderPushJobQueue sDefaultQueue = new WonderPushJobQueue("DefaultWonderPushJobQueue", DEFAULT_CAPACITY);
@@ -43,8 +42,7 @@ class WonderPushJobQueue {
     }
 
     private String mQueueName;
-    private Object mMutex = new Object();
-    private ArrayBlockingQueue<InternalJob> mQueue;
+    private ArrayBlockingQueue<Job> mQueue;
 
     /**
      * Creates a queue with the specified name
@@ -56,7 +54,7 @@ class WonderPushJobQueue {
      */
     WonderPushJobQueue(String queueName, int capacity) {
         mQueueName = queueName;
-        mQueue = new ArrayBlockingQueue<WonderPushJobQueue.InternalJob>(capacity);
+        mQueue = new ArrayBlockingQueue<WonderPushJobQueue.Job>(capacity);
         restore();
     }
 
@@ -66,15 +64,25 @@ class WonderPushJobQueue {
      * @param jobDescription
      * @return The stored job or null if something went wrong (the queue is full for instance)
      */
-    protected synchronized Job postJobWithDescription(JSONObject jobDescription) {
-        if (0 == mQueue.remainingCapacity())
-            return null;
-
+    protected Job postJobWithDescription(JSONObject jobDescription) {
         String jobId = UUID.randomUUID().toString();
         InternalJob job = new InternalJob(jobId, jobDescription);
-        mQueue.add(job);
-        save();
-        return job;
+        return post(job);
+    }
+
+    /**
+     * Stores an existing job in the queue.
+     *
+     * @param job
+     * @return The input job or null if something went wrong (the queue is full for instance)
+     */
+    protected Job post(Job job) {
+        if (mQueue.offer(job)) {
+            save();
+            return job;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -83,7 +91,7 @@ class WonderPushJobQueue {
      * @throws InterruptedException
      */
     protected Job nextJob() throws InterruptedException {
-        InternalJob job = mQueue.take();
+        Job job = mQueue.take();
         save();
         return job;
     }
@@ -95,53 +103,56 @@ class WonderPushJobQueue {
     /**
      * Saves the job queue on disk.
      */
-    protected void save() {
-        synchronized (mMutex) {
-            try {
-                InternalJob jobs[] = new InternalJob[mQueue.size()];
-                mQueue.toArray(jobs);
-                JSONArray jsonArray = new JSONArray();
-                for (int i = 0 ; i < jobs.length ; i++) {
-                    jsonArray.put(jobs[i].toJSON());
-                }
-
-                SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putString(getPrefName(), jsonArray.toString());
-                editor.commit();
-
-            } catch (JSONException e) {
-                Log.e(TAG, "Could not save job queue", e);
-            } catch (Exception e) {
-                Log.e(TAG, "Could not save job queue", e);
+    protected synchronized void save() {
+        try {
+            JSONArray jsonArray = new JSONArray();
+            Iterator<Job> it = mQueue.iterator();
+            while (it.hasNext()) {
+                Job job = it.next();
+                if (!(job instanceof InternalJob)) continue;
+                InternalJob internalJob = (InternalJob) job;
+                jsonArray.put(internalJob.toJSON());
             }
+
+            SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(getPrefName(), jsonArray.toString());
+            editor.commit();
+        } catch (JSONException e) {
+            Log.e(TAG, "Could not save job queue", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not save job queue", e);
         }
     }
 
     /**
      * Restores the job queue from its on-disk version.
      */
-    protected void restore() {
-        synchronized (mMutex) {
-            try {
-                SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
-                String jsonString = prefs.getString(getPrefName(), "[]");
-                JSONArray jsonArray = new JSONArray(jsonString);
+    protected synchronized void restore() {
+        try {
+            SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
+            String jsonString = prefs.getString(getPrefName(), "[]");
+            JSONArray jsonArray = new JSONArray(jsonString);
 
-                mQueue.clear();
+            mQueue.clear();
 
-                for (int i = 0 ; i < jsonArray.length() ; i++) {
+            for (int i = 0 ; i < jsonArray.length() ; i++) {
+                try {
                     mQueue.add(new InternalJob(jsonArray.getJSONObject(i)));
+                } catch (JSONException ex) {
+                    Log.e(TAG, "Failed to restore malformed job", ex);
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while restoring a job", ex);
                 }
-            } catch (JSONException e) {
-                Log.e(TAG, "Could not restore job queue", e);
-            } catch (Exception e) {
-                Log.e(TAG, "Could not restore job queue", e);
             }
+        } catch (JSONException e) {
+            Log.e(TAG, "Could not restore job queue", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not restore job queue", e);
         }
     }
 
-    private class InternalJob implements Job {
+    private static class InternalJob implements Job {
 
         protected String mId;
         protected JSONObject mJobDescription;
@@ -169,11 +180,6 @@ class WonderPushJobQueue {
 
         public JSONObject getJobDescription() {
             return mJobDescription;
-        }
-
-        public void repost() {
-            mQueue.add(this);
-            save();
         }
 
         @Override
