@@ -401,7 +401,7 @@ If you have any problem or wonder what the SDK is doing, you may temporarily mak
 
 <p>
   Depending on the chosen scheduling, it may take up to 1 minute for our servers to process your notifications.
-  But the most likely scenario is that you are waiting for a simple push notification while the application is in foreground.<br/>
+  But the most likely scenario is that you are waiting for a <i>simple</i> push notification while the application is in foreground.<br/>
   When push notifications are received, the WonderPush SDK automatically opens them if the application is running,
   showing directly any rich message to the user. Simple push notifications have no such rich interaction by definition
   and it seems that nothing happens.<br/>
@@ -412,6 +412,17 @@ If you have any problem or wonder what the SDK is doing, you may temporarily mak
 <p>The log see when a notification is received by your device is:</p>
 
 <pre><code>I/GCM     ( 1532): GCM message com.wonderpush.demo 0:1423658642093464%2ced406ff9fd7ecd</code></pre>
+
+<p>In cases where the push notification is properly received but something prevented its proper handling, you will notice an additional line:</p>
+
+<pre><code>W/GCM-DMM ( 1532): broadcast intent callback: result=CANCELLED forIntent { act=com.google.android.c2dm.intent.RECEIVE pkg=com.wonderpush.demo (has extras) }</code></pre>
+
+<p>If you see the above warning and are using SDK v1.1.1.0 or ulterior, then you either:</p>
+<ul>
+  <li>have a setup issue, you should check the logs for the indications given by the SDK;</li>
+  <li>or have force-quit the application, the system won't deliver notifications to the SDK until you manually restart the app;</li>
+  <li>or something went wrong in the handling of the notification, the logs should contain a stacktrace that you should kindly send back to us.</li>
+</ul>
 
 
 <h3 id="check-setup--support">Need support?</h3>
