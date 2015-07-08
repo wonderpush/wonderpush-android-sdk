@@ -1656,6 +1656,8 @@ public class WonderPush {
      */
     public static void setUserId(String userId) {
         try {
+            if ("".equals(userId)) userId = null;
+
             // Do nothing if not initialized
             if (!isInitialized()) {
                 sBeforeInitializationUserIdSet = true;
