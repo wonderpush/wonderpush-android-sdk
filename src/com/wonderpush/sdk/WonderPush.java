@@ -680,8 +680,13 @@ public class WonderPush {
                     continue;
                 }
 
-                // If broken accuracy, discard
-                if (location.getAccuracy() < 0) {
+                // If no, broken or poor accuracy, discard
+                if (location.getAccuracy() <= 0 || location.getAccuracy() >= 10000) {
+                    continue;
+                }
+
+                // Skip locations older than 5 minutes
+                if (location.getTime() < System.currentTimeMillis() - 5 * 60 * 1000) {
                     continue;
                 }
 
@@ -691,19 +696,13 @@ public class WonderPush {
                     continue;
                 }
 
-                // If this location is significantly older, discard
-                long timeDelta = location.getTime() - best.getTime();
-                if (timeDelta < -1000 * 60 * 2) {
+                // If this location is more than 2 minutes older than the current best, discard
+                if (location.getTime() < best.getTime() - 2 * 60 * 1000) {
                     continue;
                 }
 
-                // If we have no accuracy, discard
-                if (0 == location.getAccuracy()) {
-                    continue;
-                }
-
-                // If this location is less accurate, discard
-                if (best.getAccuracy() < location.getAccuracy()) {
+                // If this location is less precise (ie. has a *larger* accuracy radius), discard
+                if (location.getAccuracy() > best.getAccuracy()) {
                     continue;
                 }
 
