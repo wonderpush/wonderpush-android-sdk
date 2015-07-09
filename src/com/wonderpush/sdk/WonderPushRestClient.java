@@ -19,7 +19,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.net.Uri;
-import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Base64;
 import android.util.Log;
@@ -100,12 +99,12 @@ class WonderPushRestClient {
                         || e instanceof UnknownHostException
                         || e instanceof SocketException) {
                     // retry later
-                    new Handler().postDelayed(new Runnable() {
+                    WonderPush.safeDefer(new Runnable() {
                         @Override
                         public void run() {
                             try {
                                 WonderPushRequestVault.getDefaultVault().put(request);
-                            } catch (Exception ex) {
+                            } catch (JSONException ex) {
                                 Log.e(TAG, "Could not save request to vault: " + request, ex);
                             }
                         }
@@ -176,16 +175,12 @@ class WonderPushRestClient {
      */
     protected static boolean fetchAnonymousAccessTokenIfNeeded(final WonderPush.ResponseHandler onFetchedHandler) {
         if (!WonderPush.isUDIDReady()) {
-            new Handler().postDelayed(new Runnable() {
+            WonderPush.safeDefer(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        if (!fetchAnonymousAccessTokenIfNeeded(onFetchedHandler)) {
-                            // Call the handler anyway
-                            onFetchedHandler.onSuccess(null);
-                        }
-                    } catch (Exception ex) {
-                        Log.e(TAG, "Unexpected error while deferred fetch of access token", ex);
+                    if (!fetchAnonymousAccessTokenIfNeeded(onFetchedHandler)) {
+                        // Call the handler anyway
+                        onFetchedHandler.onSuccess(null);
                     }
                 }
             }, 100);
@@ -219,14 +214,10 @@ class WonderPushRestClient {
         }
 
         if (!WonderPush.isUDIDReady()) {
-            new Handler().postDelayed(new Runnable() {
+            WonderPush.safeDefer(new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        requestAuthenticated(request);
-                    } catch (Exception ex) {
-                        Log.e(TAG, "Unexpected error while deferred request", ex);
-                    }
+                    requestAuthenticated(request);
                 }
             }, 100);
             return;
@@ -269,26 +260,18 @@ class WonderPushRestClient {
                     WonderPushConfiguration.invalidateCredentials();
 
                     // retry later now
-                    new Handler().postDelayed(new Runnable() {
+                    WonderPush.safeDefer(new Runnable() {
                         @Override
                         public void run() {
-                            try {
-                                requestAuthenticated(request);
-                            } catch (Exception ex) {
-                                Log.e(TAG, "Unexpected error while retrying request: " + request, ex);
-                            }
+                            requestAuthenticated(request);
                         }
                     }, RETRY_INTERVAL_BAD_AUTH);
 //                } else if (e instanceof ConnectTimeoutException) {
 //                    // retry later
-//                    new Handler().postDelayed(new Runnable() {
+//                    WonderPush.safeDefer(new Runnable() {
 //                        @Override
 //                        public void run() {
-//                            try {
-//                                requestAuthenticated(request);
-//                            } catch (Exception ex) {
-//                                Log.e(TAG, "Unexpected error while retrying request: " + request, ex);
-//                            }
+//                            requestAuthenticated(request);
 //                        }
 //                    }, RETRY_INTERVAL_NETWORK_ISSUE);
                 } else {
@@ -423,20 +406,16 @@ class WonderPushRestClient {
             return;
         }
         sIsFetchingAnonymousAccessToken = true;
-        new Runnable() {
+        WonderPush.safeDefer(new Runnable() {
             @Override
             public void run() {
-                try {
-                    if (WonderPush.isUDIDReady()) {
-                        fetchAnonymousAccessToken_inner(handler, nbRetries);
-                    } else {
-                        new Handler().postDelayed(this, 100);
-                    }
-                } catch (Exception ex) {
-                    Log.e(TAG, "Unexpected error while deferred fetch of access token", ex);
+                if (WonderPush.isUDIDReady()) {
+                    fetchAnonymousAccessToken_inner(handler, nbRetries);
+                } else {
+                    WonderPush.safeDefer(this, 100);
                 }
             }
-        }.run();
+        }, 0);
     }
 
     private static void fetchAnonymousAccessToken_inner(final WonderPush.ResponseHandler handler, final int nbRetries) {
@@ -477,17 +456,13 @@ class WonderPushRestClient {
                         }
                         Log.e(TAG, "Error request anonymous access token (retrying: " + nbRetries + "): " + (errorResponse != null ? errorResponse.getJSONObject().toString() : "null error response, retrying"), e);
 
-                        new Handler().postDelayed(new Runnable() {
+                        WonderPush.safeDefer(new Runnable() {
                             @Override
                             public void run() {
-                                try {
-                                    WonderPush.logDebug("re-requesting access token!");
+                                WonderPush.logDebug("re-requesting access token!");
 
-                                    sIsFetchingAnonymousAccessToken = false;
-                                    fetchAnonymousAccessToken(handler, nbRetries - 1);
-                                } catch (Exception ex) {
-                                    Log.e(TAG, "Unexpected error while re-requesting access token", ex);
-                                }
+                                sIsFetchingAnonymousAccessToken = false;
+                                fetchAnonymousAccessToken(handler, nbRetries - 1);
                             }
                         }, RETRY_INTERVAL);
                     }

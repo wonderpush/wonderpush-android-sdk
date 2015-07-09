@@ -11,7 +11,6 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -306,7 +305,6 @@ class WonderPushView extends FrameLayout {
         private boolean mError;
         private boolean mIsLoading;
         private Timer mWebviewTimer;
-        private Handler mMainThreadHandler;
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -344,27 +342,22 @@ class WonderPushView extends FrameLayout {
                 mWebviewTimer.cancel();
                 mWebviewTimer = null;
             }
-            mMainThreadHandler = new Handler();
             mWebviewTimer = new Timer("webviewTimeout", true);
             mWebviewTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    mMainThreadHandler.post(new Runnable() {
+                    WonderPush.safeDefer(new Runnable() {
                         @Override
                         public void run() {
-                            try {
-                                view.stopLoading();
-                                mMessageView.setText(R.string.wonderpush_network_error);
-                                setUserInterfaceState(new ErrorState());
-                                // if we are preloading we must remove the preloaded view from the preloaded view pool
-                                // if (WonderPushView.this.mIsPreloading) {
-                                //     WonderPush.freePreloadedResources(WonderPushView.this.mInitialResource);
-                                // }
-                            } catch (Exception ex) {
-                                Log.e(TAG, "Unexpected error while running load timeout code", ex);
-                            }
+                            view.stopLoading();
+                            mMessageView.setText(R.string.wonderpush_network_error);
+                            setUserInterfaceState(new ErrorState());
+                            // if we are preloading we must remove the preloaded view from the preloaded view pool
+                            // if (WonderPushView.this.mIsPreloading) {
+                            //     WonderPush.freePreloadedResources(WonderPushView.this.mInitialResource);
+                            // }
                         }
-                    });
+                    }, 0);
                 }
             }, WonderPush.WEBVIEW_REQUEST_TOTAL_TIMEOUT);
 
@@ -395,7 +388,6 @@ class WonderPushView extends FrameLayout {
             if (mWebviewTimer != null) {
                 mWebviewTimer.cancel();
             }
-            mMainThreadHandler = null;
             mWebviewTimer = null;
             mIsLoading = false;
             if (mIsPreloading) {

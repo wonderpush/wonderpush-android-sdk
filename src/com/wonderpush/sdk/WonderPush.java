@@ -93,6 +93,7 @@ public class WonderPush {
     private static boolean sActivityLifecycleCallbacksRegistered;
     private static WeakReference<Intent> sLastHandledIntentRef;
     private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<Activity, Object>();
+    private static Handler sDeferHandler = new Handler();
 
     private static String sClientId;
     private static String sClientSecret;
@@ -1520,40 +1521,36 @@ public class WonderPush {
                 }
 
                 // Wait for UDID to be ready and fetch anonymous token if needed.
-                new Runnable() {
+                WonderPush.safeDefer(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            if (isUDIDReady()) {
-                                boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
-                                    @Override
-                                    public void onFailure(Throwable e, Response errorResponse) {
-                                    }
+                        if (isUDIDReady()) {
+                            boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
+                                @Override
+                                public void onFailure(Throwable e, Response errorResponse) {
+                                }
 
-                                    @Override
-                                    public void onSuccess(Response response) {
-                                        updateInstallationCoreProperties(context);
-                                        registerForPushNotification(context);
-                                        sIsReady = true;
-                                        Intent broadcast = new Intent(INTENT_INTIALIZED);
-                                        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
-                                    }
-                                });
-                                if (!isFetchingToken) {
+                                @Override
+                                public void onSuccess(Response response) {
                                     updateInstallationCoreProperties(context);
                                     registerForPushNotification(context);
                                     sIsReady = true;
                                     Intent broadcast = new Intent(INTENT_INTIALIZED);
                                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                                 }
-                            } else {
-                                new Handler().postDelayed(this, 100);
+                            });
+                            if (!isFetchingToken) {
+                                updateInstallationCoreProperties(context);
+                                registerForPushNotification(context);
+                                sIsReady = true;
+                                Intent broadcast = new Intent(INTENT_INTIALIZED);
+                                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                             }
-                        } catch (Exception ex) {
-                            Log.e(TAG, "Unexpected error while initializing the SDK asynchronously", ex);
+                        } else {
+                            WonderPush.safeDefer(this, 100);
                         }
                     }
-                }.run();
+                }, 0);
 
             }
 
@@ -2131,6 +2128,19 @@ public class WonderPush {
         intent.putExtra(INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_METHOD, method);
         intent.putExtra(INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG, arg);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+    }
+
+    protected static boolean safeDefer(final Runnable runnable, long defer) {
+        return sDeferHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    runnable.run();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error on deferred task", ex);
+                }
+            }
+        }, defer);
     }
 
     /**
