@@ -254,7 +254,7 @@ class WonderPushRestClient {
 
             @Override
             public void onFailure(Throwable e, WonderPush.Response errorResponse) {
-                WonderPush.logError("Request failed", e);
+                WonderPush.logError("Request failed: " + errorResponse, e);
                 if (errorResponse != null && WonderPush.ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
                     WonderPushConfiguration.invalidateCredentials();
