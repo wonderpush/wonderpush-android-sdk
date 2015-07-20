@@ -343,7 +343,7 @@ class WonderPushRestClient {
                     } else {
                         WonderPush.setNetworkAvailable(false);
                         if (handler != null) {
-                            handler.onFailure(e, null);
+                            handler.onFailure(e, new WonderPush.Response(data));
                         }
                     }
                 }
@@ -352,7 +352,7 @@ class WonderPushRestClient {
                 public void onFailure(Throwable e, String data) {
                     WonderPush.setNetworkAvailable(false);
                     if (handler != null) {
-                        handler.onFailure(e, null);
+                        handler.onFailure(e, new WonderPush.Response(data));
                     }
                 }
 
@@ -439,7 +439,7 @@ class WonderPushRestClient {
                     @Override
                     public void onFailure(Throwable e, Response errorResponse) {
                         if (nbRetries <= 0) {
-                            Log.e(TAG, "Error request anonymous access token (aborting): " + (errorResponse != null ? errorResponse.getJSONObject().toString() : "null error response, aborting"), e);
+                            Log.e(TAG, "Error request anonymous access token (aborting): " + (errorResponse != null ? errorResponse.toString() : "null error response, aborting"), e);
                             if (errorResponse != null && WonderPush.ERROR_INVALID_CREDENTIALS == errorResponse.getErrorCode()) {
                                 Log.e(TAG, "Check your clientId/clientSecret couple");
                             }
@@ -454,7 +454,7 @@ class WonderPushRestClient {
                             }
                             return;
                         }
-                        Log.e(TAG, "Error request anonymous access token (retrying: " + nbRetries + "): " + (errorResponse != null ? errorResponse.getJSONObject().toString() : "null error response, retrying"), e);
+                        Log.e(TAG, "Error request anonymous access token (retrying: " + nbRetries + "): " + (errorResponse != null ? errorResponse.toString() : "null error response, retrying"), e);
 
                         WonderPush.safeDefer(new Runnable() {
                             @Override
@@ -471,7 +471,7 @@ class WonderPushRestClient {
                     public void onSuccess(int statusCode, Response response) {
                         // Parse response
                         JSONObject json = response.getJSONObject();
-                        if (json.has("token") && json.has("data")) {
+                        if (json != null && json.has("token") && json.has("data")) {
                             String token = json.optString("token", null);
                             JSONObject data = json.optJSONObject("data");
                             if (data != null && data.has("installationId")) {

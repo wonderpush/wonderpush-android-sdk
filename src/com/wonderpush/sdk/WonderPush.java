@@ -2424,12 +2424,13 @@ public class WonderPush {
     protected static class Response {
 
         JSONObject mJson;
+        String mError;
 
         public Response(String responseContent) {
             try {
                 mJson = new JSONObject(responseContent);
             } catch (JSONException e) {
-                Log.e(TAG, "Invalid JSON in response content: " + responseContent, e);
+                mError = responseContent;
             }
         }
 
@@ -2438,12 +2439,16 @@ public class WonderPush {
         }
 
         public boolean isError() {
-            return mJson.has("error");
+            return mJson == null || mJson.has("error");
         }
 
         public String getErrorMessage() {
             if (!isError())
                 return null;
+
+            if (mJson == null) {
+                return mError;
+            }
 
             JSONObject error = mJson.optJSONObject("error");
             if (error == null) {
@@ -2453,7 +2458,7 @@ public class WonderPush {
         }
 
         public int getErrorStatus() {
-            if (!isError())
+            if (!isError() || mJson == null)
                 return 0;
 
             JSONObject error = mJson.optJSONObject("error");
@@ -2464,7 +2469,7 @@ public class WonderPush {
         }
 
         public int getErrorCode() {
-            if (!isError())
+            if (!isError() || mJson == null)
                 return 0;
 
             JSONObject error = mJson.optJSONObject("error");
@@ -2480,6 +2485,9 @@ public class WonderPush {
 
         @Override
         public String toString() {
+            if (mJson == null) {
+                return mError;
+            }
             return mJson.toString();
         }
 
