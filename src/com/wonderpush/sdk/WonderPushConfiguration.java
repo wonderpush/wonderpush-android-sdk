@@ -16,6 +16,8 @@ class WonderPushConfiguration {
     private static final String INSTALLATION_ID_PREF_NAME = "__installation_id";
     private static final String USER_ID_PREF_NAME = "__user_id";
 
+    private static final String NOTIFICATION_ENABLED_PREF_NAME = "__wonderpush_notification_enabled";
+
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_NAME = "__cached_installation_core_properties";
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME = "__cached_installation_core_properties_date";
 
@@ -130,6 +132,20 @@ class WonderPushConfiguration {
         editor.commit();
     }
 
+    private static boolean getBoolean(String key, boolean defaultValue) {
+        SharedPreferences prefs = getSharedPreferences();
+        if (prefs == null) {
+            return defaultValue;
+        }
+        return prefs.getBoolean(key, defaultValue);
+    }
+
+    private static void putBoolean(String key, boolean value) {
+        SharedPreferences.Editor editor = getSharedPreferences().edit();
+        editor.putBoolean(key, value);
+        editor.commit();
+    }
+
     /**
      * Get the user id stored in the user's shared preferences.
      */
@@ -207,6 +223,23 @@ class WonderPushConfiguration {
      */
     protected static void setSID(String sid) {
         putString(SID_PREF_NAME, sid);
+    }
+
+    /**
+     * Get the notification enabled stored in the user's shared preferences.
+     */
+    protected static boolean getNotificationEnabled() {
+        return getBoolean(NOTIFICATION_ENABLED_PREF_NAME, true);
+    }
+
+    /**
+     * Set the notification enabled stored in the user's shared preferences.
+     *
+     * @param sid
+     *            The SID to be stored
+     */
+    protected static void setNotificationEnabled(boolean status) {
+        putBoolean(NOTIFICATION_ENABLED_PREF_NAME, status);
     }
 
     /**

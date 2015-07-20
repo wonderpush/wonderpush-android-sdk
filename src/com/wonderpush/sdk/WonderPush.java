@@ -153,6 +153,16 @@ public class WonderPush {
     private static final String METADATA_INITIALIZER_CLASS = "wonderpushInitializerClass";
 
     /**
+     * The preference.subscriptionStatus value when notifications are enabled.
+     */
+    private static final String INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN = "optIn";
+
+    /**
+     * The preference.subscriptionStatus value when notifications are disabled.
+     */
+    private static final String INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT = "optOut";
+
+    /**
      * Local intent broadcasted when the WonderPush SDK has been initialized and network is reachable.
      */
     public static final String INTENT_INTIALIZED = "wonderpushInitialized";
@@ -1721,6 +1731,26 @@ public class WonderPush {
             Log.e(TAG, "Unexpected error while giving broadcast to the receiver", e);
         }
         return false;
+    }
+
+    public static boolean getNotificationEnabled() {
+        return WonderPushConfiguration.getNotificationEnabled();
+    }
+
+    public static void setNotificationEnabled(boolean status) {
+        try {
+            String value = status
+                    ? INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
+                    : INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
+            JSONObject properties = new JSONObject();
+            JSONObject preferences = new JSONObject();
+            properties.put("preferences", preferences);
+            preferences.put("subscriptionStatus", value);
+            updateInstallation(properties, false, null);
+            WonderPushConfiguration.setNotificationEnabled(status);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while setting notification enabled to " + status, e);
+        }
     }
 
     /**
