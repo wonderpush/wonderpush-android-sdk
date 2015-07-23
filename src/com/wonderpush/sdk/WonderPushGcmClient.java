@@ -158,6 +158,11 @@ class WonderPushGcmClient {
             WonderPush.logDebug("Received broadcasted intent has no data for WonderPush");
             return false;
         }
+        WonderPush.logDebug("Received broadcasted intent: " + intent);
+        WonderPush.logDebug("Received broadcasted intent extras: " + extras.toString());
+        for (String key : extras.keySet()) {
+            WonderPush.logDebug("Received broadcasted intent extras " + key + ": " + extras.get(key));
+        }
 
         try {
             WonderPush.logDebug("Received broadcasted intent WonderPush data: " + wpDataJson);
