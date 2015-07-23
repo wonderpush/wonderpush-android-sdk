@@ -1689,6 +1689,95 @@ public class WonderPush {
     }
 
     /**
+     * Gets the user id, used to identify a single identity across multiple devices,
+     * and to correctly identify multiple users on a single device.
+     *
+     * <p>You should not call this method before initializing the SDK.</p>
+     *
+     * @return The user id, which may be {@code null} for anonymous users.
+     * @see #setUserId(String)
+     * @see #initialize(Context)
+     */
+    public static String getUserId() {
+        String userId = null;
+        try {
+            userId = WonderPushConfiguration.getUserId();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while getting userId", e);
+        }
+        return userId;
+    }
+
+    /**
+     * Gets the device id, used to identify a single device across applications,
+     * and to correctly identify multiple users on a single device.
+     *
+     * <p>You should not call this method before initializing the SDK.</p>
+     *
+     * <p>
+     *   Because of the way our device id is build, it is populated asynchronously,
+     *   so you may get a {@code null} response even a few moments after calling
+     *   {@link #initialize(Context)}.
+     *   You can either wait a bit (1 second should be enough on modern devices), or
+     *   wait for {@link #isReady()} to return {@code true}, which may take some more
+     *   time on the first launch, especially is the network connection is bad.
+     * </p>
+     *
+     * @return The device id, or {@code null} if the SDK is not initialized.
+     * @see #isReady()
+     * @see #initialize(Context)
+     */
+    public static String getDeviceId() {
+        String deviceId = null;
+        try {
+            if (isUDIDReady()) {
+                deviceId = OpenUDID_manager.getOpenUDID();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while getting userId", e);
+        }
+        return deviceId;
+    }
+
+    /**
+     * Gets the device id, used to identify a single device across applications,
+     * and to correctly identify multiple users on a single device.
+     *
+     * <p>You should not call this method before the SDK is ready.</p>
+     *
+     * @return The device id, or {@code null} if the SDK is not initialized.
+     * @see #isReady()
+     */
+    public static String getInstallationId() {
+        String installationId = null;
+        try {
+            installationId = WonderPushConfiguration.getInstallationId();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while getting userId", e);
+        }
+        return installationId;
+    }
+
+    /**
+     * Gets the push token, used to send notification to this installation.
+     *
+     * <p>You should not call this method before initializing the SDK.</p>
+     *
+     * @return The push token, or {@code null} if the installation is not yet
+     *     registered to push notifications, or has not finished refreshing
+     *     the push token after a forced update.
+     */
+    public static String getPushToken() {
+        String pushToken = null;
+        try {
+            pushToken = WonderPushConfiguration.getGCMRegistrationId();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while getting userId", e);
+        }
+        return pushToken;
+    }
+
+    /**
      * Method to be called in your own Google Cloud Messaging
      * <a href="http://developer.android.com/reference/android/content/BroadcastReceiver.html"><tt>BroadcastReceiver</tt></a>
      * to handle WonderPush push notifications.
