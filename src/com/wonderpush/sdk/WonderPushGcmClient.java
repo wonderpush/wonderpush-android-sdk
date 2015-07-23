@@ -121,7 +121,7 @@ class WonderPushGcmClient {
         return resultPendingIntent;
     }
 
-    protected static Notification buildNotification(String text, Context context, int iconResource,
+    protected static Notification buildNotification(JSONObject wpData, Bundle extras, Context context, int iconResource,
             PendingIntent pendingIntent) {
         final PackageManager pm = context.getApplicationContext().getPackageManager();
         ApplicationInfo ai;
@@ -132,10 +132,32 @@ class WonderPushGcmClient {
         } catch (NullPointerException e) {
             ai = null;
         }
-        final String applicationName = (String) (ai != null ? pm.getApplicationLabel(ai) : "(unknown)");
+
+        // Read notification content
+        JSONObject wpAlert = wpData.optJSONObject("alert");
+        String title = null;
+        String text = null;
+        if (wpAlert != null) {
+            title = wpAlert.optString("title", null);
+            text = wpAlert.optString("text", null);
+        }
+        if (text == null) {
+            text = extras.getString("alert"); // <= v1.1.0.0 format
+        }
+
+        if (title == null && text == null) {
+            // Nothing to display, don't create a notification
+            return null;
+        }
+        // Apply defaults
+        if (title == null) {
+            title = (String) (ai != null ? pm.getApplicationLabel(ai) : null);
+        }
+
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
-                .setContentTitle(applicationName)
-                .setContentText(text).setSmallIcon(iconResource);
+                .setContentTitle(title)
+                .setContentText(text)
+                .setSmallIcon(iconResource);
 
         mBuilder.setContentIntent(pendingIntent);
         Notification notification = mBuilder.build();
@@ -200,13 +222,18 @@ class WonderPushGcmClient {
                 // before showing the notification (i.e.: the pending intent being sent)
                 WonderPush.logDebug("Building notification");
                 PendingIntent pendingIntent = buildPendingIntent(wpData, intent, true, context, activity);
-                Notification notification = buildNotification(extras.getString("alert"), context, iconResource, pendingIntent);
+                Notification notification = buildNotification(wpData, extras, context, iconResource, pendingIntent);
 
-                int localNotificationId = wpData.optString("c", "MISSING CAMPAIGN ID").hashCode();
-                NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                mNotificationManager.notify(localNotificationId, notification);
+                if (notification == null) {
+                    WonderPush.logDebug("No notification is to be displayed");
+                } else {
+                    int localNotificationId = wpData.optString("c", "MISSING CAMPAIGN ID").hashCode();
+                    NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                    mNotificationManager.notify(localNotificationId, notification);
+                }
             }
 
+            return true;
         } catch (JSONException e) {
             WonderPush.logDebug("data is not a well-formed JSON object", e);
         } catch (Exception e) {
