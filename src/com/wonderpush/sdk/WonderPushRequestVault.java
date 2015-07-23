@@ -20,6 +20,11 @@ class WonderPushRequestVault {
 
     private static WonderPushRequestVault sDefaultVault;
 
+    private static final int NORMAL_WAIT = 10 * 1000;
+    private static final float BACKOFF_EXPONENT = 1.5f;
+    private static final int MAXIMUM_WAIT = 5 * 60 * 1000;
+    private static int sWait = NORMAL_WAIT;
+
     protected static WonderPushRequestVault getDefaultVault() {
         return sDefaultVault;
     }
@@ -58,8 +63,8 @@ class WonderPushRequestVault {
             public void run() {
                 try {
                     while (true) {
-                        // Sleep for 10 seconds
-                        Thread.sleep(1000 * 10);
+                        // Sleep
+                        Thread.sleep(sWait);
 
                         // Blocks
                         final WonderPushJobQueue.Job job = mJobQueue.nextJob();
@@ -79,6 +84,7 @@ class WonderPushRequestVault {
                                 if (e instanceof NoHttpResponseException
                                         || e instanceof UnknownHostException
                                         || e instanceof SocketException) {
+                                    backoff();
                                     mJobQueue.post(job);
                                     return;
                                 }
@@ -86,6 +92,7 @@ class WonderPushRequestVault {
 
                             @Override
                             public void onSuccess(Response response) {
+                                resetBackoff();
                             }
                         });
                         WonderPushRestClient.requestAuthenticated(request);
@@ -96,6 +103,15 @@ class WonderPushRequestVault {
 
             }
         };
+    }
+
+    private static void backoff() {
+        sWait = Math.min(MAXIMUM_WAIT, Math.round(sWait * BACKOFF_EXPONENT));
+        WonderPush.logDebug("Increasing backoff to " + sWait/1000.f + "s");
+    }
+
+    private static void resetBackoff() {
+        sWait = NORMAL_WAIT;
     }
 
 }
