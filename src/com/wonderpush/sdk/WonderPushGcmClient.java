@@ -23,6 +23,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.wonderpush.sdk.WonderPush.NotificationType;
 
 /**
  * A class that handles all the messages form Google Cloud Messaging service
@@ -135,14 +136,25 @@ class WonderPushGcmClient {
 
         // Read notification content
         JSONObject wpAlert = wpData.optJSONObject("alert");
-        String title = null;
-        String text = null;
-        if (wpAlert != null) {
-            title = wpAlert.optString("title", null);
-            text = wpAlert.optString("text", null);
+        if (wpAlert== null) {
+            wpAlert= new JSONObject();
         }
-        if (text == null) {
+        String title = wpAlert.optString("title", null);
+        String text = wpAlert.optString("text", null);
+        if (text == null && extras != null) {
             text = extras.getString("alert"); // <= v1.1.0.0 format
+        }
+        int priority = NotificationCompat.PRIORITY_DEFAULT;
+
+        // Read notification content override if application is foreground
+        Activity currentActivity = WonderPush.getCurrentActivity();
+        boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
+        if (appInForeground) {
+            JSONObject wpAlertForeground = wpAlert.optJSONObject("foreground");
+            if (wpAlertForeground == null) {
+                wpAlertForeground = new JSONObject();
+            }
+            priority = wpAlertForeground.optInt("priority", NotificationCompat.PRIORITY_HIGH);
         }
 
         if (title == null && text == null) {
@@ -157,6 +169,7 @@ class WonderPushGcmClient {
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
                 .setContentTitle(title)
                 .setContentText(text)
+                .setPriority(priority)
                 .setSmallIcon(iconResource);
 
         mBuilder.setContentIntent(pendingIntent);
@@ -205,9 +218,25 @@ class WonderPushGcmClient {
 
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
+            NotificationType type;
+            try {
+                type = NotificationType.fromString(wpData.optString("type", null));
+            } catch (Exception ex) {
+                WonderPush.logError("Failed to read notification type", ex);
+                if (wpData.has("alert") || extras.containsKey("alert")) {
+                    type = NotificationType.SIMPLE;
+                } else {
+                    type = NotificationType.DATA;
+                }
+                WonderPush.logDebug("Inferred notification type: " + type);
+            }
+            boolean allowAutomaticOpen = type != NotificationType.SIMPLE && type != NotificationType.DATA;
+
             boolean automaticallyOpened = false;
             Activity currentActivity = WonderPush.getCurrentActivity();
-            if (currentActivity != null && !currentActivity.isFinishing()) {
+            boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
+            if (allowAutomaticOpen && appInForeground) {
+                WonderPush.logDebug("Automatically opening");
                 // We can show the notification (send the pending intent) right away
                 try {
                     PendingIntent pendingIntent = buildPendingIntent(wpData, intent, false, context, activity);
