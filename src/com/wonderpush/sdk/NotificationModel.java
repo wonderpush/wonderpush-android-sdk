@@ -69,6 +69,7 @@ abstract class NotificationModel {
     private String notificationId;
     private Type type;
     private AlertModel alert;
+    private String targetUrl;
     public List<ActionModel> actions = new ArrayList<ActionModel>();
 
     // Common in-app message data
@@ -111,17 +112,30 @@ abstract class NotificationModel {
     }
 
     public static NotificationModel fromLocalIntent(Intent intent) {
-        String notifString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
-        if (notifString == null) {
-            return null;
-        }
-        try {
-            JSONObject notifParsed = new JSONObject(notifString);
-            return NotificationModel.fromGCMNotificationJSONObject(notifParsed, null);
-        } catch (JSONException e) {
-            WonderPush.logDebug("data is not a well-formed JSON object", e);
-        } catch (NotTargetedForThisInstallationException e) {
-            WonderPush.logError("Notifications not targeted for this installation should have been filtered earlier", e);
+        if (WonderPush.containsExplicitNotification(intent)) {
+
+            String notifString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
+            if (notifString == null) {
+                return null;
+            }
+            try {
+                JSONObject notifParsed = new JSONObject(notifString);
+                return NotificationModel.fromGCMNotificationJSONObject(notifParsed, null);
+            } catch (JSONException e) {
+                WonderPush.logDebug("data is not a well-formed JSON object", e);
+            } catch (NotTargetedForThisInstallationException e) {
+                WonderPush.logError("Notifications not targeted for this installation should have been filtered earlier", e);
+            }
+
+        } else if (WonderPush.containsWillOpenNotification(intent)) {
+
+            try {
+                Intent pushIntent = intent.<Intent>getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+                return fromGCMBroadcastIntent(pushIntent);
+            } catch (NotTargetedForThisInstallationException e) {
+                WonderPush.logError("Notifications not targeted for this installation should have been filtered earlier", e);
+            }
+
         }
         return null;
     }
@@ -156,6 +170,7 @@ abstract class NotificationModel {
             rtn.setTargetedInstallation(wpData.optString("@", null));
             rtn.setCampaignId(wpData.optString("c", null));
             rtn.setNotificationId(wpData.optString("n", null));
+            rtn.setTargetUrl(wpData.optString("targetUrl", null));
 
             // Read notification content
             JSONObject wpAlert = wpData.optJSONObject("alert");
@@ -246,6 +261,14 @@ abstract class NotificationModel {
 
     public void setAlert(AlertModel alert) {
         this.alert = alert;
+    }
+
+    public String getTargetUrl() {
+        return targetUrl;
+    }
+
+    public void setTargetUrl(String targetUrl) {
+        this.targetUrl = targetUrl;
     }
 
     public List<ActionModel> getActions() {

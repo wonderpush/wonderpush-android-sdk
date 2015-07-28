@@ -183,6 +183,53 @@ public class WonderPush {
     public static final String INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION = "wonderpushFromUserInteraction";
 
     /**
+     * Local intent broadcasted when a push notification created by the WonderPush SDK is to be opened,
+     * but no activity is to be started.
+     * This let's you handle {@code data} notifications or any deep linking yourself.
+     */
+    public static final String INTENT_NOTIFICATION_WILL_OPEN = "wonderpushNotificationWillOpen";
+
+    /**
+     * The scheme for the WonderPushService intents.
+     */
+    protected static final String INTENT_NOTIFICATION_WILL_OPEN_SCHEME = "wonderpush";
+
+    /**
+     * The authority for handling notification opens with deep links calling the WonderPushService.
+     */
+    protected static final String INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY = "notificationOpen";
+
+    /**
+     * The first path segment for opening the notification in the default way.
+     */
+    protected static final String INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT_ACTIVITY = "defaultActivity";
+
+    /**
+     * The first path segment for broadcasting the "notification will open" event for a programmatic resolution.
+     */
+    protected static final String INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST = "broadcast";
+
+    /**
+     * The extra key for the original received push notification intent in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
+     */
+    public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION =
+            INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION;
+
+    /**
+     * The extra key for whether the user clicked the notification or it was automatically opened by the SDK
+     * in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
+     */
+    public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION =
+            INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION;
+
+    /**
+     * The extra key denoting whether to automatically display a rich notification message in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
+     * You can set this property to {@code false} in your BroadcastReceiver.
+     */
+    public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN =
+            "wonderpushAutomaticOpen";
+
+    /**
      * Local intent broadcasted when a resource has been successfully preloaded.
      */
     protected static final String INTENT_RESOURCE_PRELOADED = "wonderpushResourcePreloaded";
@@ -394,7 +441,7 @@ public class WonderPush {
         }
     }
 
-    protected static boolean containsNotification(Intent intent) {
+    protected static boolean containsExplicitNotification(Intent intent) {
         return  intent != null
                 && (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0
                 && (sLastHandledIntentRef == null || intent != sLastHandledIntentRef.get())
@@ -402,6 +449,22 @@ public class WonderPush {
                 && intent.getData() != null
                 && INTENT_NOTIFICATION_SCHEME.equals(intent.getData().getScheme())
                 && INTENT_NOTIFICATION_AUTHORITY.equals(intent.getData().getAuthority())
+                ;
+    }
+
+    protected static boolean containsWillOpenNotification(Intent intent) {
+        return  intent != null
+                // action may or may not be INTENT_NOTIFICATION_WILL_OPEN
+                && (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0
+                && (sLastHandledIntentRef == null || intent != sLastHandledIntentRef.get())
+                && intent.hasExtra(INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION)
+                ;
+    }
+
+    protected static boolean containsWillOpenNotificationAutomaticallyOpenable(Intent intent) {
+        return  containsWillOpenNotification(intent)
+                && intent.hasExtra(INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN) // makes it default to false if removed
+                && intent.getBooleanExtra(INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN, false)
                 ;
     }
 
@@ -444,10 +507,19 @@ public class WonderPush {
      */
     public static boolean showPotentialNotification(final Activity activity, Intent intent) {
         try {
-            if (containsNotification(intent)) {
-                activity.setIntent(null);
-                sLastHandledIntentRef = new WeakReference<Intent>(intent);
+            if (containsExplicitNotification(intent) || containsWillOpenNotificationAutomaticallyOpenable(intent)) {
                 final NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+                if (notif == null) {
+                    Log.e(TAG, "Failed to extract notification object");
+                    return false;
+                }
+                if (containsExplicitNotification(intent)) {
+                    intent.setDataAndType(null, null);
+                } else if (containsWillOpenNotification(intent)) {
+                    // Keep it
+                    //intent.removeExtra(INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+                }
+                sLastHandledIntentRef = new WeakReference<Intent>(intent);
                 logDebug("Handling opened notification: " + notif.getInputJSONString());
                 try {
                     JSONObject trackData = new JSONObject();

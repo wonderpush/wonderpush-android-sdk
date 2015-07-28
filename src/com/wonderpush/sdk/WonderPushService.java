@@ -7,8 +7,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ServiceInfo;
+import android.net.Uri;
 import android.os.IBinder;
 import android.support.v4.app.TaskStackBuilder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 // We don't use an IntentService because of
@@ -16,6 +18,8 @@ import android.util.Log;
 // https://github.com/loopj/android-async-http/pull/496
 // We could also update android-async-http >= 1.4.5.
 public class WonderPushService extends Service {
+
+    private static String TAG = WonderPush.TAG;
 
     private static Boolean sIsProperlySetup;
 
@@ -68,25 +72,154 @@ public class WonderPushService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
-            if (WonderPush.containsNotification(intent)) {
-                Activity activity = WonderPush.getCurrentActivity();
-                if (activity != null && !activity.isFinishing()) {
-                    WonderPush.showPotentialNotification(WonderPush.getCurrentActivity(), intent);
-                } else {
-                    Intent activityIntent = new Intent();
-                    activityIntent.setClassName(getApplicationContext(), intent.getExtras().getString("activity"));
-                    activityIntent.fillIn(intent, 0);
-                    activityIntent.setFlags(activityIntent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
-                    TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-                    stackBuilder.addNextIntentWithParentStack(activityIntent);
-                    stackBuilder.startActivities();
-                }
+            if (WonderPush.containsExplicitNotification(intent)) {
+                handleOpenFromNotificationCenter(intent);
+            } else if (containsNotificationWillOpen(intent)) {
+                handleWillOpen(intent);
+            } else {
+                Log.e(TAG, "Called with unknown intent: " + intent);
             }
         } catch (Exception e) {
             Log.e(WonderPush.TAG, "Unexpected error while responding to command " + intent, e);
         }
         stopSelf(startId);
         return START_NOT_STICKY;
+    }
+
+    private void handleOpenFromNotificationCenter(Intent intent) {
+        boolean launchSuccessful = false;
+        NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+
+        if (notif.getTargetUrl() != null) {
+
+            try {
+                // Launch the activity associated with the given target url
+                Intent activityIntent = new Intent();
+                if (notif.getTargetUrl().toLowerCase().startsWith(WonderPush.INTENT_NOTIFICATION_SCHEME + ":")) {
+                    // Restrict to this application, as the wonderpush:// scheme may not be unique
+                    activityIntent.setPackage(getApplicationContext().getPackageName());
+                    // Copy some internal extra fields
+                    activityIntent.putExtra("activity", intent.getStringExtra("activity"));
+                    activityIntent.putExtra("receivedPushNotificationIntent", intent.getParcelableExtra("receivedPushNotificationIntent"));
+                    activityIntent.putExtra("openPushNotificationIntent", intent);
+                    activityIntent.putExtra("fromUserInteraction", intent.getBooleanExtra("fromUserInteraction", true));
+                }
+
+                activityIntent.setAction(Intent.ACTION_VIEW);
+                activityIntent.setData(Uri.parse(notif.getTargetUrl()));
+                activityIntent.setFlags(activityIntent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                        intent.getParcelableExtra("receivedPushNotificationIntent"));
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                        intent.getBooleanExtra("fromUserInteraction", true));
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+                        true);
+
+                // Try as an activity
+                if (activityIntent.resolveActivity(getPackageManager()) != null) {
+
+                    TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                    stackBuilder.addNextIntentWithParentStack(activityIntent);
+                    stackBuilder.startActivities();
+                    launchSuccessful = true;
+
+                } else if (activityIntent.getPackage() != null || activityIntent.getComponent() != null) {
+                    // startService() fails if the intent is not specified enough, hence the above checks
+
+                    // Try as a service
+                    try {
+                        if (startService(activityIntent) != null) {
+                            launchSuccessful = true;
+                        }
+                    } catch (Exception ex) {
+                        WonderPush.logDebug("Failed to try notification deep link as a service", ex);
+                    }
+
+                }
+
+                if (!launchSuccessful) {
+                    Log.e(TAG, "Error when opening the target url: Could not resolve intent: " + activityIntent);
+                }
+
+            } catch (Exception ex) {
+                Log.e(TAG, "Unexpected error while trying to open the notification deep link", ex);
+            }
+
+            if (!launchSuccessful) {
+                Log.w(TAG, "Fall back to default activity");
+            }
+
+        }
+
+        if (!launchSuccessful) {
+
+            try {
+                launchSuccessful = openNotificationDefaultBehavior(intent);
+            } catch (Exception ex) {
+                Log.e(TAG, "Unexpected error while opening notification using default behavior", ex);
+            }
+
+        }
+
+        if (!launchSuccessful) {
+            Log.e(TAG, "Failed to open notification properly");
+        }
+    }
+
+    private boolean openNotificationDefaultBehavior(Intent intent) {
+        Activity activity = WonderPush.getCurrentActivity();
+        if (activity != null && !activity.isFinishing()) {
+
+            WonderPush.showPotentialNotification(WonderPush.getCurrentActivity(), intent);
+
+        } else {
+
+            Intent activityIntent = new Intent();
+            activityIntent.setClassName(getApplicationContext(), intent.getExtras().getString("activity"));
+            activityIntent.fillIn(intent, 0);
+            activityIntent.setFlags(activityIntent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+            stackBuilder.addNextIntentWithParentStack(activityIntent);
+            stackBuilder.startActivities();
+
+        }
+        return true;
+    }
+
+    private boolean containsNotificationWillOpen(Intent intent) {
+        return intent.getData() != null
+                && WonderPush.INTENT_NOTIFICATION_SCHEME.equals(intent.getData().getScheme())
+                && WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY.equals(intent.getData().getAuthority())
+                && intent.hasExtra("receivedPushNotificationIntent")
+                ;
+    }
+
+    private void handleWillOpen(Intent intent) {
+        String singlePath = null;
+        if (intent.getData().getPathSegments().size() == 1) {
+            singlePath = intent.getData().getPathSegments().get(0);
+        }
+        if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT_ACTIVITY.equals(singlePath)) {
+
+            // Broadcast locally that a notification is to be opened, and don't do anything else
+            Intent notificationOpenedIntent = intent.getParcelableExtra("openPushNotificationIntent");
+            openNotificationDefaultBehavior(notificationOpenedIntent);
+
+        } else if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST.equals(singlePath)) {
+
+            // Broadcast locally that a notification is to be opened, and don't do anything else
+            Intent notificationWillOpenIntent = new Intent(WonderPush.INTENT_NOTIFICATION_WILL_OPEN);
+            notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                    intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION, true));
+            notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                    intent.getParcelableExtra("receivedPushNotificationIntent"));
+            notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+                    true);
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(notificationWillOpenIntent);
+
+        } else {
+            Log.w(TAG, "Unhandled intent: " + intent);
+        }
     }
 
 }
