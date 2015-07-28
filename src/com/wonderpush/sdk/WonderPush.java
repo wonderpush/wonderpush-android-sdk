@@ -1871,6 +1871,9 @@ public class WonderPush {
                         case TRACK_EVENT:
                             handleTrackEventButtonAction(dialog, buttonClicked, action);
                             break;
+                        case UPDATE_INSTALLATION:
+                            handleUpdateInstallationButtonAction(dialog, buttonClicked, action);
+                            break;
                         case METHOD:
                             handleMethodButtonAction(dialog, buttonClicked, action);
                             break;
@@ -2185,6 +2188,20 @@ public class WonderPush {
             return;
         }
         trackEvent(event.optString("type", null), event.optJSONObject("custom"));
+    }
+
+    protected static void handleUpdateInstallationButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
+            ActionModel action) {
+        JSONObject custom = action.getCustom();
+        if (custom == null) {
+            Log.e(TAG, "Got no installation custom properties to update for a " + ActionModel.Type.UPDATE_INSTALLATION + " action");
+            return;
+        }
+        if (custom.length() == 0) {
+            logDebug("Empty installation custom properties for an update, for a " + ActionModel.Type.UPDATE_INSTALLATION + " action");
+            return;
+        }
+        putInstallationCustomProperties(custom);
     }
 
     protected static void handleMethodButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,

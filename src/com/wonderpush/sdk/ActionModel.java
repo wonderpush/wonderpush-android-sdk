@@ -11,6 +11,7 @@ class ActionModel {
     public enum Type {
         CLOSE("close"),
         TRACK_EVENT("trackEvent"),
+        UPDATE_INSTALLATION("updateInstallation"),
         METHOD("method"),
         LINK("link"),
         RATING("rating"),
@@ -42,9 +43,9 @@ class ActionModel {
     }
 
     private Type type;
-    private String tag;
     private String url;
     private JSONObject event; // has "type" and optionally "custom" keys
+    private JSONObject custom;
     private String method;
     private String methodArg;
 
@@ -62,9 +63,9 @@ class ActionModel {
             Log.w(TAG, "Unknown button action", e);
             type = null;
         }
-        tag = data.optString("tag", null);
         url = data.optString("url", null);
         event = data.optJSONObject("event");
+        custom = data.optJSONObject("custom");
         method = data.optString("method", null);
         methodArg = data.optString("methodArg", null);
     }
@@ -75,14 +76,6 @@ class ActionModel {
 
     public void setType(Type type) {
         this.type = type;
-    }
-
-    public String getTag() {
-        return tag;
-    }
-
-    public void setTag(String tag) {
-        this.tag = tag;
     }
 
     public String getUrl() {
@@ -99,6 +92,14 @@ class ActionModel {
 
     protected void setEvent(JSONObject event) {
         this.event = event;
+    }
+
+    public JSONObject getCustom() {
+        return custom;
+    }
+
+    public void setCustom(JSONObject custom) {
+        this.custom = custom;
     }
 
     protected String getMethod() {
