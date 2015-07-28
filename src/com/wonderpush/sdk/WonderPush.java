@@ -1848,6 +1848,7 @@ public class WonderPush {
             logDebug("User cancelled the dialog");
             return;
         }
+        Context context = dialog.getContext();
         try {
             for (ActionModel action : buttonClicked.actions) {
                 try {
@@ -1860,25 +1861,25 @@ public class WonderPush {
                             // Noop
                             break;
                         case MAP_OPEN:
-                            handleMapOpenButtonAction(dialog, buttonClicked, action);
+                            handleMapOpenAction(context, dialog.getNotificationModel(), action);
                             break;
                         case LINK:
-                            handleLinkButtonAction(dialog, buttonClicked, action);
+                            handleLinkAction(context, action);
                             break;
                         case RATING:
-                            handleRatingButtonAction(dialog, buttonClicked, action);
+                            handleRatingAction(context, action);
                             break;
                         case TRACK_EVENT:
-                            handleTrackEventButtonAction(dialog, buttonClicked, action);
+                            handleTrackEventAction(action);
                             break;
                         case UPDATE_INSTALLATION:
-                            handleUpdateInstallationButtonAction(dialog, buttonClicked, action);
+                            handleUpdateInstallationAction(action);
                             break;
                         case METHOD:
-                            handleMethodButtonAction(dialog, buttonClicked, action);
+                            handleMethodAction(action);
                             break;
                         default:
-                            Log.w(TAG, "TODO: build-in button action \"" + action.getType() + "\"");
+                            Log.w(TAG, "Unhandled button action \"" + action.getType() + "\"");
                             break;
                     }
                 } catch (Exception ex) {
@@ -2006,13 +2007,11 @@ public class WonderPush {
         }.execute();
     }
 
-    protected static void handleMapOpenButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
-            ActionModel action) {
-        Context context = dialog.getContext();
+    protected static void handleMapOpenAction(Context context, NotificationModel notif, ActionModel action) {
         try {
             NotificationMapModel.Place place;
             try {
-                place = ((NotificationMapModel) dialog.getNotificationModel()).getMap().getPlace();
+                place = ((NotificationMapModel) notif).getMap().getPlace();
             } catch (Exception e) {
                 Log.e(TAG, "Could not get the place from the map", e);
                 return;
@@ -2139,9 +2138,7 @@ public class WonderPush {
         builder.show();
     }
 
-    protected static void handleLinkButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
-            ActionModel action) {
-        Context context = dialog.getContext();
+    protected static void handleLinkAction(Context context, ActionModel action) {
         try {
             String url = action.getUrl();
             if (url == null) {
@@ -2160,9 +2157,7 @@ public class WonderPush {
         }
     }
 
-    protected static void handleRatingButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
-            ActionModel action) {
-        Context context = dialog.getContext();
+    protected static void handleRatingAction(Context context, ActionModel action) {
         try {
             Uri uri = Uri.parse("market://details?id=" + context.getPackageName());
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
@@ -2176,8 +2171,7 @@ public class WonderPush {
         }
     }
 
-    protected static void handleTrackEventButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
-            ActionModel action) {
+    protected static void handleTrackEventAction(ActionModel action) {
         JSONObject event = action.getEvent();
         if (event == null) {
             Log.e(TAG, "Got no event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
@@ -2190,8 +2184,7 @@ public class WonderPush {
         trackEvent(event.optString("type", null), event.optJSONObject("custom"));
     }
 
-    protected static void handleUpdateInstallationButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
-            ActionModel action) {
+    protected static void handleUpdateInstallationAction(ActionModel action) {
         JSONObject custom = action.getCustom();
         if (custom == null) {
             Log.e(TAG, "Got no installation custom properties to update for a " + ActionModel.Type.UPDATE_INSTALLATION + " action");
@@ -2204,8 +2197,7 @@ public class WonderPush {
         putInstallationCustomProperties(custom);
     }
 
-    protected static void handleMethodButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
-            ActionModel action) {
+    protected static void handleMethodAction(ActionModel action) {
         String method = action.getMethod();
         String arg = action.getMethodArg();
         if (method == null) {
