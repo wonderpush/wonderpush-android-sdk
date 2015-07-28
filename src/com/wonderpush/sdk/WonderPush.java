@@ -14,7 +14,6 @@ import java.util.TimeZone;
 import java.util.WeakHashMap;
 
 import org.OpenUDID.OpenUDID_manager;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -60,8 +59,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.wonderpush.sdk.WonderPushDialogBuilder.Button;
-import com.wonderpush.sdk.WonderPushDialogBuilder.Button.Action;
+import com.wonderpush.sdk.ButtonModel;
+import com.wonderpush.sdk.ActionModel;
 
 /**
  * Main class of the WonderPush SDK.
@@ -238,39 +237,6 @@ public class WonderPush {
      */
     public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG = "com.wonderpush.action.method.extra_arg";
 
-    static enum NotificationType {
-        SIMPLE("simple"),
-        DATA("data"),
-        TEXT("text"),
-        HTML("html"),
-        MAP("map"),
-        URL("url"),
-        ;
-
-        private String type;
-
-        private NotificationType(String type) {
-            this.type = type;
-        }
-
-        @Override
-        public String toString() {
-            return type;
-        }
-
-        public static NotificationType fromString(String type) {
-            if (type == null) {
-                throw new NullPointerException();
-            }
-            for (NotificationType notificationType : NotificationType.values()) {
-                if (type.equals(notificationType.toString())) {
-                    return notificationType;
-                }
-            }
-            throw new IllegalArgumentException("Constant \"" + type + "\" is not a known " + NotificationType.class.getSimpleName());
-        }
-    }
-
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
     protected static final int ERROR_INVALID_CREDENTIALS = 11000;
     protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
@@ -362,37 +328,31 @@ public class WonderPush {
         }
     }
 
-    private static void handleReceivedNotification(Context context, JSONObject data) {
-        NotificationType type = null;
+    private static void handleReceivedNotification(Context context, NotificationModel notif) {
         try {
-            type = NotificationType.fromString(data.optString("type", null));
-        } catch (NullPointerException e) {
-        } catch (IllegalArgumentException e) {
-        }
-        if (type == null) {
-            Log.w(TAG, "No built-in action for type " + data.optString("type", null));
-            return;
-        }
-        switch (type) {
-            case SIMPLE:
-            case DATA:
-                // Nothing to do
-                break;
-            case URL:
-                handleURLNotification(context, data);
-                break;
-            case TEXT:
-                handleDialogNotification(context, data);
-                break;
-            case MAP:
-                handleMapNotification(context, data);
-                break;
-            case HTML:
-                handleHTMLNotification(context, data);
-                break;
-            default:
-                Log.w(TAG, "TODO: built-in action for type " + type);
-                break;
+            switch (notif.getType()) {
+                case SIMPLE:
+                case DATA:
+                    // Nothing to do
+                    break;
+                case URL:
+                    handleURLNotification(context, (NotificationUrlModel) notif);
+                    break;
+                case TEXT:
+                    handleTextNotification(context, (NotificationTextModel) notif);
+                    break;
+                case MAP:
+                    handleMapNotification(context, (NotificationMapModel) notif);
+                    break;
+                case HTML:
+                    handleHTMLNotification(context, (NotificationHtmlModel) notif);
+                    break;
+                default:
+                    Log.e(TAG, "Missing built-in action for type " + notif.getType());
+                    break;
+            }
+        } catch (ClassCastException ex) {
+            Log.e(TAG, "Wrong notification class for type " + notif.getType(), ex);
         }
     }
 
@@ -449,13 +409,12 @@ public class WonderPush {
             if (containsNotification(intent)) {
                 activity.setIntent(null);
                 sLastHandledIntentRef = new WeakReference<Intent>(intent);
-                String notificationString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
-                logDebug("Handling notification at main activity creation: " + notificationString);
+                final NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+                logDebug("Handling opened notification: " + notif.getInputJSONString());
                 try {
-                    final JSONObject notification = new JSONObject(notificationString);
                     JSONObject trackData = new JSONObject();
-                    trackData.put("campaignId", notification.optString("c", null));
-                    trackData.put("notificationId", notification.optString("n", null));
+                    trackData.put("campaignId", notif.getCampaignId());
+                    trackData.put("notificationId", notif.getNotificationId());
                     trackData.put("actionDate", getTime());
                     WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
@@ -470,13 +429,13 @@ public class WonderPush {
                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(notificationOpenedIntent);
 
                     if (sIsInitialized) {
-                        handleReceivedNotification(activity, notification);
+                        handleReceivedNotification(activity, notif);
                     } else {
                         BroadcastReceiver receiver = new BroadcastReceiver() {
                             @Override
                             public void onReceive(Context context, Intent intent) {
                                 try {
-                                    handleReceivedNotification(context, notification);
+                                    handleReceivedNotification(context, notif);
                                 } catch (Exception ex) {
                                     Log.e(TAG, "Unexpected error on deferred handling of received notification", ex);
                                 }
@@ -1852,10 +1811,10 @@ public class WonderPush {
         return sApplicationContext;
     }
 
-    protected static WonderPushDialogBuilder createDialogNotificationBase(final Context context, final JSONObject data) {
-        WonderPushDialogBuilder builder = new WonderPushDialogBuilder(context, data, new WonderPushDialogBuilder.OnChoice() {
+    protected static WonderPushDialogBuilder createDialogNotificationBase(final Context context, final NotificationModel notif) {
+        WonderPushDialogBuilder builder = new WonderPushDialogBuilder(context, notif, new WonderPushDialogBuilder.OnChoice() {
             @Override
-            public void onChoice(WonderPushDialogBuilder dialog, Button which) {
+            public void onChoice(WonderPushDialogBuilder dialog, ButtonModel which) {
                 handleDialogButtonAction(dialog, which);
             }
         });
@@ -1865,20 +1824,21 @@ public class WonderPush {
     }
 
     protected static void createDefaultCloseButtonIfNeeded(WonderPushDialogBuilder builder) {
-        List<WonderPushDialogBuilder.Button> buttons = builder.getButtons();
-        if (buttons.isEmpty()) {
-            Button defaultButton = new Button();
+        if (builder.getNotificationModel().getButtonCount() == 0) {
+            ButtonModel defaultButton = new ButtonModel();
             defaultButton.label = builder.getContext().getResources().getString(R.string.wonderpush_close);
-            buttons.add(defaultButton);
+            builder.getNotificationModel().addButton(defaultButton);
         }
     }
 
-    protected static void handleDialogButtonAction(WonderPushDialogBuilder dialog, WonderPushDialogBuilder.Button buttonClicked) {
+    protected static void handleDialogButtonAction(WonderPushDialogBuilder dialog, ButtonModel buttonClicked) {
         JSONObject eventData = new JSONObject();
         try {
             eventData.put("buttonLabel", buttonClicked == null ? null : buttonClicked.label);
             eventData.put("reactionTime", dialog.getShownDuration());
             eventData.putOpt("custom", dialog.getInteractionEventCustom());
+            eventData.put("campaignId", dialog.getNotificationModel().getCampaignId());
+            eventData.put("notificationId", dialog.getNotificationModel().getNotificationId());
         } catch (JSONException e) {
             WonderPush.logError("Failed to fill the @NOTIFICATION_ACTION event", e);
         }
@@ -1889,7 +1849,7 @@ public class WonderPush {
             return;
         }
         try {
-            for (WonderPushDialogBuilder.Button.Action action : buttonClicked.actions) {
+            for (ActionModel action : buttonClicked.actions) {
                 try {
                     if (action == null || action.getType() == null) {
                         // Skip unrecognized action types
@@ -1927,14 +1887,13 @@ public class WonderPush {
         }
     }
 
-    protected static void handleDialogNotification(final Context context, final JSONObject data) {
-        WonderPushDialogBuilder builder = createDialogNotificationBase(context, data);
+    protected static void handleTextNotification(final Context context, final NotificationTextModel notif) {
+        WonderPushDialogBuilder builder = createDialogNotificationBase(context, notif);
 
-        String message = data.optString("message", null);
-        if (message == null) {
+        if (notif.getMessage() == null) {
             Log.w(TAG, "Got no message to display for a plain notification");
         } else {
-            builder.setMessage(message);
+            builder.setMessage(notif.getMessage());
         }
 
         createDefaultCloseButtonIfNeeded(builder);
@@ -1944,43 +1903,46 @@ public class WonderPush {
     }
 
     @SuppressLint("InflateParams")
-    protected static void handleMapNotification(final Context context, final JSONObject data) {
-        WonderPushDialogBuilder builder = createDialogNotificationBase(context, data);
+    protected static void handleMapNotification(final Context context, final NotificationMapModel notif) {
+        WonderPushDialogBuilder builder = createDialogNotificationBase(context, notif);
 
-        final JSONObject place;
-        try {
-            place = data.getJSONObject("map").getJSONObject("place");
-        } catch (JSONException e) {
-            Log.e(TAG, "Could not get the place from the map", e);
+        final NotificationMapModel.Map map = notif.getMap();
+        if (map == null) {
+            Log.e(TAG, "Could not get the map from the notification");
             return;
         }
-        final JSONObject point = place.optJSONObject("point");
+        final NotificationMapModel.Place place = map.getPlace();
+        if (place == null) {
+            Log.e(TAG, "Could not get the place from the map");
+            return;
+        }
+        final NotificationMapModel.Point point = place.getPoint();
+
         final View dialogView = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.wonderpush_notification_map_dialog, null, false);
         final TextView text = (TextView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_text);
-        if (data.has("message") && data.opt("message") != null) {
+        if (notif.getMessage() != null) {
             text.setVisibility(View.VISIBLE);
-            text.setText(data.optString("message"));
+            text.setText(notif.getMessage());
             text.setMovementMethod(new ScrollingMovementMethod());
         }
-        final ImageView map = (ImageView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_map);
+        final ImageView mapImg = (ImageView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_map);
         builder.setView(dialogView);
 
-        List<Button> buttons = builder.getButtons();
-        if (buttons.isEmpty()) {
+        if (notif.getButtonCount() == 0) {
             // Close button
-            Button closeButton = new Button();
+            ButtonModel closeButton = new ButtonModel();
             closeButton.label = context.getResources().getString(R.string.wonderpush_close);
-            Action closeAction = new Action();
-            closeAction.setType(Action.Type.CLOSE);
+            ActionModel closeAction = new ActionModel();
+            closeAction.setType(ActionModel.Type.CLOSE);
             closeButton.actions.add(closeAction);
-            buttons.add(closeButton);
+            notif.addButton(closeButton);
             // Open button
-            Button openButton = new Button();
+            ButtonModel openButton = new ButtonModel();
             openButton.label = context.getResources().getString(R.string.wonderpush_open);
-            Action openAction = new Action();
-            openAction.setType(Action.Type.MAP_OPEN);
+            ActionModel openAction = new ActionModel();
+            openAction.setType(ActionModel.Type.MAP_OPEN);
             openButton.actions.add(openAction);
-            buttons.add(openButton);
+            notif.addButton(openButton);
         }
         builder.setupButtons();
 
@@ -1991,10 +1953,12 @@ public class WonderPush {
             protected Bitmap doInBackground(Object... args) {
                 try {
                     String loc = null;
-                    if (point != null && point.has("lat") && point.has("lon")) {
-                        loc = point.optDouble("lat", 0.0) + "," + point.optDouble("lon", 0.0);
+                    if (point != null) {
+                        loc = point.getLat() + "," + point.getLon();
+                    } else if (place.getName() != null) {
+                        loc = place.getName();
                     } else {
-                        loc = place.optString("name", place.optString("query", null));
+                        loc = place.getQuery();
                     }
                     if (loc == null) {
                         Log.e(TAG, "No location for map");
@@ -2009,7 +1973,7 @@ public class WonderPush {
                     int scale = getScreenDensity(context) >= 192 ? 2 : 1;
                     URL url = new URL("https://maps.google.com/maps/api/staticmap"
                             + "?center=" + loc
-                            + "&zoom=" + place.optInt("zoom", 13)
+                            + "&zoom=" + (place.getZoom() != null ? place.getZoom() : 13)
                             + "&size=" + size
                             + "&sensors=false"
                             + "&markers=color:red%7C" + loc
@@ -2029,45 +1993,44 @@ public class WonderPush {
             @Override
             protected void onPostExecute(Bitmap bmp) {
                 if (bmp == null) {
-                    map.setVisibility(View.GONE);
+                    mapImg.setVisibility(View.GONE);
                     text.setMaxLines(Integer.MAX_VALUE);
                 } else {
-                    map.setScaleType(ScaleType.CENTER_CROP);
-                    map.setImageBitmap(bmp);
+                    mapImg.setScaleType(ScaleType.CENTER_CROP);
+                    mapImg.setImageBitmap(bmp);
                 }
             }
         }.execute();
     }
 
-    protected static void handleMapOpenButtonAction(WonderPushDialogBuilder dialog, Button button,
-            WonderPushDialogBuilder.Button.Action action) {
+    protected static void handleMapOpenButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
+            ActionModel action) {
         Context context = dialog.getContext();
-        JSONObject data = dialog.getData();
         try {
-            JSONObject place;
+            NotificationMapModel.Place place;
             try {
-                place = data.getJSONObject("map").getJSONObject("place");
-            } catch (JSONException e) {
+                place = ((NotificationMapModel) dialog.getNotificationModel()).getMap().getPlace();
+            } catch (Exception e) {
                 Log.e(TAG, "Could not get the place from the map", e);
                 return;
             }
-            JSONObject point = place.optJSONObject("point");
+            NotificationMapModel.Point point = place.getPoint();
 
             Uri.Builder geo = new Uri.Builder();
             geo.scheme("geo");
-            if (point != null && point.has("lat") && point.has("lon")) {
-                if (place.has("name")) {
+            if (point != null) {
+                if (place.getName() != null) {
                     geo.authority("0,0");
-                    geo.appendQueryParameter("q", point.getDouble("lat") + "," + point.getDouble("lon") + "(" + place.getString("name") + ")");
+                    geo.appendQueryParameter("q", point.getLat() + "," + point.getLon() + "(" + place.getName() + ")");
                 } else {
-                    geo.authority(point.getDouble("lat") + "," + point.getDouble("lon"));
-                    if (place.has("zoom")) {
-                        geo.appendQueryParameter("z", Integer.toString(place.getInt("zoom")));
+                    geo.authority(point.getLat() + "," + point.getLon());
+                    if (place.getZoom() != null) {
+                        geo.appendQueryParameter("z", place.getZoom().toString());
                     }
                 }
-            } else if (place.has("query")) {
+            } else if (place.getQuery() != null) {
                 geo.authority("0,0");
-                geo.appendQueryParameter("q", place.getString("query"));
+                geo.appendQueryParameter("q", place.getQuery());
             }
             Intent open = new Intent(Intent.ACTION_VIEW);
             open.setData(geo.build());
@@ -2081,15 +2044,15 @@ public class WonderPush {
                 geo.scheme("http");
                 geo.authority("maps.google.com");
                 geo.path("maps");
-                if (point != null && point.has("lat") && point.has("lon")) {
-                    geo.appendQueryParameter("q", point.getDouble("lat") + "," + point.getDouble("lon"));
-                    if (place.has("zoom")) {
-                        geo.appendQueryParameter("z", Integer.toString(place.getInt("zoom")));
+                if (point != null) {
+                    geo.appendQueryParameter("q", point.getLat() + "," + point.getLon());
+                    if (place.getZoom() != null) {
+                        geo.appendQueryParameter("z", place.getZoom().toString());
                     }
-                } else if (place.has("query")) {
-                    geo.appendQueryParameter("q", place.getString("query"));
-                } else if (place.has("name")) {
-                    geo.appendQueryParameter("q", place.getString("name"));
+                } else if (place.getQuery() != null) {
+                    geo.appendQueryParameter("q", place.getQuery());
+                } else if (place.getName() != null) {
+                    geo.appendQueryParameter("q", place.getName());
                 }
                 open = new Intent(Intent.ACTION_VIEW);
                 open.setData(geo.build());
@@ -2102,21 +2065,17 @@ public class WonderPush {
                     Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
                 }
             }
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to open map", e);
-            Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while opening map", e);
             Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
         }
     }
 
-    protected static WonderPushDialogBuilder createWebNotificationBasePre(final Context context, final JSONObject data, WonderPushView webView) {
-        final WonderPushDialogBuilder builder = createDialogNotificationBase(context, data);
+    protected static WonderPushDialogBuilder createWebNotificationBasePre(final Context context, final NotificationModel notif, WonderPushView webView) {
+        final WonderPushDialogBuilder builder = createDialogNotificationBase(context, notif);
         builder.setupButtons();
 
-        JSONArray buttons = data.optJSONArray("buttons");
-        webView.setShowCloseButton(buttons == null || buttons.length() < 1);
+        webView.setShowCloseButton(notif.getButtonCount() < 1);
 
         webView.setStateListener(new WonderPushView.OnStateListener() {
             @Override
@@ -2142,48 +2101,48 @@ public class WonderPush {
         return builder;
     }
 
-    protected static void handleHTMLNotification(final Context context, final JSONObject data) {
-        if (!data.has("message") || data.opt("message") == null) {
-            Log.w(TAG, "Did not have any HTML content to display in the notification!");
+    protected static void handleHTMLNotification(final Context context, final NotificationHtmlModel notif) {
+        if (notif.getMessage() == null) {
+            Log.w(TAG, "No HTML content to display in the notification!");
             return;
         }
 
         // Build the dialog
         WonderPushView webView = new WonderPushView(context);
-        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, data, webView);
+        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, notif, webView);
         builder.setupButtons();
 
         // Set content
-        webView.loadDataWithBaseURL(data.optString("baseUrl", null), data.optString("message"), "text/html", "utf-8", null);
+        webView.loadDataWithBaseURL(notif.getBaseUrl(), notif.getMessage(), "text/html", "utf-8", null);
 
         // Show time!
         builder.show();
     }
 
-    protected static void handleURLNotification(Context context, JSONObject data) {
-        if (!data.has("url") || data.opt("url") == null) {
-            Log.w(TAG, "Did not have any URL to display in the notification!");
+    protected static void handleURLNotification(Context context, NotificationUrlModel notif) {
+        if (notif.getUrl() == null) {
+            Log.e(TAG, "No URL to display in the notification!");
             return;
         }
 
         WonderPushView webView = new WonderPushView(context);
-        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, data, webView);
+        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, notif, webView);
         builder.setupButtons();
 
         // Set content
-        webView.setFullUrl(data.optString("url"));
+        webView.setFullUrl(notif.getUrl());
 
         // Show time!
         builder.show();
     }
 
-    protected static void handleLinkButtonAction(WonderPushDialogBuilder dialog, Button button,
-            WonderPushDialogBuilder.Button.Action action) {
+    protected static void handleLinkButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
+            ActionModel action) {
         Context context = dialog.getContext();
         try {
             String url = action.getUrl();
             if (url == null) {
-                Log.e(TAG, "No url in a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action!");
+                Log.e(TAG, "No url in a " + ActionModel.Type.LINK + " action!");
                 return;
             }
             Uri uri = Uri.parse(url);
@@ -2194,12 +2153,12 @@ public class WonderPush {
                 Log.e(TAG, "No service for intent " + intent);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to perform a " + WonderPushDialogBuilder.Button.Action.Type.LINK + " action", e);
+            Log.e(TAG, "Failed to perform a " + ActionModel.Type.LINK + " action", e);
         }
     }
 
-    protected static void handleRatingButtonAction(WonderPushDialogBuilder dialog, Button button,
-            WonderPushDialogBuilder.Button.Action action) {
+    protected static void handleRatingButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
+            ActionModel action) {
         Context context = dialog.getContext();
         try {
             Uri uri = Uri.parse("market://details?id=" + context.getPackageName());
@@ -2210,30 +2169,30 @@ public class WonderPush {
                 Log.e(TAG, "No service for intent " + intent);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to perform a " + WonderPushDialogBuilder.Button.Action.Type.RATING + " action", e);
+            Log.e(TAG, "Failed to perform a " + ActionModel.Type.RATING + " action", e);
         }
     }
 
-    protected static void handleTrackEventButtonAction(WonderPushDialogBuilder dialog, Button button,
-            WonderPushDialogBuilder.Button.Action action) {
+    protected static void handleTrackEventButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
+            ActionModel action) {
         JSONObject event = action.getEvent();
         if (event == null) {
-            Log.e(TAG, "Got no event to track for a " + WonderPushDialogBuilder.Button.Action.Type.TRACK_EVENT + " action");
+            Log.e(TAG, "Got no event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
             return;
         }
         if (!event.has("type") || event.optString("type", null) == null) {
-            Log.e(TAG, "Got no type in the event to track for a " + WonderPushDialogBuilder.Button.Action.Type.TRACK_EVENT + " action");
+            Log.e(TAG, "Got no type in the event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
             return;
         }
         trackEvent(event.optString("type", null), event.optJSONObject("custom"));
     }
 
-    protected static void handleMethodButtonAction(WonderPushDialogBuilder dialog, Button button,
-            WonderPushDialogBuilder.Button.Action action) {
+    protected static void handleMethodButtonAction(WonderPushDialogBuilder dialog, ButtonModel button,
+            ActionModel action) {
         String method = action.getMethod();
         String arg = action.getMethodArg();
         if (method == null) {
-            Log.e(TAG, "Got no method to call for a " + WonderPushDialogBuilder.Button.Action.Type.METHOD + " action");
+            Log.e(TAG, "Got no method to call for a " + ActionModel.Type.METHOD + " action");
             return;
         }
         Intent intent = new Intent();

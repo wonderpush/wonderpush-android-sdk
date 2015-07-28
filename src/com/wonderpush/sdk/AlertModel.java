@@ -1,0 +1,127 @@
+package com.wonderpush.sdk;
+
+import org.json.JSONObject;
+
+import android.support.v4.app.NotificationCompat;
+import android.util.Log;
+
+class AlertModel implements Cloneable {
+
+    private static final String TAG = WonderPush.TAG;
+
+    private String title;
+    private String text;
+    private int priority;
+    private AlertModel foreground;
+
+    public static AlertModel fromOldFormatStringExtra(String alert) {
+        try {
+            AlertModel rtn = new AlertModel();
+            rtn.setText(alert);
+            return rtn;
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while parsing a notification alert with string input " + alert, e);
+        }
+        return null;
+    }
+
+    public static AlertModel fromJSON(JSONObject wpAlert) {
+        try {
+            AlertModel rtn = new AlertModel();
+            fromJSON_toplevel(rtn, wpAlert);
+            return rtn;
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while parsing a notification alert with JSON input " + wpAlert.toString(), e);
+        }
+        return null;
+    }
+
+    private static void fromJSON_toplevel(AlertModel rtn, JSONObject wpAlert) {
+        fromJSON_common(rtn, wpAlert);
+
+        rtn.setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_DEFAULT));
+
+        JSONObject wpAlertForeground = wpAlert.optJSONObject("foreground");
+        if (wpAlertForeground == null) {
+            wpAlertForeground = new JSONObject();
+        }
+        AlertModel foreground = new AlertModel();
+        fromJSON_foreground(foreground, wpAlertForeground);
+        rtn.setForeground(foreground);
+    }
+
+    private static void fromJSON_foreground(AlertModel rtn, JSONObject wpAlert) {
+        fromJSON_common(rtn, wpAlert);
+
+        rtn.setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_HIGH));
+        rtn.setForeground(null);
+    }
+
+    private static void fromJSON_common(AlertModel rtn, JSONObject wpAlert) {
+        rtn.setTitle(wpAlert.optString("title", null));
+        rtn.setText(wpAlert.optString("text", null));
+    }
+
+    public AlertModel() {
+    }
+
+    public AlertModel forCurrentSettings(boolean applicationIsForeground) {
+        AlertModel rtn;
+        try {
+            rtn = (AlertModel) clone();
+        } catch (CloneNotSupportedException e) {
+            Log.e(TAG, "Failed to clone an " + this.getClass().getSimpleName(), e);
+            return null;
+        }
+
+        if (applicationIsForeground && getForeground() != null) {
+            if (getForeground().getText() != null)
+                rtn.setText(getForeground().getText());
+            if (getForeground().getTitle() != null)
+                rtn.setTitle(getForeground().getTitle());
+            rtn.setPriority(getForeground().getPriority());
+        }
+
+        rtn.setForeground(null);
+
+        return rtn;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public AlertModel getForeground() {
+        return foreground;
+    }
+
+    public void setForeground(AlertModel foreground) {
+        this.foreground = foreground;
+    }
+
+}

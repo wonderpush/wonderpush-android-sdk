@@ -1,10 +1,5 @@
 package com.wonderpush.sdk;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
@@ -13,25 +8,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.TypedArray;
 import android.os.SystemClock;
-import android.util.Log;
 import android.view.View;
 
 import com.wonderpush.sdk.R;
 
 class WonderPushDialogBuilder {
 
-    private static final String TAG = WonderPush.TAG;
-
     public interface OnChoice {
         /**
          * @param dialog
          * @param which The clicked button or null.
          */
-        public void onChoice(WonderPushDialogBuilder dialog, Button which);
+        public void onChoice(WonderPushDialogBuilder dialog, ButtonModel which);
     }
 
     final Context activity;
-    final JSONObject data;
+    final NotificationModel notif;
     final AlertDialog.Builder builder;
     final OnChoice listener;
     AlertDialog dialog;
@@ -41,8 +33,6 @@ class WonderPushDialogBuilder {
 
     String defaultTitle;
     int defaultIcon;
-    final AtomicReference<Button> choice = new AtomicReference<Button>();
-    final List<Button> buttons;
 
     /**
      * Read styled attributes, they will defined in an AlertDialog shown by the given activity.
@@ -63,9 +53,9 @@ class WonderPushDialogBuilder {
         return ta;
     }
 
-    public WonderPushDialogBuilder(Context activity, JSONObject data, OnChoice listener) {
+    public WonderPushDialogBuilder(Context activity, NotificationModel notif, OnChoice listener) {
         this.activity = activity;
-        this.data = data;
+        this.notif = notif;
         builder = new AlertDialog.Builder(activity);
         this.listener = listener;
 
@@ -73,21 +63,6 @@ class WonderPushDialogBuilder {
         defaultIcon = WonderPushBroadcastReceiver.getNotificationIcon(activity);
         if (defaultIcon == -1) {
             defaultIcon = this.activity.getApplicationInfo().icon;
-        }
-
-        JSONArray buttons = data.optJSONArray("buttons");
-        int buttonCount = buttons != null ? buttons.length() : 0;
-        if (buttonCount > 3) {
-            Log.w(TAG, "Can't handle more than 3 dialog buttons! Using only the first 3.");
-            buttonCount = 3;
-        }
-        this.buttons = new ArrayList<Button>(buttonCount);
-        for (int i = 0 ; i < buttonCount ; ++i) {
-            JSONObject button = buttons.optJSONObject(i);
-            if (button == null) {
-                continue;
-            }
-            this.buttons.add(new Button(button));
         }
 
         commonSetup();
@@ -101,8 +76,8 @@ class WonderPushDialogBuilder {
         return activity;
     }
 
-    public JSONObject getData() {
-        return data;
+    public NotificationModel getNotificationModel() {
+        return notif;
     }
 
     public void setDefaultTitle(String defaultTitle) {
@@ -113,13 +88,9 @@ class WonderPushDialogBuilder {
         this.defaultIcon = defaultIcon;
     }
 
-    public List<Button> getButtons() {
-        return buttons;
-    }
-
     public WonderPushDialogBuilder setupTitleAndIcon() {
-        if (data.has("title")) {
-            builder.setTitle(data.optString("title", defaultTitle));
+        if (notif.getTitle() != null) {
+            builder.setTitle(notif.getTitle());
             builder.setIcon(defaultIcon);
         }
         return this;
@@ -128,7 +99,7 @@ class WonderPushDialogBuilder {
     public WonderPushDialogBuilder setupButtons() {
         if (listener == null) {
             WonderPush.logError("Calling WonderPushDialogBuilder.setupButtons() without OnChoice listener, ignoring!");
-            if (buttons.size() > 0) {
+            if (notif.getButtonCount() > 0) {
                 builder.setNegativeButton(R.string.wonderpush_close, null);
             }
             return this;
@@ -138,41 +109,41 @@ class WonderPushDialogBuilder {
         int positiveIndex = -1;
         int negativeIndex = -1;
         int neutralIndex  = -1;
-        if (buttons.size() == 1) {
+        if (notif.getButtonCount() == 1) {
             positiveIndex = 0;
-        } else if (buttons.size() == 2) {
+        } else if (notif.getButtonCount() == 2) {
             negativeIndex = 0;
             positiveIndex = 1;
-        } else if (buttons.size() >= 3) {
+        } else if (notif.getButtonCount() >= 3) {
             negativeIndex = 0;
             neutralIndex = 1;
             positiveIndex = 2;
         }
 
         if (negativeIndex >= 0) {
-            final Button button = buttons.get(negativeIndex);
+            final ButtonModel button = notif.getButton(negativeIndex);
             builder.setNegativeButton(button.label, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    choice.set(button);
+                    notif.getChosenButton().set(button);
                 }
             });
         }
         if (neutralIndex >= 0) {
-            final Button button = buttons.get(neutralIndex);
+            final ButtonModel button = notif.getButton(neutralIndex);
             builder.setNeutralButton(button.label, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    choice.set(button);
+                    notif.getChosenButton().set(button);
                 }
             });
         }
         if (positiveIndex >= 0) {
-            final Button button = buttons.get(positiveIndex);
+            final ButtonModel button = notif.getButton(positiveIndex);
             builder.setPositiveButton(button.label, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    choice.set(button);
+                    notif.getChosenButton().set(button);
                 }
             });
         }
@@ -201,7 +172,7 @@ class WonderPushDialogBuilder {
                     endedAtElapsedRealtime = SystemClock.elapsedRealtime();
                     WonderPush.logDebug("Dialog dismissed");
                     if (listener != null) {
-                        listener.onChoice(WonderPushDialogBuilder.this, choice.get());
+                        listener.onChoice(WonderPushDialogBuilder.this, notif.getChosenButton().get());
                     }
                 }
             };
@@ -224,144 +195,6 @@ class WonderPushDialogBuilder {
 
     protected void setInteractionEventCustom(JSONObject interactionEventCustom) {
         this.interactionEventCustom = interactionEventCustom;
-    }
-
-    static class Button {
-
-        public String label;
-        public List<Action> actions;
-
-        public Button() {
-            actions = new ArrayList<Action>(0);
-        }
-
-        public Button(JSONObject data) {
-            if (data == null) {
-                return;
-            }
-
-            label = data.optString("label");
-            JSONArray actions = data.optJSONArray("actions");
-            int actionCount = actions != null ? actions.length() : 0;
-            this.actions = new ArrayList<Action>(actionCount);
-            for (int i = 0 ; i < actionCount ; ++i) {
-                JSONObject action = actions.optJSONObject(i);
-                this.actions.add(new Action(action));
-            }
-        }
-
-        static class Action {
-
-            public enum Type {
-                CLOSE("close"),
-                TRACK_EVENT("trackEvent"),
-                METHOD("method"),
-                LINK("link"),
-                RATING("rating"),
-                MAP_OPEN("mapOpen"),
-                ;
-
-                private String type;
-
-                private Type(String type) {
-                    this.type = type;
-                }
-
-                @Override
-                public String toString() {
-                    return type;
-                }
-
-                public static Type fromString(String type) {
-                    if (type == null) {
-                        throw new NullPointerException();
-                    }
-                    for (Type actionType : Type.values()) {
-                        if (type.equals(actionType.toString())) {
-                            return actionType;
-                        }
-                    }
-                    throw new IllegalArgumentException("Constant \"" + type + "\" is not a known " + Type.class.getSimpleName());
-                }
-            }
-
-            private Type type;
-            private String tag;
-            private String url;
-            private JSONObject event; // has "type" and optionally "custom" keys
-            private String method;
-            private String methodArg;
-
-            public Action() {
-            }
-
-            public Action(JSONObject data) {
-                if (data == null) {
-                    return;
-                }
-
-                try {
-                    type = Type.fromString(data.optString("type", null));
-                } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "Unknown button action", e);
-                    type = null;
-                }
-                tag = data.optString("tag", null);
-                url = data.optString("url", null);
-                event = data.optJSONObject("event");
-                method = data.optString("method", null);
-                methodArg = data.optString("methodArg", null);
-            }
-
-            public Type getType() {
-                return type;
-            }
-
-            public void setType(Type type) {
-                this.type = type;
-            }
-
-            public String getTag() {
-                return tag;
-            }
-
-            public void setTag(String tag) {
-                this.tag = tag;
-            }
-
-            public String getUrl() {
-                return url;
-            }
-
-            public void setUrl(String url) {
-                this.url = url;
-            }
-
-            protected JSONObject getEvent() {
-                return event;
-            }
-
-            protected void setEvent(JSONObject event) {
-                this.event = event;
-            }
-
-            protected String getMethod() {
-                return method;
-            }
-
-            protected void setMethod(String method) {
-                this.method = method;
-            }
-
-            protected String getMethodArg() {
-                return methodArg;
-            }
-
-            protected void setMethodArg(String methodArg) {
-                this.methodArg = methodArg;
-            }
-
-        }
     }
 
 }

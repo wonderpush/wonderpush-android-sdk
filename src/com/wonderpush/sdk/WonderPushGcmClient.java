@@ -23,7 +23,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
-import com.wonderpush.sdk.WonderPush.NotificationType;
+import com.wonderpush.sdk.NotificationModel.NotTargetedForThisInstallationException;
 
 /**
  * A class that handles all the messages form Google Cloud Messaging service
@@ -32,7 +32,7 @@ class WonderPushGcmClient {
 
     private static final String TAG = WonderPush.TAG;
 
-    private static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
+    static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
     private static GoogleCloudMessaging mGcm;
 
     private static void storeRegistrationIdToWonderPush(String registrationId) {
@@ -85,7 +85,7 @@ class WonderPushGcmClient {
         WonderPushConfiguration.setGCMRegistrationAppVersion(WonderPush.getApplicationVersionCode());
     }
 
-    protected static PendingIntent buildPendingIntent(JSONObject wonderpushData, Intent pushIntent, boolean fromUserInteraction,
+    protected static PendingIntent buildPendingIntent(NotificationModel notif, Intent pushIntent, boolean fromUserInteraction,
             Context context, Class<? extends Activity> activity) {
         Intent resultIntent = new Intent();
         if (WonderPushService.isProperlySetup()) {
@@ -106,7 +106,7 @@ class WonderPushGcmClient {
         Uri dataUri = new Uri.Builder()
                 .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
                 .authority(WonderPush.INTENT_NOTIFICATION_AUTHORITY)
-                .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER, wonderpushData.toString())
+                .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER, notif.getInputJSONString())
                 .build();
         resultIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
 
@@ -122,7 +122,7 @@ class WonderPushGcmClient {
         return resultPendingIntent;
     }
 
-    protected static Notification buildNotification(JSONObject wpData, Bundle extras, Context context, int iconResource,
+    protected static Notification buildNotification(NotificationModel notif, Context context, int iconResource,
             PendingIntent pendingIntent) {
         final PackageManager pm = context.getApplicationContext().getPackageManager();
         ApplicationInfo ai;
@@ -134,42 +134,23 @@ class WonderPushGcmClient {
             ai = null;
         }
 
-        // Read notification content
-        JSONObject wpAlert = wpData.optJSONObject("alert");
-        if (wpAlert== null) {
-            wpAlert= new JSONObject();
-        }
-        String title = wpAlert.optString("title", null);
-        String text = wpAlert.optString("text", null);
-        if (text == null && extras != null) {
-            text = extras.getString("alert"); // <= v1.1.0.0 format
-        }
-        int priority = NotificationCompat.PRIORITY_DEFAULT;
-
         // Read notification content override if application is foreground
         Activity currentActivity = WonderPush.getCurrentActivity();
         boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
-        if (appInForeground) {
-            JSONObject wpAlertForeground = wpAlert.optJSONObject("foreground");
-            if (wpAlertForeground == null) {
-                wpAlertForeground = new JSONObject();
-            }
-            priority = wpAlertForeground.optInt("priority", NotificationCompat.PRIORITY_HIGH);
-        }
-
-        if (title == null && text == null) {
+        AlertModel alert = notif.getAlert() == null ? null : notif.getAlert().forCurrentSettings(appInForeground);
+        if (alert == null || (alert.getTitle() == null && alert.getText() == null)) {
             // Nothing to display, don't create a notification
             return null;
         }
         // Apply defaults
-        if (title == null) {
-            title = (String) (ai != null ? pm.getApplicationLabel(ai) : null);
+        if (alert.getTitle() == null) {
+            alert.setTitle((String) (ai != null ? pm.getApplicationLabel(ai) : null));
         }
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
-                .setContentTitle(title)
-                .setContentText(text)
-                .setPriority(priority)
+                .setContentTitle(alert.getTitle())
+                .setContentText(alert.getText())
+                .setPriority(alert.getPriority())
                 .setSmallIcon(iconResource);
 
         mBuilder.setContentIntent(pendingIntent);
@@ -183,54 +164,36 @@ class WonderPushGcmClient {
     }
 
     protected static boolean onBroadcastReceived(Context context, Intent intent, int iconResource, Class<? extends Activity> activity) {
-        Bundle extras = intent.getExtras();
-        if (extras.isEmpty()) { // has effect of unparcelling Bundle
-            WonderPush.logDebug("Received broadcasted intent has no extra");
-            return false;
+        WonderPush.ensureInitialized(context);
+
+        NotificationModel notif = null;
+        try {
+            notif = NotificationModel.fromGCMBroadcastIntent(intent);
+        } catch (NotTargetedForThisInstallationException ex) {
+            WonderPush.logDebug(ex.getMessage());
+            return true;
         }
-        String wpDataJson = extras.getString(WONDERPUSH_NOTIFICATION_EXTRA_KEY);
-        if (null == wpDataJson) {
-            WonderPush.logDebug("Received broadcasted intent has no data for WonderPush");
+        if (notif == null) {
             return false;
-        }
-        WonderPush.logDebug("Received broadcasted intent: " + intent);
-        WonderPush.logDebug("Received broadcasted intent extras: " + extras.toString());
-        for (String key : extras.keySet()) {
-            WonderPush.logDebug("Received broadcasted intent extras " + key + ": " + extras.get(key));
         }
 
         try {
-            WonderPush.logDebug("Received broadcasted intent WonderPush data: " + wpDataJson);
-            JSONObject wpData = new JSONObject(wpDataJson);
-            String targetInstallationId = wpData.optString("@", null);
             String loggedInstallationId = WonderPushConfiguration.getInstallationId();
-            if (targetInstallationId != null && !targetInstallationId.equals(loggedInstallationId)) {
-                WonderPush.logDebug("Received notification is not targetted at the current installation (" + targetInstallationId + " does not match current installation " + loggedInstallationId + ")");
+            if (notif.getTargetedInstallation() != null && !notif.getTargetedInstallation().equals(loggedInstallationId)) {
+                WonderPush.logDebug("Received notification is not targetted at the current installation (" + notif.getTargetedInstallation() + " does not match current installation " + loggedInstallationId + ")");
                 return true;
             }
 
             final JSONObject trackData = new JSONObject();
-            trackData.put("campaignId", wpData.optString("c", null));
-            trackData.put("notificationId", wpData.optString("n", null));
+            trackData.put("campaignId", notif.getCampaignId());
+            trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", WonderPush.getTime());
             WonderPush.ensureInitialized(context);
             WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
 
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
-            NotificationType type;
-            try {
-                type = NotificationType.fromString(wpData.optString("type", null));
-            } catch (Exception ex) {
-                WonderPush.logError("Failed to read notification type", ex);
-                if (wpData.has("alert") || extras.containsKey("alert")) {
-                    type = NotificationType.SIMPLE;
-                } else {
-                    type = NotificationType.DATA;
-                }
-                WonderPush.logDebug("Inferred notification type: " + type);
-            }
-            boolean allowAutomaticOpen = type != NotificationType.SIMPLE && type != NotificationType.DATA;
+            boolean allowAutomaticOpen = notif.getType() != NotificationModel.Type.SIMPLE && notif.getType() != NotificationModel.Type.DATA;
 
             boolean automaticallyOpened = false;
             Activity currentActivity = WonderPush.getCurrentActivity();
@@ -239,7 +202,7 @@ class WonderPushGcmClient {
                 WonderPush.logDebug("Automatically opening");
                 // We can show the notification (send the pending intent) right away
                 try {
-                    PendingIntent pendingIntent = buildPendingIntent(wpData, intent, false, context, activity);
+                    PendingIntent pendingIntent = buildPendingIntent(notif, intent, false, context, activity);
                     pendingIntent.send();
                     automaticallyOpened = true;
                 } catch (CanceledException e) {
@@ -250,13 +213,15 @@ class WonderPushGcmClient {
                 // We should use a notification to warn the user, and wait for him to click it
                 // before showing the notification (i.e.: the pending intent being sent)
                 WonderPush.logDebug("Building notification");
-                PendingIntent pendingIntent = buildPendingIntent(wpData, intent, true, context, activity);
-                Notification notification = buildNotification(wpData, extras, context, iconResource, pendingIntent);
+                PendingIntent pendingIntent = buildPendingIntent(notif, intent, true, context, activity);
+                Notification notification = buildNotification(notif, context, iconResource, pendingIntent);
 
                 if (notification == null) {
                     WonderPush.logDebug("No notification is to be displayed");
                 } else {
-                    int localNotificationId = wpData.optString("c", "MISSING CAMPAIGN ID").hashCode();
+                    String campaignId = notif.getCampaignId();
+                    if (campaignId == null) campaignId = "MISSING CAMPAIGN ID";
+                    int localNotificationId = campaignId.hashCode();
                     NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                     mNotificationManager.notify(localNotificationId, notification);
                 }
