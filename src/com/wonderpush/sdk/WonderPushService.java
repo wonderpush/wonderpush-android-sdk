@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ServiceInfo;
 import android.os.IBinder;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 // We don't use an IntentService because of
@@ -76,7 +77,9 @@ public class WonderPushService extends Service {
                     activityIntent.setClassName(getApplicationContext(), intent.getExtras().getString("activity"));
                     activityIntent.fillIn(intent, 0);
                     activityIntent.setFlags(activityIntent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(activityIntent);
+                    TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                    stackBuilder.addNextIntentWithParentStack(activityIntent);
+                    stackBuilder.startActivities();
                 }
             }
         } catch (Exception e) {
