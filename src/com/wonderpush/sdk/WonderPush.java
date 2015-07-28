@@ -330,6 +330,44 @@ public class WonderPush {
 
     private static void handleReceivedNotification(Context context, NotificationModel notif) {
         try {
+            for (ActionModel action : notif.getActions()) {
+                try {
+                    if (action == null || action.getType() == null) {
+                        // Skip unrecognized action types
+                        continue;
+                    }
+                    switch (action.getType()) {
+                        case CLOSE:
+                            // Noop
+                            break;
+                        case LINK:
+                            handleLinkAction(context, action);
+                            break;
+                        case RATING:
+                            handleRatingAction(context, action);
+                            break;
+                        case TRACK_EVENT:
+                            handleTrackEventAction(action);
+                            break;
+                        case UPDATE_INSTALLATION:
+                            handleUpdateInstallationAction(action);
+                            break;
+                        case METHOD:
+                            handleMethodAction(action);
+                            break;
+                        default:
+                            Log.w(TAG, "Unhandled opened notification action \"" + action.getType() + "\"");
+                            break;
+                    }
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while handling opened notification action " + action, ex);
+                }
+            }
+        } catch (Exception ex) {
+            Log.e(TAG, "Unexpected error while handling opened notification actions", ex);
+        }
+
+        try {
             switch (notif.getType()) {
                 case SIMPLE:
                 case DATA:

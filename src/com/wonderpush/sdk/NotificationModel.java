@@ -69,6 +69,7 @@ abstract class NotificationModel {
     private String notificationId;
     private Type type;
     private AlertModel alert;
+    public List<ActionModel> actions = new ArrayList<ActionModel>();
 
     // Common in-app message data
     private final AtomicReference<ButtonModel> choice = new AtomicReference<ButtonModel>();
@@ -167,6 +168,14 @@ abstract class NotificationModel {
                 // We are not interested in showing a notification anyway, the in-app message is what's important now.
             }
 
+            // Read actions
+            JSONArray actions = wpData.optJSONArray("actions");
+            int actionCount = actions != null ? actions.length() : 0;
+            for (int i = 0 ; i < actionCount ; ++i) {
+                JSONObject action = actions.optJSONObject(i);
+                rtn.addAction(new ActionModel(action));
+            }
+
             // Read common in-app fields
             rtn.setTitle(wpData.optString("title", null));
 
@@ -237,6 +246,20 @@ abstract class NotificationModel {
 
     public void setAlert(AlertModel alert) {
         this.alert = alert;
+    }
+
+    public List<ActionModel> getActions() {
+        return actions;
+    }
+
+    public void setActions(List<ActionModel> actions) {
+        this.actions = actions;
+    }
+
+    public void addAction(ActionModel action) {
+        if (action != null) {
+            actions.add(action);
+        }
     }
 
     public String getTitle() {
