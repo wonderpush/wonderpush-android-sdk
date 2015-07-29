@@ -167,12 +167,16 @@ git checkout latest</code></pre>
 
         &lt;/receiver&gt;
 
-        &lt;!-- Required to properly hand notifications to the application while opened --&gt;
+        &lt;!-- Required to properly handle deep links and notifications in foreground --&gt;
         &lt;service
             android:name="com.wonderpush.sdk.WonderPushService"
             android:enabled="true"
             android:exported="false"
             android:label="Push Notification service"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.VIEW" /&gt;
+                &lt;data android:scheme="wonderpush" /&gt;
+            &lt;/intent-filter&gt;
         &lt;/service&gt;
 
         &lt;!-- Required configuration for WonderPush to refresh push tokens,
