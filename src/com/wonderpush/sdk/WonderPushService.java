@@ -88,6 +88,8 @@ public class WonderPushService extends Service {
 
     private void handleOpenFromNotificationCenter(Intent intent) {
         boolean launchSuccessful = false;
+        boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
+
         NotificationModel notif = NotificationModel.fromLocalIntent(intent);
 
         String targetUrl = notif.getTargetUrl();
@@ -95,7 +97,9 @@ public class WonderPushService extends Service {
             targetUrl = intent.getStringExtra("overrideTargetUrl");
         }
 
-        if (targetUrl != null) {
+        if (targetUrl != null && (
+                fromUserInteraction || NotificationModel.Type.DATA.equals(notif.getType())
+        )) {
 
             try {
                 // Launch the activity associated with the given target url
