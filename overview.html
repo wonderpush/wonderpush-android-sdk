@@ -516,6 +516,27 @@ private void didPurchase() {
 </p>
 
 
+<h3 id="using-sdk--soft-opt-out">Opt-out</h3>
+
+<p>
+  On Android, users are opt-in by default, and the SDK registers the device at the first opportunity (the first launch after either a new installation or an update).<br/>
+  A user always has the option of opening the system settings and blocking notifications. This process does not prevent the application from receiving push notifications,
+  but it prevents any notification from being displayed in the notification center, they are simply hidden silently, and the application has no mean to know it.
+</p>
+
+<p>
+  If a user no longer wants to receive notifications, you will rather want them to opt out of push notifications.<br/>
+  This is done very simply using the following function call, and WonderPush will no longer send push notifications to this installation:
+</p>
+
+<pre><code>WonderPush.setNotificationEnabled(false);</code></pre>
+
+<p>
+  Note that the device is not actually unregistered from push notifications, so the registration id continues to be valid and the device stays reachable.<br/>
+  The installation is simply marked and reported as <i>Soft opt-out</i> in the dashboard, and WonderPush filters it out from the targeted users.
+</p>
+
+
 
 <p>&nbsp;</p>
 <p>&nbsp;</p>
