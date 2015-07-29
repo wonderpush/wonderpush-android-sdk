@@ -401,17 +401,13 @@ If you have any problem or wonder what the SDK is doing, you may temporarily mak
 
 <p>
   Depending on the chosen scheduling, it may take up to 1 minute for our servers to process your notifications.
-  But the most likely scenario is that you are waiting for a <i>simple</i> push notification while the application is in foreground.<br/>
-  When push notifications are received, the WonderPush SDK automatically opens them if the application is running,
-  showing directly any rich message to the user. Simple push notifications have no such rich interaction by definition
-  and it seems that nothing happens.<br/>
-  Either background your application (imitating a real user that is not always using your application when push notifications are received),
-  or use any of the rich notification types WonderPush proposes!
+  Note that you must both be pushable and present in the targeted segment for your device to be delivered a notification.
+  If in doubt, click on your notification, then click on the associated segment, and see if you are listed as pushable there.
 </p>
 
-<p>The log see when a notification is received by your device is:</p>
+<p>When your device receives a push notification, you can see a log like the following:</p>
 
-<pre><code>I/GCM     ( 1532): GCM message com.wonderpush.demo 0:1423658642093464%2ced406ff9fd7ecd</code></pre>
+<pre><code>I/GCM     ( 1532): GCM message com.your.package 0:1423658642093464%2ced406ff9fd7ecd</code></pre>
 
 <p>In cases where the push notification is properly received but something prevented its proper handling, you will notice an additional line:</p>
 
