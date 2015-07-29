@@ -669,6 +669,91 @@ LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver()
 }</code></pre>
 
 
+<h3 id="advanced--data-notifications">Handling data notifications <em style="font-weight: normal;">(optional)</em></h3>
+
+<p>
+  Data notifications can be received while your application is either foreground or background,
+  they do not display any alert in the notification center, nor any in-app message.
+  As such, they have to be handled using code.
+</p>
+
+<p>
+  The WonderPush SDK broadcasts a local intent when a data notification is received.
+  Simply register a local broadcast received, preferably in your <tt>Application</tt> class:
+</p>
+
+<pre><code>LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
+                intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
+
+            Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+            // Read and process the data from the push notification intent
+
+        }
+    }
+}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_WILL_OPEN));</code></pre>
+
+
+<h3 id="advanced--custom-deep-links">Handling your own deep links <em style="font-weight: normal;">(optional)</em></h3>
+
+<p>
+  The most common way of handling deep links is to add intent filters on the desired activities,
+  so that the system can properly resolve URIs such as <tt><b>yourApplicationSpecificScheme</b>://<b>someActivity</b></tt>.<br/>
+  You can set this up this way:
+</p>
+
+<pre><code>&lt;activity android:name=".SomeActivity"&gt;
+    &lt;!-- Makes the activity reachable from the yourApplicationSpecificScheme://someActivity URI across the system --&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.intent.action.VIEW" /&gt;
+        &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+        &lt;category android:name="android.intent.category.BROWSABLE" /&gt;
+        &lt;data android:scheme="<b>yourApplicationSpecificScheme</b>" android:host="<b>someActivity</b>"/&gt;
+    &lt;/intent-filter&gt;
+&lt;/activity&gt;</code></pre>
+
+<p>
+  You would then use this application-specific URI in your notification.</br>
+  When your activity is started, you can examine the data URI from the intent to extract any additional information.
+</p>
+
+<p>
+  If desired, you can also broadcast the notification opening to let some code resolve the most appropriate action to perform.<br/>
+  To do so, you would use the <tt>wonderpush://notificationOpen/broadcast</tt> URI in your notification.<br/>
+  Here is how to listen to this local broadcast, preferably in your <tt>Application</tt> class:
+</p>
+
+<pre><code>LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (!WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
+                intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
+
+            Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+            // Resolve the deep link as desired using the push notification intent
+
+            // For example: Start a chosen activity
+            Intent openIntent = new Intent();
+            openIntent.setClass(context, <b>ActivityToBeStarted</b>.class);
+            // Give the notification to the notification for both tracking and in-app message display
+            openIntent.fillIn(intent, 0);
+            // Start the new activity with a proper parent stack
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+            stackBuilder.addNextIntentWithParentStack(openIntent);
+            stackBuilder.startActivities();
+
+        }
+    }
+}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_WILL_OPEN));</code></pre>
+
+<p>
+  Note that this is the same intent filter as used for the <a href="#advanced--data-notifications">Handling data notifications</a> section,
+  but with the test on the notification type inverted.
+</p>
+
+
 <h3 id="advanced--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
 
 <p>
