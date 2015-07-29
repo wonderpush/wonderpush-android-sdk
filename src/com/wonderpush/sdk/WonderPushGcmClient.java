@@ -87,7 +87,7 @@ class WonderPushGcmClient {
     }
 
     protected static PendingIntent buildPendingIntent(NotificationModel notif, Intent pushIntent, boolean fromUserInteraction,
-            Context context, Class<? extends Activity> activity) {
+            Bundle extrasOverride, Context context, Class<? extends Activity> activity) {
         Intent resultIntent = new Intent();
         if (WonderPushService.isProperlySetup()) {
             resultIntent.setClass(context, WonderPushService.class);
@@ -99,6 +99,9 @@ class WonderPushGcmClient {
         resultIntent.putExtra("activity", activity.getCanonicalName());
         resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
         resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
+        if (extrasOverride != null) {
+            resultIntent.putExtras(extrasOverride);
+        }
 
         resultIntent.setAction(Intent.ACTION_MAIN);
         resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -205,7 +208,7 @@ class WonderPushGcmClient {
                 WonderPush.logDebug("Automatically opening");
                 // We can show the notification (send the pending intent) right away
                 try {
-                    PendingIntent pendingIntent = buildPendingIntent(notif, intent, false, context, activity);
+                    PendingIntent pendingIntent = buildPendingIntent(notif, intent, false, null, context, activity);
                     pendingIntent.send();
                     automaticallyOpened = true;
                 } catch (CanceledException e) {
@@ -216,11 +219,22 @@ class WonderPushGcmClient {
                 // We should use a notification to warn the user, and wait for him to click it
                 // before showing the notification (i.e.: the pending intent being sent)
                 WonderPush.logDebug("Building notification");
-                PendingIntent pendingIntent = buildPendingIntent(notif, intent, true, context, activity);
+                PendingIntent pendingIntent = buildPendingIntent(notif, intent, true, null, context, activity);
                 Notification notification = buildNotification(notif, context, iconResource, pendingIntent);
 
                 if (notification == null) {
                     WonderPush.logDebug("No notification is to be displayed");
+                    // Fire an Intent to notify the application anyway (especially for `data` notifications)
+                    try {
+                        Bundle extrasOverride = new Bundle();
+                        extrasOverride.putString("overrideTargetUrl",
+                                WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
+                                + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST);
+                        PendingIntent broadcastPendingIntent = buildPendingIntent(notif, intent, false, extrasOverride, context, activity);
+                        broadcastPendingIntent.send();
+                    } catch (CanceledException e) {
+                        Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
+                    }
                 } else {
                     String campaignId = notif.getCampaignId();
                     if (campaignId == null) campaignId = "MISSING CAMPAIGN ID";

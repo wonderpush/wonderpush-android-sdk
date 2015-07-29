@@ -90,30 +90,33 @@ public class WonderPushService extends Service {
         boolean launchSuccessful = false;
         NotificationModel notif = NotificationModel.fromLocalIntent(intent);
 
-        if (notif.getTargetUrl() != null) {
+        String targetUrl = notif.getTargetUrl();
+        if (intent.hasExtra("overrideTargetUrl")) {
+            targetUrl = intent.getStringExtra("overrideTargetUrl");
+        }
+
+        if (targetUrl != null) {
 
             try {
                 // Launch the activity associated with the given target url
                 Intent activityIntent = new Intent();
-                if (notif.getTargetUrl().toLowerCase().startsWith(WonderPush.INTENT_NOTIFICATION_SCHEME + ":")) {
-                    // Restrict to this application, as the wonderpush:// scheme may not be unique
-                    activityIntent.setPackage(getApplicationContext().getPackageName());
-                    // Copy some internal extra fields
-                    activityIntent.putExtra("activity", intent.getStringExtra("activity"));
-                    activityIntent.putExtra("receivedPushNotificationIntent", intent.getParcelableExtra("receivedPushNotificationIntent"));
-                    activityIntent.putExtra("openPushNotificationIntent", intent);
-                    activityIntent.putExtra("fromUserInteraction", intent.getBooleanExtra("fromUserInteraction", true));
-                }
-
                 activityIntent.setAction(Intent.ACTION_VIEW);
-                activityIntent.setData(Uri.parse(notif.getTargetUrl()));
-                activityIntent.setFlags(activityIntent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
+                activityIntent.setData(Uri.parse(targetUrl));
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
                         intent.getParcelableExtra("receivedPushNotificationIntent"));
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
+                        notif.getType().toString());
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
                         intent.getBooleanExtra("fromUserInteraction", true));
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
                         true);
+
+                if (targetUrl.toLowerCase().startsWith(WonderPush.INTENT_NOTIFICATION_SCHEME + ":")) {
+                    // Restrict to this application, as the wonderpush:// scheme may not be unique
+                    activityIntent.setPackage(getApplicationContext().getPackageName());
+                    // Add some internal extra fields
+                    activityIntent.putExtra("openPushNotificationIntent", intent);
+                }
 
                 // Try as an activity
                 if (activityIntent.resolveActivity(getPackageManager()) != null) {
@@ -177,7 +180,6 @@ public class WonderPushService extends Service {
             Intent activityIntent = new Intent();
             activityIntent.setClassName(getApplicationContext(), intent.getExtras().getString("activity"));
             activityIntent.fillIn(intent, 0);
-            activityIntent.setFlags(activityIntent.getFlags() | Intent.FLAG_ACTIVITY_NEW_TASK);
             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
             stackBuilder.addNextIntentWithParentStack(activityIntent);
             stackBuilder.startActivities();
@@ -190,11 +192,15 @@ public class WonderPushService extends Service {
         return intent.getData() != null
                 && WonderPush.INTENT_NOTIFICATION_SCHEME.equals(intent.getData().getScheme())
                 && WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY.equals(intent.getData().getAuthority())
-                && intent.hasExtra("receivedPushNotificationIntent")
+                && intent.hasExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION)
                 ;
     }
 
     private void handleWillOpen(Intent intent) {
+        // Read any private extra and clean them out
+        Intent notificationOpenedIntent = intent.getParcelableExtra("openPushNotificationIntent");
+        intent.removeExtra("openPushNotificationIntent");
+
         String singlePath = null;
         if (intent.getData().getPathSegments().size() == 1) {
             singlePath = intent.getData().getPathSegments().get(0);
@@ -202,19 +208,13 @@ public class WonderPushService extends Service {
         if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT_ACTIVITY.equals(singlePath)) {
 
             // Broadcast locally that a notification is to be opened, and don't do anything else
-            Intent notificationOpenedIntent = intent.getParcelableExtra("openPushNotificationIntent");
             openNotificationDefaultBehavior(notificationOpenedIntent);
 
         } else if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST.equals(singlePath)) {
 
             // Broadcast locally that a notification is to be opened, and don't do anything else
             Intent notificationWillOpenIntent = new Intent(WonderPush.INTENT_NOTIFICATION_WILL_OPEN);
-            notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
-                    intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION, true));
-            notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
-                    intent.getParcelableExtra("receivedPushNotificationIntent"));
-            notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
-                    true);
+            notificationWillOpenIntent.putExtras(intent.getExtras());
             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(notificationWillOpenIntent);
 
         } else {
