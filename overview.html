@@ -683,7 +683,7 @@ LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver()
 </p>
 
 <pre><code>LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
-    @Override
+    &#64;Override
     public void onReceive(Context context, Intent intent) {
         if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
                 intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
@@ -726,7 +726,7 @@ LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver()
 </p>
 
 <pre><code>LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
-    @Override
+    &#64;Override
     public void onReceive(Context context, Intent intent) {
         if (!WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
                 intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
