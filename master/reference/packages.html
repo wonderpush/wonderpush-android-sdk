@@ -874,7 +874,150 @@ LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver()
   Simply register a local broadcast received, preferably in your <tt>Application</tt> class:
 </p>
 
-<pre><code>LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {</p>
+<pre><code>LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    &#64;Override
+    public void onReceive(Context context, Intent intent) {
+        if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
+                intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
+
+            Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+            // Read and process the data from the push notification intent
+
+        }
+    }
+}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_WILL_OPEN));</code></pre>
+
+
+<h3 id="advanced--custom-deep-links">Handling your own deep links <em style="font-weight: normal;">(optional)</em></h3>
+
+<p>
+  The most common way of handling deep links is to add intent filters on the desired activities,
+  so that the system can properly resolve URIs such as <tt><b>yourApplicationSpecificScheme</b>://<b>someActivity</b></tt>.<br/>
+  You can set this up this way:
+</p>
+
+<pre><code>&lt;activity android:name=".SomeActivity"&gt;
+    &lt;!-- Makes the activity reachable from the yourApplicationSpecificScheme://someActivity URI across the system --&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="android.intent.action.VIEW" /&gt;
+        &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+        &lt;category android:name="android.intent.category.BROWSABLE" /&gt;
+        &lt;data android:scheme="<b>yourApplicationSpecificScheme</b>" android:host="<b>someActivity</b>"/&gt;
+    &lt;/intent-filter&gt;
+&lt;/activity&gt;</code></pre>
+
+<p>
+  You would then use this application-specific URI in your notification.</br>
+  When your activity is started, you can examine the data URI from the intent to extract any additional information.
+</p>
+
+<p>
+  If desired, you can also broadcast the notification opening to let some code resolve the most appropriate action to perform.<br/>
+  To do so, you would use the <tt>wonderpush://notificationOpen/broadcast</tt> URI in your notification.<br/>
+  Here is how to listen to this local broadcast, preferably in your <tt>Application</tt> class:
+</p>
+
+<pre><code>LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    &#64;Override
+    public void onReceive(Context context, Intent intent) {
+        if (!WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
+                intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
+
+            Intent pushNotif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+            // Resolve the deep link as desired using the push notification intent
+
+            // For example: Start a chosen activity
+            Intent openIntent = new Intent();
+            openIntent.setClass(context, <b>ActivityToBeStarted</b>.class);
+            // Give the notification to the notification for both tracking and in-app message display
+            openIntent.fillIn(intent, 0);
+            // Start the new activity with a proper parent stack
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+            stackBuilder.addNextIntentWithParentStack(openIntent);
+            stackBuilder.startActivities();
+
+        }
+    }
+}, new IntentFilter(WonderPush.INTENT_NOTIFICATION_WILL_OPEN));</code></pre>
+
+<p>
+  Note that this is the same intent filter as used for the <a href="#advanced--data-notifications">Handling data notifications</a> section,
+  but with the test on the notification type inverted.
+</p>
+
+
+<h3 id="advanced--handling-own-notifications">Handling your own notifications <em style="font-weight: normal;">(optional)</em></h3>
+
+<p>
+  If you want to handle some notifications yourself, you will have to first create your own
+  <a href="http://developer.android.com/reference/android/content/BroadcastReceiver.html"><tt>BroadcastReceiver</tt></a> as follows:
+</p>
+
+<blockquote>
+  Note that the broadcast receiver is called whenever a push notification is received.
+  You may instead be interested in <a href="#advanced--knowing-when-notification-opened">knowing when a push notification is opened</a>,
+  <a href="#advanced--custom-deep-links">handling your own deep links</a>, or <a href="#advanced--data-notifications">handling data notifications</a>.
+</blockquote>
+
+<pre><code>package com.your.package;
+
+import com.wonderpush.sdk.WonderPush;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+
+public class CustomBroadcastReceiver extends BroadcastReceiver {
+
+    // This function is called whenever a push notification is *received*.
+    &#64;Override
+    public void onReceive(Context context, Intent intent) {
+        // Call this function if you removed WonderPush's receiver in your AndroidManifest.xml
+        if (WonderPush.onBroadcastReceived(context, intent, R.drawable.icon, YourMainActivity.class)) {
+            // The notification was handled by WonderPush
+        } else {
+            // Hand the notification to others notification providers here
+        }
+    }
+
+}</pre></code>
+
+<p>Then setup your own <tt>BroadcastReceiver</tt> in your manifest:</p>
+<pre><code>&lt;manifest&gt;
+
+    &lt;application&gt;
+
+        &lt;!-- This registers your own receiver to receive push notifications.
+             Don't forget to call WonderPush.onBroadcastReceived() in your receiver
+             if you removed WonderPush's receiver. --&gt;
+        &lt;receiver
+            android:name="com.your.package.CustomBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND"&gt;
+
+            &lt;intent-filter&gt;
+                &lt;action android:name="com.google.android.c2dm.intent.RECEIVE" /&gt;
+                &lt;category android:name="<b>[YOUR_APPLICATION_PACKAGE]</b>" /&gt;
+            &lt;/intent-filter>
+
+        &lt;/receiver&gt;
+
+    &lt;/application&gt;
+
+&lt;/manifest&gt;</code></pre>
+
+<dl>
+  <legend>Replace:</legend>
+  <dt><b><tt>[YOUR_APPLICATION_PACKAGE]</tt></b></dt>
+  <dd>with your application package name.<br/>
+    Eg.: <tt>com.your.package</tt>.</dd>
+</dl>
+
+
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<h1 id="package-index" style="border-top: 2px solid #ccc; padding-top: .5em;">Package index</h1></p>
 </div>
 
 
