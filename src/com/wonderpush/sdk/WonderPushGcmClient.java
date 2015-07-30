@@ -199,12 +199,10 @@ class WonderPushGcmClient {
 
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
-            boolean allowAutomaticOpen = notif.getType() != NotificationModel.Type.SIMPLE && notif.getType() != NotificationModel.Type.DATA;
-
             boolean automaticallyOpened = false;
             Activity currentActivity = WonderPush.getCurrentActivity();
             boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
-            if (allowAutomaticOpen && appInForeground) {
+            if (notif.getAlert().forCurrentSettings(appInForeground).getAutoOpen()) {
                 WonderPush.logDebug("Automatically opening");
                 // We can show the notification (send the pending intent) right away
                 try {

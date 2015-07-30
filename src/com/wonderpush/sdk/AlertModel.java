@@ -9,9 +9,12 @@ class AlertModel implements Cloneable {
 
     private static final String TAG = WonderPush.TAG;
 
+    // Modify forCurrentSettings() when adding a field below
     private String title;
     private String text;
     private int priority;
+    private Boolean autoOpen;
+    // Modify forCurrentSettings() when adding a field above
     private AlertModel foreground;
 
     public static AlertModel fromOldFormatStringExtra(String alert) {
@@ -60,6 +63,11 @@ class AlertModel implements Cloneable {
     private static void fromJSON_common(AlertModel rtn, JSONObject wpAlert) {
         rtn.setTitle(wpAlert.optString("title", null));
         rtn.setText(wpAlert.optString("text", null));
+        if (wpAlert.has("autoOpen")) {
+            rtn.setAutoOpen(wpAlert.optBoolean("autoOpen", false));
+        } else {
+            rtn.setAutoOpen(null);
+        }
     }
 
     public AlertModel() {
@@ -75,11 +83,16 @@ class AlertModel implements Cloneable {
         }
 
         if (applicationIsForeground && getForeground() != null) {
-            if (getForeground().getText() != null)
+            if (getForeground().getText() != null) {
                 rtn.setText(getForeground().getText());
-            if (getForeground().getTitle() != null)
+            }
+            if (getForeground().getTitle() != null) {
                 rtn.setTitle(getForeground().getTitle());
+            }
             rtn.setPriority(getForeground().getPriority());
+            if (getForeground().hasAutoOpen()) {
+                rtn.setAutoOpen(getForeground().getAutoOpen());
+            }
         }
 
         rtn.setForeground(null);
@@ -114,6 +127,18 @@ class AlertModel implements Cloneable {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public boolean hasAutoOpen() {
+        return autoOpen != null;
+    }
+
+    public boolean getAutoOpen() {
+        return autoOpen != null && autoOpen.booleanValue();
+    }
+
+    public void setAutoOpen(Boolean autoOpen) {
+        this.autoOpen = autoOpen;
     }
 
     public AlertModel getForeground() {
