@@ -209,7 +209,7 @@ public class WonderPushService extends Service {
         if (intent.getData().getPathSegments().size() == 1) {
             singlePath = intent.getData().getPathSegments().get(0);
         }
-        if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT_ACTIVITY.equals(singlePath)) {
+        if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT.equals(singlePath)) {
 
             // Broadcast locally that a notification is to be opened, and don't do anything else
             openNotificationDefaultBehavior(notificationOpenedIntent);

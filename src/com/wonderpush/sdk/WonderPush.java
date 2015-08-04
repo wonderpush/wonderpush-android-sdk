@@ -202,7 +202,7 @@ public class WonderPush {
     /**
      * The first path segment for opening the notification in the default way.
      */
-    protected static final String INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT_ACTIVITY = "defaultActivity";
+    protected static final String INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT = "default";
 
     /**
      * The first path segment for broadcasting the "notification will open" event for a programmatic resolution.
