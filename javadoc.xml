@@ -27,7 +27,7 @@
                 <param name="-XDignore.symbol.file" />
             </doclet>
             <fileset dir="." defaultexcludes="yes">
-                <include name="src/com/wonderpush/sdk/*"/>
+                <include name="src/main/java/com/wonderpush/sdk/*"/>
             </fileset>
         </javadoc>
     </target>

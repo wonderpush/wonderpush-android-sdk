@@ -1,0 +1,84 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.+'
+    }
+}
+
+plugins {
+    id "com.jfrog.bintray" version "1.2"
+}
+apply plugin: 'android-library'
+
+android {
+    compileSdkVersion 'android-22'
+    buildToolsVersion '22.0.1'
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFile getDefaultProguardFile('proguard-android.txt')
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'com.google.android.gms:play-services-gcm:7.8.0'
+    //compile 'com.loopj.android:android-async-http:1.4.8'
+    compile files('libs/android-async-http-1.4.3.jar')
+    compile files('libs/openudid.jar')
+}
+
+bintray {
+    //
+    // See https://github.com/bintray/gradle-bintray-plugin#copying-specific-files-using-filesspec
+    //
+
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    configurations = ['assemble']
+    dryTun = true
+    publish = false
+    pkg {
+        repo = 'maven'
+        name = 'wonderpush-android-sdk'
+        version {
+            name = '1.1.1.0'
+            vcsTag = 'v1.1.1.0'
+        }
+    }
+
+    //
+    // See http://inthecheesefactory.com/blog/how-to-upload-library-to-jcenter-maven-central-as-dependency/en
+    //
+
+    //bintrayRepo = 'maven'
+    //bintrayName = 'wonderpush-android-sdk'
+ 
+    //publishedGroupId = 'com.wonderpush'
+    //libraryName = 'WonderPush Android SDK'
+    //artifact = 'wonderpush-android-sdk'
+ 
+    //libraryDescription = 'Android SDK for WonderPush − Notifications & Analytics'
+ 
+    //siteUrl = 'https://github.com/wonderpush/wonderpush-android-sdk'
+    //gitUrl = 'https://github.com/wonderpush/wonderpush-android-sdk.git'
+ 
+    //libraryVersion = '1.1.1.0'
+ 
+    //developerId = 'wonderpush'
+    //developerName = 'WonderPush'
+    //developerEmail = 'dev@wonderpush.com'
+ 
+    //licenseName = 'The Apache Software License, Version 2.0'
+    //licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    //allLicenses = ["Apache-2.0"]
+}

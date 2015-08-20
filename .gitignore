@@ -1,7 +1,7 @@
-/bin/
-/gen/
+/local.properties
+/.gradle/
+/build/
 /doc/
-/.settings/
 
 # You should import the latest one, likewise in your project, so they both have the same version
 /libs/android-support-v4.jar
