@@ -263,7 +263,7 @@ class WonderPushConfiguration {
      * Get the cached installation core properties date stored in the user's shared preferences.
      */
     protected static long getCachedInstallationCorePropertiesDate() {
-        return getLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, Long.MIN_VALUE);
+        return getLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, 0);
     }
 
     /**
@@ -297,7 +297,7 @@ class WonderPushConfiguration {
      * Get the cached registration id date stored in the user's shared preferences.
      */
     protected static long getCachedGCMRegistrationIdDate() {
-        return getLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, Long.MIN_VALUE);
+        return getLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, 0);
     }
 
     /**

@@ -36,7 +36,7 @@ class WonderPushGcmClient {
     static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
     private static GoogleCloudMessaging mGcm;
 
-    private static void storeRegistrationIdToWonderPush(String registrationId) {
+    private static void storeRegistrationId(String senderIds, String registrationId) {
         try {
             JSONObject properties = new JSONObject();
             JSONObject pushToken = new JSONObject();
@@ -53,6 +53,10 @@ class WonderPushGcmClient {
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while updating push token to WonderPush", e);
         }
+
+        WonderPushConfiguration.setGCMRegistrationId(registrationId);
+        WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
+        WonderPushConfiguration.setGCMRegistrationAppVersion(WonderPush.getApplicationVersionCode());
     }
 
     protected static String getRegistrationId() {
@@ -78,12 +82,6 @@ class WonderPushGcmClient {
                 registeredSenderIds == null // there is no previous pushToken to unregister
                 || registeredSenderIds.equals(pushSenderIds) // change of senderIds
         );
-    }
-
-    protected static void storeRegistrationId(String senderIds, String registrationId) {
-        WonderPushConfiguration.setGCMRegistrationId(registrationId);
-        WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
-        WonderPushConfiguration.setGCMRegistrationAppVersion(WonderPush.getApplicationVersionCode());
     }
 
     protected static PendingIntent buildPendingIntent(NotificationModel notif, Intent pushIntent, boolean fromUserInteraction,
@@ -293,7 +291,6 @@ class WonderPushGcmClient {
                 // We're back on the main thread, this is required for potential deferring due to OpenUDID not being ready
                 if (regid != null) {
                     storeRegistrationId(senderIds, regid);
-                    storeRegistrationIdToWonderPush(regid);
                 }
             }
         }.execute();
