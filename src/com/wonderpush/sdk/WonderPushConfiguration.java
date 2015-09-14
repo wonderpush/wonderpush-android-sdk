@@ -21,6 +21,12 @@ class WonderPushConfiguration {
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_NAME = "__cached_installation_core_properties";
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME = "__cached_installation_core_properties_date";
 
+    private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME = "__cached_installation_custom_properties_written";
+    private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME = "__cached_installation_custom_properties_written_date";
+    private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME = "__cached_installation_custom_properties_updated";
+    private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME = "__cached_installation_custom_properties_updated_date";
+    private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME = "__cached_installation_custom_properties_first_delayed_write_date";
+
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME = "__wonderpush_gcm_registration_id_date";
     private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
@@ -276,6 +282,92 @@ class WonderPushConfiguration {
      */
     protected static void setCachedInstallationCorePropertiesDate(long cachedInstallationCorePropertiesDate) {
         putLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, cachedInstallationCorePropertiesDate);
+    }
+
+    /**
+     * Get the partial object representing the written installation code properties so far stored in the user's shared preferences.
+     * This object is updated whenever grouped updates are performed.
+     */
+    protected static JSONObject getCachedInstallationCustomPropertiesWritten() {
+        return getJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME);
+    }
+
+    /**
+     * Set the partial object representing the written installation code properties so far stored in the user's shared preferences.
+     *
+     * @param cachedInstallationCustomPropertiesWritten
+     *            The partial object representing the written installation code properties so far to be stored.
+     */
+    protected static void setCachedInstallationCustomPropertiesWritten(JSONObject cachedInstallationCustomPropertiesWritten) {
+        putJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME, cachedInstallationCustomPropertiesWritten);
+    }
+
+    /**
+     * Get the date of the last write to installation custom properties that has been performed.
+     */
+    protected static long getCachedInstallationCustomPropertiesWrittenDate() {
+        return getLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME, 0);
+    }
+
+    /**
+     * Set the date of the last write to installation custom properties that has been performed.
+     * @param cachedInstallationCustomPropertiesWrittenDate
+     *            The date of the last write to installation custom properties that has been performed to store.
+     */
+    protected static void setCachedInstallationCustomPropertiesWrittenDate(long cachedInstallationCustomPropertiesWrittenDate) {
+        putLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME, cachedInstallationCustomPropertiesWrittenDate);
+    }
+
+    /**
+     * Get the partial object representing the updated installation code properties stored in the user's shared preferences.
+     * This object is updated whenever updates are demanded, whether delayed for grouping or already written.
+     */
+    protected static JSONObject getCachedInstallationCustomPropertiesUpdated() {
+        return getJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME);
+    }
+
+    /**
+     * Set the partial object representing the updated installation code properties stored in the user's shared preferences.
+     *
+     * @param cachedInstallationCustomPropertiesUpdated
+     *            The partial object representing the updated installation code properties to be stored.
+     */
+    protected static void setCachedInstallationCustomPropertiesUpdated(JSONObject cachedInstallationCustomPropertiesUpdated) {
+        putJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME, cachedInstallationCustomPropertiesUpdated);
+    }
+
+    /**
+     * Get the date of the last update to {@link #getCachedInstallationCustomPropertiesUpdated()}.
+     * This is the date of the last non-noop write to installation custom properties that has been delayed for grouping.
+     */
+    protected static long getCachedInstallationCustomPropertiesUpdatedDate() {
+        return getLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME, 0);
+    }
+
+    /**
+     * Set the date of the last update to {@link #getCachedInstallationCustomPropertiesUpdated()}.
+     * This is the date of the last non-noop write to installation custom properties that has been delayed for grouping.
+     * @param cachedInstallationCustomPropertiesUpdatedDate
+     *            The date of the last update to {@link #getCachedInstallationCustomPropertiesUpdated()}.
+     */
+    protected static void setCachedInstallationCustomPropertiesUpdatedDate(long cachedInstallationCustomPropertiesUpdatedDate) {
+        putLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME, cachedInstallationCustomPropertiesUpdatedDate);
+    }
+
+    /**
+     * The date of the first non-noop write to installation custom properties that has been delayed for grouping.
+     */
+    protected static long getCachedInstallationCustomPropertiesFirstDelayedWrite() {
+        return getLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME, 0);
+    }
+
+    /**
+     * Set the date of the first non-noop write to installation custom properties that has been delayed for grouping.
+     * @param cachedInstallationCustomPropertiesLastDelayedWrite
+     *            The date of the first non-noop write to installation custom properties that has been delayed for grouping to store.
+     */
+    protected static void setCachedInstallationCustomPropertiesFirstDelayedWrite(long cachedInstallationCustomPropertiesFirstDelayedWrite) {
+        putLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME, cachedInstallationCustomPropertiesFirstDelayedWrite);
     }
 
     /**

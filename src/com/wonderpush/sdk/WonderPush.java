@@ -12,6 +12,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.OpenUDID.OpenUDID_manager;
 import org.json.JSONException;
@@ -93,6 +98,7 @@ public class WonderPush {
     private static WeakReference<Intent> sLastHandledIntentRef;
     private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<Activity, Object>();
     private static Handler sDeferHandler = new Handler();
+    private static ScheduledExecutorService sScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private static String sClientId;
     private static String sClientSecret;
@@ -122,6 +128,8 @@ public class WonderPush {
     private static long deviceDateToServerDateUncertainty = Long.MAX_VALUE;
     private static long startupDateToDeviceDateOffset = Long.MAX_VALUE;
 
+    private static ScheduledFuture<Void> putInstallationCustomPropertiesDelayedTask;
+
     /**
      * How long in ms should two interactions should be separated in time,
      * to be considered as belonging to two different sessions.
@@ -140,6 +148,18 @@ public class WonderPush {
      * How long in ms to skip updating the installation core properties if they did not change.
      */
     private static final long CACHED_INSTALLATION_CORE_PROPERTIES_DURATION = 7 * 24 * 60 * 60 * 1000;
+
+    /**
+     * How long to wait for no other call to {@link #putInstallationCustomProperties(JSONObject)}
+     * before writing changes to the server.
+     */
+    private static final long CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY = 5 * 1000;
+
+    /**
+     * How long to wait for another call to {@link #putInstallationCustomProperties(JSONObject)} at maximum,
+     * if there are no pause of {@link #CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY} time between calls.
+     */
+    private static final long CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY = 20 * 1000;
 
     /**
      * How long in ms to skip updating the registration id if it did not change.
@@ -1196,19 +1216,79 @@ public class WonderPush {
      * @param customProperties
      *            The partial object containing only the properties to update.
      */
-    public static void putInstallationCustomProperties(JSONObject customProperties) {
+    public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
         try {
-            JSONObject properties = new JSONObject();
+            JSONObject updatedRef = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+            if (updatedRef == null) updatedRef = new JSONObject();
+            JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+            if (updated == null) updated = new JSONObject();
             try {
-                properties.put("custom", customProperties);
-            } catch (JSONException e) {
-                Log.e(TAG, "Unexpected error while updating installation core properties", e);
+                JSONUtil.merge(updated, customProperties);
+            } catch (JSONException ex) {
+                WonderPush.logError("Unexpected error while merging custom properties", ex);
             }
-            updateInstallation(properties, false, null);
+            if (!JSONUtil.equals(updatedRef, updated)) {
+                if (putInstallationCustomPropertiesDelayedTask != null) {
+                    putInstallationCustomPropertiesDelayedTask.cancel(false);
+                }
+                long nowRT = SystemClock.elapsedRealtime();
+                long now = System.currentTimeMillis();
+                long firstWrite = WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite();
+                if (firstWrite == 0) {
+                    WonderPushConfiguration.setCachedInstallationCustomPropertiesFirstDelayedWrite(nowRT);
+                    firstWrite = nowRT;
+                }
+                WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdated(updated);
+                WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdatedDate(now);
+                putInstallationCustomPropertiesDelayedTask = sScheduledExecutor.schedule(
+                        new Callable<Void>() {
+                            @Override
+                            public Void call() {
+                                try {
+                                    putInstallationCustomProperties_inner();
+                                } catch (Exception ex) {
+                                    Log.e(TAG, "Unexpected error on scheduled task", ex);
+                                }
+                                return null;
+                            }
+                        },
+                        Math.min(CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY,
+                                firstWrite + CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY - nowRT),
+                        TimeUnit.MILLISECONDS);
+            }
             onInteraction();
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while putting installation custom properties", e);
         }
+    }
+
+    private static synchronized void putInstallationCustomProperties_inner() {
+        JSONObject written = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
+        JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+        JSONObject customProperties;
+        try {
+            customProperties = JSONUtil.diff(written, updated);
+        } catch (JSONException ex) {
+            WonderPush.logError("Unexpected error while calculating custom properties diff, using whole value", ex);
+            customProperties = updated;
+        }
+        if (customProperties != null && customProperties.length() > 0) {
+            try {
+                JSONObject properties = new JSONObject();
+                try {
+                    properties.put("custom", customProperties);
+                } catch (JSONException e) {
+                    Log.e(TAG, "Unexpected error while updating installation core properties", e);
+                }
+                updateInstallation(properties, false, null);
+                long now = System.currentTimeMillis();
+                WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(updated);
+                WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(now);
+            } catch (Exception ex) {
+                WonderPush.logError("Unexpected error while putting custom properties", ex);
+            }
+        }
+        WonderPushConfiguration.setCachedInstallationCustomPropertiesFirstDelayedWrite(0);
     }
 
     static void updateInstallation(JSONObject properties, boolean overwrite, ResponseHandler handler) {
@@ -1624,6 +1704,9 @@ public class WonderPush {
                                 public void onSuccess(Response response) {
                                     updateInstallationCoreProperties(context);
                                     registerForPushNotification(context);
+                                    if (WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite() != 0) {
+                                        putInstallationCustomProperties_inner();
+                                    }
                                     sIsReady = true;
                                     Intent broadcast = new Intent(INTENT_INTIALIZED);
                                     LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
@@ -1632,6 +1715,9 @@ public class WonderPush {
                             if (!isFetchingToken) {
                                 updateInstallationCoreProperties(context);
                                 registerForPushNotification(context);
+                                if (WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite() != 0) {
+                                    putInstallationCustomProperties_inner();
+                                }
                                 sIsReady = true;
                                 Intent broadcast = new Intent(INTENT_INTIALIZED);
                                 LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
