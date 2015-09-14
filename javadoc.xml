@@ -3,7 +3,7 @@
     <target name="javadoc">
         <javadoc
             access="public"
-            classpath="../google-play-services_lib/bin/classes:libs/android-support-v4.jar:libs/android-async-http-1.4.3.jar:../google-play-services_lib/bin/google-play-services_lib.jar:../google-play-services_lib/libs/google-play-services.jar:libs/openudid.jar:/usr/local/android-sdk-linux/platforms/android-8/android.jar:/usr/local/android-sdk-linux/tools/support/annotations.jar"
+            classpath="../google-play-services_lib/bin/classes:libs/android-support-v4.jar:libs/android-async-http-1.4.3.jar:../google-play-services_lib/bin/google-play-services_lib.jar:../google-play-services_lib/libs/google-play-services.jar:libs/openudid.jar:/usr/local/android-sdk-linux/platforms/android-22/android.jar:/usr/local/android-sdk-linux/tools/support/annotations.jar"
             destdir="doc"
             packagenames="com.wonderpush.sdk"
             version="true"
