@@ -38,6 +38,8 @@ class WonderPushConfiguration {
     private static final String DEVICE_DATE_SYNC_OFFSET_PREF_NAME = "__device_date_sync_offset";
     private static final String DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME = "__device_date_sync_uncertainty";
 
+    private static final String LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME = "__last_tagless_notification_manager_id";
+
     private static Context sContext;
 
     protected static void initialize(Context context) {
@@ -491,4 +493,13 @@ class WonderPushConfiguration {
         putLong(DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME, uncertainty);
     }
 
+    /**
+     * Retrieves the next notification id to use in NotificationManager for showing a tag-less notifications.
+     */
+    protected static int getNextTaglessNotificationManagerId() {
+        int id = getInt(LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME, 0);
+        ++id;
+        putInt(LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME, id);
+        return id;
+    }
 }

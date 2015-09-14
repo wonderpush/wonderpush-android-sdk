@@ -12,6 +12,8 @@ class AlertModel implements Cloneable {
     // Modify forCurrentSettings() when adding a field below
     private String title;
     private String text;
+    private String tag;
+    private boolean tagPresent;
     private int priority;
     private Boolean autoOpen;
     // Modify forCurrentSettings() when adding a field above
@@ -63,6 +65,8 @@ class AlertModel implements Cloneable {
     private static void fromJSON_common(AlertModel rtn, JSONObject wpAlert) {
         rtn.setTitle(wpAlert.optString("title", null));
         rtn.setText(wpAlert.optString("text", null));
+        rtn.setHasTag(wpAlert.has("tag"));
+        rtn.setTag(wpAlert.isNull("tag") ? null : wpAlert.optString("tag", null));
         if (wpAlert.has("autoOpen")) {
             rtn.setAutoOpen(wpAlert.optBoolean("autoOpen", false));
         } else {
@@ -119,6 +123,22 @@ class AlertModel implements Cloneable {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public boolean hasTag() {
+        return tagPresent;
+    }
+
+    public void setHasTag(boolean tagPresent) {
+        this.tagPresent = tagPresent;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     public int getPriority() {

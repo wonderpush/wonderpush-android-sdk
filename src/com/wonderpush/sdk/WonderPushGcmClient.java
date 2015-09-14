@@ -232,11 +232,12 @@ class WonderPushGcmClient {
                         Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
                     }
                 } else {
-                    String campaignId = notif.getCampaignId();
-                    if (campaignId == null) campaignId = "MISSING CAMPAIGN ID";
-                    int localNotificationId = campaignId.hashCode();
+                    String tag = notif.getAlert() != null && notif.getAlert().hasTag()
+                            ? notif.getAlert().getTag() : notif.getCampaignId();
+                    int localNotificationId = tag != null ? 0 : WonderPushConfiguration.getNextTaglessNotificationManagerId();
+                    WonderPush.logDebug("Showing notification with tag " + (tag == null ? "(null)" : "\"" + tag + "\"") + " and id " + localNotificationId);
                     NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                    mNotificationManager.notify(localNotificationId, notification);
+                    mNotificationManager.notify(tag, localNotificationId, notification);
                 }
             }
 
