@@ -150,7 +150,7 @@ abstract class NotificationModel {
                 type = NotificationModel.Type.fromString(wpData.optString("type", null));
             } catch (Exception ex) {
                 WonderPush.logError("Failed to read notification type", ex);
-                if (wpData.has("alert") || extras.containsKey("alert")) {
+                if (wpData.has("alert") || extras != null && extras.containsKey("alert")) {
                     type = NotificationModel.Type.SIMPLE;
                 } else {
                     type = NotificationModel.Type.DATA;
