@@ -23,7 +23,7 @@ abstract class NotificationModel {
         }
     }
 
-    static enum Type {
+    enum Type {
         SIMPLE("simple", NotificationSimpleModel.class),
         DATA("data", NotificationDataModel.class),
         TEXT("text", NotificationTextModel.class),
@@ -32,10 +32,10 @@ abstract class NotificationModel {
         URL("url", NotificationUrlModel.class),
         ;
 
-        private String type;
-        private Class<? extends NotificationModel> clazz;
+        private final String type;
+        private final Class<? extends NotificationModel> clazz;
 
-        private Type(String type, Class<? extends NotificationModel> clazz) {
+        Type(String type, Class<? extends NotificationModel> clazz) {
             this.type = type;
             this.clazz = clazz;
         }
@@ -70,11 +70,11 @@ abstract class NotificationModel {
     private Type type;
     private AlertModel alert;
     private String targetUrl;
-    public List<ActionModel> actions = new ArrayList<ActionModel>();
+    public List<ActionModel> actions = new ArrayList<>();
 
     // Common in-app message data
-    private final AtomicReference<ButtonModel> choice = new AtomicReference<ButtonModel>();
-    private final List<ButtonModel> buttons = new ArrayList<ButtonModel>(3);
+    private final AtomicReference<ButtonModel> choice = new AtomicReference<>();
+    private final List<ButtonModel> buttons = new ArrayList<>(3);
     private String title;
 
     public static NotificationModel fromGCMBroadcastIntent(Intent intent)
@@ -130,7 +130,7 @@ abstract class NotificationModel {
         } else if (WonderPush.containsWillOpenNotification(intent)) {
 
             try {
-                Intent pushIntent = intent.<Intent>getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+                Intent pushIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
                 return fromGCMBroadcastIntent(pushIntent);
             } catch (NotTargetedForThisInstallationException e) {
                 WonderPush.logError("Notifications not targeted for this installation should have been filtered earlier", e);
@@ -145,7 +145,7 @@ abstract class NotificationModel {
     {
         try {
             // Get the notification type
-            Type type = null;
+            Type type;
             try {
                 type = NotificationModel.Type.fromString(wpData.optString("type", null));
             } catch (Exception ex) {

@@ -10,8 +10,6 @@ import android.content.res.TypedArray;
 import android.os.SystemClock;
 import android.view.View;
 
-import com.wonderpush.sdk.R;
-
 class WonderPushDialogBuilder {
 
     public interface OnChoice {
@@ -19,7 +17,7 @@ class WonderPushDialogBuilder {
          * @param dialog
          * @param which The clicked button or null.
          */
-        public void onChoice(WonderPushDialogBuilder dialog, ButtonModel which);
+        void onChoice(WonderPushDialogBuilder dialog, ButtonModel which);
     }
 
     final Context activity;

@@ -19,7 +19,7 @@ import android.util.Log;
 // We could also update android-async-http >= 1.4.5.
 public class WonderPushService extends Service {
 
-    private static String TAG = WonderPush.TAG;
+    private static final String TAG = WonderPush.TAG;
 
     private static Boolean sIsProperlySetup;
 
@@ -91,6 +91,10 @@ public class WonderPushService extends Service {
         boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
 
         NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+        if (notif == null) {
+            Log.e(TAG, "handleOpenFromNotificationCenter() could not extract notification from intent: " + intent);
+            return;
+        }
 
         String targetUrl = notif.getTargetUrl();
         if (intent.hasExtra("overrideTargetUrl")) {

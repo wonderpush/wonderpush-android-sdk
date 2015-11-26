@@ -33,10 +33,6 @@ class WonderPushUriHelper {
         // Strip out the protocol and store the result in the "remainder" variable
         String remainder = uri.toString().substring(scheme.length());
 
-        if (remainder == null) {
-            return null;
-        }
-
         // Strip out the protocol from the base URI
         String apiRemainder = getBaseUri().toString().substring(apiScheme.length());
 
@@ -59,7 +55,7 @@ class WonderPushUriHelper {
             return Collections.emptySet();
         }
 
-        Set<String> names = new LinkedHashSet<String>();
+        Set<String> names = new LinkedHashSet<>();
         int start = 0;
         do {
             int next = query.indexOf('&', start);

@@ -106,7 +106,9 @@ class AlertModel implements Cloneable {
 
     @Override
     protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
+        AlertModel rtn = (AlertModel) super.clone();
+        rtn.foreground = (AlertModel) foreground.clone();
+        return rtn;
     }
 
     public String getTitle() {

@@ -2,12 +2,10 @@ package org.OpenUDID;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.TreeMap;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -32,7 +30,7 @@ public class OpenUDID_manager implements ServiceConnection{
 
 	private final Context mContext; //Application context
 	private List<ResolveInfo> mMatchingIntents; //List of available OpenUDID Intents
-	private Map<String, Integer> mReceivedOpenUDIDs; //Map of OpenUDIDs found so far
+	private final Map<String, Integer> mReceivedOpenUDIDs; //Map of OpenUDIDs found so far
 
 	private final SharedPreferences mPreferences; //Preferences to store the OpenUDID
 	private final Random mRandom;
@@ -41,7 +39,7 @@ public class OpenUDID_manager implements ServiceConnection{
 		mPreferences =  context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 		mContext = context;
 		mRandom = new Random();
-		mReceivedOpenUDIDs = new HashMap<String, Integer>();
+		mReceivedOpenUDIDs = new HashMap<>();
 	}
 	
 	@Override
@@ -64,6 +62,7 @@ public class OpenUDID_manager implements ServiceConnection{
 						
 				}
 			}
+			data.recycle();
 		} catch (RemoteException e) {if (LOG) Log.e(TAG, "RemoteException: " + e.getMessage());}		    	    			
 		mContext.unbindService(this);
 		
@@ -76,7 +75,7 @@ public class OpenUDID_manager implements ServiceConnection{
 	private void storeOpenUDID() {
     	final Editor e = mPreferences.edit();
 		e.putString(PREF_KEY, OpenUDID);
-		e.commit();
+		e.apply();
 	}
 	
 	/*
@@ -125,11 +124,14 @@ public class OpenUDID_manager implements ServiceConnection{
 	}
 	
 	private void getMostFrequentOpenUDID() {
-		if (mReceivedOpenUDIDs.isEmpty() == false) {
-			final TreeMap<String,Integer> sorted_OpenUDIDS = new TreeMap(new ValueComparator());
-			sorted_OpenUDIDS.putAll(mReceivedOpenUDIDs);
-        
-			OpenUDID = sorted_OpenUDIDS.firstKey();
+		if (!mReceivedOpenUDIDs.isEmpty()) {
+			int max = Integer.MIN_VALUE;
+			for (Map.Entry<String, Integer> entry : mReceivedOpenUDIDs.entrySet()) {
+				if (max < entry.getValue()) {
+					max = entry.getValue();
+					OpenUDID = entry.getKey();
+				}
+			}
 		}
 	}
 	
@@ -178,24 +180,6 @@ public class OpenUDID_manager implements ServiceConnection{
 			if (LOG) Log.d(TAG, "OpenUDID: " + OpenUDID);
 			mInitialized = true;
 		}
-	}
-	
-	
-	
-	/*
-	 * Used to sort the OpenUDIDs collected by occurrence
-	 */
-	private class ValueComparator implements Comparator {
-		public int compare(Object a, Object b) {
-
-			if(mReceivedOpenUDIDs.get(a) < mReceivedOpenUDIDs.get(b)) {
-				return 1;
-		    } else if(mReceivedOpenUDIDs.get(a) == mReceivedOpenUDIDs.get(b)) {
-		    	return 0;
-		    } else {
-		    	return -1;
-		    }
-		 }
 	}
 }
 

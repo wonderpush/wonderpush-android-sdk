@@ -1,6 +1,5 @@
 package com.wonderpush.sdk;
 
-import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -19,16 +18,16 @@ class WonderPushJobQueue {
 
     private static final String TAG = WonderPush.TAG;
 
-    private static int DEFAULT_CAPACITY = 100;
+    private static final int DEFAULT_CAPACITY = 100;
 
     /**
      * Queued objects.
      */
     protected interface Job {
 
-        public String getId();
+        String getId();
 
-        public JSONObject getJobDescription();
+        JSONObject getJobDescription();
 
     }
 
@@ -41,8 +40,8 @@ class WonderPushJobQueue {
         return sDefaultQueue;
     }
 
-    private String mQueueName;
-    private ArrayBlockingQueue<Job> mQueue;
+    private final String mQueueName;
+    private final ArrayBlockingQueue<Job> mQueue;
 
     /**
      * Creates a queue with the specified name
@@ -54,7 +53,7 @@ class WonderPushJobQueue {
      */
     WonderPushJobQueue(String queueName, int capacity) {
         mQueueName = queueName;
-        mQueue = new ArrayBlockingQueue<WonderPushJobQueue.Job>(capacity);
+        mQueue = new ArrayBlockingQueue<>(capacity);
         restore();
     }
 
@@ -106,9 +105,7 @@ class WonderPushJobQueue {
     protected synchronized void save() {
         try {
             JSONArray jsonArray = new JSONArray();
-            Iterator<Job> it = mQueue.iterator();
-            while (it.hasNext()) {
-                Job job = it.next();
+            for (Job job : mQueue) {
                 if (!(job instanceof InternalJob)) continue;
                 InternalJob internalJob = (InternalJob) job;
                 jsonArray.put(internalJob.toJSON());
@@ -117,7 +114,7 @@ class WonderPushJobQueue {
             SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString(getPrefName(), jsonArray.toString());
-            editor.commit();
+            editor.apply();
         } catch (JSONException e) {
             Log.e(TAG, "Could not save job queue", e);
         } catch (Exception e) {

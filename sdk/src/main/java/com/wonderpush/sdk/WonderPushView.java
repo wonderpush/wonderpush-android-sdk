@@ -11,6 +11,7 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -110,8 +111,8 @@ class WonderPushView extends FrameLayout {
 
         // Create the close button
         mCloseButton = new ImageButton(getContext());
-        Drawable closeButtonDrawable = getResources().getDrawable(R.drawable.wonderpush_close_button);
-        int closeButtonMargin = (int) 0;
+        Drawable closeButtonDrawable = ContextCompat.getDrawable(getContext(), R.drawable.wonderpush_close_button);
+        int closeButtonMargin = 0;
         FrameLayout.LayoutParams closeButtonLayoutParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -160,7 +161,6 @@ class WonderPushView extends FrameLayout {
         if (mTextColor != 0) {
             mTextColorCSS = String.format("#%06X", 0xFFFFFF & mTextColor);
         }
-        attrs = new int[] { android.R.attr.textSize };
         int mediumFontSizePx = Math.round(36 * getContext().getResources().getDisplayMetrics().scaledDensity / getContext().getResources().getDisplayMetrics().density);
         mediumFontSizePx = ta.getDimensionPixelSize(0, mediumFontSizePx);
         ta.recycle();
@@ -322,11 +322,7 @@ class WonderPushView extends FrameLayout {
                 return true;
             }
             // Handle web callback
-            if (mWebCallbackHandler.handleWebCallback(uri)) {
-                return true;
-            }
-
-            return false;
+            return mWebCallbackHandler.handleWebCallback(uri);
         }
 
         @Override
@@ -527,11 +523,11 @@ class WonderPushView extends FrameLayout {
 
     }
 
-    public static interface OnStateListener {
-        public void onLoading();
-        public void onLoaded();
-        public void onError();
-        public void onClose();
+    public interface OnStateListener {
+        void onLoading();
+        void onLoaded();
+        void onError();
+        void onClose();
     }
 
     private class WebContentState extends UserInterfaceState {

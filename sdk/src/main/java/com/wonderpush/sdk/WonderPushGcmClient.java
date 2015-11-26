@@ -170,7 +170,7 @@ class WonderPushGcmClient {
     protected static boolean onBroadcastReceived(Context context, Intent intent, int iconResource, Class<? extends Activity> activity) {
         WonderPush.ensureInitialized(context);
 
-        NotificationModel notif = null;
+        NotificationModel notif;
         try {
             notif = NotificationModel.fromGCMBroadcastIntent(intent);
         } catch (NotTargetedForThisInstallationException ex) {
@@ -326,7 +326,6 @@ class WonderPushGcmClient {
                 || System.currentTimeMillis() - WonderPushConfiguration.getCachedGCMRegistrationIdDate() > WonderPush.CACHED_REGISTRATION_ID_DURATION) {
             registerInBackground(pushSenderId, context);
         } // already pushed by WonderPush.updateInstallationCoreProperties()
-        return;
     }
 
 }

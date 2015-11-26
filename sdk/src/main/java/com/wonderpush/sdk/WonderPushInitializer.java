@@ -32,6 +32,6 @@ public interface WonderPushInitializer {
      * @param context
      *            The {@link Context} you must pass on to {@link WonderPush#initialize(Context, String, String)}.
      */
-    public void initialize(Context context);
+    void initialize(Context context);
 
 }

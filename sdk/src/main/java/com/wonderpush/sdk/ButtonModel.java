@@ -12,7 +12,7 @@ class ButtonModel {
     public List<ActionModel> actions;
 
     public ButtonModel() {
-        actions = new ArrayList<ActionModel>(0);
+        actions = new ArrayList<>(0);
     }
 
     public ButtonModel(JSONObject data) {
@@ -23,7 +23,7 @@ class ButtonModel {
         label = data.optString("label");
         JSONArray actions = data.optJSONArray("actions");
         int actionCount = actions != null ? actions.length() : 0;
-        this.actions = new ArrayList<ActionModel>(actionCount);
+        this.actions = new ArrayList<>(actionCount);
         for (int i = 0 ; i < actionCount ; ++i) {
             JSONObject action = actions.optJSONObject(i);
             this.actions.add(new ActionModel(action));

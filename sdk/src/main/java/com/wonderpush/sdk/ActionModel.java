@@ -18,9 +18,9 @@ class ActionModel {
         MAP_OPEN("mapOpen"),
         ;
 
-        private String type;
+        private final String type;
 
-        private Type(String type) {
+        Type(String type) {
             this.type = type;
         }
 

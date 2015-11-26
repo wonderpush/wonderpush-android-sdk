@@ -88,7 +88,7 @@ class WonderPushConfiguration {
         } else {
             editor.putString(key, value);
         }
-        editor.commit();
+        editor.apply();
     }
 
     private static JSONObject getJSONObject(String key) {
@@ -123,7 +123,7 @@ class WonderPushConfiguration {
     private static void putInt(String key, int value) {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         editor.putInt(key, value);
-        editor.commit();
+        editor.apply();
     }
 
     private static long getLong(String key, long defaultValue) {
@@ -137,7 +137,7 @@ class WonderPushConfiguration {
     private static void putLong(String key, long value) {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         editor.putLong(key, value);
-        editor.commit();
+        editor.apply();
     }
 
     private static boolean getBoolean(String key, boolean defaultValue) {
@@ -151,7 +151,7 @@ class WonderPushConfiguration {
     private static void putBoolean(String key, boolean value) {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         editor.putBoolean(key, value);
-        editor.commit();
+        editor.apply();
     }
 
     /**
@@ -241,10 +241,10 @@ class WonderPushConfiguration {
     }
 
     /**
-     * Set the notification enabled stored in the user's shared preferences.
+     * Set the notification enabled status stored in the user's shared preferences.
      *
-     * @param sid
-     *            The SID to be stored
+     * @param status
+     *            The notification enabled status to be stored
      */
     protected static void setNotificationEnabled(boolean status) {
         putBoolean(NOTIFICATION_ENABLED_PREF_NAME, status);
@@ -363,7 +363,7 @@ class WonderPushConfiguration {
 
     /**
      * Set the date of the first non-noop write to installation custom properties that has been delayed for grouping.
-     * @param cachedInstallationCustomPropertiesLastDelayedWrite
+     * @param cachedInstallationCustomPropertiesFirstDelayedWrite
      *            The date of the first non-noop write to installation custom properties that has been delayed for grouping to store.
      */
     protected static void setCachedInstallationCustomPropertiesFirstDelayedWrite(long cachedInstallationCustomPropertiesFirstDelayedWrite) {
@@ -397,7 +397,7 @@ class WonderPushConfiguration {
     /**
      * Set the cached registration id date as stored in the user's shared preferences.
      *
-     * @param date
+     * @param cachedGCMRegistrationIdDate
      *            The cached registration id date to be stored
      */
     protected static void setCachedGCMRegistrationIdDate(long cachedGCMRegistrationIdDate) {
@@ -562,7 +562,7 @@ class WonderPushConfiguration {
 
     /**
      * Set the last known device date to WonderPush time offset in milliseconds stored in the user's shared preferences.
-     * @param date
+     * @param offset
      *            The last known device date to WonderPush time offset to be stored
      */
     protected static void setDeviceDateSyncOffset(long offset) {
@@ -578,7 +578,7 @@ class WonderPushConfiguration {
 
     /**
      * Set the last known device date to WonderPush time uncertainty in milliseconds stored in the user's shared preferences.
-     * @param date
+     * @param uncertainty
      *            The last known device date to WonderPush time uncertainty to be stored
      */
     protected static void setDeviceDateSyncUncertainty(long uncertainty) {

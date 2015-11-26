@@ -59,7 +59,7 @@ task setVersion {
         if (apiMatcher.matches()) {
             apiVersion = apiMatcher[0][1]
         }
-        def versionMatcher = (it =~ /(?:.*SDK_SHORT_VERSION = \")(.*)(?:\".*)/)
+        def versionMatcher = (it =~ /(?:.*SDK_SHORT_VERSION = ")(.*)(?:".*)/)
         if (versionMatcher.matches()) {
             sdkVersion = versionMatcher[0][1]
         }

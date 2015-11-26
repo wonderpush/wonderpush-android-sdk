@@ -38,8 +38,8 @@ class WonderPushRequestVault {
         }
     }
 
-    private WonderPushJobQueue mJobQueue;
-    private Thread mThread;
+    private final WonderPushJobQueue mJobQueue;
+    private final Thread mThread;
 
     WonderPushRequestVault(WonderPushJobQueue jobQueue) {
         mJobQueue = jobQueue;
@@ -86,7 +86,6 @@ class WonderPushRequestVault {
                                         || e instanceof SocketException) {
                                     backoff();
                                     mJobQueue.post(job);
-                                    return;
                                 }
                             }
 

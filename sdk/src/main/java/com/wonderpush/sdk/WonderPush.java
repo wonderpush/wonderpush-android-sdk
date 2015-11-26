@@ -4,12 +4,10 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
@@ -97,7 +95,7 @@ public class WonderPush {
     private static ActivityLifecycleMonitor sActivityLifecycleCallbacks;
     private static boolean sActivityLifecycleCallbacksRegistered;
     private static WeakReference<Intent> sLastHandledIntentRef;
-    private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<Activity, Object>();
+    private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<>();
     static {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             sActivityLifecycleCallbacks = new ActivityLifecycleMonitor();
@@ -337,7 +335,7 @@ public class WonderPush {
      */
     public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG = "com.wonderpush.action.method.extra_arg";
 
-    private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
+    private static final String PRODUCTION_API_URL = "https://devnws3-ofavre/api/" + API_VERSION;
     protected static final int ERROR_INVALID_CREDENTIALS = 11000;
     protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
     protected static final String DEFAULT_LANGUAGE_CODE = "en";
@@ -566,7 +564,7 @@ public class WonderPush {
                     // Keep it
                     //intent.removeExtra(INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
                 }
-                sLastHandledIntentRef = new WeakReference<Intent>(intent);
+                sLastHandledIntentRef = new WeakReference<>(intent);
                 logDebug("Handling opened notification: " + notif.getInputJSONString());
                 try {
                     JSONObject trackData = new JSONObject();
@@ -867,13 +865,13 @@ public class WonderPush {
         // 2. try to match the language or the entire locale string among the
         // list of available language codes
         String matchedLanguageCode = null;
-        for (int i = 0 ; i < VALID_LANGUAGE_CODES.length ; i++) {
-            if (VALID_LANGUAGE_CODES[i].equals(localeString)) {
+        for (String languageCode : VALID_LANGUAGE_CODES) {
+            if (languageCode.equals(localeString)) {
                 // return here as this is the most precise match we can get
                 return localeString;
             }
 
-            if (VALID_LANGUAGE_CODES[i].equals(language)) {
+            if (languageCode.equals(language)) {
                 // set the matched language code, and continue iterating as we
                 // may match the localeString in a later iteration.
                 matchedLanguageCode = language;
@@ -1694,7 +1692,7 @@ public class WonderPush {
                 // Permission checks
                 if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
                     Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
-                };
+                }
                 if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED
                         && context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
                     Log.w(TAG, "Missing ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION permission. Add <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both)");
@@ -1753,9 +1751,7 @@ public class WonderPush {
         if (sApplication != null || !(context instanceof Application)) {
             return;
         }
-        Application application = (Application) context;
-
-        sApplication = application;
+        sApplication = (Application) context;
         monitorActivitiesLifecycle();
     }
 
@@ -2175,7 +2171,7 @@ public class WonderPush {
             @Override
             protected Bitmap doInBackground(Object... args) {
                 try {
-                    String loc = null;
+                    String loc;
                     if (point != null) {
                         loc = point.getLat() + "," + point.getLon();
                     } else if (place.getName() != null) {
@@ -2639,6 +2635,7 @@ public class WonderPush {
             super(key, value);
         }
 
+        // Only redeclared for package private access
         @Override
         protected List<BasicNameValuePair> getParamsList() {
             return super.getParamsList();

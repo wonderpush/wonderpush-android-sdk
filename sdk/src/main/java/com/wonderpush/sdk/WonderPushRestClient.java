@@ -48,9 +48,9 @@ class WonderPushRestClient {
     private static final int RETRY_INTERVAL = 30 * 1000; // in milliseconds
     private static final int RETRY_INTERVAL_NETWORK_ISSUE = 60 * 1000; // in milliseconds
     private static boolean sIsFetchingAnonymousAccessToken = false;
-    private static List<WonderPush.ResponseHandler> sPendingHandlers = new ArrayList<WonderPush.ResponseHandler>();
+    private static final List<WonderPush.ResponseHandler> sPendingHandlers = new ArrayList<>();
 
-    private static AsyncHttpClient sClient = new AsyncHttpClient();
+    private static final AsyncHttpClient sClient = new AsyncHttpClient();
 
     /**
      * A GET request
@@ -350,36 +350,29 @@ class WonderPushRestClient {
 
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
-                        WonderPush.logError("Unexpected JSONArray answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + response.length() + ") " + response.toString());
+                        WonderPush.logError("Unexpected JSONArray answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + response.length() + ") " + response.toString());
                     }
 
                     @Override
                     public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                        WonderPush.logError("Error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: " + errorResponse);
+                        WonderPush.logError("Error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: " + errorResponse);
                         syncTime(errorResponse);
-                        if (errorResponse != null) {
-                            WonderPush.logDebug("Request Error: " + errorResponse);
-                            WonderPush.setNetworkAvailable(true);
-                            if (handler != null) {
-                                handler.onFailure(throwable, new WonderPush.Response(errorResponse));
-                            }
-                        } else {
-                            WonderPush.setNetworkAvailable(false);
-                            if (handler != null) {
-                                handler.onFailure(throwable, new WonderPush.Response(errorResponse));
-                            }
+                        WonderPush.logDebug("Request Error: " + errorResponse);
+                        WonderPush.setNetworkAvailable(errorResponse != null);
+                        if (handler != null) {
+                            handler.onFailure(throwable, new WonderPush.Response(errorResponse));
                         }
                     }
 
                     @Override
                     public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
-                        WonderPush.logError("Unexpected JSONArray error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + errorResponse.length() + ") " + errorResponse.toString());
+                        WonderPush.logError("Unexpected JSONArray error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + errorResponse.length() + ") " + errorResponse.toString());
                         this.onFailure(statusCode, headers, errorResponse.toString(), throwable);
                     }
 
                     @Override
                     public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
-                        WonderPush.logError("Unexpected string error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + responseString.length() + ") \"" + responseString + "\"");
+                        WonderPush.logError("Unexpected string error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + responseString.length() + ") \"" + responseString + "\"");
                         WonderPush.setNetworkAvailable(false);
                         if (handler != null) {
                             handler.onFailure(throwable, new WonderPush.Response(responseString));
@@ -388,7 +381,7 @@ class WonderPushRestClient {
 
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, String responseString) {
-                        WonderPush.logError("Unexpected string answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + responseString.length() + ") \"" + responseString + "\"");
+                        WonderPush.logError("Unexpected string answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + responseString.length() + ") \"" + responseString + "\"");
                     }
 
                     private void syncTime(JSONObject data) {
@@ -476,7 +469,7 @@ class WonderPushRestClient {
                             if (null != handler) {
                                 handler.onFailure(e, errorResponse);
                             }
-                            WonderPush.ResponseHandler chainedHandler = null;
+                            WonderPush.ResponseHandler chainedHandler;
                             while ((chainedHandler = dequeueHandler()) != null) {
                                 chainedHandler.onFailure(e, errorResponse);
                             }
@@ -518,7 +511,7 @@ class WonderPushRestClient {
                                 if (null != handler) {
                                     handler.onSuccess(statusCode, response);
                                 }
-                                WonderPush.ResponseHandler chainedHandler = null;
+                                WonderPush.ResponseHandler chainedHandler;
                                 while ((chainedHandler = dequeueHandler()) != null) {
                                     chainedHandler.onSuccess(statusCode, response);
                                 }
@@ -747,9 +740,7 @@ class WonderPushRestClient {
                 byte[] digest = mac.doFinal(sb.toString().getBytes());
                 String sig = Base64.encodeToString(digest, Base64.DEFAULT).trim();
                 String encodedSig = encode(sig.trim());
-                BasicHeader result = new BasicHeader("X-WonderPush-Authorization", String.format("WonderPush sig=\"%s\", meth=\"0\"", encodedSig));
-
-                return result;
+                return new BasicHeader("X-WonderPush-Authorization", String.format("WonderPush sig=\"%s\", meth=\"0\"", encodedSig));
             } catch (Exception e) {
                 Log.e(TAG, "Could not generate signature", e);
                 return null;
