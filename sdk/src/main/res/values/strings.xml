@@ -1,7 +1,7 @@
 <resources>
 
+    <string name="app_name">WonderPush Android SDK</string>
     <string name="push_sender_ids">1023997258979</string>
-    <string name="app_name">WonderPush</string>
     <string name="wonderpush_close">Close</string>
     <string name="wonderpush_cancel">Cancel</string>
     <string name="wonderpush_retry">Retry</string>

@@ -45,6 +45,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
@@ -64,8 +65,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.wonderpush.sdk.ButtonModel;
-import com.wonderpush.sdk.ActionModel;
+
+import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 /**
  * Main class of the WonderPush SDK.
@@ -97,8 +98,28 @@ public class WonderPush {
     private static boolean sActivityLifecycleCallbacksRegistered;
     private static WeakReference<Intent> sLastHandledIntentRef;
     private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<Activity, Object>();
-    private static Handler sDeferHandler = new Handler();
-    private static ScheduledExecutorService sScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    static {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            sActivityLifecycleCallbacks = new ActivityLifecycleMonitor();
+        }
+    }
+
+    private static Looper sLooper;
+    private static Handler sDeferHandler;
+    private static ScheduledExecutorService sScheduledExecutor;
+    static {
+        sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Looper.prepare();
+                sLooper = Looper.myLooper();
+                sDeferHandler = new Handler(sLooper);
+                Looper.loop();
+            }
+        }, "WonderPush").start();
+        sScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    }
 
     private static String sClientId;
     private static String sClientSecret;
@@ -118,7 +139,8 @@ public class WonderPush {
     protected static final int WEBVIEW_REQUEST_TOTAL_TIMEOUT = 10000;
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
-    protected static final String SDK_VERSION = "Android-" + API_INT + ".1.1.2"; // reset to .1.0.0 when bumping API_INT
+    protected static final String SDK_SHORT_VERSION = "1.1.3-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
+    protected static final String SDK_VERSION = "Android-" + API_INT + "." + SDK_SHORT_VERSION;
     protected static final int ERROR_INVALID_SID = 12017;
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
@@ -326,12 +348,6 @@ public class WonderPush {
             "ta", "th", "tl", "tr", "uk", "vi", "zh", "zh_CN", "zh_TW", "zh_HK",
     };
 
-    static {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            sActivityLifecycleCallbacks = new ActivityLifecycleMonitor();
-        }
-    }
-
     protected WonderPush() {
         throw new IllegalAccessError("You should not instantiate this class!");
     }
@@ -365,7 +381,7 @@ public class WonderPush {
     /**
      * Helper method that will register a device for google cloud messages
      * notification and register the device token to WonderPush. This method is
-     * called within {@link #initialize(Activity, String, String, String)}.
+     * called within {@link #initialize(Context, String, String)}.
      *
      * @param context
      *            The current {@link Activity} (preferred) or {@link Application} context.
@@ -601,14 +617,14 @@ public class WonderPush {
     }
 
     /**
-     * Gets the clientId that was specified during the {@link WonderPush.initialize(Context, String, String} call.
+     * Gets the clientId that was specified during the {@link #initialize(Context, String, String)} call.
      */
     protected static String getClientId() {
         return sClientId;
     }
 
     /**
-     * Gets the clientSecret that was specified during the {@link WonderPush.initialize(Context, String, String} call.
+     * Gets the clientSecret that was specified during the {@link #initialize(Context, String, String)} call.
      */
     protected static String getClientSecret() {
         return sClientSecret;
@@ -752,8 +768,6 @@ public class WonderPush {
      *
      * @param resource
      *            The resource path, starting with /.
-     * @param params
-     *            AsyncHttpClient request parameters.
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
@@ -763,9 +777,8 @@ public class WonderPush {
     }
 
     /**
-     * Returns the Location as set in {@link setLocation(Location)} or the best
-     * last known location of the {@link LocationManager} or null if permission
-     * was not given.
+     * Returns the last known location of the {@link LocationManager}
+     * or null if permission was not given.
      */
     protected static Location getLocation() {
         if (null != sLocation)
@@ -828,8 +841,7 @@ public class WonderPush {
     }
 
     /**
-     * Gets the current language. If language was specified using {@link WonderPush#setLang(String)},
-     * this value is returned. Otherwise it is guessed from the system.
+     * Gets the current language, guessed from the system.
      *
      * @return The locale in use.
      */
@@ -1301,7 +1313,7 @@ public class WonderPush {
 
     /**
      * Get the current timestamp in milliseconds, UTC.
-     * @return
+     * @return A timestamp in milliseconds
      */
     protected static long getTime() {
         // Initialization
@@ -1583,10 +1595,10 @@ public class WonderPush {
     }
 
     /**
-     * Whether {@link #initialize(Activity, String, String)} has been called.
+     * Whether {@link #initialize(Context, String, String)} has been called.
      * Different from having fetched an access token,
      * and hence from {@link #INTENT_INTIALIZED} being dispatched.
-     * @return
+     * @return {@code true} if the SDK is initialized, {@code false} otherwise.
      */
     static boolean isInitialized() {
         return sIsInitialized;
@@ -1597,7 +1609,7 @@ public class WonderPush {
      * the {@link #INTENT_INTIALIZED} intent has been dispatched.
      *
      * The SDK is ready when it is initialized and has fetched an access token.
-     * @return
+     * @return {@code true} if the SDK is ready, {@code false} otherwise.
      */
     public static boolean isReady() {
         return sIsReady;
@@ -2010,7 +2022,7 @@ public class WonderPush {
 
     /**
      * Gets the application context that was captured during the
-     * {@link WonderPush#initialize(Activity, String, String} call.
+     * {@link WonderPush#initialize(Context, String, String)} call.
      */
     protected static Context getApplicationContext() {
         if (null == sApplicationContext)
@@ -2439,7 +2451,7 @@ public class WonderPush {
 
     /**
      * Monitors activities lifecycle operations, which are evidences of user interactions.
-     * @see http://www.mjbshaw.com/2012/12/determining-if-your-android-application.html
+     * @link http://www.mjbshaw.com/2012/12/determining-if-your-android-application.html
      */
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     protected static class ActivityLifecycleMonitor implements ActivityLifecycleCallbacks {
@@ -2627,46 +2639,9 @@ public class WonderPush {
             super(key, value);
         }
 
-        /**
-         * Return the names of all parameters.
-         */
-        public Set<String> getParamNames() {
-            HashSet<String> result = new HashSet<String>();
-            result.addAll(this.fileParams.keySet());
-            result.addAll(this.urlParams.keySet());
-            result.addAll(this.urlParamsWithArray.keySet());
-            return result;
-        }
-
-        /**
-         * Returns the value for the given param. If the given param is
-         * encountered multiple times, the first occurrence is returned.
-         *
-         * @param paramName
-         */
-        public String getParamValue(String paramName) {
-
-            if (this.urlParams.containsKey(paramName))
-                return this.urlParams.get(paramName);
-
-            if (this.urlParamsWithArray.containsKey(paramName)) {
-                List<String> values = this.urlParamsWithArray.get(paramName);
-                if (0 < values.size())
-                    return values.get(0);
-            }
-
-            return null;
-        }
-
-        /**
-         * Checks whether the provided key has been specified as parameter.
-         *
-         * @param key
-         */
-        public boolean has(String key) {
-            return urlParams.containsKey(key)
-                    || fileParams.containsKey(key)
-                    || urlParamsWithArray.containsKey(key);
+        @Override
+        protected List<BasicNameValuePair> getParamsList() {
+            return super.getParamsList();
         }
 
         public String getURLEncodedString() {
@@ -2680,8 +2655,8 @@ public class WonderPush {
 
         public JSONObject toJSONObject() {
             JSONObject result = new JSONObject();
-            java.util.List<org.apache.http.message.BasicNameValuePair> params = getParamsList();
-            for (org.apache.http.message.BasicNameValuePair parameter : params) {
+            java.util.List<BasicNameValuePair> params = getParamsList();
+            for (BasicNameValuePair parameter : params) {
                 try {
                     result.put(parameter.getName(), parameter.getValue());
                 } catch (JSONException e) {

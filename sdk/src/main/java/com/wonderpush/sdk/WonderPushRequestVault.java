@@ -3,7 +3,7 @@ package com.wonderpush.sdk;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import org.apache.http.NoHttpResponseException;
+import cz.msebera.android.httpclient.NoHttpResponseException;
 import org.json.JSONException;
 
 import android.util.Log;

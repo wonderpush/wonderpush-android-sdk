@@ -1,20 +1,21 @@
 package com.wonderpush.sdk;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.SocketException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeSet;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.http.Header;
-import org.apache.http.NoHttpResponseException;
-import org.apache.http.message.BasicHeader;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,6 +28,10 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.wonderpush.sdk.WonderPush.Response;
 import com.wonderpush.sdk.WonderPush.ResponseHandler;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.message.BasicHeader;
+import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 /**
  * A REST client that lets you hit the WonderPush REST server.
@@ -95,8 +100,7 @@ class WonderPushRestClient {
             @Override
             public void onFailure(Throwable e, Response errorResponse) {
                 // Post to vault on network error
-                if (e instanceof NoHttpResponseException
-                        || e instanceof UnknownHostException
+                if (e instanceof UnknownHostException
                         || e instanceof SocketException) {
                     // retry later
                     WonderPush.safeDefer(new Runnable() {
@@ -155,8 +159,6 @@ class WonderPushRestClient {
      *
      * @param resource
      *            The resource path, starting with /
-     * @param params
-     *            AsyncHttpClient request parameters
      * @param responseHandler
      *            An AsyncHttpClient response handler
      */
@@ -307,93 +309,119 @@ class WonderPushRestClient {
             return;
         }
 
-        try {
+        WonderPush.safeDefer(new Runnable() {
+            @Override
+            public void run() {
+                // Decorate parameters
+                WonderPushRequestParamsDecorator.decorate(request.getResource(), request.getParams());
 
-            // Decorate parameters
-            WonderPushRequestParamsDecorator.decorate(request.getResource(), request.getParams());
+                // Generate signature
+                BasicHeader authorizationHeader = request.getAuthorizationHeader();
 
-            // Generate signature
-            Header authorizationHeader = request.getAuthorizationHeader();
+                // Headers
+                BasicHeader[] headers = null;
+                if (null != authorizationHeader) {
+                    headers = new BasicHeader[1];
+                    headers[0] = authorizationHeader;
+                }
 
-            // Headers
-            Header[] headers = null;
-            if (null != authorizationHeader) {
-                headers = new Header[1];
-                headers[0] = authorizationHeader;
-            }
+                String url = WonderPushUriHelper.getAbsoluteUrl(request.getResource());
+                WonderPush.logDebug("requesting url: " + request.getMethod() + " " + url + "?" + request.getParams().getURLEncodedString());
+                // TODO: support other contentTypes such as "application/json"
+                String contentType = "application/x-www-form-urlencoded";
 
-            String url = WonderPushUriHelper.getAbsoluteUrl(request.getResource());
-            WonderPush.logDebug("requesting url: " + request.getMethod() + " " + url + "?" + request.getParams().getURLEncodedString());
-            // TODO: support other contentTypes such as "application/json"
-            String contentType = "application/x-www-form-urlencoded";
+                // Handler
+                final ResponseHandler handler = request.getHandler();
+                final long sendDate = SystemClock.elapsedRealtime();
+                JsonHttpResponseHandler jsonHandler = new JsonHttpResponseHandler() {
+                    @Override
+                    public void onProgress(long bytesWritten, long totalSize) {
+                        // mute this
+                    }
 
-            // Handler
-            final ResponseHandler handler = request.getHandler();
-            final long sendDate = SystemClock.elapsedRealtime();
-            JsonHttpResponseHandler jsonHandler = new JsonHttpResponseHandler() {
-                @Override
-                public void onFailure(Throwable e, JSONObject data) {
-                    syncTime(data);
-                    if (data != null) {
-                        WonderPush.logDebug("Requesting Error: " + data);
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                        syncTime(response);
                         WonderPush.setNetworkAvailable(true);
                         if (handler != null) {
-                            handler.onFailure(e, new WonderPush.Response(data));
+                            handler.onSuccess(statusCode, new WonderPush.Response(response));
                         }
-                    } else {
+                    }
+
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
+                        WonderPush.logError("Unexpected JSONArray answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + response.length() + ") " + response.toString());
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                        WonderPush.logError("Error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: " + errorResponse);
+                        syncTime(errorResponse);
+                        if (errorResponse != null) {
+                            WonderPush.logDebug("Request Error: " + errorResponse);
+                            WonderPush.setNetworkAvailable(true);
+                            if (handler != null) {
+                                handler.onFailure(throwable, new WonderPush.Response(errorResponse));
+                            }
+                        } else {
+                            WonderPush.setNetworkAvailable(false);
+                            if (handler != null) {
+                                handler.onFailure(throwable, new WonderPush.Response(errorResponse));
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+                        WonderPush.logError("Unexpected JSONArray error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + errorResponse.length() + ") " + errorResponse.toString());
+                        this.onFailure(statusCode, headers, errorResponse.toString(), throwable);
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                        WonderPush.logError("Unexpected string error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + responseString.length() + ") \"" + responseString + "\"");
                         WonderPush.setNetworkAvailable(false);
                         if (handler != null) {
-                            handler.onFailure(e, new WonderPush.Response(data));
+                            handler.onFailure(throwable, new WonderPush.Response(responseString));
                         }
                     }
-                }
 
-                @Override
-                public void onFailure(Throwable e, String data) {
-                    WonderPush.setNetworkAvailable(false);
-                    if (handler != null) {
-                        handler.onFailure(e, new WonderPush.Response(data));
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                        WonderPush.logError("Unexpected string answer: " + statusCode + " headers: " + Arrays.toString(headers) + " repsonse: (" + responseString.length() + ") \"" + responseString + "\"");
                     }
-                }
 
-                @Override
-                public void onSuccess(int statusCode, JSONObject data) {
-                    syncTime(data);
-                    WonderPush.setNetworkAvailable(true);
-                    if (handler != null) {
-                        handler.onSuccess(statusCode, new WonderPush.Response(data));
+                    private void syncTime(JSONObject data) {
+                        long recvDate = SystemClock.elapsedRealtime();
+                        if (data == null || !data.has("_serverTime")) {
+                            return;
+                        }
+                        WonderPush.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"), data.optLong("_serverTook"));
                     }
+                };
+                // NO UNNECESSARY WORK HERE, because of timed request
+                switch (request.getMethod()) {
+                    case GET:
+                        sClient.get(null, url, headers, request.getParams(), jsonHandler);
+                        break;
+                    case PUT:
+                        try {
+                            sClient.put(null, url, headers,
+                                    request.getParams() != null ? request.getParams().getEntity(jsonHandler) : null,
+                                    contentType, jsonHandler);
+                        } catch (IOException ex) {
+                            Log.e(TAG, "Unexpected error while performing request " + request, ex);
+                        }
+                        break;
+                    case POST:
+                        sClient.post(null, url, headers, request.getParams(), contentType, jsonHandler);
+                        break;
+                    case DELETE:
+                        sClient.delete(null, url, headers, jsonHandler);
+                        break;
                 }
-
-                private void syncTime(JSONObject data) {
-                    long recvDate = SystemClock.elapsedRealtime();
-                    if (data == null || !data.has("_serverTime")) {
-                        return;
-                    }
-                    WonderPush.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"), data.optLong("_serverTook"));
-                }
-            };
-            // NO UNNECESSARY WORK HERE, because of timed request
-            switch (request.getMethod()) {
-                case GET:
-                    sClient.get(null, url, headers, request.getParams(), jsonHandler);
-                    break;
-                case PUT:
-                    sClient.put(null, url, headers,
-                            request.getParams() != null ? request.getParams().getEntity() : null,
-                            contentType, jsonHandler);
-                    break;
-                case POST:
-                    sClient.post(null, url, headers, request.getParams(), contentType, jsonHandler);
-                    break;
-                case DELETE:
-                    sClient.delete(null, url, headers, jsonHandler);
-                    break;
             }
-
-        } catch (Exception ex) {
-            Log.e(TAG, "Unexpected error while performing request " + request, ex);
-        }
+        }, 0);
     }
 
     protected static void fetchAnonymousAccessToken(final WonderPush.ResponseHandler handler) {
@@ -587,8 +615,8 @@ class WonderPushRestClient {
             result.put("resource", mResource);
             JSONObject params = new JSONObject();
             if (null != mParams) {
-                for (String key : mParams.getParamNames()) {
-                    params.put(key, mParams.getParamValue(key));
+                for (BasicNameValuePair pair : mParams.getParamsList()) {
+                    params.put(pair.getName(), pair.getValue());
                 }
             }
             result.put("params", params);
@@ -668,42 +696,51 @@ class WonderPushRestClient {
 
                 // Step 3: add URL encoded parameters
                 sb.append('&');
-                TreeSet<String> paramNames = new TreeSet<String>();
 
                 // Params from the URL
+                List<BasicNameValuePair> unencodedParams = new ArrayList<>();
                 WonderPush.RequestParams queryStringParams = QueryStringParser.getRequestParams(uri.getQuery());
                 if (queryStringParams != null) {
-                    paramNames.addAll(queryStringParams.getParamNames());
+                    unencodedParams.addAll(queryStringParams.getParamsList());
                 }
 
                 // Params from the request
                 if (mParams != null) {
-                    paramNames.addAll(mParams.getParamNames());
+                    unencodedParams.addAll(mParams.getParamsList());
                 }
 
-                if (paramNames.size() > 0) {
-                    String last = paramNames.last();
-                    for (String paramName : paramNames) {
-                        String paramValue = null;
-
-                        if (null != mParams) {
-                            paramValue = mParams.getParamValue(paramName);
+                // Encode and sort params
+                List<BasicNameValuePair> encodedParams = new ArrayList<>(unencodedParams.size());
+                for (BasicNameValuePair pair : unencodedParams) {
+                    encodedParams.add(new BasicNameValuePair(encode(pair.getName()), encode(pair.getValue())));
+                }
+                Collections.sort(encodedParams, new Comparator<BasicNameValuePair>() {
+                    @Override
+                    public int compare(BasicNameValuePair lhs, BasicNameValuePair rhs) {
+                        int rtn = lhs.getName().compareTo(rhs.getName());
+                        if (rtn == 0) {
+                            rtn = lhs.getValue().compareTo(rhs.getValue());
                         }
-
-                        if (paramValue == null && queryStringParams != null) {
-                            paramValue = queryStringParams.getParamValue(paramName);
-                        }
-
-                        sb.append(encode(String.format("%s=%s", encode(paramName), encode(paramValue))));
-                        if (!last.equals(paramName)) {
-                            sb.append("%26");
-                        }
+                        return rtn;
                     }
+                });
+
+                // Append to the clear signature
+                boolean first = true;
+                for (BasicNameValuePair pair : encodedParams) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append("%26");
+                    }
+                    sb.append(encode(String.format("%s=%s", pair.getName(), pair.getValue())));
                 }
 
                 // Step 4: add body
                 sb.append('&');
                 // TODO: add the body here when we support other content types than application/x-www-form-urlencoded
+
+                // Final step: Hash and format header
                 Mac mac = Mac.getInstance("HmacSHA1");
                 SecretKeySpec secret = new SecretKeySpec(WonderPush.getClientSecret().getBytes("UTF-8"), mac.getAlgorithm());
                 mac.init(secret);

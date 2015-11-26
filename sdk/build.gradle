@@ -1,0 +1,189 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+
+project.group = 'com.wonderpush'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    lintOptions {
+        abortOnError true //false
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 23
+//        versionCode 1
+//        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    // Suggestions:
+    //compile fileTree(dir: 'libs', include: ['*.jar'])
+    //testCompile 'junit:junit:4.12'
+    //compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.android.support:support-v4:+'
+    compile 'com.google.android.gms:play-services-gcm:+'
+    compile 'com.loopj.android:android-async-http:1.4.9'
+}
+
+if (file('local.gradle').exists()) {
+    apply from: 'local.gradle'
+}
+
+apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'com.github.dcendents.android-maven'
+
+def isSnapshot = version.endsWith('-SNAPSHOT')
+task setVersion {
+    // The version will be derived from source
+    project.version = null
+    def sdkVersionFile = file('src/main/java/com/wonderpush/sdk/WonderPush.java')
+    def apiVersion = null;
+    def sdkVersion = null;
+    sdkVersionFile.eachLine{
+        def apiMatcher = (it =~ /(?:.*API_INT = )([0-9]*)(?:[^0-9].*)/)
+        if (apiMatcher.matches()) {
+            apiVersion = apiMatcher[0][1]
+        }
+        def versionMatcher = (it =~ /(?:.*SDK_SHORT_VERSION = \")(.*)(?:\".*)/)
+        if (versionMatcher.matches()) {
+            sdkVersion = versionMatcher[0][1]
+        }
+        if (apiVersion && sdkVersion) {
+            return
+        }
+    }
+    if (apiVersion && sdkVersion) {
+        project.version = apiVersion + '.' + sdkVersion;
+    }
+    if (project.version.is('unspecified')) {
+        throw new GradleScriptException('Version could not be found.', null)
+    }
+}
+
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            name 'WonderPush Android SDK'
+            artifactId = 'wonderpush-android-sdk'
+            packaging 'aar'
+            description 'WonderPush Android SDK'
+            url 'https://github.com/wonderpush/wonderpush-android-sdk'
+
+            scm {
+                connection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                developerConnection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                url 'https://github.com/wonderpush/wonderpush-android-sdk'
+            }
+
+            licenses {
+                license {
+                    name 'Apache 2.0'
+                    url 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
+                    distribution 'repo'
+                }
+            }
+
+            developers {
+                developer {
+                    id 'wonderpush'
+                    name 'WonderPush'
+                }
+            }
+        }
+    }
+}
+
+//uploadArchives {
+//    repositories.mavenDeployer {
+//        beforeDeployment {
+//            MavenDeployment deployment -> signing.signPom(deployment)
+//        }
+//
+//        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+//            authentication(userName: ossrhUsername, password: ossrhPassword)
+//        }
+//
+//        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+//            authentication(userName: ossrhUsername, password: ossrhPassword)
+//        }
+//
+//        pom.project {
+//            name 'WonderPush Android SDK'
+//            artifactId = 'wonderpush-android-sdk'
+//            packaging 'aar'
+//            description 'WonderPush Android SDK'
+//            url 'https://github.com/wonderpush/wonderpush-android-sdk'
+//
+//            scm {
+//                connection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+//                developerConnection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+//                url 'https://github.com/wonderpush/wonderpush-android-sdk'
+//            }
+//
+//            licenses {
+//                license {
+//                    name 'Apache 2.0'
+//                    url 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
+//                    distribution 'repo'
+//                }
+//            }
+//
+//            developers {
+//                developer {
+//                    id 'wonderpush'
+//                    name 'WonderPush'
+//                }
+//            }
+//        }
+//    }
+//}
+
+uploadArchives.dependsOn(setVersion)
+
+signing {
+    required { !isSnapshot && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    // JDK 1.8 is more strict then 1.7. Have JDK 1.8 behave like 1.7 for javadoc generation
+    if (org.gradle.internal.jvm.Jvm.current().getJavaVersion() == JavaVersion.VERSION_1_8) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.sourceFiles
+}
+
+artifacts {
+    archives androidSourcesJar
+    archives androidJavadocsJar
+}
+
+afterEvaluate {
+    androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+}
