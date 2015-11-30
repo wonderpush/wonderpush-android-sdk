@@ -53,6 +53,9 @@ public class WonderPushBroadcastReceiver extends BroadcastReceiver {
                     Log.e(TAG, "You should specify a <meta-data android:name=\"activityName\" android:value=\"com.package.YourMainActivity\"/> in your Receiver definition of your AndroidManifest.xml");
                     return;
                 }
+                if (activityName.startsWith(".")) {
+                    activityName = context.getPackageName() + activityName;
+                }
                 WonderPushGcmClient.onBroadcastReceived(context, intent, iconId, Class.forName(activityName).asSubclass(Activity.class));
                 setResultCode(Activity.RESULT_OK);
             } catch (NameNotFoundException e) {
