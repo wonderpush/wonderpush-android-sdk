@@ -1,10 +1,93 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.wonderpush.sdk">
 
-    <application
-        android:allowBackup="true"
-        android:label="@string/app_name"
-        android:supportsRtl="true">
+    <!-- Required permissions for push notifications -->
+    <uses-permission
+        android:name="android.permission.INTERNET" />
+    <uses-permission
+        android:name="android.permission.GET_ACCOUNTS"
+        android:maxSdkVersion="15" />
+    <uses-permission
+        android:name="com.google.android.c2dm.permission.RECEIVE" />
+    <permission
+        android:name="${wonderpushGradleApplicationId}.permission.C2D_MESSAGE"
+        android:protectionLevel="signature" />
+    <uses-permission
+        android:name="${wonderpushGradleApplicationId}.permission.C2D_MESSAGE" />
+
+    <!-- Using these permissions ultimately is the choice of the developer, do not include them here
+         or they'll get automatically merged into the final application. -->
+    <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
+    <!--<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />-->
+
+    <application>
+
+        <!-- Permits the SDK to initialize itself whenever needed, without need for your application to launch -->
+        <meta-data
+            android:name="wonderpushInitializerClass"
+            android:value="${wonderpushGradleApplicationId}.WonderPushInitializerImpl" />
+
+        <!-- Required for configuring Google Play Services for push notifications -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+        <meta-data
+            android:name="GCMSenderId"
+            android:value="@string/push_sender_ids" />
+
+        <!-- Required configuration for WonderPush to properly receive and handle push notification -->
+        <receiver
+            android:name="com.wonderpush.sdk.WonderPushBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND">
+
+            <!-- Put here the icon to be displayed in the notification -->
+            <meta-data
+                android:name="notificationIcon"
+                android:resource="${wonderpushNotificationIcon}" />
+
+            <!-- Put here the activity to start when the user clicks the notification -->
+            <meta-data
+                android:name="activityName"
+                android:value="${wonderpushDefaultActivity}" />
+
+            <intent-filter>
+                <action
+                    android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category
+                    android:name="${wonderpushGradleApplicationId}" />
+            </intent-filter>
+
+        </receiver>
+
+        <!-- Required to properly handle deep links and notifications in foreground -->
+        <service
+            android:name="com.wonderpush.sdk.WonderPushService"
+            android:enabled="true"
+            android:exported="false"
+            android:label="Push Notification service">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <data android:scheme="wonderpush" />
+            </intent-filter>
+        </service>
+
+        <!-- Required configuration for WonderPush to refresh push tokens,
+             as they are not guaranteed to work after an update -->
+        <receiver android:name="com.wonderpush.sdk.WonderPushOnUpgradeReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" android:path="${wonderpushGradleApplicationId}" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Required to properly generate a unique device identifier -->
+        <service
+            android:name="org.OpenUDID.OpenUDID_service"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="org.OpenUDID.GETUDID" />
+            </intent-filter>
+        </service>
 
     </application>
 

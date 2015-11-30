@@ -20,6 +20,11 @@ android {
         targetSdkVersion 23
 //        versionCode 1
 //        versionName "1.0"
+        manifestPlaceholders = [
+                wonderpushGradleApplicationId: '${applicationId}',
+                wonderpushNotificationIcon: '${wonderpushNotificationIcon}',
+                wonderpushDefaultActivity: '${wonderpushDefaultActivity}',
+        ]
     }
     buildTypes {
         release {
@@ -184,6 +189,19 @@ artifacts {
     archives androidJavadocsJar
 }
 
+def replaceInManifest(output, fromString, toString) {
+    def manifestOutFile = output.processManifest.aaptFriendlyManifestOutputFile
+    def updatedContent = manifestOutFile.getText('UTF-8').replaceAll(fromString, toString)
+    manifestOutFile.write(updatedContent, 'UTF-8')
+}
 afterEvaluate {
     androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+
+    android.libraryVariants.all { variant ->
+        variant.outputs.each { output ->
+            output.processManifest.doLast {
+                replaceInManifest(output, 'dollar_openBracket_wonderpushNotificationIcon_closeBracket', '@drawable/ic_notifications_white_24dp')
+            }
+        }
+    }
 }
