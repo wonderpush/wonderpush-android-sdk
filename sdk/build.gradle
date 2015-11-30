@@ -8,7 +8,7 @@ android {
     buildToolsVersion "23.0.2"
 
     lintOptions {
-        abortOnError true //false
+        abortOnError false
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7
@@ -18,8 +18,6 @@ android {
     defaultConfig {
         minSdkVersion 9
         targetSdkVersion 23
-//        versionCode 1
-//        versionName "1.0"
         manifestPlaceholders = [
                 wonderpushGradleApplicationId: '${applicationId}',
                 wonderpushNotificationIcon: '${wonderpushNotificationIcon}',
@@ -36,9 +34,9 @@ android {
 
 dependencies {
     // Suggestions:
-    //compile fileTree(dir: 'libs', include: ['*.jar'])
-    //testCompile 'junit:junit:4.12'
-    //compile 'com.android.support:appcompat-v7:23.1.1'
+    // - compile fileTree(dir: 'libs', include: ['*.jar'])
+    // - testCompile 'junit:junit:4.12'
+    // - compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.android.support:support-v4:+'
     compile 'com.google.android.gms:play-services-gcm:8.1.0'
     compile 'com.loopj.android:android-async-http:1.4.9'
