@@ -58,10 +58,7 @@ class WonderPushDialogBuilder {
         this.listener = listener;
 
         defaultTitle = this.activity.getApplicationInfo().name;
-        defaultIcon = WonderPushBroadcastReceiver.getNotificationIcon(activity);
-        if (defaultIcon == -1) {
-            defaultIcon = this.activity.getApplicationInfo().icon;
-        }
+        defaultIcon  = this.activity.getApplicationInfo().icon;
 
         commonSetup();
     }
