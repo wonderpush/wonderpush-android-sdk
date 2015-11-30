@@ -21,9 +21,9 @@ class AlertModel implements Cloneable {
 
     public static AlertModel fromOldFormatStringExtra(String alert) {
         try {
-            AlertModel rtn = new AlertModel();
-            rtn.setText(alert);
-            return rtn;
+            JSONObject wpAlert = new JSONObject();
+            wpAlert.putOpt("text", alert);
+            return fromJSON(wpAlert);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while parsing a notification alert with string input " + alert, e);
         }
