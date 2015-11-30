@@ -47,6 +47,7 @@ class WonderPushGcmClient {
                     || registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
                     || registrationId != null && !registrationId.equals(WonderPushConfiguration.getGCMRegistrationId())) {
                 WonderPush.updateInstallation(properties, false, null);
+                WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
             }
         } catch (JSONException e) {
             Log.e(TAG, "Failed to update push token to WonderPush", e);

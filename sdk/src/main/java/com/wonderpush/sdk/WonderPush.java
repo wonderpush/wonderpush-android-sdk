@@ -1563,6 +1563,7 @@ public class WonderPush {
             }
             trackInternalEvent("@APP_OPEN", openInfo);
             WonderPushConfiguration.setLastAppOpenDate(now);
+            WonderPushConfiguration.setLastAppOpenInfoJson(openInfo);
         }
 
         WonderPushConfiguration.setLastInteractionDate(now);
