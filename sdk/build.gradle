@@ -166,8 +166,11 @@ signing {
 }
 
 task androidJavadocs(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
+    title = 'WonderPush Android SDK Reference'
+    source = 'src/main/java/com/wonderpush/sdk' //android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    options.overview = project.rootDir.path + '/overview.html'
+    options.showFromPublic()
     // JDK 1.8 is more strict then 1.7. Have JDK 1.8 behave like 1.7 for javadoc generation
     if (org.gradle.internal.jvm.Jvm.current().getJavaVersion() == JavaVersion.VERSION_1_8) {
         options.addStringOption('Xdoclint:none', '-quiet')
