@@ -82,9 +82,11 @@ task setVersion {
 install {
     repositories.mavenInstaller {
         pom.project {
-            name 'WonderPush Android SDK'
-            artifactId = 'wonderpush-android-sdk'
             packaging 'aar'
+            groupId = project.group
+            artifactId = 'wonderpush-android-sdk'
+
+            name 'WonderPush Android SDK'
             description 'WonderPush Android SDK'
             url 'https://github.com/wonderpush/wonderpush-android-sdk'
 
@@ -112,52 +114,47 @@ install {
     }
 }
 
-//uploadArchives {
-//    repositories.mavenDeployer {
-//        beforeDeployment {
-//            MavenDeployment deployment -> signing.signPom(deployment)
-//        }
-//
-//        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-//            authentication(userName: ossrhUsername, password: ossrhPassword)
-//        }
-//
-//        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-//            authentication(userName: ossrhUsername, password: ossrhPassword)
-//        }
-//
-//        pom.project {
-//            name 'WonderPush Android SDK'
-//            artifactId = 'wonderpush-android-sdk'
-//            packaging 'aar'
-//            description 'WonderPush Android SDK'
-//            url 'https://github.com/wonderpush/wonderpush-android-sdk'
-//
-//            scm {
-//                connection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
-//                developerConnection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
-//                url 'https://github.com/wonderpush/wonderpush-android-sdk'
-//            }
-//
-//            licenses {
-//                license {
-//                    name 'Apache 2.0'
-//                    url 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
-//                    distribution 'repo'
-//                }
-//            }
-//
-//            developers {
-//                developer {
-//                    id 'wonderpush'
-//                    name 'WonderPush'
-//                }
-//            }
-//        }
-//    }
-//}
+def ossrhUsername = 'foo'
+def ossrhPassword = 'bar'
+uploadArchives {
+    repositories.mavenDeployer {
+        beforeDeployment {
+            MavenDeployment deployment -> signing.signPom(deployment)
+        }
 
-uploadArchives.dependsOn(setVersion)
+        pom.project {
+            packaging 'aar'
+            groupId = project.group
+            artifactId = 'wonderpush-android-sdk'
+
+            name 'WonderPush Android SDK'
+            description 'WonderPush Android SDK'
+            url 'https://github.com/wonderpush/wonderpush-android-sdk'
+
+            scm {
+                connection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                developerConnection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                url 'https://github.com/wonderpush/wonderpush-android-sdk'
+            }
+
+            licenses {
+                license {
+                    name 'Apache 2.0'
+                    url 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
+                    distribution 'repo'
+                }
+            }
+
+            developers {
+                developer {
+                    id 'wonderpush'
+                    name 'WonderPush'
+                }
+            }
+        }
+    }
+}
+uploadArchives.dependsOn(install)
 
 signing {
     required { !isSnapshot && gradle.taskGraph.hasTask("uploadArchives") }
