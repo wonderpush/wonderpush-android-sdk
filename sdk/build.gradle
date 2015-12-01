@@ -2,6 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
 
 project.group = 'com.wonderpush'
+project.archivesBaseName = 'wonderpush-android-sdk'
 
 android {
     compileSdkVersion 23
