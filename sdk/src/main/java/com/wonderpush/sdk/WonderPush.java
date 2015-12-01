@@ -137,7 +137,7 @@ public class WonderPush {
     protected static final int WEBVIEW_REQUEST_TOTAL_TIMEOUT = 10000;
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
-    protected static final String SDK_SHORT_VERSION = "1.1.3-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
+    protected static final String SDK_SHORT_VERSION = "2.0.0"; // reset to .1.0.0 when bumping API_INT
     protected static final String SDK_VERSION = "Android-" + API_INT + "." + SDK_SHORT_VERSION;
     protected static final int ERROR_INVALID_SID = 12017;
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
@@ -335,7 +335,7 @@ public class WonderPush {
      */
     public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG = "com.wonderpush.action.method.extra_arg";
 
-    private static final String PRODUCTION_API_URL = "https://devnws3-ofavre/api/" + API_VERSION;
+    private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
     protected static final int ERROR_INVALID_CREDENTIALS = 11000;
     protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
     protected static final String DEFAULT_LANGUAGE_CODE = "en";
