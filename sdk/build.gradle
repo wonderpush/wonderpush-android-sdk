@@ -19,6 +19,7 @@ android {
     defaultConfig {
         minSdkVersion 9
         targetSdkVersion 23
+        consumerProguardFiles 'proguard-exported.pro'
         manifestPlaceholders = [
                 wonderpushGradleApplicationId: '${applicationId}',
                 wonderpushNotificationIcon: '${wonderpushNotificationIcon}',
