@@ -1520,7 +1520,7 @@ public class WonderPush {
                 now - lastInteractionDate >= DIFFERENT_SESSION_REGULAR_MIN_TIME_GAP
                 || (
                         lastReceivedNotificationDate > lastInteractionDate
-                        && now - lastReceivedNotificationDate >= DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP
+                        && now - lastInteractionDate >= DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP
                 )
         ) {
             // We will track a new app open event
