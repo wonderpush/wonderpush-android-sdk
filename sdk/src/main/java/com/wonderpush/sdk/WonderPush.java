@@ -62,7 +62,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.GoogleApiAvailability;
 
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
@@ -353,14 +353,14 @@ public class WonderPush {
     private static boolean checkPlayService(Context context) {
         try {
             Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
-            int resultCode = GooglePlayServicesUtil
-                    .isGooglePlayServicesAvailable(context);
+            GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
+            int resultCode = googleApiAvailability.isGooglePlayServicesAvailable(context);
             if (resultCode != ConnectionResult.SUCCESS) {
-                if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+                if (googleApiAvailability.isUserResolvableError(resultCode)) {
                     if (context instanceof Activity) {
-                        GooglePlayServicesUtil.getErrorDialog(resultCode, (Activity) context, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+                        googleApiAvailability.getErrorDialog((Activity) context, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST).show();
                     } else {
-                        GooglePlayServicesUtil.showErrorNotification(resultCode, context);
+                        googleApiAvailability.showErrorNotification(context, resultCode);
                     }
                 } else {
                     Log.w(TAG, "This device does not support Google Play Services, push notification are not supported");
