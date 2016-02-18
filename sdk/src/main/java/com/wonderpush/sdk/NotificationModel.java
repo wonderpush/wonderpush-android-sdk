@@ -23,21 +23,55 @@ abstract class NotificationModel {
         }
     }
 
+    interface Builder {
+        NotificationModel build(String inputJSONString);
+    }
+
     enum Type {
-        SIMPLE("simple", NotificationSimpleModel.class),
-        DATA("data", NotificationDataModel.class),
-        TEXT("text", NotificationTextModel.class),
-        HTML("html", NotificationHtmlModel.class),
-        MAP("map", NotificationMapModel.class),
-        URL("url", NotificationUrlModel.class),
+        SIMPLE("simple", new Builder() {
+            @Override
+            public NotificationModel build(String inputJSONString) {
+                return new NotificationSimpleModel(inputJSONString);
+            }
+        }),
+        DATA("data", new Builder() {
+            @Override
+            public NotificationModel build(String inputJSONString) {
+                return new NotificationDataModel(inputJSONString);
+            }
+        }),
+        TEXT("text", new Builder() {
+            @Override
+            public NotificationModel build(String inputJSONString) {
+                return new NotificationTextModel(inputJSONString);
+            }
+        }),
+        HTML("html", new Builder() {
+            @Override
+            public NotificationModel build(String inputJSONString) {
+                return new NotificationHtmlModel(inputJSONString);
+            }
+        }),
+        MAP("map", new Builder() {
+            @Override
+            public NotificationModel build(String inputJSONString) {
+                return new NotificationMapModel(inputJSONString);
+            }
+        }),
+        URL("url", new Builder() {
+            @Override
+            public NotificationModel build(String inputJSONString) {
+                return new NotificationUrlModel(inputJSONString);
+            }
+        }),
         ;
 
         private final String type;
-        private final Class<? extends NotificationModel> clazz;
+        private final Builder builder;
 
-        Type(String type, Class<? extends NotificationModel> clazz) {
+        Type(String type, Builder builder) {
             this.type = type;
-            this.clazz = clazz;
+            this.builder = builder;
         }
 
         @Override
@@ -45,8 +79,8 @@ abstract class NotificationModel {
             return type;
         }
 
-        public Class<? extends NotificationModel> getImplementation() {
-            return clazz;
+        public Builder getBuilder() {
+            return builder;
         }
 
         public static Type fromString(String type) {
@@ -162,8 +196,7 @@ abstract class NotificationModel {
             }
 
             // Instantiate the appropriate non-abstract subclass
-            Class<? extends NotificationModel> implementation = type.getImplementation();
-            NotificationModel rtn = implementation.getConstructor(String.class).newInstance(wpData.toString());
+            NotificationModel rtn = type.getBuilder().build(wpData.toString());
 
             // Read common fields
             rtn.setType(type);
