@@ -145,48 +145,52 @@ class WonderPushGcmClient {
 
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
-            boolean automaticallyOpened = false;
-            Activity currentActivity = WonderPush.getCurrentActivity();
-            boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
-            if (notif.getAlert().forCurrentSettings(appInForeground).getAutoOpen()) {
-                WonderPush.logDebug("Automatically opening");
-                // We can show the notification (send the pending intent) right away
-                try {
-                    PendingIntent pendingIntent = buildPendingIntent(notif, intent, false, null, context, activity);
-                    pendingIntent.send();
-                    automaticallyOpened = true;
-                } catch (CanceledException e) {
-                    Log.e(WonderPush.TAG, "Could not show notification", e);
-                }
-            }
-            if (!automaticallyOpened) {
-                // We should use a notification to warn the user, and wait for him to click it
-                // before showing the notification (i.e.: the pending intent being sent)
-                WonderPush.logDebug("Building notification");
-                PendingIntent pendingIntent = buildPendingIntent(notif, intent, true, null, context, activity);
-                Notification notification = buildNotification(notif, context, iconResource, pendingIntent);
+            if (!NotificationModel.Type.DATA.equals(notif.getType())) {
 
-                if (notification == null) {
-                    WonderPush.logDebug("No notification is to be displayed");
-                    // Fire an Intent to notify the application anyway (especially for `data` notifications)
+                boolean automaticallyOpened = false;
+                Activity currentActivity = WonderPush.getCurrentActivity();
+                boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
+                if (notif.getAlert().forCurrentSettings(appInForeground).getAutoOpen()) {
+                    WonderPush.logDebug("Automatically opening");
+                    // We can show the notification (send the pending intent) right away
                     try {
-                        Bundle extrasOverride = new Bundle();
-                        extrasOverride.putString("overrideTargetUrl",
-                                WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
-                                + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST);
-                        PendingIntent broadcastPendingIntent = buildPendingIntent(notif, intent, false, extrasOverride, context, activity);
-                        broadcastPendingIntent.send();
+                        PendingIntent pendingIntent = buildPendingIntent(notif, intent, false, null, context, activity);
+                        pendingIntent.send();
+                        automaticallyOpened = true;
                     } catch (CanceledException e) {
-                        Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
+                        Log.e(WonderPush.TAG, "Could not show notification", e);
                     }
-                } else {
-                    String tag = notif.getAlert() != null && notif.getAlert().hasTag()
-                            ? notif.getAlert().getTag() : notif.getCampaignId();
-                    int localNotificationId = tag != null ? 0 : WonderPushConfiguration.getNextTaglessNotificationManagerId();
-                    WonderPush.logDebug("Showing notification with tag " + (tag == null ? "(null)" : "\"" + tag + "\"") + " and id " + localNotificationId);
-                    NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                    mNotificationManager.notify(tag, localNotificationId, notification);
                 }
+                if (!automaticallyOpened) {
+                    // We should use a notification to warn the user, and wait for him to click it
+                    // before showing the notification (i.e.: the pending intent being sent)
+                    WonderPush.logDebug("Building notification");
+                    PendingIntent pendingIntent = buildPendingIntent(notif, intent, true, null, context, activity);
+                    Notification notification = buildNotification(notif, context, iconResource, pendingIntent);
+
+                    if (notification == null) {
+                        WonderPush.logDebug("No notification is to be displayed");
+                        // Fire an Intent to notify the application anyway (especially for `data` notifications)
+                        try {
+                            Bundle extrasOverride = new Bundle();
+                            extrasOverride.putString("overrideTargetUrl",
+                                    WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
+                                            + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST);
+                            PendingIntent broadcastPendingIntent = buildPendingIntent(notif, intent, false, extrasOverride, context, activity);
+                            broadcastPendingIntent.send();
+                        } catch (CanceledException e) {
+                            Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
+                        }
+                    } else {
+                        String tag = notif.getAlert() != null && notif.getAlert().hasTag()
+                                ? notif.getAlert().getTag() : notif.getCampaignId();
+                        int localNotificationId = tag != null ? 0 : WonderPushConfiguration.getNextTaglessNotificationManagerId();
+                        WonderPush.logDebug("Showing notification with tag " + (tag == null ? "(null)" : "\"" + tag + "\"") + " and id " + localNotificationId);
+                        NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                        mNotificationManager.notify(tag, localNotificationId, notification);
+                    }
+                }
+
             }
 
             return true;
