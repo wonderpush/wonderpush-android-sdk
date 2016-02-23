@@ -48,6 +48,10 @@ if (file('local.gradle').exists()) {
     apply from: 'local.gradle'
 }
 
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
 apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'com.github.dcendents.android-maven'

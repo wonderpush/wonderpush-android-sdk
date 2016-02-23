@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.Gravity;
@@ -42,6 +43,16 @@ class WonderPushCompatibilityHelper {
     public static void ApplicationRegisterActivityLifecycleCallbacks(Application application, ActivityLifecycleCallbacks callbacks) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             application.registerActivityLifecycleCallbacks(callbacks);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    @SuppressWarnings("deprecation")
+    public static int getIntentFlagActivityNewDocument() {
+        if (Build.VERSION.SDK_INT >= 21) {
+            return Intent.FLAG_ACTIVITY_NEW_DOCUMENT;
+        } else {
+            return Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET;
         }
     }
 

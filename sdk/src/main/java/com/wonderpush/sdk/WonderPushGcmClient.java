@@ -90,12 +90,14 @@ class WonderPushGcmClient {
         Intent resultIntent = new Intent();
         if (WonderPushService.isProperlySetup()) {
             resultIntent.setClass(context, WonderPushService.class);
-        } else {
+        } else if (activity != null) {
             // Fallback to blindly launching the configured activity
             resultIntent.setClass(context, activity);
             resultIntent = new Intent(context, activity);
+        } // else We have nothing to propose!
+        if (activity != null) {
+            resultIntent.putExtra("activity", activity.getCanonicalName());
         }
-        resultIntent.putExtra("activity", activity.getCanonicalName());
         resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
         resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
         if (extrasOverride != null) {

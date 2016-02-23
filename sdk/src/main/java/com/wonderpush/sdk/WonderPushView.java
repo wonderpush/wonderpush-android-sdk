@@ -23,6 +23,8 @@ import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
@@ -361,6 +363,22 @@ class WonderPushView extends FrameLayout {
         }
 
         @Override
+        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+            super.onReceivedError(view, request, error);
+            Log.i(TAG, "API 23 onReceivedError(WebView, WebResourceRequest, WebResourceError) called");
+            Log.i(TAG, "WebResourceRequest: " + request);
+            Log.i(TAG, "WebResourceError: " + error);
+
+            if (request != null && request.getUrl() != null && request.getUrl().equals(Uri.parse(view.getUrl()))) {
+                mError = true;
+                if (null != mMessageView)
+                    mMessageView.setText(error.getDescription());
+                setUserInterfaceState(new ErrorState());
+            }
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
             super.onReceivedError(view, errorCode, description, failingUrl);
 
