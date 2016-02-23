@@ -1139,13 +1139,6 @@ public class WonderPush {
             application.put("sdkVersion", SDK_VERSION);
             properties.put("application", application);
 
-            String registrationId = WonderPushGcmClient.getRegistrationId();
-            if (registrationId != null) {
-                JSONObject pushToken = new JSONObject();
-                pushToken.put("data", registrationId);
-                properties.put("pushToken", pushToken);
-            } // otherwise, let another (possibly concurrent) call to registerForPushNotification() perform the update
-
             JSONObject device = new JSONObject();
             device.put("id", getUDID());
             device.put("platform", "Android");
