@@ -16,6 +16,7 @@ class AlertModel implements Cloneable {
     private boolean tagPresent;
     private int priority;
     private Boolean autoOpen;
+    private Boolean autoDrop;
     // Modify forCurrentSettings() when adding a field above
     private AlertModel foreground;
 
@@ -72,6 +73,11 @@ class AlertModel implements Cloneable {
         } else {
             rtn.setAutoOpen(null);
         }
+        if (wpAlert.has("autoDrop")) {
+            rtn.setAutoDrop(wpAlert.optBoolean("autoDrop", false));
+        } else {
+            rtn.setAutoDrop(null);
+        }
     }
 
     public AlertModel() {
@@ -96,6 +102,9 @@ class AlertModel implements Cloneable {
             rtn.setPriority(getForeground().getPriority());
             if (getForeground().hasAutoOpen()) {
                 rtn.setAutoOpen(getForeground().getAutoOpen());
+            }
+            if (getForeground().hasAutoDrop()) {
+                rtn.setAutoDrop(getForeground().getAutoDrop());
             }
         }
 
@@ -163,6 +172,18 @@ class AlertModel implements Cloneable {
 
     public void setAutoOpen(Boolean autoOpen) {
         this.autoOpen = autoOpen;
+    }
+
+    public boolean hasAutoDrop() {
+        return autoDrop != null;
+    }
+
+    public boolean getAutoDrop() {
+        return autoDrop != null && autoDrop.booleanValue();
+    }
+
+    public void setAutoDrop(Boolean autoDrop) {
+        this.autoDrop = autoDrop;
     }
 
     public AlertModel getForeground() {

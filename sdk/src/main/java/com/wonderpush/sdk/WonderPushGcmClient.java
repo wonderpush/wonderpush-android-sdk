@@ -147,21 +147,24 @@ class WonderPushGcmClient {
 
             if (!NotificationModel.Type.DATA.equals(notif.getType())) {
 
-                boolean automaticallyOpened = false;
+                boolean automaticallyHandled = false;
                 Activity currentActivity = WonderPush.getCurrentActivity();
                 boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
-                if (notif.getAlert().forCurrentSettings(appInForeground).getAutoOpen()) {
+                if (notif.getAlert().forCurrentSettings(appInForeground).getAutoDrop()) {
+                    WonderPush.logDebug("Automatically dropping");
+                    automaticallyHandled = true;
+                } else if (notif.getAlert().forCurrentSettings(appInForeground).getAutoOpen()) {
                     WonderPush.logDebug("Automatically opening");
                     // We can show the notification (send the pending intent) right away
                     try {
                         PendingIntent pendingIntent = buildPendingIntent(notif, intent, false, null, context, activity);
                         pendingIntent.send();
-                        automaticallyOpened = true;
+                        automaticallyHandled = true;
                     } catch (CanceledException e) {
                         Log.e(WonderPush.TAG, "Could not show notification", e);
                     }
                 }
-                if (!automaticallyOpened) {
+                if (!automaticallyHandled) {
                     // We should use a notification to warn the user, and wait for him to click it
                     // before showing the notification (i.e.: the pending intent being sent)
                     WonderPush.logDebug("Building notification");
