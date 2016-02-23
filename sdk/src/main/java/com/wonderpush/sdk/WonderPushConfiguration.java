@@ -422,23 +422,6 @@ class WonderPushConfiguration {
     }
 
     /**
-     * Get the application version for the update receiver stored in the user's shared preferences.
-     */
-    protected static int getGCMRegistrationAppVersionForUpdateReceiver() {
-        return getInt(GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME, Integer.MIN_VALUE);
-    }
-
-    /**
-     * Set the application version for the update receiver stored in the user's shared preferences.
-     *
-     * @param appVersion
-     *            The application version for the update receiver to be stored
-     */
-    protected static void setGCMRegistrationAppVersionForUpdateReceiver(int appVersion) {
-        putInt(GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME, appVersion);
-    }
-
-    /**
      * Get the registration sender ids stored in the user's shared preferences.
      */
     protected static String getGCMRegistrationSenderIds() {

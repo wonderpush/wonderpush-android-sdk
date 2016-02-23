@@ -1,7 +1,5 @@
 package com.wonderpush.sdk;
 
-import java.io.IOException;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -16,14 +14,11 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
-import android.text.TextUtils;
 import android.util.Log;
 
-import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.wonderpush.sdk.NotificationModel.NotTargetedForThisInstallationException;
 
 /**
@@ -34,56 +29,6 @@ class WonderPushGcmClient {
     private static final String TAG = WonderPush.TAG;
 
     static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
-    private static GoogleCloudMessaging mGcm;
-
-    private static void storeRegistrationId(String senderIds, String registrationId) {
-        try {
-            JSONObject properties = new JSONObject();
-            JSONObject pushToken = new JSONObject();
-            pushToken.put("data", registrationId);
-            properties.put("pushToken", pushToken);
-
-            if (System.currentTimeMillis() - WonderPushConfiguration.getCachedGCMRegistrationIdDate() > WonderPush.CACHED_REGISTRATION_ID_DURATION
-                    || registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
-                    || registrationId != null && !registrationId.equals(WonderPushConfiguration.getGCMRegistrationId())) {
-                WonderPush.updateInstallation(properties, false, null);
-                WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
-            }
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to update push token to WonderPush", e);
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while updating push token to WonderPush", e);
-        }
-
-        WonderPushConfiguration.setGCMRegistrationId(registrationId);
-        WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
-        WonderPushConfiguration.setGCMRegistrationAppVersion(WonderPush.getApplicationVersionCode());
-    }
-
-    protected static String getRegistrationId() {
-        String registrationId = WonderPushConfiguration.getGCMRegistrationId();
-        if (TextUtils.isEmpty(registrationId)) {
-            return null;
-        }
-
-        int registeredVersion = WonderPushConfiguration.getGCMRegistrationAppVersion();
-        int currentVersion = WonderPush.getApplicationVersionCode();
-        if (registeredVersion != currentVersion) {
-            return null;
-        }
-
-        // This function deliberately does not check for cases that should cause unregistration (senderIds change)
-
-        return registrationId;
-    }
-
-    protected static boolean checkForUnregistrationNeed(Context c, String pushSenderIds) {
-        String registeredSenderIds = WonderPushConfiguration.getGCMRegistrationSenderIds();
-        return !(
-                registeredSenderIds == null // there is no previous pushToken to unregister
-                || registeredSenderIds.equals(pushSenderIds) // change of senderIds
-        );
-    }
 
     protected static PendingIntent buildPendingIntent(NotificationModel notif, Intent pushIntent, boolean fromUserInteraction,
             Bundle extrasOverride, Context context, Class<? extends Activity> activity) {
@@ -106,7 +51,7 @@ class WonderPushGcmClient {
 
         resultIntent.setAction(Intent.ACTION_MAIN);
         resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | WonderPushCompatibilityHelper.getIntentFlagActivityNewDocument() | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         Uri dataUri = new Uri.Builder()
                 .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
@@ -253,82 +198,10 @@ class WonderPushGcmClient {
         return false;
     }
 
-    private static void unregister(Context context) throws IOException {
-        if (mGcm == null) {
-            mGcm = GoogleCloudMessaging.getInstance(context);
-        }
-        mGcm.unregister();
-    }
-
-    private static String register(Context context, String senderId) throws IOException {
-        if (mGcm == null) {
-            mGcm = GoogleCloudMessaging.getInstance(context);
-        }
-        return mGcm.register(senderId.split(","));
-    }
-
-    private static void registerInBackground(final String senderIds, final Context activity) {
+    static void registerForPushNotification(final Context context) {
         // Get off the main UI thread for using GCM
-        new AsyncTask<Object, Object, String>() {
-            @Override
-            protected String doInBackground(Object... dummy) {
-                try {
-                    if (checkForUnregistrationNeed(activity, senderIds)) {
-                        unregister(activity);
-                    }
-                    final String regid = register(activity, senderIds);
-                    if (regid == null) {
-                        WonderPush.logError("Device could not register");
-                    } else {
-                        WonderPush.logDebug("Device registered, registration ID=" + regid);
-                    }
-                    return regid;
-                } catch (IOException ex) {
-                    Log.w(TAG, "Could not register for push notifications", ex);
-                } catch (Exception ex) {
-                    Log.w(TAG, "Could not register for push notifications", ex);
-                }
-                return null;
-            }
-            @Override
-            protected void onPostExecute(String regid) {
-                // We're back on the main thread, this is required for potential deferring due to OpenUDID not being ready
-                if (regid != null) {
-                    storeRegistrationId(senderIds, regid);
-                }
-            }
-        }.execute();
-    }
-
-    /**
-     * Start the registration process for GCM.
-     *
-     * @param context
-     *            A valid context
-     */
-    static void registerForPushNotification(Context context) {
-        String pushSenderId = null;
-        try {
-            ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = ai.metaData;
-            pushSenderId = bundle.getString("GCMSenderId");
-        } catch (NameNotFoundException e) {
-            Log.e(TAG, "Could not get GCMSenderId meta data from your manifest. Did you add: <meta-data android:name=\"GCMSenderId\" android:value=\"@string/push_sender_ids\"/> under <application> in your AndroidManifest.xml?");
-        } catch (NullPointerException e) {
-            Log.e(TAG, "Could not get GCMSenderId meta data from your manifest. Did you add: <meta-data android:name=\"GCMSenderId\" android:value=\"@string/push_sender_ids\"/> under <application> in your AndroidManifest.xml?");
-        }
-
-        if (pushSenderId == null) {
-            return;
-        }
-
-        String regid = getRegistrationId();
-
-        if (checkForUnregistrationNeed(context, pushSenderId)
-                || TextUtils.isEmpty(regid)
-                || System.currentTimeMillis() - WonderPushConfiguration.getCachedGCMRegistrationIdDate() > WonderPush.CACHED_REGISTRATION_ID_DURATION) {
-            registerInBackground(pushSenderId, context);
-        } // already pushed by WonderPush.updateInstallationCoreProperties()
+        Intent intent = new Intent(context, WonderPushRegistrationIntentService.class);
+        context.startService(intent);
     }
 
 }
