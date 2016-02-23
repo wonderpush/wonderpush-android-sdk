@@ -140,9 +140,9 @@ class WonderPushGcmClient {
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", WonderPush.getTime());
-            WonderPush.ensureInitialized(context);
-            WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
-
+            if (notif.getReceipt()) {
+                WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+            }
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
             if (!NotificationModel.Type.DATA.equals(notif.getType())) {

@@ -105,6 +105,7 @@ abstract class NotificationModel {
     private AlertModel alert;
     private String targetUrl;
     public List<ActionModel> actions = new ArrayList<>();
+    private boolean receipt;
 
     // Common in-app message data
     private final AtomicReference<ButtonModel> choice = new AtomicReference<>();
@@ -204,6 +205,7 @@ abstract class NotificationModel {
             rtn.setCampaignId(wpData.optString("c", null));
             rtn.setNotificationId(wpData.optString("n", null));
             rtn.setTargetUrl(wpData.optString("targetUrl", null));
+            rtn.setReceipt(wpData.optBoolean("receipt", true));
 
             // Read notification content
             JSONObject wpAlert = wpData.optJSONObject("alert");
@@ -316,6 +318,14 @@ abstract class NotificationModel {
         if (action != null) {
             actions.add(action);
         }
+    }
+
+    public boolean getReceipt() {
+        return receipt;
+    }
+
+    public void setReceipt(boolean receipt) {
+        this.receipt = receipt;
     }
 
     public String getTitle() {
