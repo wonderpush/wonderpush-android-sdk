@@ -83,7 +83,7 @@
         <!-- Required to properly generate a unique device identifier -->
         <service
             android:name="org.OpenUDID.OpenUDID_service"
-            android:exported="false" >
+            android:exported="true" >
             <intent-filter>
                 <action android:name="org.OpenUDID.GETUDID" />
             </intent-filter>
