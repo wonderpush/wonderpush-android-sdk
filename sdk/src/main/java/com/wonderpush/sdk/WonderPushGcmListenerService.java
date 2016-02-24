@@ -19,17 +19,21 @@ public class WonderPushGcmListenerService extends GcmListenerService {
 
     @Override
     public void onMessageReceived(String from, Bundle data) {
-        WonderPush.logDebug("Received a push notification!");
-        Context context = getApplicationContext();
-        // Reconstruct the original intent
-        Intent pushIntent = new Intent("com.google.android.c2dm.intent.RECEIVE")
-                .addCategory(context.getPackageName())
-                .putExtras(data)
-                .putExtra("from", from);
         try {
-            WonderPushGcmClient.onBroadcastReceived(context, pushIntent, getNotificationIcon(context), getActivity(context));
+            WonderPush.logDebug("Received a push notification!");
+            Context context = getApplicationContext();
+            // Reconstruct the original intent
+            Intent pushIntent = new Intent("com.google.android.c2dm.intent.RECEIVE")
+                    .addCategory(context.getPackageName())
+                    .putExtras(data)
+                    .putExtra("from", from);
+            try {
+                WonderPushGcmClient.onBroadcastReceived(context, pushIntent, getNotificationIcon(context), getActivity(context));
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected error while treating broadcast intent " + pushIntent, e);
+            }
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while treating broadcast intent " + pushIntent, e);
+            Log.e(TAG, "Unexpected error while handling GCM message from:" + from + " bundle:" + data, e);
         }
     }
 
