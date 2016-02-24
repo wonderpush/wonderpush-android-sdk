@@ -54,7 +54,8 @@ public class WonderPushRegistrationIntentService extends IntentService {
         }
     }
 
-    private static void storeRegistrationId(String senderIds, String registrationId) {
+    private void storeRegistrationId(String senderIds, String registrationId) {
+        WonderPushConfiguration.initialize(this);
         try {
             JSONObject properties = new JSONObject();
             JSONObject pushToken = new JSONObject();
@@ -64,6 +65,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
             if (System.currentTimeMillis() - WonderPushConfiguration.getCachedGCMRegistrationIdDate() > WonderPush.CACHED_REGISTRATION_ID_DURATION
                     || registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
                     || registrationId != null && !registrationId.equals(WonderPushConfiguration.getGCMRegistrationId())) {
+                WonderPush.ensureInitialized(this);
                 WonderPush.updateInstallation(properties, false, null);
                 WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
             }
