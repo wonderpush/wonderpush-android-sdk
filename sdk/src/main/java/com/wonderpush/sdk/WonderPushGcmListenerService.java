@@ -19,25 +19,72 @@ public class WonderPushGcmListenerService extends GcmListenerService {
 
     @Override
     public void onMessageReceived(String from, Bundle data) {
+        onMessageReceived(getApplicationContext(), from, data);
+    }
+
+    /**
+     * Method to be called in your own Google Cloud Messaging {@link GcmListenerService} to handle
+     * WonderPush push notifications.
+     *
+     * <b>Note:</b> This is only required if you use your own {@link GcmListenerService}.
+     *
+     * Implement your {@link GcmListenerService#onMessageReceived(String, Bundle)} method as follows:
+     *
+     * <pre><code>@Override
+     * public void onMessageReceived(String from, Bundle data) {
+     *     if (WonderPushGcmListenerService.onMessageReceived(getApplicationContext(), from, data)) {
+     *         return;
+     *     }
+     *     // Do your own handling here
+     * }</code></pre>
+     *
+     * @see WonderPush#onBroadcastReceived(Context, Intent, int, Class)
+     * @param context The current context
+     * @param from The sender id
+     * @param data The notification data
+     * @return Whether the notification has been handled by WonderPush
+     */
+    public static boolean onMessageReceived(Context context, String from, Bundle data) {
+        try {
+            return onMessageReceived(context, from, data, getNotificationIcon(context), getActivity(context));
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while handling GCM message from:" + from + " bundle:" + data, e);
+        }
+        return false;
+    }
+
+    /**
+     * Method to be called in your own Google Cloud Messaging {@link GcmListenerService} to handle
+     * WonderPush push notifications, overriding default icon and default activity.
+     *
+     * @see #onMessageReceived(Context, String, Bundle)
+     * @param context The current context
+     * @param from The sender id
+     * @param data The notification data
+     * @param iconResource The default notification icon to use
+     * @param activity The default activity to use
+     * @return Whether the notification has been handled by WonderPush
+     */
+    public static boolean onMessageReceived(Context context, String from, Bundle data, int iconResource, Class<? extends Activity> activity) {
         try {
             WonderPush.logDebug("Received a push notification!");
-            Context context = getApplicationContext();
             // Reconstruct the original intent
             Intent pushIntent = new Intent("com.google.android.c2dm.intent.RECEIVE")
                     .addCategory(context.getPackageName())
                     .putExtras(data)
                     .putExtra("from", from);
             try {
-                WonderPushGcmClient.onBroadcastReceived(context, pushIntent, getNotificationIcon(context), getActivity(context));
+                return WonderPushGcmClient.onBroadcastReceived(context, pushIntent, iconResource, activity);
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected error while treating broadcast intent " + pushIntent, e);
             }
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while handling GCM message from:" + from + " bundle:" + data, e);
         }
+        return false;
     }
 
-    int getNotificationIcon(Context context) {
+    static int getNotificationIcon(Context context) {
         int iconId = -1;
         ComponentName service = new ComponentName(context, WonderPushService.class);
         try {
@@ -58,7 +105,7 @@ public class WonderPushGcmListenerService extends GcmListenerService {
         return iconId;
     }
 
-    Class<? extends Activity> getActivity(Context context) {
+    static Class<? extends Activity> getActivity(Context context) {
         Class<? extends Activity> activityClass = null;
         ComponentName service = new ComponentName(context, WonderPushService.class);
         try {

@@ -1951,8 +1951,8 @@ public class WonderPush {
      * to handle WonderPush push notifications.
      *
      * <p>
-     *   <b>Note:</b> There is no need to call this method if you use {@link WonderPushBroadcastReceiver},
-     *   as advertised in <a href="../../../packages.html#installing-sdk--configuring-sdk">the guide</a>.
+     *   <b>Note:</b> This is only needed if you use your own {@link BroadcastReceiver}, as previously
+     *   advertised in <a href="../../../packages.html#installing-sdk--configuring-sdk">the guide</a>.
      * </p>
      *
      * <p>
@@ -1968,7 +1968,7 @@ public class WonderPush {
      *
      * <p>
      *   For more information about Google Cloud Messaging visit:
-     *   <a href="http://developer.android.com/google/gcm/index.html">http://developer.android.com/google/gcm/index.html</a>.
+     *   <a href="https://developers.google.com/cloud-messaging/android/client">https://developers.google.com/cloud-messaging/android/client</a>.
      * </p>
      *
      * @param context
