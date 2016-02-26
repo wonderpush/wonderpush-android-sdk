@@ -115,8 +115,6 @@ install {
     }
 }
 
-def ossrhUsername = 'foo'
-def ossrhPassword = 'bar'
 uploadArchives {
     repositories.mavenDeployer {
         beforeDeployment {
