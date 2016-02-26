@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Currency;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -926,6 +927,32 @@ public class WonderPush {
                 .toUpperCase(Locale.ENGLISH));
     }
 
+    protected static String getLocaleCountry() {
+        String rtn = Locale.getDefault().getCountry();
+        if ("".equals(rtn)) {
+            rtn = null;
+        } else {
+            rtn = rtn.toUpperCase();
+        }
+        return rtn;
+    }
+
+    protected static String getLocaleCurrency() {
+        try {
+            Currency currency = Currency.getInstance(Locale.getDefault());
+            if (currency == null) return null;
+            String rtn = currency.getCurrencyCode();
+            if ("".equals(rtn)) {
+                rtn = null;
+            } else {
+                rtn = rtn.toUpperCase();
+            }
+            return rtn;
+        } catch (Exception e) { // mostly for IllegalArgumentException
+            return null;
+        }
+    }
+
     protected static String getLibraryVersion() {
         return SDK_VERSION;
     }
@@ -1154,6 +1181,8 @@ public class WonderPush {
             configuration.put("timeZone", getUserTimezone());
             configuration.put("carrier", getCarrierName());
             configuration.put("locale", getLocaleString());
+            configuration.put("country", getLocaleCountry());
+            configuration.put("currency", getLocaleCurrency());
             device.put("configuration", configuration);
 
             JSONObject capabilities = new JSONObject();
