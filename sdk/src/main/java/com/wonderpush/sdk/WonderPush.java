@@ -393,6 +393,13 @@ public class WonderPush {
         }
     }
 
+    /**
+     * Whether to enable debug logging.
+     *
+     * You should not do this in production builds.
+     *
+     * @param enable {@code true} to enable debug logs.
+     */
     public static void setLogging(boolean enable) {
         WonderPush.SHOW_DEBUG = enable;
     }
@@ -2019,10 +2026,18 @@ public class WonderPush {
         return false;
     }
 
+    /**
+     * Returns whether push notification are enabled.
+     * @return {@code true} by default as no explicit user permission is required.
+     */
     public static boolean getNotificationEnabled() {
         return WonderPushConfiguration.getNotificationEnabled();
     }
 
+    /**
+     * Sets whether to enable push notifications for the current device.
+     * @param status {@code false} to opt out of push notifications.
+     */
     public static void setNotificationEnabled(boolean status) {
         try {
             String value = status
