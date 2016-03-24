@@ -1244,6 +1244,15 @@ public class WonderPush {
     }
 
     /**
+     * Returns the latest known custom properties attached to the current installation object stored by WonderPush.
+     */
+    public static JSONObject getInstallationCustomProperties() {
+        JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+        if (updated == null) updated = new JSONObject();
+        return updated;
+    }
+
+    /**
      * Update the custom properties attached to the current installation object stored by WonderPush.
      *
      * <p>

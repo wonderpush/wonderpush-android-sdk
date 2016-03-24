@@ -505,9 +505,35 @@ class WonderPushRestClient {
                                 WonderPushConfiguration.setSID(sid);
                                 WonderPushConfiguration.setInstallationId(installationId);
                                 WonderPushConfiguration.setUserId(userId);
-                                sIsFetchingAnonymousAccessToken = false;
+
+                                JSONObject installation = json.optJSONObject("_installation");
+                                if (installation != null) {
+                                    Long installationUpdateDate = installation.optLong("updateDate", 0);
+                                    JSONObject custom        = installation.optJSONObject("custom");
+                                    JSONObject customUpdated = installation.optJSONObject("custom");
+                                    JSONObject written       = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
+                                    JSONObject updated       = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+                                    if (custom        == null) custom        = new JSONObject();
+                                    if (customUpdated == null) customUpdated = new JSONObject();
+                                    if (written       == null) written       = new JSONObject();
+                                    if (updated       == null) updated       = new JSONObject();
+                                    long writtenDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesWrittenDate();
+                                    long updatedDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdatedDate();
+                                    // Apply any yet unapplied changes over the read value
+                                    try {
+                                        JSONObject customUnappliedDiff = JSONUtil.diff(written, updated);
+                                        JSONUtil.merge(customUpdated, customUnappliedDiff);
+                                    } catch (JSONException ex) {
+                                        WonderPush.logError("Unexpected error while calculating custom properties diff", ex);
+                                    }
+                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdated(customUpdated);
+                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(custom);
+                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdatedDate(Math.max(updatedDate, installationUpdateDate));
+                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(Math.max(writtenDate, installationUpdateDate));
+                                }
 
                                 // call handlers
+                                sIsFetchingAnonymousAccessToken = false;
                                 if (null != handler) {
                                     handler.onSuccess(statusCode, response);
                                 }
