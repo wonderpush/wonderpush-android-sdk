@@ -62,8 +62,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
             pushToken.put("data", registrationId);
             properties.put("pushToken", pushToken);
 
-            if (System.currentTimeMillis() - WonderPushConfiguration.getCachedGCMRegistrationIdDate() > WonderPush.CACHED_REGISTRATION_ID_DURATION
-                    || registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
+            if (       registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
                     || registrationId != null && !registrationId.equals(WonderPushConfiguration.getGCMRegistrationId())) {
                 WonderPush.ensureInitialized(this);
                 WonderPush.updateInstallation(properties, false, null);

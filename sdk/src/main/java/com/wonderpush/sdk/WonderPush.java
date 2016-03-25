@@ -166,11 +166,6 @@ public class WonderPush {
     private static final long DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP = 15 * 60 * 1000;
 
     /**
-     * How long in ms to skip updating the installation core properties if they did not change.
-     */
-    private static final long CACHED_INSTALLATION_CORE_PROPERTIES_DURATION = 7 * 24 * 60 * 60 * 1000;
-
-    /**
      * How long to wait for no other call to {@link #putInstallationCustomProperties(JSONObject)}
      * before writing changes to the server.
      */
@@ -181,11 +176,6 @@ public class WonderPush {
      * if there are no pause of {@link #CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY} time between calls.
      */
     private static final long CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY = 20 * 1000;
-
-    /**
-     * How long in ms to skip updating the registration id if it did not change.
-     */
-    protected static final long CACHED_REGISTRATION_ID_DURATION = 7 * 24 * 60 * 60 * 1000;
 
     /**
      * The metadata key name corresponding to the name of the WonderPushInitializer implementation.
@@ -1230,8 +1220,7 @@ public class WonderPush {
             String propertiesString = properties.toString();
             String cachedPropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
             long cachedPropertiesDate = WonderPushConfiguration.getCachedInstallationCorePropertiesDate();
-            if (System.currentTimeMillis() - cachedPropertiesDate > CACHED_INSTALLATION_CORE_PROPERTIES_DURATION
-                    || !propertiesString.equals(cachedPropertiesString)) {
+            if (!propertiesString.equals(cachedPropertiesString)) {
                 WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
                 WonderPushConfiguration.setCachedInstallationCoreProperties(propertiesString);
                 updateInstallation(properties, false, null);
