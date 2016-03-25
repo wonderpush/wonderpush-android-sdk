@@ -1576,7 +1576,7 @@ public class WonderPush {
                 } catch (JSONException e) {
                     logDebug("Failed to fill @APP_CLOSE information", e);
                 }
-                trackInternalEvent("@APP_CLOSE", closeInfo);
+                // trackInternalEvent("@APP_CLOSE", closeInfo);
                 WonderPushConfiguration.setLastAppCloseDate(appCloseDate);
             }
 
