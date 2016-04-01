@@ -105,7 +105,9 @@ class WonderPushGcmClient {
                 .setContentTitle(alert.getTitle())
                 .setContentText(alert.getText())
                 .setPriority(alert.getPriority())
-                .setSmallIcon(iconResource);
+                .setSmallIcon(iconResource)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(alert.getText()));
 
         mBuilder.setContentIntent(pendingIntent);
         Notification notification = mBuilder.build();
