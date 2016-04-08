@@ -1955,7 +1955,7 @@ public class WonderPush {
         try {
             installationId = WonderPushConfiguration.getInstallationId();
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while getting userId", e);
+            Log.e(TAG, "Unexpected error while getting installationId", e);
         }
         return installationId;
     }
@@ -1974,9 +1974,33 @@ public class WonderPush {
         try {
             pushToken = WonderPushConfiguration.getGCMRegistrationId();
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while getting userId", e);
+            Log.e(TAG, "Unexpected error while getting pushToken", e);
         }
         return pushToken;
+    }
+
+    /**
+     * Gets the access token, used to grant access to the current installation
+     * to the WonderPush REST API.
+     *
+     * <p>You should not call this method before the SDK is ready.</p>
+     *
+     * <p>
+     *     This together with your client secret gives entire control to the current installation
+     *     and the associated user, you should not disclose it unnecessarily.
+     * </p>
+     *
+     * @return The access token, or {@code null} if the SDK is not initialized.
+     * @see #isReady()
+     */
+    public static String getAccessToken() {
+        String accessToken = null;
+        try {
+            accessToken = WonderPushConfiguration.getAccessToken();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error while getting accessToken", e);
+        }
+        return accessToken;
     }
 
     /**
