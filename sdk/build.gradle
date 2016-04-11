@@ -22,8 +22,8 @@ android {
         consumerProguardFiles 'proguard-exported.pro'
         manifestPlaceholders = [
                 wonderpushGradleApplicationId: '${applicationId}',
-                wonderpushNotificationIcon: '${wonderpushNotificationIcon}',
-                wonderpushDefaultActivity: '${wonderpushDefaultActivity}',
+                wonderpushNotificationIcon   : '${wonderpushNotificationIcon}',
+                wonderpushDefaultActivity    : '${wonderpushDefaultActivity}',
         ]
     }
     buildTypes {
@@ -36,7 +36,7 @@ android {
 
 dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
-    compile 'com.android.support:support-v4:23.1.1'
+    compile 'com.android.support:support-v4:23.3.0'
     compile 'com.google.android.gms:play-services-gcm:8.4.0'
 }
 
@@ -59,7 +59,7 @@ task setVersion {
     def sdkVersionFile = file('src/main/java/com/wonderpush/sdk/WonderPush.java')
     def apiVersion = null;
     def sdkVersion = null;
-    sdkVersionFile.eachLine{
+    sdkVersionFile.eachLine {
         def apiMatcher = (it =~ /(?:.*API_INT = )([0-9]*)(?:[^0-9].*)/)
         if (apiMatcher.matches()) {
             apiVersion = apiMatcher[0][1]
@@ -192,6 +192,7 @@ def replaceInManifest(output, fromString, toString) {
     def updatedContent = manifestOutFile.getText('UTF-8').replaceAll(fromString, toString)
     manifestOutFile.write(updatedContent, 'UTF-8')
 }
+
 afterEvaluate {
     androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
 
