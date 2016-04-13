@@ -1706,11 +1706,11 @@ public class WonderPush {
                 sBaseURL = PRODUCTION_API_URL;
 
                 WonderPushConfiguration.initialize(getApplicationContext());
-                if (sBeforeInitializationUserIdSet) {
-                    setUserId(sBeforeInitializationUserId);
-                }
-
                 WonderPushRequestVault.initialize();
+
+                initForNewUser(sBeforeInitializationUserIdSet
+                        ? sBeforeInitializationUserId
+                        : WonderPushConfiguration.getUserId());
 
                 // Initialize OpenUDID
                 OpenUDID_manager.sync(getApplicationContext());
@@ -1727,45 +1727,6 @@ public class WonderPush {
                 } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
                     Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
                 }
-
-                // Wait for UDID to be ready and fetch anonymous token if needed.
-                WonderPush.safeDefer(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isUDIDReady()) {
-                            boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
-                                @Override
-                                public void onFailure(Throwable e, Response errorResponse) {
-                                }
-
-                                @Override
-                                public void onSuccess(Response response) {
-                                    updateInstallationCoreProperties(context);
-                                    registerForPushNotification(context);
-                                    if (WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite() != 0) {
-                                        putInstallationCustomProperties_inner();
-                                    }
-                                    sIsReady = true;
-                                    Intent broadcast = new Intent(INTENT_INTIALIZED);
-                                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
-                                }
-                            });
-                            if (!isFetchingToken) {
-                                updateInstallationCoreProperties(context);
-                                registerForPushNotification(context);
-                                if (WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite() != 0) {
-                                    putInstallationCustomProperties_inner();
-                                }
-                                sIsReady = true;
-                                Intent broadcast = new Intent(INTENT_INTIALIZED);
-                                LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
-                            }
-                        } else {
-                            WonderPush.safeDefer(this, 100);
-                        }
-                    }
-                }, 0);
-
             }
 
             initializeForApplication(context);
@@ -1773,6 +1734,47 @@ public class WonderPush {
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while initializing the SDK", e);
         }
+    }
+
+    private static void initForNewUser(String userId) {
+        sIsReady = false;
+        if (WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite() != 0) {
+            // Flush any delayed write for old user
+            putInstallationCustomProperties_inner();
+        }
+        WonderPushConfiguration.changeUserId(userId);
+        // Wait for UDID to be ready and fetch anonymous token if needed.
+        WonderPush.safeDefer(new Runnable() {
+            @Override
+            public void run() {
+                if (isUDIDReady()) {
+                    final Runnable init = new Runnable() {
+                        @Override
+                        public void run() {
+                            updateInstallationCoreProperties(getApplicationContext());
+                            registerForPushNotification(getApplicationContext());
+                            sIsReady = true;
+                            Intent broadcast = new Intent(INTENT_INTIALIZED);
+                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
+                        }
+                    };
+                    boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
+                        @Override
+                        public void onFailure(Throwable e, Response errorResponse) {
+                        }
+                        @Override
+                        public void onSuccess(Response response) {
+                            init.run();
+                        }
+                    });
+                    if (!isFetchingToken) {
+                        init.run();
+                    }
+                } else {
+                    WonderPush.safeDefer(this, 100);
+                }
+            }
+        }, 0);
     }
 
     protected static void initializeForApplication(Context context) {
@@ -1881,9 +1883,7 @@ public class WonderPush {
                 // User id is the same as before, nothing needs to be done
             } else {
                 // The user id changed, we must reset the access token
-                WonderPushConfiguration.invalidateCredentials();
-                WonderPushConfiguration.setUserId(userId);
-                // DO NOT fetch another access token now, or beware the possible callback from initialize()
+                initForNewUser(userId);
             }
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while setting userId to \"" + userId + "\"", e);

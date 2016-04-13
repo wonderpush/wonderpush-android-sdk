@@ -11,6 +11,8 @@ class WonderPushConfiguration {
 
     private static final String PREF_FILE = "wonderpush";
 
+    private static final String PER_USER_ARCHIVE_PREF_NAME = "__per_user_archive";
+
     private static final String ACCESS_TOKEN_PREF_NAME = "__wonderpush_access_token";
     private static final String SID_PREF_NAME = "__wonderpush_sid";
     private static final String INSTALLATION_ID_PREF_NAME = "__installation_id";
@@ -29,6 +31,7 @@ class WonderPushConfiguration {
 
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME = "__wonderpush_gcm_registration_id_date";
+    private static final String CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME = "__wonderpush_gcm_registration_id_associated_to_user_id";
     private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
     private static final String GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME = "__wonderpush_gcm_registration_app_version_for_update_receiver";
     private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
@@ -58,6 +61,63 @@ class WonderPushConfiguration {
 
     protected static Context getApplicationContext() {
         return sContext;
+    }
+
+    protected static void changeUserId(String newUserId) {
+        if (newUserId == null && getUserId() == null
+                || newUserId != null && newUserId.equals(getUserId())) {
+            // No userId change
+            return;
+        }
+        // Save current user preferences
+        try {
+            JSONObject currentUserArchive = new JSONObject();
+            currentUserArchive.putOpt(ACCESS_TOKEN_PREF_NAME, getAccessToken());
+            currentUserArchive.putOpt(SID_PREF_NAME, getSID());
+            currentUserArchive.putOpt(INSTALLATION_ID_PREF_NAME, getInstallationId());
+            currentUserArchive.putOpt(USER_ID_PREF_NAME, getUserId());
+            currentUserArchive.putOpt(NOTIFICATION_ENABLED_PREF_NAME, getNotificationEnabled());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, getCachedInstallationCoreProperties());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, getCachedInstallationCorePropertiesDate());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME, getCachedInstallationCustomPropertiesWritten());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME, getCachedInstallationCustomPropertiesWrittenDate());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME, getCachedInstallationCustomPropertiesUpdated());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME, getCachedInstallationCustomPropertiesUpdatedDate());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME, getCachedInstallationCustomPropertiesFirstDelayedWrite());
+            currentUserArchive.putOpt(LAST_INTERACTION_DATE_PREF_NAME, getLastInteractionDate());
+            currentUserArchive.putOpt(LAST_APPOPEN_DATE_PREF_NAME, getLastAppOpenDate());
+            currentUserArchive.putOpt(LAST_APPOPEN_INFO_PREF_NAME, getLastAppOpenInfoJson());
+            currentUserArchive.putOpt(LAST_APPCLOSE_DATE_PREF_NAME, getLastAppCloseDate());
+            JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
+            if (usersArchive == null) {
+                usersArchive = new JSONObject();
+            }
+            usersArchive.put(getUserId() == null ? "" : getUserId(), currentUserArchive);
+            putJSONObject(PER_USER_ARCHIVE_PREF_NAME, usersArchive);
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to save current user preferences", ex);
+        }
+        // Load new user preferences
+        JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
+        if (usersArchive == null) usersArchive = new JSONObject();
+        JSONObject newUserArchive = usersArchive.optJSONObject(newUserId == null ? "" : newUserId);
+        if (newUserArchive == null) newUserArchive = new JSONObject();
+        setAccessToken(newUserArchive.optString(ACCESS_TOKEN_PREF_NAME, null));
+        setSID(newUserArchive.optString(SID_PREF_NAME, null));
+        setInstallationId(newUserArchive.optString(INSTALLATION_ID_PREF_NAME, null));
+        setUserId(newUserId);
+        setNotificationEnabled(newUserArchive.optBoolean(NOTIFICATION_ENABLED_PREF_NAME, true));
+        setCachedInstallationCoreProperties(newUserArchive.optString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, null));
+        setCachedInstallationCorePropertiesDate(newUserArchive.optLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME));
+        setCachedInstallationCustomPropertiesWritten(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME));
+        setCachedInstallationCustomPropertiesWrittenDate(newUserArchive.optLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME));
+        setCachedInstallationCustomPropertiesUpdated(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME));
+        setCachedInstallationCustomPropertiesUpdatedDate(newUserArchive.optLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME));
+        setCachedInstallationCustomPropertiesFirstDelayedWrite(newUserArchive.optLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME));
+        setLastInteractionDate(newUserArchive.optLong(LAST_INTERACTION_DATE_PREF_NAME));
+        setLastAppOpenDate(newUserArchive.optLong(LAST_APPOPEN_DATE_PREF_NAME));
+        setLastAppOpenInfoJson(newUserArchive.optJSONObject(LAST_APPOPEN_INFO_PREF_NAME));
+        setLastAppCloseDate(newUserArchive.optLong(LAST_APPCLOSE_DATE_PREF_NAME));
     }
 
     /**
@@ -402,6 +462,23 @@ class WonderPushConfiguration {
      */
     protected static void setCachedGCMRegistrationIdDate(long cachedGCMRegistrationIdDate) {
         putLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, cachedGCMRegistrationIdDate);
+    }
+
+    /**
+     * Get the user id the registration id was associated with in the user's shared preferences.
+     */
+    protected static String getCachedGCMRegistrationIdAssociatedUserId() {
+        return getString(CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME);
+    }
+
+    /**
+     * Set the user id the registration was associated with in the user's shared preferences.
+     *
+     * @param userId
+     *            The associated user id to be stored
+     */
+    protected static void setCachedGCMRegistrationIdAssociatedUserId(String userId) {
+        putString(CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME, userId);
     }
 
     /**

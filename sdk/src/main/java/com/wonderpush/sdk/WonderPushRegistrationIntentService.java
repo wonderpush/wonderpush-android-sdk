@@ -57,16 +57,23 @@ public class WonderPushRegistrationIntentService extends IntentService {
     private void storeRegistrationId(String senderIds, String registrationId) {
         WonderPushConfiguration.initialize(this);
         try {
-            JSONObject properties = new JSONObject();
-            JSONObject pushToken = new JSONObject();
-            pushToken.put("data", registrationId);
-            properties.put("pushToken", pushToken);
+            if (
+                    // New registration id
+                       registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
+                    || registrationId != null && !registrationId.equals(WonderPushConfiguration.getGCMRegistrationId())
+                    // Last associated with an other userId?
+                    || WonderPushConfiguration.getUserId() == null && WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId() != null
+                    || WonderPushConfiguration.getUserId() != null && !WonderPushConfiguration.getUserId().equals(WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId())
+            ) {
+                JSONObject properties = new JSONObject();
+                JSONObject pushToken = new JSONObject();
+                pushToken.put("data", registrationId);
+                properties.put("pushToken", pushToken);
 
-            if (       registrationId == null && WonderPushConfiguration.getGCMRegistrationId() != null
-                    || registrationId != null && !registrationId.equals(WonderPushConfiguration.getGCMRegistrationId())) {
                 WonderPush.ensureInitialized(this);
                 WonderPush.updateInstallation(properties, false, null);
                 WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
+                WonderPushConfiguration.setCachedGCMRegistrationIdAssociatedUserId(WonderPushConfiguration.getUserId());
             }
         } catch (JSONException e) {
             Log.e(WonderPush.TAG, "Failed to update push token to WonderPush", e);
