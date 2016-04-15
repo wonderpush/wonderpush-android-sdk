@@ -482,7 +482,7 @@ class WonderPushView extends FrameLayout {
             WonderPushConfiguration.invalidateCredentials();
 
             // Request a new anonymous access token
-            WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded();
+            WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(WonderPushConfiguration.getUserId());
 
             return true;
         }

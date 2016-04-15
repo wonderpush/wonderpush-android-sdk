@@ -1,7 +1,9 @@
 package com.wonderpush.sdk;
 
+import java.util.Comparator;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,7 +20,7 @@ class WonderPushJobQueue {
 
     private static final String TAG = WonderPush.TAG;
 
-    private static final int DEFAULT_CAPACITY = 100;
+    private static final int DEFAULT_CAPACITY = 10;
 
     /**
      * Queued objects.
@@ -28,6 +30,8 @@ class WonderPushJobQueue {
         String getId();
 
         JSONObject getJobDescription();
+
+        long getNotBeforeRealtimeElapsed();
 
     }
 
@@ -41,7 +45,7 @@ class WonderPushJobQueue {
     }
 
     private final String mQueueName;
-    private final ArrayBlockingQueue<Job> mQueue;
+    private final PriorityBlockingQueue<Job> mQueue;
 
     /**
      * Creates a queue with the specified name
@@ -53,7 +57,18 @@ class WonderPushJobQueue {
      */
     WonderPushJobQueue(String queueName, int capacity) {
         mQueueName = queueName;
-        mQueue = new ArrayBlockingQueue<>(capacity);
+        mQueue = new PriorityBlockingQueue<>(capacity, new Comparator<Job>() {
+            @Override
+            public int compare(Job lhs, Job rhs) {
+                // Sort by increasing time
+                long diff = lhs.getNotBeforeRealtimeElapsed() - rhs.getNotBeforeRealtimeElapsed();
+                // Then break ties using the ids
+                if (diff == 0) {
+                    diff = lhs.getId().compareTo(rhs.getId());
+                }
+                return (int) diff;
+            }
+        });
         restore();
     }
 
@@ -63,9 +78,9 @@ class WonderPushJobQueue {
      * @param jobDescription
      * @return The stored job or null if something went wrong (the queue is full for instance)
      */
-    protected Job postJobWithDescription(JSONObject jobDescription) {
+    protected Job postJobWithDescription(JSONObject jobDescription, long notBeforeRealtimeElapsed) {
         String jobId = UUID.randomUUID().toString();
-        InternalJob job = new InternalJob(jobId, jobDescription);
+        InternalJob job = new InternalJob(jobId, jobDescription, notBeforeRealtimeElapsed);
         return post(job);
     }
 
@@ -82,6 +97,12 @@ class WonderPushJobQueue {
         } else {
             return null;
         }
+    }
+
+    protected long peekNextJobNotBeforeRealtimeElapsed() {
+        Job head = mQueue.peek();
+        if (head == null) return Long.MAX_VALUE;
+        return head.getNotBeforeRealtimeElapsed();
     }
 
     /**
@@ -153,21 +174,25 @@ class WonderPushJobQueue {
 
         protected String mId;
         protected JSONObject mJobDescription;
+        protected long mNotBeforeRealtimeElapsed;
 
-        public InternalJob(String id, JSONObject description) {
+        public InternalJob(String id, JSONObject description, long notBeforeRealtimeElapsed) {
             mId = id;
             mJobDescription = description;
+            mNotBeforeRealtimeElapsed = notBeforeRealtimeElapsed;
         }
 
         public InternalJob(JSONObject json) throws JSONException {
             mId = json.getString("id");
             mJobDescription = json.getJSONObject("description");
+            mNotBeforeRealtimeElapsed = -1;
         }
 
         public JSONObject toJSON() throws JSONException {
             JSONObject json = new JSONObject();
             json.put("id", mId);
             json.put("description", mJobDescription);
+            // (Do not persist mNotBeforeRealtimeElapsed, such delay is not supposed to be saved after application death)
             return json;
         }
 
@@ -177,6 +202,11 @@ class WonderPushJobQueue {
 
         public JSONObject getJobDescription() {
             return mJobDescription;
+        }
+
+        @Override
+        public long getNotBeforeRealtimeElapsed() {
+            return mNotBeforeRealtimeElapsed;
         }
 
         @Override

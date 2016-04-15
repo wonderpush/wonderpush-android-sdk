@@ -735,13 +735,10 @@ public class WonderPush {
      * @param params
      *            The request parameters. Only serializable parameters are
      *            guaranteed to survive a network error or device reboot.
-     * @param responseHandler
-     *            An AsyncHttpClient response handler.
      */
     protected static void postEventually(String resource,
-            WonderPush.RequestParams params,
-            WonderPush.ResponseHandler responseHandler) {
-        WonderPushRestClient.postEventually(resource, params, responseHandler);
+            WonderPush.RequestParams params) {
+        WonderPushRestClient.postEventually(resource, params);
     }
 
     /**
@@ -1223,7 +1220,7 @@ public class WonderPush {
             if (!propertiesString.equals(cachedPropertiesString)) {
                 WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
                 WonderPushConfiguration.setCachedInstallationCoreProperties(propertiesString);
-                updateInstallation(properties, false, null);
+                updateInstallation(properties, false);
             }
         } catch (JSONException ex) {
             Log.e(TAG, "Unexpected error while updating installation core properties", ex);
@@ -1317,7 +1314,7 @@ public class WonderPush {
                 } catch (JSONException e) {
                     Log.e(TAG, "Unexpected error while updating installation core properties", e);
                 }
-                updateInstallation(properties, false, null);
+                updateInstallation(properties, false);
                 long now = System.currentTimeMillis();
                 WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(updated);
                 WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(now);
@@ -1328,12 +1325,12 @@ public class WonderPush {
         WonderPushConfiguration.setCachedInstallationCustomPropertiesFirstDelayedWrite(0);
     }
 
-    static void updateInstallation(JSONObject properties, boolean overwrite, ResponseHandler handler) {
+    static void updateInstallation(JSONObject properties, boolean overwrite) {
         String propertyEndpoint = "/installation";
         RequestParams parameters = new RequestParams();
         parameters.put("body", properties.toString());
         parameters.put("overwrite", overwrite ? "true" : "false");
-        postEventually(propertyEndpoint, parameters, handler);
+        postEventually(propertyEndpoint, parameters);
     }
 
     /**
@@ -1528,7 +1525,7 @@ public class WonderPush {
 
         RequestParams parameters = new RequestParams();
         parameters.put("body", event.toString());
-        postEventually(eventEndpoint, parameters, null);
+        postEventually(eventEndpoint, parameters);
     }
 
     protected static void onInteraction() {
@@ -1736,7 +1733,7 @@ public class WonderPush {
         }
     }
 
-    private static void initForNewUser(String userId) {
+    private static void initForNewUser(final String userId) {
         sIsReady = false;
         if (WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite() != 0) {
             // Flush any delayed write for old user
@@ -1758,7 +1755,7 @@ public class WonderPush {
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                         }
                     };
-                    boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(new ResponseHandler() {
+                    boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
                         @Override
                         public void onFailure(Throwable e, Response errorResponse) {
                         }
@@ -1867,9 +1864,11 @@ public class WonderPush {
     public static void setUserId(String userId) {
         try {
             if ("".equals(userId)) userId = null;
+            logDebug("setUserId(" + userId + ")");
 
             // Do nothing if not initialized
             if (!isInitialized()) {
+                logDebug("setting user id for next initialization");
                 sBeforeInitializationUserIdSet = true;
                 sBeforeInitializationUserId = userId;
                 return;
@@ -2069,7 +2068,7 @@ public class WonderPush {
             JSONObject preferences = new JSONObject();
             properties.put("preferences", preferences);
             preferences.put("subscriptionStatus", value);
-            updateInstallation(properties, false, null);
+            updateInstallation(properties, false);
             WonderPushConfiguration.setNotificationEnabled(status);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while setting notification enabled to " + status, e);

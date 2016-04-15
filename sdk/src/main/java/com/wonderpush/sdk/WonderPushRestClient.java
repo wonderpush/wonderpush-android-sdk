@@ -30,6 +30,9 @@ import com.wonderpush.sdk.WonderPush.Response;
 import com.wonderpush.sdk.WonderPush.ResponseHandler;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.conn.ConnectTimeoutException;
+import cz.msebera.android.httpclient.conn.ConnectionPoolTimeoutException;
+import cz.msebera.android.httpclient.conn.HttpHostConnectException;
 import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
@@ -41,12 +44,15 @@ class WonderPushRestClient {
     private static final String TAG = WonderPushRestClient.class.getSimpleName();
 
     private enum HttpMethod {
-        GET, PUT, POST, DELETE
+        GET,
+        PUT,
+        POST,
+        DELETE,
+        // APPEND ONLY!
     }
 
     private static final int RETRY_INTERVAL_BAD_AUTH = 1 * 1000; // in milliseconds
     private static final int RETRY_INTERVAL = 30 * 1000; // in milliseconds
-    private static final int RETRY_INTERVAL_NETWORK_ISSUE = 60 * 1000; // in milliseconds
     private static boolean sIsFetchingAnonymousAccessToken = false;
     private static final List<WonderPush.ResponseHandler> sPendingHandlers = new ArrayList<>();
 
@@ -63,7 +69,7 @@ class WonderPushRestClient {
      *            An AsyncHttpClient response handler
      */
     protected static void get(String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler responseHandler) {
-        requestAuthenticated(new Request(HttpMethod.GET, resource, params, responseHandler));
+        requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.GET, resource, params, responseHandler));
     }
 
     /**
@@ -77,7 +83,7 @@ class WonderPushRestClient {
      *            An AsyncHttpClient response handler
      */
     protected static void post(String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler responseHandler) {
-        requestAuthenticated(new Request(HttpMethod.POST, resource, params, responseHandler));
+        requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, responseHandler));
     }
 
     /**
@@ -87,57 +93,10 @@ class WonderPushRestClient {
      *
      * @param resource
      * @param params
-     * @param responseHandler
      */
-    protected static void postEventually(String resource, WonderPush.RequestParams params,
-            final WonderPush.ResponseHandler responseHandler) {
-
-        // Create a request
-        final Request request = new Request(HttpMethod.POST, resource, params, null);
-
-        // Wrap the provided handler with ours
-        request.setHandler(new WonderPush.ResponseHandler() {
-            @Override
-            public void onFailure(Throwable e, Response errorResponse) {
-                // Post to vault on network error
-                if (e instanceof UnknownHostException
-                        || e instanceof SocketException) {
-                    // retry later
-                    WonderPush.safeDefer(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                WonderPushRequestVault.getDefaultVault().put(request);
-                            } catch (JSONException ex) {
-                                Log.e(TAG, "Could not save request to vault: " + request, ex);
-                            }
-                        }
-                    }, RETRY_INTERVAL_NETWORK_ISSUE);
-                    return;
-                }
-
-                // Forward to original handler otherwise
-                if (null != responseHandler) {
-                    responseHandler.onFailure(e, errorResponse);
-                }
-            }
-
-            @Override
-            public void onSuccess(Response response) {
-                if (null != responseHandler) {
-                    responseHandler.onSuccess(response);
-                }
-            }
-
-            @Override
-            public void onSuccess(int statusCode, Response response) {
-                if (null != responseHandler) {
-                    responseHandler.onSuccess(statusCode, response);
-                }
-            }
-        });
-
-        requestAuthenticated(request);
+    protected static void postEventually(String resource, WonderPush.RequestParams params) {
+        final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, null);
+        WonderPushRequestVault.getDefaultVault().put(request, 0);
     }
 
     /**
@@ -151,7 +110,7 @@ class WonderPushRestClient {
      *            An AsyncHttpClient response handler
      */
     protected static void put(String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler responseHandler) {
-        requestAuthenticated(new Request(HttpMethod.PUT, resource, params, responseHandler));
+        requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.PUT, resource, params, responseHandler));
     }
 
     /**
@@ -163,7 +122,7 @@ class WonderPushRestClient {
      *            An AsyncHttpClient response handler
      */
     protected static void delete(String resource, WonderPush.ResponseHandler responseHandler) {
-        requestAuthenticated(new Request(HttpMethod.DELETE, resource, null, responseHandler));
+        requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.DELETE, resource, null, responseHandler));
     }
 
     /**
@@ -175,12 +134,12 @@ class WonderPushRestClient {
      * @return Whether or not a request has been executed to fetch an anonymous
      *         access token (true fetching, false retrieved from local cache)
      */
-    protected static boolean fetchAnonymousAccessTokenIfNeeded(final WonderPush.ResponseHandler onFetchedHandler) {
+    protected static boolean fetchAnonymousAccessTokenIfNeeded(final String userId, final WonderPush.ResponseHandler onFetchedHandler) {
         if (!WonderPush.isUDIDReady()) {
             WonderPush.safeDefer(new Runnable() {
                 @Override
                 public void run() {
-                    if (!fetchAnonymousAccessTokenIfNeeded(onFetchedHandler)) {
+                    if (!fetchAnonymousAccessTokenIfNeeded(userId, onFetchedHandler)) {
                         // Call the handler anyway
                         onFetchedHandler.onSuccess(null);
                     }
@@ -190,7 +149,7 @@ class WonderPushRestClient {
         }
 
         if (null == WonderPushConfiguration.getAccessToken()) {
-            fetchAnonymousAccessToken(onFetchedHandler);
+            fetchAnonymousAccessToken(userId, onFetchedHandler);
             return true;
         }
         return false;
@@ -199,8 +158,8 @@ class WonderPushRestClient {
     /**
      * If no access token is found in the user's preferences, fetch an anonymous access token.
      */
-    protected static void fetchAnonymousAccessTokenIfNeeded() {
-        fetchAnonymousAccessTokenIfNeeded(null);
+    protected static void fetchAnonymousAccessTokenIfNeeded(final String userId) {
+        fetchAnonymousAccessTokenIfNeeded(userId, null);
     }
 
     /**
@@ -225,9 +184,8 @@ class WonderPushRestClient {
             return;
         }
 
-        String accessToken = WonderPushConfiguration.getAccessToken();
+        String accessToken = WonderPushConfiguration.getAccessTokenForUserId(request.getUserId());
 
-        // User is authenticated
         if (accessToken == null) {
             // User is not authenticated, request a token
             fetchAnonymousAccessTokenAndRunRequest(request);
@@ -268,14 +226,6 @@ class WonderPushRestClient {
                             requestAuthenticated(request);
                         }
                     }, RETRY_INTERVAL_BAD_AUTH);
-//                } else if (e instanceof ConnectTimeoutException) {
-//                    // retry later
-//                    WonderPush.safeDefer(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            requestAuthenticated(request);
-//                        }
-//                    }, RETRY_INTERVAL_NETWORK_ISSUE);
                 } else {
                     if (request.getHandler() != null) {
                         request.getHandler().onFailure(e, errorResponse);
@@ -417,11 +367,11 @@ class WonderPushRestClient {
         }, 0);
     }
 
-    protected static void fetchAnonymousAccessToken(final WonderPush.ResponseHandler handler) {
-        fetchAnonymousAccessToken(handler, 0);
+    protected static void fetchAnonymousAccessToken(final String userId, final WonderPush.ResponseHandler handler) {
+        fetchAnonymousAccessToken(userId, handler, 0);
     }
 
-    protected static void fetchAnonymousAccessToken(final WonderPush.ResponseHandler handler, final int nbRetries) {
+    protected static void fetchAnonymousAccessToken(final String userId, final WonderPush.ResponseHandler handler, final int nbRetries) {
         if (sIsFetchingAnonymousAccessToken) {
             queueHandler(handler);
             return;
@@ -431,7 +381,7 @@ class WonderPushRestClient {
             @Override
             public void run() {
                 if (WonderPush.isUDIDReady()) {
-                    fetchAnonymousAccessToken_inner(handler, nbRetries);
+                    fetchAnonymousAccessToken_inner(userId, handler, nbRetries);
                 } else {
                     WonderPush.safeDefer(this, 100);
                 }
@@ -439,7 +389,7 @@ class WonderPushRestClient {
         }, 0);
     }
 
-    private static void fetchAnonymousAccessToken_inner(final WonderPush.ResponseHandler handler, final int nbRetries) {
+    private static void fetchAnonymousAccessToken_inner(final String userId, final WonderPush.ResponseHandler handler, final int nbRetries) {
         WonderPush.RequestParams authParams = new WonderPush.RequestParams();
         authParams.put("clientId", WonderPush.getClientId());
         authParams.put("devicePlatform", "Android");
@@ -448,14 +398,13 @@ class WonderPushRestClient {
         if (null != udid) {
             authParams.put("deviceId", udid);
         }
-        String userId = WonderPushConfiguration.getUserId();
         if (null != userId) {
             authParams.put("userId", userId);
         }
 
         String resource = "/authentication/accessToken";
 
-        request(new Request(HttpMethod.POST, resource, authParams,
+        request(new Request(userId, HttpMethod.POST, resource, authParams,
                 new WonderPush.ResponseHandler() {
                     @Override
                     public void onFailure(Throwable e, Response errorResponse) {
@@ -483,7 +432,7 @@ class WonderPushRestClient {
                                 WonderPush.logDebug("re-requesting access token!");
 
                                 sIsFetchingAnonymousAccessToken = false;
-                                fetchAnonymousAccessToken(handler, nbRetries - 1);
+                                fetchAnonymousAccessToken(userId, handler, nbRetries - 1);
                             }
                         }, RETRY_INTERVAL);
                     }
@@ -496,40 +445,49 @@ class WonderPushRestClient {
                             String token = json.optString("token", null);
                             JSONObject data = json.optJSONObject("data");
                             if (data != null && data.has("installationId")) {
-                                String sid = data.optString("sid", null);
-                                String installationId = data.optString("installationId", null);
-                                String userId = data.optString("userId", null);
+                                String prevUserId = WonderPushConfiguration.getUserId();
+                                try {
+                                    // Make sure we alter the storage of the appropriate user
+                                    WonderPushConfiguration.changeUserId(userId);
 
-                                // Store access token
-                                WonderPushConfiguration.setAccessToken(token);
-                                WonderPushConfiguration.setSID(sid);
-                                WonderPushConfiguration.setInstallationId(installationId);
-                                WonderPushConfiguration.setUserId(userId);
+                                    String sid = data.optString("sid", null);
+                                    String installationId = data.optString("installationId", null);
+                                    String userId = data.optString("userId", null);
 
-                                JSONObject installation = json.optJSONObject("_installation");
-                                if (installation != null) {
-                                    Long installationUpdateDate = installation.optLong("updateDate", 0);
-                                    JSONObject custom        = installation.optJSONObject("custom");
-                                    JSONObject customUpdated = installation.optJSONObject("custom");
-                                    JSONObject written       = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
-                                    JSONObject updated       = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
-                                    if (custom        == null) custom        = new JSONObject();
-                                    if (customUpdated == null) customUpdated = new JSONObject();
-                                    if (written       == null) written       = new JSONObject();
-                                    if (updated       == null) updated       = new JSONObject();
-                                    long writtenDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesWrittenDate();
-                                    long updatedDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdatedDate();
-                                    // Apply any yet unapplied changes over the read value
-                                    try {
-                                        JSONObject customUnappliedDiff = JSONUtil.diff(written, updated);
-                                        JSONUtil.merge(customUpdated, customUnappliedDiff);
-                                    } catch (JSONException ex) {
-                                        WonderPush.logError("Unexpected error while calculating custom properties diff", ex);
+                                    // Store access token
+                                    WonderPushConfiguration.setAccessToken(token);
+                                    WonderPushConfiguration.setSID(sid);
+                                    WonderPushConfiguration.setInstallationId(installationId);
+                                    WonderPushConfiguration.setUserId(userId);
+
+                                    JSONObject installation = json.optJSONObject("_installation");
+                                    if (installation != null) {
+                                        Long installationUpdateDate = installation.optLong("updateDate", 0);
+                                        JSONObject custom = installation.optJSONObject("custom");
+                                        JSONObject customUpdated = installation.optJSONObject("custom");
+                                        JSONObject written = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
+                                        JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+                                        if (custom == null) custom = new JSONObject();
+                                        if (customUpdated == null) customUpdated = new JSONObject();
+                                        if (written == null) written = new JSONObject();
+                                        if (updated == null) updated = new JSONObject();
+                                        long writtenDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesWrittenDate();
+                                        long updatedDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdatedDate();
+                                        // Apply any yet unapplied changes over the read value
+                                        try {
+                                            JSONObject customUnappliedDiff = JSONUtil.diff(written, updated);
+                                            JSONUtil.merge(customUpdated, customUnappliedDiff);
+                                        } catch (JSONException ex) {
+                                            WonderPush.logError("Unexpected error while calculating custom properties diff", ex);
+                                        }
+                                        WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdated(customUpdated);
+                                        WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(custom);
+                                        WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdatedDate(Math.max(updatedDate, installationUpdateDate));
+                                        WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(Math.max(writtenDate, installationUpdateDate));
                                     }
-                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdated(customUpdated);
-                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(custom);
-                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdatedDate(Math.max(updatedDate, installationUpdateDate));
-                                    WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(Math.max(writtenDate, installationUpdateDate));
+                                } finally {
+                                    // Make sure to switch back to the current user now
+                                    WonderPushConfiguration.changeUserId(prevUserId);
                                 }
 
                                 // call handlers
@@ -563,7 +521,7 @@ class WonderPushRestClient {
      *            The request to be run
      */
     protected static void fetchAnonymousAccessTokenAndRunRequest(final Request request) {
-        fetchAnonymousAccessToken(new WonderPush.ResponseHandler() {
+        fetchAnonymousAccessToken(request.getUserId(), new WonderPush.ResponseHandler() {
             @Override
             public void onSuccess(Response response) {
                 requestAuthenticated(request);
@@ -603,12 +561,14 @@ class WonderPushRestClient {
      */
     protected static class Request implements Cloneable {
 
+        String mUserId;
         HttpMethod mMethod;
         WonderPush.RequestParams mParams;
         WonderPush.ResponseHandler mHandler;
         String mResource;
 
-        public Request(HttpMethod method, String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler handler) {
+        public Request(String userId, HttpMethod method, String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler handler) {
+            mUserId = userId;
             mMethod = method;
             mParams = params;
             mHandler = handler;
@@ -616,7 +576,12 @@ class WonderPushRestClient {
         }
 
         public Request(JSONObject data) throws JSONException {
-            mMethod = HttpMethod.values()[data.getInt("method")];
+            mUserId = data.has("userId") ? data.optString("userId", null) : WonderPushConfiguration.getUserId();
+            try {
+                mMethod = HttpMethod.valueOf(data.optString("method", null));
+            } catch (IllegalArgumentException ex) {
+                mMethod = HttpMethod.values()[data.getInt("method")];
+            }
             mResource = data.getString("resource");
             JSONObject paramsJson = data.getJSONObject("params");
             mParams = new WonderPush.RequestParams();
@@ -628,18 +593,28 @@ class WonderPushRestClient {
             }
         }
 
-        public JSONObject toJSON() throws JSONException {
-            JSONObject result = new JSONObject();
-            result.put("method", mMethod.ordinal());
-            result.put("resource", mResource);
-            JSONObject params = new JSONObject();
-            if (null != mParams) {
-                for (BasicNameValuePair pair : mParams.getParamsList()) {
-                    params.put(pair.getName(), pair.getValue());
+        public JSONObject toJSON() {
+            try {
+                JSONObject result = new JSONObject();
+                result.put("userId", mUserId);
+                result.put("method", mMethod.name());
+                result.put("resource", mResource);
+                JSONObject params = new JSONObject();
+                if (null != mParams) {
+                    for (BasicNameValuePair pair : mParams.getParamsList()) {
+                        params.put(pair.getName(), pair.getValue());
+                    }
                 }
+                result.put("params", params);
+                return result;
+            } catch (JSONException e) {
+                WonderPush.logError("Failed to serialize job", e);
+                return null;
             }
-            result.put("params", params);
-            return result;
+        }
+
+        public String getUserId() {
+            return mUserId;
         }
 
         public HttpMethod getMethod() {
@@ -676,7 +651,7 @@ class WonderPushRestClient {
 
         @Override
         protected Object clone() {
-            return new Request(mMethod, mResource, mParams, mHandler);
+            return new Request(mUserId, mMethod, mResource, mParams, mHandler);
         }
 
         /**
@@ -689,21 +664,7 @@ class WonderPushRestClient {
                 StringBuilder sb = new StringBuilder();
 
                 // Step 1: add HTTP method uppercase
-                switch (mMethod) {
-                    case POST:
-                        sb.append("POST");
-                        break;
-                    case PUT:
-                        sb.append("PUT");
-                        break;
-                    case GET:
-                        // No authorization header for GET requests
-                        return null;
-                    case DELETE:
-                        sb.append("DELETE");
-                        break;
-                }
-
+                sb.append(mMethod.name().toUpperCase());
                 sb.append('&');
 
                 // Step 2: add the URI

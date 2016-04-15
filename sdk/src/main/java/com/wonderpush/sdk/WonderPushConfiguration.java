@@ -69,6 +69,7 @@ class WonderPushConfiguration {
             // No userId change
             return;
         }
+        WonderPush.logDebug("archiving storage for user " + getUserId());
         // Save current user preferences
         try {
             JSONObject currentUserArchive = new JSONObject();
@@ -98,6 +99,7 @@ class WonderPushConfiguration {
             WonderPush.logError("Failed to save current user preferences", ex);
         }
         // Load new user preferences
+        WonderPush.logDebug("loading storage for user " + newUserId);
         JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
         if (usersArchive == null) usersArchive = new JSONObject();
         JSONObject newUserArchive = usersArchive.optJSONObject(newUserId == null ? "" : newUserId);
@@ -240,6 +242,22 @@ class WonderPushConfiguration {
         setAccessToken(null);
         setInstallationId(null);
         setSID(null);
+    }
+
+    /**
+     * Get the access token associated to a given user's shared preferences.
+     */
+    protected static String getAccessTokenForUserId(String userId) {
+        if (userId == null && getUserId() == null
+                || userId != null && userId.equals(getUserId())) {
+            return getAccessToken();
+        } else {
+            JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
+            if (usersArchive == null) usersArchive = new JSONObject();
+            JSONObject userArchive = usersArchive.optJSONObject(userId == null ? "" : userId);
+            if (userArchive == null) userArchive = new JSONObject();
+            return userArchive.optString(ACCESS_TOKEN_PREF_NAME, null);
+        }
     }
 
     /**
