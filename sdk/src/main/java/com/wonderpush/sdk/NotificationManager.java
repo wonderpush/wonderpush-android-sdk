@@ -40,7 +40,7 @@ class NotificationManager {
             final JSONObject trackData = new JSONObject();
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
-            trackData.put("actionDate", WonderPush.getTime());
+            trackData.put("actionDate", TimeSync.getTime());
             if (notif.getReceipt()) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
             }
@@ -209,7 +209,7 @@ class NotificationManager {
                 JSONObject trackData = new JSONObject();
                 trackData.put("campaignId", notif.getCampaignId());
                 trackData.put("notificationId", notif.getNotificationId());
-                trackData.put("actionDate", WonderPush.getTime());
+                trackData.put("actionDate", TimeSync.getTime());
                 WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
                 WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);

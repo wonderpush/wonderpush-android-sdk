@@ -332,7 +332,7 @@ class WonderPushRestClient {
                         if (data == null || !data.has("_serverTime")) {
                             return;
                         }
-                        WonderPush.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"), data.optLong("_serverTook"));
+                        TimeSync.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"), data.optLong("_serverTook"));
                     }
                 };
                 // NO UNNECESSARY WORK HERE, because of timed request

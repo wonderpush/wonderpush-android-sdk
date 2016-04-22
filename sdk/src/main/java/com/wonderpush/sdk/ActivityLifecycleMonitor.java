@@ -70,7 +70,7 @@ class ActivityLifecycleMonitor implements Application.ActivityLifecycleCallbacks
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
         if (!hasCreatedActivities()) {
-            createFirstDate = WonderPush.getTime();
+            createFirstDate = TimeSync.getTime();
         }
         ++createCount;
         WonderPush.showPotentialNotification(activity, activity.getIntent());
@@ -83,7 +83,7 @@ class ActivityLifecycleMonitor implements Application.ActivityLifecycleCallbacks
             this.onActivityCreated(activity, null);
         }
         if (!hasStartedActivities()) {
-            startFirstDate = WonderPush.getTime();
+            startFirstDate = TimeSync.getTime();
         }
         ++startCount;
         WonderPush.onInteraction();
@@ -92,7 +92,7 @@ class ActivityLifecycleMonitor implements Application.ActivityLifecycleCallbacks
     @Override
     public void onActivityResumed(Activity activity) {
         if (!hasResumedActivities()) {
-            resumeFirstDate = WonderPush.getTime();
+            resumeFirstDate = TimeSync.getTime();
         }
         lastResumedActivity = activity;
         ++resumeCount;
@@ -103,7 +103,7 @@ class ActivityLifecycleMonitor implements Application.ActivityLifecycleCallbacks
     public void onActivityPaused(Activity activity) {
         ++pausedCount;
         if (!hasResumedActivities()) {
-            pausedLastDate = WonderPush.getTime();
+            pausedLastDate = TimeSync.getTime();
         }
         WonderPush.onInteraction();
     }
@@ -112,7 +112,7 @@ class ActivityLifecycleMonitor implements Application.ActivityLifecycleCallbacks
     public void onActivityStopped(Activity activity) {
         ++stopCount;
         if (!hasStartedActivities()) {
-            stopLastDate = WonderPush.getTime();
+            stopLastDate = TimeSync.getTime();
         }
         WonderPush.onInteraction();
     }
@@ -125,7 +125,7 @@ class ActivityLifecycleMonitor implements Application.ActivityLifecycleCallbacks
     public void onActivityDestroyed(Activity activity) {
         ++destroyCount;
         if (!hasCreatedActivities()) {
-            destroyLastDate = WonderPush.getTime();
+            destroyLastDate = TimeSync.getTime();
         }
         WonderPush.onInteraction();
     }
