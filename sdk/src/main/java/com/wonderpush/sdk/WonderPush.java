@@ -226,6 +226,7 @@ public class WonderPush {
      * The value associated to data push notifications (aka silent notifications), corresponding to the extra key
      * {@link #INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE}.
      */
+    @SuppressWarnings("unused")
     public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA = "data";
 
     /**
@@ -347,6 +348,7 @@ public class WonderPush {
      *
      * @param enable {@code true} to enable debug logs.
      */
+    @SuppressWarnings("unused")
     public static void setLogging(boolean enable) {
         WonderPush.SHOW_DEBUG = enable;
     }
@@ -667,6 +669,7 @@ public class WonderPush {
     /**
      * Returns the latest known custom properties attached to the current installation object stored by WonderPush.
      */
+    @SuppressWarnings("unused")
     public static JSONObject getInstallationCustomProperties() {
         return InstallationManager.getInstallationCustomProperties();
     }
@@ -683,6 +686,7 @@ public class WonderPush {
      * @param customProperties
      *            The partial object containing only the properties to update.
      */
+    @SuppressWarnings("unused")
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
         try {
             InstallationManager.putInstallationCustomProperties(customProperties);
@@ -806,6 +810,7 @@ public class WonderPush {
      *            The event type, or name.
      *            Event types starting with an {@code @} character are reserved.
      */
+    @SuppressWarnings("unused")
     public static void trackEvent(String type) {
         try {
             trackEvent(type, null);
@@ -993,6 +998,7 @@ public class WonderPush {
      * The SDK is ready when it is initialized and has fetched an access token.
      * @return {@code true} if the SDK is ready, {@code false} otherwise.
      */
+    @SuppressWarnings("unused")
     public static boolean isReady() {
         return sIsReady;
     }
@@ -1021,6 +1027,7 @@ public class WonderPush {
      *            It must be the same activity that you declared in the {@code <meta-data>} tag
      *            under the WonderPush {@code <receiver>} tag in your {@code AndroidManifest.xml}.
      */
+    @SuppressWarnings("unused")
     public static void initialize(final Context context) {
         try {
             ensureInitialized(context);
@@ -1220,6 +1227,7 @@ public class WonderPush {
      *            Use {@code null} for anonymous users.<br />
      *            You are strongly encouraged to use your own unique internal identifier.
      */
+    @SuppressWarnings("unused")
     public static void setUserId(String userId) {
         try {
             if ("".equals(userId)) userId = null;
@@ -1258,6 +1266,7 @@ public class WonderPush {
      * @see #setUserId(String)
      * @see #initialize(Context)
      */
+    @SuppressWarnings("unused")
     public static String getUserId() {
         String userId = null;
         try {
@@ -1287,6 +1296,7 @@ public class WonderPush {
      * @see #isReady()
      * @see #initialize(Context)
      */
+    @SuppressWarnings("unused")
     public static String getDeviceId() {
         String deviceId = null;
         try {
@@ -1306,6 +1316,7 @@ public class WonderPush {
      * @return The device id, or {@code null} if the SDK is not initialized.
      * @see #isReady()
      */
+    @SuppressWarnings("unused")
     public static String getInstallationId() {
         String installationId = null;
         try {
@@ -1325,6 +1336,7 @@ public class WonderPush {
      *     registered to push notifications, or has not finished refreshing
      *     the push token after a forced update.
      */
+    @SuppressWarnings("unused")
     public static String getPushToken() {
         String pushToken = null;
         try {
@@ -1349,6 +1361,7 @@ public class WonderPush {
      * @return The access token, or {@code null} if the SDK is not initialized.
      * @see #isReady()
      */
+    @SuppressWarnings("unused")
     public static String getAccessToken() {
         String accessToken = null;
         try {
@@ -1408,6 +1421,7 @@ public class WonderPush {
      * Returns whether push notification are enabled.
      * @return {@code true} by default as no explicit user permission is required.
      */
+    @SuppressWarnings("unused")
     public static boolean getNotificationEnabled() {
         return WonderPushConfiguration.getNotificationEnabled();
     }
@@ -1416,6 +1430,7 @@ public class WonderPush {
      * Sets whether to enable push notifications for the current device.
      * @param status {@code false} to opt out of push notifications.
      */
+    @SuppressWarnings("unused")
     public static void setNotificationEnabled(boolean status) {
         try {
             String value = status
