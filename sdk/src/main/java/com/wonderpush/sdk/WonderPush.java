@@ -1,9 +1,7 @@
 package com.wonderpush.sdk;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
-import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -33,7 +31,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -64,15 +61,7 @@ public class WonderPush {
     protected static boolean SHOW_DEBUG = false;
 
     private static Context sApplicationContext;
-    private static Application sApplication;
-    private static ActivityLifecycleMonitor sActivityLifecycleCallbacks;
-    private static boolean sActivityLifecycleCallbacksRegistered;
-    private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<>();
-    static {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            sActivityLifecycleCallbacks = new ActivityLifecycleMonitor();
-        }
-    }
+    protected static Application sApplication;
 
     private static Looper sLooper;
     private static Handler sDeferHandler;
@@ -950,30 +939,6 @@ public class WonderPush {
         WonderPushConfiguration.setLastInteractionDate(now);
     }
 
-    protected static void monitorActivitiesLifecycle() {
-        if (!sActivityLifecycleCallbacksRegistered && sActivityLifecycleCallbacks != null && sApplication != null) {
-            WonderPushCompatibilityHelper.ApplicationRegisterActivityLifecycleCallbacks(sApplication, sActivityLifecycleCallbacks);
-            sActivityLifecycleCallbacksRegistered = true;
-        }
-    }
-
-    protected static Activity getCurrentActivity() {
-        Activity candidate = null;
-        if (sActivityLifecycleCallbacksRegistered
-                && sActivityLifecycleCallbacks.hasResumedActivities()) {
-            candidate = sActivityLifecycleCallbacks.getLastResumedActivity();
-        }
-        if (candidate == null) {
-            for (Activity activity : sTrackedActivities.keySet()) {
-                if (activity.hasWindowFocus() && !activity.isFinishing()) {
-                    candidate = activity;
-                    break;
-                }
-            }
-        }
-        return candidate;
-    }
-
     /**
      * Whether {@link #initialize(Context, String, String)} has been called.
      * Different from having fetched an access token,
@@ -1136,7 +1101,7 @@ public class WonderPush {
             return;
         }
         sApplication = (Application) context;
-        monitorActivitiesLifecycle();
+        ActivityLifecycleMonitor.monitorActivitiesLifecycle();
     }
 
     protected static void initializeForActivity(Context context) {
@@ -1145,7 +1110,7 @@ public class WonderPush {
         }
         Activity activity = (Activity) context;
 
-        sTrackedActivities.put(activity, null);
+        ActivityLifecycleMonitor.addTrackedActivity(activity);
 
         showPotentialNotification(activity, activity.getIntent());
         onInteraction(); // keep after onCreateMainActivity() as a possible received notification's information is needed
@@ -1460,110 +1425,6 @@ public class WonderPush {
                 }
             }
         }, defer);
-    }
-
-    /**
-     * Monitors activities lifecycle operations, which are evidences of user interactions.
-     * @link http://www.mjbshaw.com/2012/12/determining-if-your-android-application.html
-     */
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    protected static class ActivityLifecycleMonitor implements ActivityLifecycleCallbacks {
-
-        private int createCount;
-        private int startCount;
-        private int resumeCount;
-        private int pausedCount;
-        private int stopCount;
-        private int destroyCount;
-
-        private long createFirstDate;
-        private long startFirstDate;
-        private long resumeFirstDate;
-        private long pausedLastDate;
-        private long stopLastDate;
-        private long destroyLastDate;
-
-        private Activity lastResumedActivity;
-
-        @Override
-        public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-            if (!hasCreatedActivities()) {
-                createFirstDate = WonderPush.getTime();
-            }
-            ++createCount;
-            WonderPush.showPotentialNotification(activity, activity.getIntent());
-        }
-
-        @Override
-        public void onActivityStarted(Activity activity) {
-            if (createCount == 0) {
-                // The monitor was probably setup inside a Activity.onCreate() call
-                this.onActivityCreated(activity, null);
-            }
-            if (!hasStartedActivities()) {
-                startFirstDate = WonderPush.getTime();
-            }
-            ++startCount;
-            onInteraction();
-        }
-
-        @Override
-        public void onActivityResumed(Activity activity) {
-            if (!hasResumedActivities()) {
-                resumeFirstDate = WonderPush.getTime();
-            }
-            lastResumedActivity = activity;
-            ++resumeCount;
-            onInteraction();
-        }
-
-        @Override
-        public void onActivityPaused(Activity activity) {
-            ++pausedCount;
-            if (!hasResumedActivities()) {
-                pausedLastDate = WonderPush.getTime();
-            }
-            onInteraction();
-        }
-
-        @Override
-        public void onActivityStopped(Activity activity) {
-            ++stopCount;
-            if (!hasStartedActivities()) {
-                stopLastDate = WonderPush.getTime();
-            }
-            onInteraction();
-        }
-
-        @Override
-        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
-        }
-
-        @Override
-        public void onActivityDestroyed(Activity activity) {
-            ++destroyCount;
-            if (!hasCreatedActivities()) {
-                destroyLastDate = WonderPush.getTime();
-            }
-            onInteraction();
-        }
-
-        protected boolean hasResumedActivities() {
-            return resumeCount > pausedCount;
-        }
-
-        protected boolean hasStartedActivities() {
-            return startCount > stopCount;
-        }
-
-        protected boolean hasCreatedActivities() {
-            return createCount > destroyCount;
-        }
-
-        protected Activity getLastResumedActivity() {
-            return lastResumedActivity;
-        }
-
     }
 
     /**

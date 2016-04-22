@@ -80,7 +80,7 @@ class WonderPushGcmClient {
             return null;
         }
         // Read notification content override if application is foreground
-        Activity currentActivity = WonderPush.getCurrentActivity();
+        Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();
         boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
         AlertModel alert = notif.getAlert() == null ? null : notif.getAlert().forCurrentSettings(appInForeground);
         if (alert == null || (alert.getTitle() == null && alert.getText() == null)) {
@@ -150,7 +150,7 @@ class WonderPushGcmClient {
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
 
             boolean automaticallyHandled = false;
-            Activity currentActivity = WonderPush.getCurrentActivity();
+            Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();
             boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
             if (notif.getAlert().forCurrentSettings(appInForeground).getAutoDrop()) {
                 WonderPush.logDebug("Automatically dropping");

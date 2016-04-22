@@ -178,10 +178,10 @@ public class WonderPushService extends Service {
     }
 
     private boolean openNotificationDefaultBehavior(Intent intent) {
-        Activity activity = WonderPush.getCurrentActivity();
+        Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
         if (activity != null && !activity.isFinishing()) {
 
-            WonderPush.showPotentialNotification(WonderPush.getCurrentActivity(), intent);
+            WonderPush.showPotentialNotification(ActivityLifecycleMonitor.getCurrentActivity(), intent);
 
         } else {
 
