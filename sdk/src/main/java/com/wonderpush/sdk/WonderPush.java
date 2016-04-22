@@ -93,9 +93,7 @@ public class WonderPush {
 
     private static String sClientId;
     private static String sClientSecret;
-    private static Location sLocation;
     private static String sBaseURL;
-    private static String sLang;
     private static boolean sIsInitialized = false;
     private static boolean sIsReady = false;
     private static boolean sIsReachable = false;
@@ -519,6 +517,7 @@ public class WonderPush {
      * will be called only if the network is present when the request is first run.
      *
      * @param resource
+     *            The resource path, starting with /.
      * @param params
      *            The request parameters. Only serializable parameters are
      *            guaranteed to survive a network error or device reboot.
@@ -561,9 +560,6 @@ public class WonderPush {
      * or null if permission was not given.
      */
     protected static Location getLocation() {
-        if (null != sLocation)
-            return sLocation;
-
         Context applicationContext = getApplicationContext();
 
         if (applicationContext == null)
@@ -626,9 +622,6 @@ public class WonderPush {
      * @return The locale in use.
      */
     protected static String getLang() {
-        if (null != sLang)
-            return sLang;
-
         Locale locale = Locale.getDefault();
 
         if (null == locale)
@@ -1047,8 +1040,6 @@ public class WonderPush {
      *
      * @param context
      *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
-     *            It must be the same activity that you declared in the {@code <meta-data>} tag
-     *            under the WonderPush {@code <receiver>} tag in your {@code AndroidManifest.xml}.
      * @param clientId
      *            The clientId of your application.
      * @param clientSecret
@@ -1164,6 +1155,7 @@ public class WonderPush {
      * Instantiate the {@link WonderPushInitializer} interface configured in the {@code AndroidManifest.xml},
      * and calls it if the SDK is not initialized yet.
      * @param context
+     *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
      * @return {@code true} if no error happened, {@code false} otherwise
      */
     protected static boolean ensureInitialized(Context context) {
@@ -1566,30 +1558,6 @@ public class WonderPush {
 
         protected boolean hasCreatedActivities() {
             return createCount > destroyCount;
-        }
-
-        protected long getCreateFirstDate() {
-            return createFirstDate;
-        }
-
-        protected long getStartFirstDate() {
-            return startFirstDate;
-        }
-
-        protected long getResumeFirstDate() {
-            return resumeFirstDate;
-        }
-
-        protected long getPausedLastDate() {
-            return pausedLastDate;
-        }
-
-        protected long getStopLastDate() {
-            return stopLastDate;
-        }
-
-        protected long getDestroyLastDate() {
-            return destroyLastDate;
         }
 
         protected Activity getLastResumedActivity() {
