@@ -10,16 +10,12 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.location.Location;
 import android.location.LocationManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 
 import org.OpenUDID.OpenUDID_manager;
 import org.json.JSONException;
@@ -93,7 +89,6 @@ public class WonderPush {
     protected static final String SDK_SHORT_VERSION = "2.1.1-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
     protected static final String SDK_VERSION = "Android-" + API_INT + "." + SDK_SHORT_VERSION;
     protected static final int ERROR_INVALID_SID = 12017;
-    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
     private static long startupDateToServerDateOffset = 0;
     private static long startupDateToServerDateUncertainty = Long.MAX_VALUE;
@@ -278,48 +273,6 @@ public class WonderPush {
 
     protected WonderPush() {
         throw new IllegalAccessError("You should not instantiate this class!");
-    }
-
-    private static boolean checkPlayService(Context context) {
-        try {
-            Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
-            GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
-            int resultCode = googleApiAvailability.isGooglePlayServicesAvailable(context);
-            if (resultCode != ConnectionResult.SUCCESS) {
-                if (googleApiAvailability.isUserResolvableError(resultCode)) {
-                    if (context instanceof Activity) {
-                        googleApiAvailability.getErrorDialog((Activity) context, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST).show();
-                    } else {
-                        googleApiAvailability.showErrorNotification(context, resultCode);
-                    }
-                } else {
-                    Log.w(TAG, "This device does not support Google Play Services, push notification are not supported");
-                }
-                return false;
-            }
-            return true;
-        } catch (ClassNotFoundException e) {
-            Log.w(TAG, "The Google Play Services have not been added to the application", e);
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while checking the Google Play Services", e);
-        }
-        return false;
-    }
-
-    /**
-     * Helper method that will register a device for google cloud messages
-     * notification and register the device token to WonderPush. This method is
-     * called within {@link #initialize(Context, String, String)}.
-     *
-     * @param context
-     *            The current {@link Activity} (preferred) or {@link Application} context.
-     */
-    protected static void registerForPushNotification(Context context) {
-        if (checkPlayService(context)) {
-            WonderPushGcmClient.registerForPushNotification(context);
-        } else {
-            Log.w(TAG, "Google Play Services not present. Check your setup. If on an emulator, use a Google APIs system image.");
-        }
     }
 
     /**
@@ -1065,7 +1018,7 @@ public class WonderPush {
                         @Override
                         public void run() {
                             InstallationManager.updateInstallationCoreProperties(getApplicationContext());
-                            registerForPushNotification(getApplicationContext());
+                            WonderPushGcmClient.registerForPushNotification(getApplicationContext());
                             sIsReady = true;
                             Intent broadcast = new Intent(INTENT_INTIALIZED);
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);

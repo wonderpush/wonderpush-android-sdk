@@ -1,37 +1,194 @@
 package com.wonderpush.sdk;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.List;
 
 class NotificationManager {
 
     static final String TAG = WonderPush.TAG;
 
     private static WeakReference<Intent> sLastHandledIntentRef;
+
+    protected static void onReceivedNotification(Context context, Intent intent, int iconResource, Class<? extends Activity> activity, NotificationModel notif) {
+        String loggedInstallationId = WonderPushConfiguration.getInstallationId();
+        if (notif.getTargetedInstallation() != null && !notif.getTargetedInstallation().equals(loggedInstallationId)) {
+            WonderPush.logDebug("Received notification is not targetted at the current installation (" + notif.getTargetedInstallation() + " does not match current installation " + loggedInstallationId + ")");
+            return;
+        }
+
+        try {
+            final JSONObject trackData = new JSONObject();
+            trackData.put("campaignId", notif.getCampaignId());
+            trackData.put("notificationId", notif.getNotificationId());
+            trackData.put("actionDate", WonderPush.getTime());
+            if (notif.getReceipt()) {
+                WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+            }
+            WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
+        } catch (JSONException ex) {
+            WonderPush.logError("Unexpected error while tracking notification received", ex);
+        }
+
+        boolean automaticallyHandled = false;
+        Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();
+        boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
+        if (notif.getAlert().forCurrentSettings(appInForeground).getAutoDrop()) {
+            WonderPush.logDebug("Automatically dropping");
+            automaticallyHandled = true;
+        } else if (notif.getAlert().forCurrentSettings(appInForeground).getAutoOpen()) {
+            WonderPush.logDebug("Automatically opening");
+            // We can show the notification (send the pending intent) right away
+            try {
+                PendingIntent pendingIntent = NotificationManager.buildPendingIntent(notif, intent, false, null, context, activity);
+                pendingIntent.send();
+                automaticallyHandled = true;
+            } catch (PendingIntent.CanceledException e) {
+                Log.e(WonderPush.TAG, "Could not show notification", e);
+            }
+        }
+        if (!automaticallyHandled) {
+            // We should use a notification to warn the user, and wait for him to click it
+            // before showing the notification (i.e.: the pending intent being sent)
+            WonderPush.logDebug("Building notification");
+            PendingIntent pendingIntent = NotificationManager.buildPendingIntent(notif, intent, true, null, context, activity);
+            Notification notification = NotificationManager.buildNotification(notif, context, iconResource, pendingIntent);
+
+            if (notification == null) {
+                WonderPush.logDebug("No notification is to be displayed");
+                // Fire an Intent to notify the application anyway (especially for `data` notifications)
+                try {
+                    Bundle extrasOverride = new Bundle();
+                    extrasOverride.putString("overrideTargetUrl",
+                            WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
+                                    + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST);
+                    PendingIntent broadcastPendingIntent = NotificationManager.buildPendingIntent(notif, intent, false, extrasOverride, context, activity);
+                    broadcastPendingIntent.send();
+                } catch (PendingIntent.CanceledException e) {
+                    Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
+                }
+            } else {
+                String tag = notif.getAlert() != null && notif.getAlert().hasTag()
+                        ? notif.getAlert().getTag() : notif.getCampaignId();
+                notify(context, tag, notification);
+            }
+        }
+    }
+
+    protected static void notify(Context context, String tag, Notification notification) {
+        int localNotificationId = tag != null ? 0 : WonderPushConfiguration.getNextTaglessNotificationManagerId();
+        WonderPush.logDebug("Showing notification with tag " + (tag == null ? "(null)" : "\"" + tag + "\"") + " and id " + localNotificationId);
+        android.app.NotificationManager mNotificationManager = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(tag, localNotificationId, notification);
+    }
+
+    protected static PendingIntent buildPendingIntent(NotificationModel notif, Intent pushIntent, boolean fromUserInteraction,
+                                                      Bundle extrasOverride, Context context, Class<? extends Activity> activity) {
+        Intent resultIntent = new Intent();
+        if (WonderPushService.isProperlySetup()) {
+            resultIntent.setClass(context, WonderPushService.class);
+        } else if (activity != null) {
+            // Fallback to blindly launching the configured activity
+            resultIntent.setClass(context, activity);
+            resultIntent = new Intent(context, activity);
+        } // else We have nothing to propose!
+        if (activity != null) {
+            resultIntent.putExtra("activity", activity.getCanonicalName());
+        }
+        resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
+        resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
+        if (extrasOverride != null) {
+            resultIntent.putExtras(extrasOverride);
+        }
+
+        resultIntent.setAction(Intent.ACTION_MAIN);
+        resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | WonderPushCompatibilityHelper.getIntentFlagActivityNewDocument() | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        Uri dataUri = new Uri.Builder()
+                .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
+                .authority(WonderPush.INTENT_NOTIFICATION_AUTHORITY)
+                .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER, notif.getInputJSONString())
+                .build();
+        resultIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
+
+        PendingIntent resultPendingIntent;
+        if (WonderPushService.isProperlySetup()) {
+            resultPendingIntent = PendingIntent.getService(context, 0, resultIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        } else {
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+            stackBuilder.addNextIntentWithParentStack(resultIntent);
+            resultPendingIntent = stackBuilder.getPendingIntent(0,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        }
+
+        return resultPendingIntent;
+    }
+
+    protected static Notification buildNotification(NotificationModel notif, Context context, int iconResource,
+                                                    PendingIntent pendingIntent) {
+        if (NotificationModel.Type.DATA.equals(notif.getType())) {
+            return null;
+        }
+        // Read notification content override if application is foreground
+        Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();
+        boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
+        AlertModel alert = notif.getAlert() == null ? null : notif.getAlert().forCurrentSettings(appInForeground);
+        if (alert == null || (alert.getTitle() == null && alert.getText() == null)) {
+            // Nothing to display, don't create a notification
+            return null;
+        }
+        // Apply defaults
+        if (alert.getTitle() == null) {
+            final PackageManager pm = context.getApplicationContext().getPackageManager();
+            ApplicationInfo ai;
+            try {
+                ai = pm.getApplicationInfo(context.getPackageName(), 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                ai = null;
+            } catch (NullPointerException e) {
+                ai = null;
+            }
+            alert.setTitle((String) (ai != null ? pm.getApplicationLabel(ai) : null));
+        }
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
+                .setContentTitle(alert.getTitle())
+                .setContentText(alert.getText())
+                .setPriority(alert.getPriority())
+                .setSmallIcon(iconResource)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(alert.getText()));
+
+        mBuilder.setContentIntent(pendingIntent);
+        Notification notification = mBuilder.build();
+        notification.defaults = Notification.DEFAULT_SOUND;
+        if (context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
+            notification.defaults |= Notification.DEFAULT_VIBRATE;
+        }
+        notification.flags = Notification.FLAG_AUTO_CANCEL;
+        return notification;
+    }
 
     public static boolean showPotentialNotification(final Activity activity, Intent intent) {
         if (containsExplicitNotification(intent) || containsWillOpenNotificationAutomaticallyOpenable(intent)) {
@@ -66,13 +223,13 @@ class NotificationManager {
                 LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
 
                 if (WonderPush.isInitialized()) {
-                    handleReceivedNotification(activity, notif);
+                    handleOpenedNotification(activity, notif);
                 } else {
                     BroadcastReceiver receiver = new BroadcastReceiver() {
                         @Override
                         public void onReceive(Context context, Intent intent) {
                             try {
-                                handleReceivedNotification(context, notif);
+                                handleOpenedNotification(context, notif);
                             } catch (Exception ex) {
                                 Log.e(TAG, "Unexpected error on deferred handling of received notification", ex);
                             }
@@ -120,397 +277,59 @@ class NotificationManager {
                 ;
     }
 
-    private static void handleReceivedNotification(Context context, NotificationModel notif) {
+    private static void handleOpenedNotification(Context context, NotificationModel notif) {
+        handleNotificationActions(context, notif, notif.getActions()); // notification opened actions
+        InAppManager.handleInApp(context, notif);
+    }
+
+    protected static void handleNotificationActions(Context context, NotificationModel notif, List<ActionModel> actions) {
         try {
-            for (ActionModel action : notif.getActions()) {
-                try {
-                    if (action == null || action.getType() == null) {
-                        // Skip unrecognized action types
-                        continue;
-                    }
-                    switch (action.getType()) {
-                        case CLOSE:
-                            // Noop
-                            break;
-                        case LINK:
-                            handleLinkAction(context, action);
-                            break;
-                        case RATING:
-                            handleRatingAction(context, action);
-                            break;
-                        case TRACK_EVENT:
-                            handleTrackEventAction(action);
-                            break;
-                        case UPDATE_INSTALLATION:
-                            handleUpdateInstallationAction(action);
-                            break;
-                        case METHOD:
-                            handleMethodAction(action);
-                            break;
-                        default:
-                            Log.w(TAG, "Unhandled opened notification action \"" + action.getType() + "\"");
-                            break;
-                    }
-                } catch (Exception ex) {
-                    Log.e(TAG, "Unexpected error while handling opened notification action " + action, ex);
-                }
+            if (actions == null)
+                return;
+
+            for (ActionModel action : actions) {
+                handleAction(context, notif, action);
             }
         } catch (Exception ex) {
-            Log.e(TAG, "Unexpected error while handling opened notification actions", ex);
+            Log.e(TAG, "Unexpected error while handling actions", ex);
         }
+    }
 
+    protected static void handleAction(Context context, NotificationModel notif, ActionModel action) {
         try {
-            switch (notif.getType()) {
-                case SIMPLE:
-                case DATA:
-                    // Nothing to do
-                    break;
-                case URL:
-                    handleURLNotification(context, (NotificationUrlModel) notif);
-                    break;
-                case TEXT:
-                    handleTextNotification(context, (NotificationTextModel) notif);
-                    break;
-                case MAP:
-                    handleMapNotification(context, (NotificationMapModel) notif);
-                    break;
-                case HTML:
-                    handleHTMLNotification(context, (NotificationHtmlModel) notif);
-                    break;
-                default:
-                    Log.e(TAG, "Missing built-in action for type " + notif.getType());
-                    break;
-            }
-        } catch (ClassCastException ex) {
-            Log.e(TAG, "Wrong notification class for type " + notif.getType(), ex);
-        }
-    }
-
-    protected static WonderPushDialogBuilder createDialogNotificationBase(final Context context, final NotificationModel notif) {
-        WonderPushDialogBuilder builder = new WonderPushDialogBuilder(context, notif, new WonderPushDialogBuilder.OnChoice() {
-            @Override
-            public void onChoice(WonderPushDialogBuilder dialog, ButtonModel which) {
-                handleDialogButtonAction(dialog, which);
-            }
-        });
-        builder.setupTitleAndIcon();
-
-        return builder;
-    }
-
-    protected static void createDefaultCloseButtonIfNeeded(WonderPushDialogBuilder builder) {
-        if (builder.getNotificationModel().getButtonCount() == 0) {
-            ButtonModel defaultButton = new ButtonModel();
-            defaultButton.label = builder.getContext().getResources().getString(R.string.wonderpush_close);
-            builder.getNotificationModel().addButton(defaultButton);
-        }
-    }
-
-    protected static void handleDialogButtonAction(WonderPushDialogBuilder dialog, ButtonModel buttonClicked) {
-        JSONObject eventData = new JSONObject();
-        try {
-            eventData.put("buttonLabel", buttonClicked == null ? null : buttonClicked.label);
-            eventData.put("reactionTime", dialog.getShownDuration());
-            eventData.putOpt("custom", dialog.getInteractionEventCustom());
-            eventData.put("campaignId", dialog.getNotificationModel().getCampaignId());
-            eventData.put("notificationId", dialog.getNotificationModel().getNotificationId());
-        } catch (JSONException e) {
-            WonderPush.logError("Failed to fill the @NOTIFICATION_ACTION event", e);
-        }
-        WonderPush.trackInternalEvent("@NOTIFICATION_ACTION", eventData);
-
-        if (buttonClicked == null) {
-            WonderPush.logDebug("User cancelled the dialog");
-            return;
-        }
-        Context context = dialog.getContext();
-        try {
-            for (ActionModel action : buttonClicked.actions) {
-                try {
-                    if (action == null || action.getType() == null) {
-                        // Skip unrecognized action types
-                        continue;
-                    }
-                    switch (action.getType()) {
-                        case CLOSE:
-                            // Noop
-                            break;
-                        case MAP_OPEN:
-                            handleMapOpenAction(context, dialog.getNotificationModel(), action);
-                            break;
-                        case LINK:
-                            handleLinkAction(context, action);
-                            break;
-                        case RATING:
-                            handleRatingAction(context, action);
-                            break;
-                        case TRACK_EVENT:
-                            handleTrackEventAction(action);
-                            break;
-                        case UPDATE_INSTALLATION:
-                            handleUpdateInstallationAction(action);
-                            break;
-                        case METHOD:
-                            handleMethodAction(action);
-                            break;
-                        default:
-                            Log.w(TAG, "Unhandled button action \"" + action.getType() + "\"");
-                            break;
-                    }
-                } catch (Exception ex) {
-                    Log.e(TAG, "Unexpected error while handling button action " + action, ex);
-                }
-            }
-        } catch (Exception ex) {
-            Log.e(TAG, "Unexpected error while handling button actions", ex);
-        }
-    }
-
-    protected static void handleTextNotification(final Context context, final NotificationTextModel notif) {
-        WonderPushDialogBuilder builder = createDialogNotificationBase(context, notif);
-
-        if (notif.getMessage() == null) {
-            Log.w(TAG, "Got no message to display for a plain notification");
-        } else {
-            builder.setMessage(notif.getMessage());
-        }
-
-        createDefaultCloseButtonIfNeeded(builder);
-        builder.setupButtons();
-
-        builder.show();
-    }
-
-    @SuppressLint("InflateParams")
-    protected static void handleMapNotification(final Context context, final NotificationMapModel notif) {
-        WonderPushDialogBuilder builder = createDialogNotificationBase(context, notif);
-
-        final NotificationMapModel.Map map = notif.getMap();
-        if (map == null) {
-            Log.e(TAG, "Could not get the map from the notification");
-            return;
-        }
-        final NotificationMapModel.Place place = map.getPlace();
-        if (place == null) {
-            Log.e(TAG, "Could not get the place from the map");
-            return;
-        }
-        final NotificationMapModel.Point point = place.getPoint();
-
-        final View dialogView = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.wonderpush_notification_map_dialog, null, false);
-        final TextView text = (TextView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_text);
-        if (notif.getMessage() != null) {
-            text.setVisibility(View.VISIBLE);
-            text.setText(notif.getMessage());
-            text.setMovementMethod(new ScrollingMovementMethod());
-        }
-        final ImageView mapImg = (ImageView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_map);
-        builder.setView(dialogView);
-
-        if (notif.getButtonCount() == 0) {
-            // Close button
-            ButtonModel closeButton = new ButtonModel();
-            closeButton.label = context.getResources().getString(R.string.wonderpush_close);
-            ActionModel closeAction = new ActionModel();
-            closeAction.setType(ActionModel.Type.CLOSE);
-            closeButton.actions.add(closeAction);
-            notif.addButton(closeButton);
-            // Open button
-            ButtonModel openButton = new ButtonModel();
-            openButton.label = context.getResources().getString(R.string.wonderpush_open);
-            ActionModel openAction = new ActionModel();
-            openAction.setType(ActionModel.Type.MAP_OPEN);
-            openButton.actions.add(openAction);
-            notif.addButton(openButton);
-        }
-        builder.setupButtons();
-
-        builder.show();
-
-        new AsyncTask<Object, Object, Bitmap>() {
-            @Override
-            protected Bitmap doInBackground(Object... args) {
-                try {
-                    String loc;
-                    if (point != null) {
-                        loc = point.getLat() + "," + point.getLon();
-                    } else if (place.getName() != null) {
-                        loc = place.getName();
-                    } else {
-                        loc = place.getQuery();
-                    }
-                    if (loc == null) {
-                        Log.e(TAG, "No location for map");
-                        return null;
-                    }
-                    int screenWidth = InstallationManager.getScreenWidth(context);
-                    int screenHeight = InstallationManager.getScreenHeight(context);
-                    double ratio = screenWidth / (double)screenHeight;
-                    int width = ratio >= 1 ? Math.min(640, screenWidth) : (int)Math.floor(ratio * Math.min(640, screenHeight));
-                    int height = ratio <= 1 ? Math.min(640, screenHeight) : (int)Math.floor(Math.min(640, screenWidth) / ratio);
-                    String size = width + "x" + height;
-                    int scale = InstallationManager.getScreenDensity(context) >= 192 ? 2 : 1;
-                    URL url = new URL("https://maps.google.com/maps/api/staticmap"
-                            + "?center=" + loc
-                            + "&zoom=" + (place.getZoom() != null ? place.getZoom() : 13)
-                            + "&size=" + size
-                            + "&sensors=false"
-                            + "&markers=color:red%7C" + loc
-                            + "&scale=" + scale
-                            + "&language=" + WonderPush.getLang()
-                    );
-                    return BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                } catch (MalformedURLException e) {
-                    Log.e(TAG, "Malformed map URL", e);
-                } catch (IOException e) {
-                    Log.e(TAG, "Could not load map image", e);
-                } catch (Exception e) {
-                    Log.e(TAG, "Unexpected error while loading map image", e);
-                }
-                return null;
-            }
-            @Override
-            protected void onPostExecute(Bitmap bmp) {
-                if (bmp == null) {
-                    mapImg.setVisibility(View.GONE);
-                    text.setMaxLines(Integer.MAX_VALUE);
-                } else {
-                    mapImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    mapImg.setImageBitmap(bmp);
-                }
-            }
-        }.execute();
-    }
-
-    protected static void handleMapOpenAction(Context context, NotificationModel notif, ActionModel action) {
-        try {
-            NotificationMapModel.Place place;
-            try {
-                place = ((NotificationMapModel) notif).getMap().getPlace();
-            } catch (Exception e) {
-                Log.e(TAG, "Could not get the place from the map", e);
+            if (action == null || action.getType() == null) {
+                // Skip unrecognized action types
                 return;
             }
-            NotificationMapModel.Point point = place.getPoint();
-
-            Uri.Builder geo = new Uri.Builder();
-            geo.scheme("geo");
-            if (point != null) {
-                if (place.getName() != null) {
-                    geo.authority("0,0");
-                    geo.appendQueryParameter("q", point.getLat() + "," + point.getLon() + "(" + place.getName() + ")");
-                } else {
-                    geo.authority(point.getLat() + "," + point.getLon());
-                    if (place.getZoom() != null) {
-                        geo.appendQueryParameter("z", place.getZoom().toString());
-                    }
-                }
-            } else if (place.getQuery() != null) {
-                geo.authority("0,0");
-                geo.appendQueryParameter("q", place.getQuery());
+            switch (action.getType()) {
+                case CLOSE:
+                    // Noop
+                    break;
+                case MAP_OPEN:
+                    handleMapOpenAction(context, notif, action);
+                    break;
+                case LINK:
+                    handleLinkAction(context, action);
+                    break;
+                case RATING:
+                    handleRatingAction(context, action);
+                    break;
+                case TRACK_EVENT:
+                    handleTrackEventAction(action);
+                    break;
+                case UPDATE_INSTALLATION:
+                    handleUpdateInstallationAction(action);
+                    break;
+                case METHOD:
+                    handleMethodAction(action);
+                    break;
+                default:
+                    Log.w(TAG, "Unhandled action \"" + action.getType() + "\"");
+                    break;
             }
-            Intent open = new Intent(Intent.ACTION_VIEW);
-            open.setData(geo.build());
-            if (open.resolveActivity(context.getPackageManager()) != null) {
-                WonderPush.logDebug("Will open location " + open.getDataString());
-                context.startActivity(open);
-            } else {
-                WonderPush.logDebug("No activity can open location " + open.getDataString());
-                WonderPush.logDebug("Falling back to regular URL");
-                geo = new Uri.Builder();
-                geo.scheme("http");
-                geo.authority("maps.google.com");
-                geo.path("maps");
-                if (point != null) {
-                    geo.appendQueryParameter("q", point.getLat() + "," + point.getLon());
-                    if (place.getZoom() != null) {
-                        geo.appendQueryParameter("z", place.getZoom().toString());
-                    }
-                } else if (place.getQuery() != null) {
-                    geo.appendQueryParameter("q", place.getQuery());
-                } else if (place.getName() != null) {
-                    geo.appendQueryParameter("q", place.getName());
-                }
-                open = new Intent(Intent.ACTION_VIEW);
-                open.setData(geo.build());
-                if (open.resolveActivity(context.getPackageManager()) != null) {
-                    WonderPush.logDebug("Opening URL " + open.getDataString());
-                    context.startActivity(open);
-                } else {
-                    WonderPush.logDebug("No activity can open URL " + open.getDataString());
-                    Log.w(TAG, "Cannot open map!");
-                    Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while opening map", e);
-            Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+        } catch (Exception ex) {
+            Log.e(TAG, "Unexpected error while handling action " + action, ex);
         }
-    }
-
-    protected static WonderPushDialogBuilder createWebNotificationBasePre(final Context context, final NotificationModel notif, WonderPushView webView) {
-        final WonderPushDialogBuilder builder = createDialogNotificationBase(context, notif);
-        builder.setupButtons();
-
-        webView.setShowCloseButton(notif.getButtonCount() < 1);
-
-        webView.setStateListener(new WonderPushView.OnStateListener() {
-            @Override
-            public void onLoading() {
-                // Handled by WonderPushView itself
-            }
-            @Override
-            public void onLoaded() {
-                // Handled by WonderPushView itself
-            }
-            @Override
-            public void onError() {
-                // Handled by WonderPushView itself
-            }
-            @Override
-            public void onClose() {
-                builder.dismiss();
-            }
-        });
-
-        builder.setView(webView);
-
-        return builder;
-    }
-
-    protected static void handleHTMLNotification(final Context context, final NotificationHtmlModel notif) {
-        if (notif.getMessage() == null) {
-            Log.w(TAG, "No HTML content to display in the notification!");
-            return;
-        }
-
-        // Build the dialog
-        WonderPushView webView = new WonderPushView(context);
-        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, notif, webView);
-        builder.setupButtons();
-
-        // Set content
-        webView.loadDataWithBaseURL(notif.getBaseUrl(), notif.getMessage(), "text/html", "utf-8", null);
-
-        // Show time!
-        builder.show();
-    }
-
-    protected static void handleURLNotification(Context context, NotificationUrlModel notif) {
-        if (notif.getUrl() == null) {
-            Log.e(TAG, "No URL to display in the notification!");
-            return;
-        }
-
-        WonderPushView webView = new WonderPushView(context);
-        final WonderPushDialogBuilder builder = createWebNotificationBasePre(context, notif, webView);
-        builder.setupButtons();
-
-        // Set content
-        webView.setFullUrl(notif.getUrl());
-
-        // Show time!
-        builder.show();
     }
 
     protected static void handleLinkAction(Context context, ActionModel action) {
@@ -590,6 +409,72 @@ class NotificationManager {
         intent.putExtra(WonderPush.INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_METHOD, method);
         intent.putExtra(WonderPush.INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG, arg);
         LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(intent);
+    }
+
+    private static void handleMapOpenAction(Context context, NotificationModel notif, ActionModel action) {
+        try {
+            NotificationMapModel.Place place;
+            try {
+                place = ((NotificationMapModel) notif).getMap().getPlace();
+            } catch (Exception e) {
+                Log.e(NotificationManager.TAG, "Could not get the place from the map", e);
+                return;
+            }
+            NotificationMapModel.Point point = place.getPoint();
+
+            Uri.Builder geo = new Uri.Builder();
+            geo.scheme("geo");
+            if (point != null) {
+                if (place.getName() != null) {
+                    geo.authority("0,0");
+                    geo.appendQueryParameter("q", point.getLat() + "," + point.getLon() + "(" + place.getName() + ")");
+                } else {
+                    geo.authority(point.getLat() + "," + point.getLon());
+                    if (place.getZoom() != null) {
+                        geo.appendQueryParameter("z", place.getZoom().toString());
+                    }
+                }
+            } else if (place.getQuery() != null) {
+                geo.authority("0,0");
+                geo.appendQueryParameter("q", place.getQuery());
+            }
+            Intent open = new Intent(Intent.ACTION_VIEW);
+            open.setData(geo.build());
+            if (open.resolveActivity(context.getPackageManager()) != null) {
+                WonderPush.logDebug("Will open location " + open.getDataString());
+                context.startActivity(open);
+            } else {
+                WonderPush.logDebug("No activity can open location " + open.getDataString());
+                WonderPush.logDebug("Falling back to regular URL");
+                geo = new Uri.Builder();
+                geo.scheme("http");
+                geo.authority("maps.google.com");
+                geo.path("maps");
+                if (point != null) {
+                    geo.appendQueryParameter("q", point.getLat() + "," + point.getLon());
+                    if (place.getZoom() != null) {
+                        geo.appendQueryParameter("z", place.getZoom().toString());
+                    }
+                } else if (place.getQuery() != null) {
+                    geo.appendQueryParameter("q", place.getQuery());
+                } else if (place.getName() != null) {
+                    geo.appendQueryParameter("q", place.getName());
+                }
+                open = new Intent(Intent.ACTION_VIEW);
+                open.setData(geo.build());
+                if (open.resolveActivity(context.getPackageManager()) != null) {
+                    WonderPush.logDebug("Opening URL " + open.getDataString());
+                    context.startActivity(open);
+                } else {
+                    WonderPush.logDebug("No activity can open URL " + open.getDataString());
+                    Log.w(NotificationManager.TAG, "Cannot open map!");
+                    Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(NotificationManager.TAG, "Unexpected error while opening map", e);
+            Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+        }
     }
 
 }
