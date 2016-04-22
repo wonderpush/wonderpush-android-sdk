@@ -147,7 +147,7 @@ abstract class NotificationModel {
     }
 
     public static NotificationModel fromLocalIntent(Intent intent) {
-        if (WonderPush.containsExplicitNotification(intent)) {
+        if (NotificationManager.containsExplicitNotification(intent)) {
 
             String notifString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
             if (notifString == null) {
@@ -162,7 +162,7 @@ abstract class NotificationModel {
                 WonderPush.logError("Notifications not targeted for this installation should have been filtered earlier", e);
             }
 
-        } else if (WonderPush.containsWillOpenNotification(intent)) {
+        } else if (NotificationManager.containsWillOpenNotification(intent)) {
 
             try {
                 Intent pushIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);

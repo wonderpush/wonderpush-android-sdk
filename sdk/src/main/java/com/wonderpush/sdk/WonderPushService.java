@@ -72,7 +72,7 @@ public class WonderPushService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
-            if (WonderPush.containsExplicitNotification(intent)) {
+            if (NotificationManager.containsExplicitNotification(intent)) {
                 handleOpenFromNotificationCenter(intent);
             } else if (containsNotificationWillOpen(intent)) {
                 handleWillOpen(intent);
