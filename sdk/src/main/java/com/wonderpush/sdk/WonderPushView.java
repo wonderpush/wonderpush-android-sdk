@@ -56,7 +56,7 @@ class WonderPushView extends FrameLayout {
     UserInterfaceState mUserInterfaceState;
     ValueCallback<Uri> mUploadMessage;
     String mInitialResource;
-    WonderPush.RequestParams mInitialRequestParams;
+    RequestParams mInitialRequestParams;
     boolean mIsPreloading;
     protected boolean isLoginSource;
     private int mTextColor;
@@ -255,7 +255,7 @@ class WonderPushView extends FrameLayout {
      * @param resource
      * @param params
      */
-    public void setResource(String resource, WonderPush.RequestParams params) {
+    public void setResource(String resource, RequestParams params) {
         if (null == resource) {
             WonderPush.logError("null resource provided to WonderPushView");
             return;
@@ -264,7 +264,7 @@ class WonderPushView extends FrameLayout {
         mInitialRequestParams = params;
         mIsPreloading = false;
         if (null == params)
-            params = new WonderPush.RequestParams();
+            params = new RequestParams();
 
         WonderPushRequestParamsDecorator.decorate(resource, params);
 

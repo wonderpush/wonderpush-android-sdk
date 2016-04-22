@@ -3,12 +3,12 @@ package com.wonderpush.sdk;
 import android.location.Location;
 
 /**
- * A static helper class that will add parameters to a {@link WonderPush.RequestParams} object depending on the resource
+ * A static helper class that will add parameters to a {@link RequestParams} object depending on the resource
  * path and user configuration of the {@link WonderPush} object.
  */
 class WonderPushRequestParamsDecorator {
 
-    protected static void decorate(String resource, WonderPush.RequestParams params) {
+    protected static void decorate(String resource, RequestParams params) {
         // Always add lang
         addParameterIfAbsent(params, "lang", WonderPush.getLang());
 
@@ -23,7 +23,7 @@ class WonderPushRequestParamsDecorator {
             params.put("sid", WonderPushConfiguration.getSID());
     }
 
-    private static void addParameterIfAbsent(WonderPush.RequestParams params, String paramName, String paramValue) {
+    private static void addParameterIfAbsent(RequestParams params, String paramName, String paramValue) {
         if (null == params || null == paramName || null == paramValue)
             return;
 
@@ -33,7 +33,7 @@ class WonderPushRequestParamsDecorator {
         params.put(paramName, paramValue);
     }
 
-    private static void addParameterIfAbsent(WonderPush.RequestParams params, String paramName, Location paramValue) {
+    private static void addParameterIfAbsent(RequestParams params, String paramName, Location paramValue) {
         if (null == paramValue)
             return;
 

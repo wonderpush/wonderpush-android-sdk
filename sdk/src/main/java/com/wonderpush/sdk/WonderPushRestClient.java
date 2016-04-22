@@ -7,8 +7,6 @@ import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
-import com.wonderpush.sdk.WonderPush.Response;
-import com.wonderpush.sdk.WonderPush.ResponseHandler;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -49,7 +47,7 @@ class WonderPushRestClient {
     private static final int RETRY_INTERVAL_BAD_AUTH = 1 * 1000; // in milliseconds
     private static final int RETRY_INTERVAL = 30 * 1000; // in milliseconds
     private static boolean sIsFetchingAnonymousAccessToken = false;
-    private static final List<WonderPush.ResponseHandler> sPendingHandlers = new ArrayList<>();
+    private static final List<ResponseHandler> sPendingHandlers = new ArrayList<>();
 
     private static final AsyncHttpClient sClient = new AsyncHttpClient();
 
@@ -63,7 +61,7 @@ class WonderPushRestClient {
      * @param responseHandler
      *            An AsyncHttpClient response handler
      */
-    protected static void get(String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler responseHandler) {
+    protected static void get(String resource, RequestParams params, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.GET, resource, params, responseHandler));
     }
 
@@ -77,7 +75,7 @@ class WonderPushRestClient {
      * @param responseHandler
      *            An AsyncHttpClient response handler
      */
-    protected static void post(String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler responseHandler) {
+    protected static void post(String resource, RequestParams params, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, responseHandler));
     }
 
@@ -89,7 +87,7 @@ class WonderPushRestClient {
      * @param resource
      * @param params
      */
-    protected static void postEventually(String resource, WonderPush.RequestParams params) {
+    protected static void postEventually(String resource, RequestParams params) {
         final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, null);
         WonderPushRequestVault.getDefaultVault().put(request, 0);
     }
@@ -104,7 +102,7 @@ class WonderPushRestClient {
      * @param responseHandler
      *            An AsyncHttpClient response handler
      */
-    protected static void put(String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler responseHandler) {
+    protected static void put(String resource, RequestParams params, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.PUT, resource, params, responseHandler));
     }
 
@@ -116,7 +114,7 @@ class WonderPushRestClient {
      * @param responseHandler
      *            An AsyncHttpClient response handler
      */
-    protected static void delete(String resource, WonderPush.ResponseHandler responseHandler) {
+    protected static void delete(String resource, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.DELETE, resource, null, responseHandler));
     }
 
@@ -129,7 +127,7 @@ class WonderPushRestClient {
      * @return Whether or not a request has been executed to fetch an anonymous
      *         access token (true fetching, false retrieved from local cache)
      */
-    protected static boolean fetchAnonymousAccessTokenIfNeeded(final String userId, final WonderPush.ResponseHandler onFetchedHandler) {
+    protected static boolean fetchAnonymousAccessTokenIfNeeded(final String userId, final ResponseHandler onFetchedHandler) {
         if (!WonderPush.isUDIDReady()) {
             WonderPush.safeDefer(new Runnable() {
                 @Override
@@ -188,9 +186,9 @@ class WonderPushRestClient {
         }
 
         // Add the access token to the params
-        WonderPush.RequestParams params = request.getParams();
+        RequestParams params = request.getParams();
         if (null == params) {
-            params = new WonderPush.RequestParams();
+            params = new RequestParams();
             request.setParams(params);
         }
 
@@ -198,9 +196,9 @@ class WonderPushRestClient {
         params.put("accessToken", accessToken);
 
         // Wrap the request handler with our own
-        WonderPush.ResponseHandler wrapperHandler = new WonderPush.ResponseHandler() {
+        ResponseHandler wrapperHandler = new ResponseHandler() {
             @Override
-            public void onSuccess(int status, WonderPush.Response response) {
+            public void onSuccess(int status, Response response) {
                 WonderPush.logDebug("Request successful: (" + status + ") " + response + " (for " + request + ")");
                 if (request.getHandler() != null) {
                     request.getHandler().onSuccess(status, response);
@@ -208,7 +206,7 @@ class WonderPushRestClient {
             }
 
             @Override
-            public void onFailure(Throwable e, WonderPush.Response errorResponse) {
+            public void onFailure(Throwable e, Response errorResponse) {
                 WonderPush.logError("Request failed: " + errorResponse, e);
                 if (errorResponse != null && WonderPush.ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
@@ -289,7 +287,7 @@ class WonderPushRestClient {
                         syncTime(response);
                         WonderPush.setNetworkAvailable(true);
                         if (handler != null) {
-                            handler.onSuccess(statusCode, new WonderPush.Response(response));
+                            handler.onSuccess(statusCode, new Response(response));
                         }
                     }
 
@@ -305,7 +303,7 @@ class WonderPushRestClient {
                         WonderPush.logDebug("Request Error: " + errorResponse);
                         WonderPush.setNetworkAvailable(errorResponse != null);
                         if (handler != null) {
-                            handler.onFailure(throwable, new WonderPush.Response(errorResponse));
+                            handler.onFailure(throwable, new Response(errorResponse));
                         }
                     }
 
@@ -320,7 +318,7 @@ class WonderPushRestClient {
                         WonderPush.logError("Unexpected string error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + responseString.length() + ") \"" + responseString + "\"");
                         WonderPush.setNetworkAvailable(false);
                         if (handler != null) {
-                            handler.onFailure(throwable, new WonderPush.Response(responseString));
+                            handler.onFailure(throwable, new Response(responseString));
                         }
                     }
 
@@ -362,11 +360,11 @@ class WonderPushRestClient {
         }, 0);
     }
 
-    protected static void fetchAnonymousAccessToken(final String userId, final WonderPush.ResponseHandler handler) {
+    protected static void fetchAnonymousAccessToken(final String userId, final ResponseHandler handler) {
         fetchAnonymousAccessToken(userId, handler, 0);
     }
 
-    protected static void fetchAnonymousAccessToken(final String userId, final WonderPush.ResponseHandler handler, final int nbRetries) {
+    protected static void fetchAnonymousAccessToken(final String userId, final ResponseHandler handler, final int nbRetries) {
         if (sIsFetchingAnonymousAccessToken) {
             queueHandler(handler);
             return;
@@ -384,8 +382,8 @@ class WonderPushRestClient {
         }, 0);
     }
 
-    private static void fetchAnonymousAccessToken_inner(final String userId, final WonderPush.ResponseHandler handler, final int nbRetries) {
-        WonderPush.RequestParams authParams = new WonderPush.RequestParams();
+    private static void fetchAnonymousAccessToken_inner(final String userId, final ResponseHandler handler, final int nbRetries) {
+        RequestParams authParams = new RequestParams();
         authParams.put("clientId", WonderPush.getClientId());
         authParams.put("devicePlatform", "Android");
         authParams.put("deviceModel", InstallationManager.getDeviceModel());
@@ -400,7 +398,7 @@ class WonderPushRestClient {
         String resource = "/authentication/accessToken";
 
         request(new Request(userId, HttpMethod.POST, resource, authParams,
-                new WonderPush.ResponseHandler() {
+                new ResponseHandler() {
                     @Override
                     public void onFailure(Throwable e, Response errorResponse) {
                         if (nbRetries <= 0) {
@@ -413,7 +411,7 @@ class WonderPushRestClient {
                             if (null != handler) {
                                 handler.onFailure(e, errorResponse);
                             }
-                            WonderPush.ResponseHandler chainedHandler;
+                            ResponseHandler chainedHandler;
                             while ((chainedHandler = dequeueHandler()) != null) {
                                 chainedHandler.onFailure(e, errorResponse);
                             }
@@ -490,7 +488,7 @@ class WonderPushRestClient {
                                 if (null != handler) {
                                     handler.onSuccess(statusCode, response);
                                 }
-                                WonderPush.ResponseHandler chainedHandler;
+                                ResponseHandler chainedHandler;
                                 while ((chainedHandler = dequeueHandler()) != null) {
                                     chainedHandler.onSuccess(statusCode, response);
                                 }
@@ -516,7 +514,7 @@ class WonderPushRestClient {
      *            The request to be run
      */
     protected static void fetchAnonymousAccessTokenAndRunRequest(final Request request) {
-        fetchAnonymousAccessToken(request.getUserId(), new WonderPush.ResponseHandler() {
+        fetchAnonymousAccessToken(request.getUserId(), new ResponseHandler() {
             @Override
             public void onSuccess(Response response) {
                 requestAuthenticated(request);
@@ -528,7 +526,7 @@ class WonderPushRestClient {
         });
     }
 
-    private static void queueHandler(WonderPush.ResponseHandler handler) {
+    private static void queueHandler(ResponseHandler handler) {
         if (null == handler) {
             return;
         }
@@ -538,8 +536,8 @@ class WonderPushRestClient {
         }
     }
 
-    private static WonderPush.ResponseHandler dequeueHandler() {
-        WonderPush.ResponseHandler handler = null;
+    private static ResponseHandler dequeueHandler() {
+        ResponseHandler handler = null;
         synchronized (sPendingHandlers) {
             if (sPendingHandlers.size() > 0) {
                 handler = sPendingHandlers.get(0);
@@ -558,11 +556,11 @@ class WonderPushRestClient {
 
         String mUserId;
         HttpMethod mMethod;
-        WonderPush.RequestParams mParams;
-        WonderPush.ResponseHandler mHandler;
+        RequestParams mParams;
+        ResponseHandler mHandler;
         String mResource;
 
-        public Request(String userId, HttpMethod method, String resource, WonderPush.RequestParams params, WonderPush.ResponseHandler handler) {
+        public Request(String userId, HttpMethod method, String resource, RequestParams params, ResponseHandler handler) {
             mUserId = userId;
             mMethod = method;
             mParams = params;
@@ -579,7 +577,7 @@ class WonderPushRestClient {
             }
             mResource = data.getString("resource");
             JSONObject paramsJson = data.getJSONObject("params");
-            mParams = new WonderPush.RequestParams();
+            mParams = new RequestParams();
             @SuppressWarnings("unchecked")
             Iterator<String> keys = paramsJson.keys();
             while (keys.hasNext()) {
@@ -616,11 +614,11 @@ class WonderPushRestClient {
             return mMethod;
         }
 
-        public WonderPush.RequestParams getParams() {
+        public RequestParams getParams() {
             return mParams;
         }
 
-        public WonderPush.ResponseHandler getHandler() {
+        public ResponseHandler getHandler() {
             return mHandler;
         }
 
@@ -632,11 +630,11 @@ class WonderPushRestClient {
             this.mMethod = mMethod;
         }
 
-        public void setParams(WonderPush.RequestParams mParams) {
+        public void setParams(RequestParams mParams) {
             this.mParams = mParams;
         }
 
-        public void setHandler(WonderPush.ResponseHandler mHandler) {
+        public void setHandler(ResponseHandler mHandler) {
             this.mHandler = mHandler;
         }
 
@@ -674,7 +672,7 @@ class WonderPushRestClient {
 
                 // Params from the URL
                 List<BasicNameValuePair> unencodedParams = new ArrayList<>();
-                WonderPush.RequestParams queryStringParams = QueryStringParser.getRequestParams(uri.getQuery());
+                RequestParams queryStringParams = QueryStringParser.getRequestParams(uri.getQuery());
                 if (queryStringParams != null) {
                     unencodedParams.addAll(queryStringParams.getParamsList());
                 }

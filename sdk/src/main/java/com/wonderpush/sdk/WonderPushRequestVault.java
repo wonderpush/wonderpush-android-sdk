@@ -3,8 +3,6 @@ package com.wonderpush.sdk;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.wonderpush.sdk.WonderPush.Response;
-
 import org.json.JSONException;
 
 import java.io.IOException;
@@ -91,7 +89,7 @@ class WonderPushRequestVault {
                             Log.e(TAG, "Could not restore request", e);
                             continue;
                         }
-                        request.setHandler(new WonderPush.ResponseHandler() {
+                        request.setHandler(new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 WonderPush.logDebug("RequestVault: failure", e);

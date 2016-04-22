@@ -119,7 +119,7 @@ class InstallationManager {
 
     static void updateInstallation(JSONObject properties, boolean overwrite) {
         String propertyEndpoint = "/installation";
-        WonderPush.RequestParams parameters = new WonderPush.RequestParams();
+        RequestParams parameters = new RequestParams();
         parameters.put("body", properties.toString());
         parameters.put("overwrite", overwrite ? "true" : "false");
         WonderPush.postEventually(propertyEndpoint, parameters);

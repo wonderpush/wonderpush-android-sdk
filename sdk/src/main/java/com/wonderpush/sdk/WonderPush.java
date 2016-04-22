@@ -14,8 +14,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -28,13 +26,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
-import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 /**
  * Main class of the WonderPush SDK.
@@ -480,8 +474,8 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void get(String resource, WonderPush.RequestParams params,
-            WonderPush.ResponseHandler responseHandler) {
+    protected static void get(String resource, RequestParams params,
+            ResponseHandler responseHandler) {
         WonderPushRestClient.get(resource, params, responseHandler);
     }
 
@@ -495,8 +489,8 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void post(String resource, WonderPush.RequestParams params,
-            WonderPush.ResponseHandler responseHandler) {
+    protected static void post(String resource, RequestParams params,
+            ResponseHandler responseHandler) {
         WonderPushRestClient.post(resource, params, responseHandler);
     }
 
@@ -512,7 +506,7 @@ public class WonderPush {
      *            guaranteed to survive a network error or device reboot.
      */
     protected static void postEventually(String resource,
-            WonderPush.RequestParams params) {
+            RequestParams params) {
         WonderPushRestClient.postEventually(resource, params);
     }
 
@@ -526,8 +520,8 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void put(String resource, WonderPush.RequestParams params,
-            WonderPush.ResponseHandler responseHandler) {
+    protected static void put(String resource, RequestParams params,
+            ResponseHandler responseHandler) {
         WonderPushRestClient.put(resource, params, responseHandler);
     }
 
@@ -540,7 +534,7 @@ public class WonderPush {
      *            An AsyncHttpClient response handler.
      */
     protected static void delete(String resource,
-            WonderPush.ResponseHandler responseHandler) {
+            ResponseHandler responseHandler) {
         WonderPushRestClient.delete(resource, responseHandler);
     }
 
@@ -1425,223 +1419,6 @@ public class WonderPush {
                 }
             }
         }, defer);
-    }
-
-    /**
-     * A class that handles the parameter to provide to either an api call or a view.
-     */
-    protected static class RequestParams extends com.loopj.android.http.RequestParams implements Parcelable {
-
-        public static final String TAG = "RequestParams";
-
-        public RequestParams(Parcel in) throws JSONException {
-            JSONObject json = new JSONObject(in.readString());
-            Iterator<?> it = json.keys();
-            String key;
-            while (it.hasNext()) {
-                key = (String) it.next();
-                this.put(key, json.optString(key));
-            }
-        }
-
-        /**
-         * Constructs a new empty <code>RequestParams</code> instance.
-         */
-        public RequestParams() {
-            super();
-        }
-
-        /**
-         * Constructs a new RequestParams instance containing the key/value
-         * string params from the specified map.
-         *
-         * @param source
-         *            The source key/value string map to add.
-         */
-        public RequestParams(Map<String, String> source) {
-            super(source);
-        }
-
-        /**
-         * Constructs a new RequestParams instance and populate it with multiple
-         * initial key/value string param.
-         *
-         * @param keysAndValues
-         *            A sequence of keys and values. Objects are automatically
-         *            converted to Strings (including the value {@code null}).
-         * @throws IllegalArgumentException
-         *            If the number of arguments isn't even.
-         */
-        public RequestParams(Object... keysAndValues) {
-            super(keysAndValues);
-        }
-
-        /**
-         * Constructs a new RequestParams instance and populate it with a single
-         * initial key/value string param.
-         *
-         * @param key
-         *            The key name for the intial param.
-         * @param value
-         *            The value string for the initial param.
-         */
-        public RequestParams(String key, String value) {
-            super(key, value);
-        }
-
-        // Only redeclared for package private access
-        @Override
-        protected List<BasicNameValuePair> getParamsList() {
-            return super.getParamsList();
-        }
-
-        public String getURLEncodedString() {
-            return getParamString();
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        public JSONObject toJSONObject() {
-            JSONObject result = new JSONObject();
-            java.util.List<BasicNameValuePair> params = getParamsList();
-            for (BasicNameValuePair parameter : params) {
-                try {
-                    result.put(parameter.getName(), parameter.getValue());
-                } catch (JSONException e) {
-                    WonderPush.logError("Failed to add parameter " + parameter, e);
-                }
-            }
-            return result;
-        }
-
-        @Override
-        public void writeToParcel(Parcel destination, int flags) {
-            destination.writeString(toJSONObject().toString());
-        }
-
-        public static final Parcelable.Creator<WonderPush.RequestParams> CREATOR = new Parcelable.Creator<WonderPush.RequestParams>() {
-            public RequestParams createFromParcel(Parcel in) {
-                try {
-                    return new RequestParams(in);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error while unserializing JSON from a WonderPush.RequestParams", e);
-                    return null;
-                }
-            }
-
-            public RequestParams[] newArray(int size) {
-                return new RequestParams[size];
-            }
-        };
-    }
-
-    /**
-     * An HTTP response object
-     */
-    protected static class Response {
-
-        JSONObject mJson;
-        String mError;
-
-        public Response(String responseContent) {
-            try {
-                mJson = new JSONObject(responseContent);
-            } catch (JSONException e) {
-                mError = responseContent;
-            }
-        }
-
-        public Response(JSONObject responseJson) {
-            mJson = responseJson;
-        }
-
-        public boolean isError() {
-            return mJson == null || mJson.has("error");
-        }
-
-        public String getErrorMessage() {
-            if (!isError())
-                return null;
-
-            if (mJson == null) {
-                return mError;
-            }
-
-            JSONObject error = mJson.optJSONObject("error");
-            if (error == null) {
-                return null;
-            }
-            return error.optString("message", null);
-        }
-
-        public int getErrorStatus() {
-            if (!isError() || mJson == null)
-                return 0;
-
-            JSONObject error = mJson.optJSONObject("error");
-            if (error == null) {
-                return 0;
-            }
-            return error.optInt("status", 0);
-        }
-
-        public int getErrorCode() {
-            if (!isError() || mJson == null)
-                return 0;
-
-            JSONObject error = mJson.optJSONObject("error");
-            if (error == null) {
-                return 0;
-            }
-            return error.optInt("code", 0);
-        }
-
-        public JSONObject getJSONObject() {
-            return mJson;
-        }
-
-        @Override
-        public String toString() {
-            if (mJson == null) {
-                return mError;
-            }
-            return mJson.toString();
-        }
-
-    }
-
-    /**
-     * HTTP response handler.
-     */
-    protected static abstract class ResponseHandler {
-
-        /**
-         * Called when the request failed. Default implementation is empty.
-         *
-         * @param e
-         * @param errorResponse
-         */
-        public abstract void onFailure(Throwable e, Response errorResponse);
-
-        /**
-         * Called on request success. Default implementation is empty.
-         *
-         * @param response
-         */
-        public abstract void onSuccess(Response response);
-
-        /**
-         * Called on request success. Default implementation calls {@link #onSuccess(Response)}.
-         *
-         * @param response
-         */
-        public void onSuccess(int statusCode, Response response) {
-            onSuccess(response);
-        }
-
     }
 
 }
