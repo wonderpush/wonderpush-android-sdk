@@ -1,13 +1,13 @@
 package com.wonderpush.sdk;
 
-import java.io.IOException;
-
-import org.json.JSONException;
-
 import android.os.SystemClock;
 import android.util.Log;
 
 import com.wonderpush.sdk.WonderPush.Response;
+
+import org.json.JSONException;
+
+import java.io.IOException;
 
 /**
  * This class will make sure important {@link WonderPushRestClient.Request} objects are run eventually, even if the user

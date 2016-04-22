@@ -1,9 +1,9 @@
 package com.wonderpush.sdk;
 
-import org.json.JSONObject;
-
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import org.json.JSONObject;
 
 class AlertModel implements Cloneable {
 

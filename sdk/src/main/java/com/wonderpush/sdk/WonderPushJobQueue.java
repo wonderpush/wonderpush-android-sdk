@@ -1,16 +1,16 @@
 package com.wonderpush.sdk;
 
-import java.util.Comparator;
-import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
+import android.content.SharedPreferences;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.content.SharedPreferences;
-import android.util.Log;
+import java.util.Comparator;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 /**
  * A simple persistent job queue which saves itself on disk using SharedPreferences

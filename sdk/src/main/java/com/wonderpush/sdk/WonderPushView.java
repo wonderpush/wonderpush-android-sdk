@@ -1,9 +1,5 @@
 package com.wonderpush.sdk;
 
-import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -33,6 +29,10 @@ import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * An Android view that displays WonderPush content.

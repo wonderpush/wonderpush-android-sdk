@@ -1,11 +1,11 @@
 package com.wonderpush.sdk;
 
+import android.net.Uri;
+import android.text.TextUtils;
+
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-import android.net.Uri;
-import android.text.TextUtils;
 
 /**
  * A collection of static helpers that manipulate Uri's and resources.

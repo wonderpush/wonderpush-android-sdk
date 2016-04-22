@@ -1,11 +1,11 @@
 package com.wonderpush.sdk;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 class WonderPushConfiguration {
 

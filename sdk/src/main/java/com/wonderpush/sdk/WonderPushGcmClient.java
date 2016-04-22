@@ -1,8 +1,5 @@
 package com.wonderpush.sdk;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -20,6 +17,9 @@ import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import com.wonderpush.sdk.NotificationModel.NotTargetedForThisInstallationException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * A class that handles all the messages form Google Cloud Messaging service

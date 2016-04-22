@@ -1,7 +1,5 @@
 package com.wonderpush.sdk;
 
-import org.json.JSONObject;
-
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -9,6 +7,8 @@ import android.content.DialogInterface;
 import android.content.res.TypedArray;
 import android.os.SystemClock;
 import android.view.View;
+
+import org.json.JSONObject;
 
 class WonderPushDialogBuilder {
 
