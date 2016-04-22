@@ -71,7 +71,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
                 properties.put("pushToken", pushToken);
 
                 WonderPush.ensureInitialized(this);
-                WonderPush.updateInstallation(properties, false);
+                InstallationManager.updateInstallation(properties, false);
                 WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
                 WonderPushConfiguration.setCachedGCMRegistrationIdAssociatedUserId(WonderPushConfiguration.getUserId());
             }
@@ -83,7 +83,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
 
         WonderPushConfiguration.setGCMRegistrationId(registrationId);
         WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
-        WonderPushConfiguration.setGCMRegistrationAppVersion(WonderPush.getApplicationVersionCode());
+        WonderPushConfiguration.setGCMRegistrationAppVersion(InstallationManager.getApplicationVersionCode());
     }
 
 }

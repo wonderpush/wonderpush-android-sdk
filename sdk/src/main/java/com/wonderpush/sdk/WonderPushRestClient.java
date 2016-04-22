@@ -393,7 +393,7 @@ class WonderPushRestClient {
         WonderPush.RequestParams authParams = new WonderPush.RequestParams();
         authParams.put("clientId", WonderPush.getClientId());
         authParams.put("devicePlatform", "Android");
-        authParams.put("deviceModel", WonderPush.getDeviceModel());
+        authParams.put("deviceModel", InstallationManager.getDeviceModel());
         String udid = WonderPush.getUDID();
         if (null != udid) {
             authParams.put("deviceId", udid);
