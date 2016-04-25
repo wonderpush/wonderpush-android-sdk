@@ -46,6 +46,9 @@ class WonderPushRestClient {
 
     private static final int RETRY_INTERVAL_BAD_AUTH = 1 * 1000; // in milliseconds
     private static final int RETRY_INTERVAL = 30 * 1000; // in milliseconds
+    protected static final int ERROR_INVALID_CREDENTIALS = 11000;
+    protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
+
     private static boolean sIsFetchingAnonymousAccessToken = false;
     private static final List<ResponseHandler> sPendingHandlers = new ArrayList<>();
 
@@ -208,7 +211,7 @@ class WonderPushRestClient {
             @Override
             public void onFailure(Throwable e, Response errorResponse) {
                 WonderPush.logError("Request failed: " + errorResponse, e);
-                if (errorResponse != null && WonderPush.ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
+                if (errorResponse != null && ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
                     WonderPushConfiguration.invalidateCredentials();
 
@@ -403,7 +406,7 @@ class WonderPushRestClient {
                     public void onFailure(Throwable e, Response errorResponse) {
                         if (nbRetries <= 0) {
                             Log.e(TAG, "Error request anonymous access token (aborting): " + (errorResponse != null ? errorResponse.toString() : "null error response, aborting"), e);
-                            if (errorResponse != null && WonderPush.ERROR_INVALID_CREDENTIALS == errorResponse.getErrorCode()) {
+                            if (errorResponse != null && ERROR_INVALID_CREDENTIALS == errorResponse.getErrorCode()) {
                                 Log.e(TAG, "Check your clientId/clientSecret couple");
                             }
 

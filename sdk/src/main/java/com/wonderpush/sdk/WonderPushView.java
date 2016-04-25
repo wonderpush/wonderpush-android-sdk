@@ -43,6 +43,12 @@ class WonderPushView extends FrameLayout {
 
     private static final String TAG = WonderPush.TAG;
 
+    /**
+     * The timeout for WebView requests
+     */
+    protected static final int WEBVIEW_REQUEST_TOTAL_TIMEOUT = 10000;
+    protected static final int ERROR_INVALID_SID = 12017;
+
     OnStateListener mStateListener;
     WebView mWebView;
     ViewGroup mErrorLayout;
@@ -357,7 +363,7 @@ class WonderPushView extends FrameLayout {
                         }
                     }, 0);
                 }
-            }, WonderPush.WEBVIEW_REQUEST_TOTAL_TIMEOUT);
+            }, WEBVIEW_REQUEST_TOTAL_TIMEOUT);
 
             mIsLoading = true;
         }
@@ -474,7 +480,7 @@ class WonderPushView extends FrameLayout {
         }
 
         private boolean handleInvalidSIDError(Uri uri, int status, int code) {
-            if (WonderPush.ERROR_INVALID_SID != code) {
+            if (ERROR_INVALID_SID != code) {
                 return false;
             }
 

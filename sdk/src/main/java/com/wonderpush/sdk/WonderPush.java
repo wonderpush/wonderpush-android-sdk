@@ -80,15 +80,11 @@ public class WonderPush {
     private static boolean sBeforeInitializationUserIdSet = false;
     private static String sBeforeInitializationUserId;
 
-    /**
-     * The timeout for WebView requests
-     */
-    protected static final int WEBVIEW_REQUEST_TOTAL_TIMEOUT = 10000;
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
     protected static final String SDK_SHORT_VERSION = "2.1.1-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
     protected static final String SDK_VERSION = "Android-" + API_INT + "." + SDK_SHORT_VERSION;
-    protected static final int ERROR_INVALID_SID = 12017;
+    private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
 
     /**
      * How long in ms should two interactions should be separated in time,
@@ -254,9 +250,6 @@ public class WonderPush {
      */
     public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG = "com.wonderpush.action.method.extra_arg";
 
-    private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
-    protected static final int ERROR_INVALID_CREDENTIALS = 11000;
-    protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
     protected static final String DEFAULT_LANGUAGE_CODE = "en";
     protected static final String[] VALID_LANGUAGE_CODES = {
             "af", "ar", "be", "bg", "bn", "ca", "cs", "da", "de", "el", "en", "en_GB", "en_US", "es", "es_ES", "es_MX",
