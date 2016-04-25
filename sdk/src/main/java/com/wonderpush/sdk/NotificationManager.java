@@ -172,21 +172,54 @@ class NotificationManager {
             alert.setTitle((String) (ai != null ? pm.getApplicationLabel(ai) : null));
         }
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
+                .setAutoCancel(true)
                 .setContentTitle(alert.getTitle())
                 .setContentText(alert.getText())
+                .setSubText(alert.getSubText())
+                .setContentInfo(alert.getInfo())
+                .setTicker(alert.getTicker())
                 .setPriority(alert.getPriority())
+                .setColor(alert.getColor())
                 .setSmallIcon(iconResource)
+                .setCategory(alert.getCategory())
+                .setGroup(alert.getGroup())
+                .setSortKey(alert.getSortKey())
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(alert.getText()));
-
-        mBuilder.setContentIntent(pendingIntent);
-        Notification notification = mBuilder.build();
-        notification.defaults = Notification.DEFAULT_SOUND;
-        if (context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED) {
-            notification.defaults |= Notification.DEFAULT_VIBRATE;
+        if (alert.hasLocalOnly()) {
+            builder.setLocalOnly(alert.getLocalOnly());
         }
-        notification.flags = Notification.FLAG_AUTO_CANCEL;
+        if (alert.hasNumber()) {
+            builder.setNumber(alert.getNumber());
+        }
+        if (alert.hasOnlyAlertOnce()) {
+            builder.setOnlyAlertOnce(alert.getOnlyAlertOnce());
+        }
+        if (alert.hasWhen()) {
+            builder.setWhen(alert.getWhen());
+        }
+        if (alert.hasShowWhen()) {
+            builder.setShowWhen(alert.getShowWhen());
+        }
+        if (alert.hasUsesChronometer()) {
+            builder.setUsesChronometer(alert.getUsesChronometer());
+        }
+        if (alert.hasVisibility()) {
+            builder.setVisibility(alert.getVisibility());
+        }
+        if (alert.getPersons() != null) {
+            for (String person : alert.getPersons()) {
+                builder.addPerson(person);
+            }
+        }
+
+        builder.setContentIntent(pendingIntent);
+        Notification notification = builder.build();
+        notification.defaults = Notification.DEFAULT_ALL;
+        if (context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+            notification.defaults &= ~Notification.DEFAULT_VIBRATE;
+        }
         return notification;
     }
 
