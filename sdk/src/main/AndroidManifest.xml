@@ -99,6 +99,18 @@
             </intent-filter>
         </service>
 
+        <provider
+            android:authorities="${wonderpushGradleApplicationId}.wonderpush.fileprovider"
+            android:name="android.support.v4.content.FileProvider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <grant-uri-permission android:pathPrefix="" />
+            <path-permission android:pathPrefix="" />
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/wp_file_provider_paths" />
+        </provider>
+
     </application>
 
 </manifest>

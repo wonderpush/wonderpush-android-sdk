@@ -2,18 +2,19 @@ package com.wonderpush.sdk;
 
 import android.app.Notification;
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
-import android.util.Base64;
-import android.util.Base64OutputStream;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -25,6 +26,8 @@ import java.util.Locale;
 class AlertModel implements Cloneable {
 
     private static final String TAG = WonderPush.TAG;
+
+    private static final int MAX_ALLOWED_SOUND_FILESIZE = 1 * 1024 * 1024; // 1 MB
 
     private static boolean defaultVibrate = true;
     private static boolean defaultSound = true;
@@ -773,30 +776,39 @@ class AlertModel implements Cloneable {
             // and convert it to a data URI
             if ("http".equals(scheme) || "https".equals(scheme)) {
                 try {
-                    WonderPush.logDebug("Sound: Will open URL: " + soundUri);
-                    URLConnection conn = new URL(soundUri.toString()).openConnection();
-                    InputStream is = (InputStream) conn.getContent();
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream(4 * 1024);
-                    Base64OutputStream b64out = new Base64OutputStream(baos, Base64.NO_WRAP); // do *NOT* use Base64.URL_SAFE
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("data:");
-                    sb.append(conn.getContentType());
-                    WonderPush.logDebug("Sound: Content-Type: " + conn.getContentType());
-                    sb.append(";base64,");
-                    int read, ttl = 0;
-                    byte[] buffer = new byte[3 * 1024];
-                    while ((read = is.read(buffer)) != -1) {
-                        ttl += read;
-                        b64out.write(buffer, 0, read);
-                        sb.append(new String(baos.toByteArray(), 0, baos.size(), "US-ASCII"));
-                        baos.reset();
+                    String filename = Integer.toHexString(soundUri.toString().hashCode());
+                    File cacheSoundsDir = new File(WonderPush.getApplicationContext().getCacheDir(), "sounds");
+                    cacheSoundsDir.mkdirs();
+                    File cached = new File(cacheSoundsDir, filename);
+                    // TODO handle If-Modified-Since
+                    if (!cached.exists()) {
+                        WonderPush.logDebug("Sound: Will open URL: " + soundUri);
+                        URLConnection conn = new URL(soundUri.toString()).openConnection();
+                        InputStream is = (InputStream) conn.getContent();
+                        WonderPush.logDebug("Sound: Content-Type: " + conn.getContentType());
+                        WonderPush.logDebug("Sound: Content-Length: " + conn.getContentLength() + " bytes");
+                        if (conn.getContentLength() > MAX_ALLOWED_SOUND_FILESIZE) {
+                            throw new RuntimeException("Sound file too large (" + conn.getContentLength() + " is over " + MAX_ALLOWED_SOUND_FILESIZE + " bytes)");
+                        }
+
+                        FileOutputStream outputStream = new FileOutputStream(cached);
+                        int read, ttl = 0;
+                        byte[] buffer = new byte[2048];
+                        while ((read = is.read(buffer)) != -1) {
+                            ttl += read;
+                            outputStream.write(buffer, 0, read);
+                        }
+                        outputStream.close();
+                        WonderPush.logDebug("Sound: Finished reading " + ttl + " bytes");
                     }
-                    WonderPush.logDebug("Sound: Finished reading " + ttl + " bytes");
-                    b64out.close();
-                    sb.append(new String(baos.toByteArray(), 0, baos.size(), "US-ASCII"));
-                    soundUri = Uri.parse(sb.toString());
+                    soundUri = FileProvider.getUriForFile(
+                            WonderPush.getApplicationContext(),
+                            WonderPush.getApplicationContext().getPackageName() + ".wonderpush.fileprovider",
+                            cached);
+                    WonderPush.getApplicationContext().grantUriPermission("com.android.systemui", soundUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    WonderPush.logDebug("Sound: new URI: " + soundUri);
                 } catch (Exception ex) {
-                    Log.e(WonderPush.TAG, "Failed to convert sound from URI " + soundUri + " into a data URI", ex);
+                    Log.e(WonderPush.TAG, "Failed to fetch sound from URI " + soundUri, ex);
                     setSound(true);
                     setSoundUri((Uri) null);
                     return;
