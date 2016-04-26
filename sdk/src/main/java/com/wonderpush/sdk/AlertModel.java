@@ -1,14 +1,23 @@
 package com.wonderpush.sdk;
 
 import android.app.Notification;
+import android.content.ContentResolver;
+import android.content.res.Resources;
 import android.graphics.Color;
+import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
+import android.util.Base64;
+import android.util.Base64OutputStream;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -16,6 +25,48 @@ import java.util.Locale;
 class AlertModel implements Cloneable {
 
     private static final String TAG = WonderPush.TAG;
+
+    private static boolean defaultVibrate = true;
+    private static boolean defaultSound = true;
+    private static boolean defaultLight = true;
+
+    // https://android.googlesource.com/device/lge/mako/+/master/overlay/frameworks/base/core/res/res/values/config.xml
+    private static final int defaultNotificationColor;
+    private static final int defaultNotificationLedOn;
+    private static final int defaultNotificationLedOff;
+
+    static {
+        // https://android.googlesource.com/device/lge/mako/+/master/overlay/frameworks/base/core/res/res/values/config.xml
+        int _defaultNotificationColor = Color.WHITE;
+        try {
+            int config_defaultNotificationColor = Resources.getSystem().getIdentifier("config_defaultNotificationColor", "color", "android");
+            if (config_defaultNotificationColor != 0)
+                _defaultNotificationColor = WonderPushCompatibilityHelper.getColorResource(Resources.getSystem(), config_defaultNotificationColor);
+        } catch (Exception ex) {
+            WonderPush.logError("Failed to read config_defaultNotificationColor", ex);
+        }
+        defaultNotificationColor = _defaultNotificationColor;
+
+        // https://android.googlesource.com/device/lge/mako/+/master/overlay/frameworks/base/core/res/res/values/config.xml
+        int _defaultNotificationLedOn = 1000;
+        try {
+            int config_defaultNotificationLedOn = Resources.getSystem().getIdentifier("config_defaultNotificationLedOn", "integer", "android");
+            _defaultNotificationLedOn = Resources.getSystem().getInteger(config_defaultNotificationLedOn);
+        } catch (Exception ex) {
+            WonderPush.logError("Failed to read config_defaultNotificationLedOn", ex);
+        }
+        defaultNotificationLedOn = _defaultNotificationLedOn;
+
+        // https://android.googlesource.com/device/lge/mako/+/master/overlay/frameworks/base/core/res/res/values/config.xml
+        int _defaultNotificationLedOff = 9000;
+        try {
+            int config_defaultNotificationLedOff = Resources.getSystem().getIdentifier("config_defaultNotificationLedOff", "integer", "android");
+            _defaultNotificationLedOff = Resources.getSystem().getInteger(config_defaultNotificationLedOff);
+        } catch (Exception ex) {
+            WonderPush.logError("Failed to read config_defaultNotificationLedOff", ex);
+        }
+        defaultNotificationLedOff = _defaultNotificationLedOff;
+    }
 
     // Modify forCurrentSettings() when adding a field below
     private String title;
@@ -30,7 +81,7 @@ class AlertModel implements Cloneable {
     private Boolean autoDrop;
     private List<String> persons;
     private String category;
-    private Integer color = NotificationCompat.COLOR_DEFAULT;
+    private Integer color;
     private String group;
     private String sortKey;
     private Boolean localOnly;
@@ -40,6 +91,14 @@ class AlertModel implements Cloneable {
     private Boolean showWhen;
     private Boolean usesChronometer;
     private Integer visibility;
+    private Boolean vibrate;
+    private long[] vibratePattern;
+    private Boolean lights;
+    private Integer lightsColor;
+    private Integer lightsOn;
+    private Integer lightsOff;
+    private Boolean sound;
+    private Uri soundUri;
     // Modify forCurrentSettings() when adding a field above
     private AlertModel foreground;
 
@@ -160,6 +219,56 @@ class AlertModel implements Cloneable {
         } else {
             rtn.setVisibility(wpAlert.optInt("visibility", NotificationCompat.VISIBILITY_PRIVATE));
         }
+        if (wpAlert.isNull("lights")) {
+            rtn.setLights(null);
+            rtn.setLightsColor((Integer) null);
+            rtn.setLightsOn(null);
+            rtn.setLightsOff(null);
+        } else if (wpAlert.optJSONObject("lights") != null) {
+            JSONObject lights = wpAlert.optJSONObject("lights");
+            rtn.setLights(null);
+            rtn.setLightsColor(lights.optString("color", null));
+            if (!(lights.opt("on") instanceof Number)) {
+                rtn.setLightsOn(null);
+            } else {
+                rtn.setLightsOn(lights.optInt("on", defaultNotificationLedOn));
+            }
+            if (!(lights.opt("off") instanceof Number)) {
+                rtn.setLightsOff(null);
+            } else {
+                rtn.setLightsOff(lights.optInt("off", defaultNotificationLedOff));
+            }
+        } else {
+            rtn.setLights(wpAlert.optBoolean("lights", defaultLight));
+            rtn.setLightsColor((Integer) null);
+            rtn.setLightsOn(null);
+            rtn.setLightsOff(null);
+        }
+        if (wpAlert.isNull("vibrate")) {
+            rtn.setVibrate(null);
+            rtn.setVibratePattern(null);
+        } else if (wpAlert.optJSONArray("vibrate") != null) {
+            rtn.setVibrate(null);
+            JSONArray vibrate = wpAlert.optJSONArray("vibrate");
+            long[] pattern = new long[vibrate.length()];
+            for (int i = 0; i < vibrate.length(); ++i) {
+                pattern[i] = vibrate.optLong(i, 0);
+            }
+            rtn.setVibratePattern(pattern);
+        } else {
+            rtn.setVibrate(wpAlert.optBoolean("vibrate", defaultVibrate));
+            rtn.setVibratePattern(null);
+        }
+        if (wpAlert.isNull("sound")) {
+            rtn.setSound(null);
+            rtn.setSoundUri((Uri) null);
+        } else if (wpAlert.opt("sound") instanceof String) {
+            rtn.setSound(null);
+            rtn.setSoundUri(wpAlert.optString("sound", null));
+        } else {
+            rtn.setSound(wpAlert.optBoolean("sound", defaultSound));
+            rtn.setSoundUri((Uri) null);
+        }
     }
 
     public AlertModel() {
@@ -232,6 +341,30 @@ class AlertModel implements Cloneable {
             }
             if (getForeground().hasVisibility()) {
                 rtn.setVisibility(getForeground().getVisibility());
+            }
+            if (getForeground().hasLights()) {
+                rtn.setLights(getForeground().getLights());
+            }
+            if (getForeground().hasLightsColor()) {
+                rtn.setLightsColor(getForeground().getLightsColor());
+            }
+            if (getForeground().hasLightsOn()) {
+                rtn.setLightsOn(getForeground().getLightsOn());
+            }
+            if (getForeground().hasLightsOff()) {
+                rtn.setLightsOff(getForeground().getLightsOff());
+            }
+            if (getForeground().hasVibrate()) {
+                rtn.setVibrate(getForeground().getVibrate());
+            }
+            if (getForeground().getVibratePattern() != null) {
+                rtn.setVibratePattern(getForeground().getVibratePattern());
+            }
+            if (getForeground().hasSound()) {
+                rtn.setSound(getForeground().getSound());
+            }
+            if (getForeground().getSoundUri() != null) {
+                rtn.setSoundUri(getForeground().getSoundUri());
             }
         }
 
@@ -537,6 +670,164 @@ class AlertModel implements Cloneable {
             try {
                 setVisibility(Notification.class.getField("VISIBILITY_" + visibility.toUpperCase(Locale.ROOT)).getInt(null));
             } catch (Exception ignored) {
+            }
+        }
+    }
+
+    public boolean hasVibrate() {
+        return vibrate != null;
+    }
+
+    public boolean getVibrate() {
+        return vibrate == null ? defaultVibrate : vibrate.booleanValue();
+    }
+
+    public void setVibrate(Boolean vibrate) {
+        this.vibrate = vibrate;
+    }
+
+    public long[] getVibratePattern() {
+        return vibratePattern;
+    }
+
+    public void setVibratePattern(long[] vibratePattern) {
+        this.vibratePattern = vibratePattern;
+    }
+
+    public boolean hasLights() {
+        return lights != null;
+    }
+
+    public boolean getLights() {
+        return lights == null ? defaultLight : lights.booleanValue();
+    }
+
+    public void setLights(Boolean lights) {
+        this.lights = lights;
+    }
+
+    public boolean hasLightsColor() {
+        return lightsColor != null;
+    }
+
+    public int getLightsColor() {
+        return lightsColor == null ? defaultNotificationColor : lightsColor.intValue();
+    }
+
+    public void setLightsColor(Integer lightsColor) {
+        this.lightsColor = lightsColor;
+    }
+
+    public void setLightsColor(String lightsColor) {
+        try {
+            setLightsColor(Color.parseColor(lightsColor));
+        } catch (Exception ignored) { // IllegalArgumentException | NullPointerException
+            setLightsColor((Integer) null);
+        }
+    }
+
+    public boolean hasLightsOn() {
+        return lightsOn != null;
+    }
+
+    public int getLightsOn() {
+        return lightsOn == null ? defaultNotificationLedOn : lightsOn.intValue();
+    }
+
+    public void setLightsOn(Integer lightsOn) {
+        this.lightsOn = lightsOn;
+    }
+
+    public boolean hasLightsOff() {
+        return lightsOff != null;
+    }
+
+    public int getLightsOff() {
+        return lightsOff == null ? defaultNotificationLedOff : lightsOff.intValue();
+    }
+
+    public void setLightsOff(Integer lightsOff) {
+        this.lightsOff = lightsOff;
+    }
+
+    public boolean hasSound() {
+        return sound != null;
+    }
+
+    public boolean getSound() {
+        return sound == null ? defaultSound : sound.booleanValue();
+    }
+
+    public void setSound(Boolean sound) {
+        this.sound = sound;
+    }
+
+    public Uri getSoundUri() {
+        return soundUri;
+    }
+
+    public void setSoundUri(Uri soundUri) {
+        if (soundUri != null) {
+            String scheme = soundUri.getScheme().toLowerCase(Locale.ROOT);
+            // Fetch external file (as the system RingtoneManager has no INTERNET permission, unlike us)
+            // and convert it to a data URI
+            if ("http".equals(scheme) || "https".equals(scheme)) {
+                try {
+                    WonderPush.logDebug("Sound: Will open URL: " + soundUri);
+                    URLConnection conn = new URL(soundUri.toString()).openConnection();
+                    InputStream is = (InputStream) conn.getContent();
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(4 * 1024);
+                    Base64OutputStream b64out = new Base64OutputStream(baos, Base64.NO_WRAP); // do *NOT* use Base64.URL_SAFE
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("data:");
+                    sb.append(conn.getContentType());
+                    WonderPush.logDebug("Sound: Content-Type: " + conn.getContentType());
+                    sb.append(";base64,");
+                    int read, ttl = 0;
+                    byte[] buffer = new byte[3 * 1024];
+                    while ((read = is.read(buffer)) != -1) {
+                        ttl += read;
+                        b64out.write(buffer, 0, read);
+                        sb.append(new String(baos.toByteArray(), 0, baos.size(), "US-ASCII"));
+                        baos.reset();
+                    }
+                    WonderPush.logDebug("Sound: Finished reading " + ttl + " bytes");
+                    b64out.close();
+                    sb.append(new String(baos.toByteArray(), 0, baos.size(), "US-ASCII"));
+                    soundUri = Uri.parse(sb.toString());
+                } catch (Exception ex) {
+                    Log.e(WonderPush.TAG, "Failed to convert sound from URI " + soundUri + " into a data URI", ex);
+                    setSound(true);
+                    setSoundUri((Uri) null);
+                    return;
+                }
+            }
+        }
+        this.soundUri = soundUri;
+    }
+
+    public void setSoundUri(String soundUri) {
+        if (soundUri == null) {
+            setSoundUri((Uri) null);
+        } else {
+            // Resolve as a raw resource
+            int resId = WonderPush.getApplicationContext().getResources().getIdentifier(soundUri, "raw", WonderPush.getApplicationContext().getPackageName());
+            WonderPush.logDebug("Resolving " + soundUri + " as raw resource of " + WonderPush.getApplicationContext().getPackageName() + ": " + resId);
+            if (resId != 0) {
+                setSoundUri(new Uri.Builder()
+                        .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+                        .authority(WonderPush.getApplicationContext().getPackageName())
+                        .path(String.valueOf(resId))
+                        .build());
+            } else {
+                // Parse as Uri
+                try {
+                    setSoundUri(Uri.parse(soundUri));
+                } catch (Exception ex) {
+                    Log.e(WonderPush.TAG, "Failed to parse sound as uri: " + soundUri);
+                    setSoundUri((Uri) null);
+                    setSound(defaultSound);
+                }
             }
         }
     }

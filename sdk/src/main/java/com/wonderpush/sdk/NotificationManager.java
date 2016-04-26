@@ -172,6 +172,10 @@ class NotificationManager {
             alert.setTitle((String) (ai != null ? pm.getApplicationLabel(ai) : null));
         }
 
+        boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
+        int defaults = Notification.DEFAULT_ALL;
+        if (!canVibrate) defaults &= ~Notification.DEFAULT_VIBRATE;
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
                 .setAutoCancel(true)
                 .setContentTitle(alert.getTitle())
@@ -214,13 +218,45 @@ class NotificationManager {
             }
         }
 
-        builder.setContentIntent(pendingIntent);
-        Notification notification = builder.build();
-        notification.defaults = Notification.DEFAULT_ALL;
-        if (context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-            notification.defaults &= ~Notification.DEFAULT_VIBRATE;
+        if (alert.hasLightsColor() || alert.hasLightsOn() || alert.hasLightsOff()) {
+            builder.setLights(alert.getLightsColor(), alert.getLightsOn(), alert.getLightsOff());
+            defaults &= ~Notification.DEFAULT_LIGHTS;
         }
-        return notification;
+        if (alert.hasLights()) {
+            if (alert.getLights()) {
+                defaults |= Notification.DEFAULT_LIGHTS;
+            } else {
+                defaults &= ~Notification.DEFAULT_LIGHTS;
+            }
+        }
+        if (canVibrate) {
+            if (alert.getVibratePattern() != null) {
+                builder.setVibrate(alert.getVibratePattern());
+                defaults &= ~Notification.DEFAULT_VIBRATE;
+            }
+            if (alert.hasVibrate()) {
+                if (alert.getVibrate()) {
+                    defaults |= Notification.DEFAULT_VIBRATE;
+                } else {
+                    defaults &= ~Notification.DEFAULT_VIBRATE;
+                }
+            }
+        }
+        if (alert.getSoundUri() != null) {
+            builder.setSound(alert.getSoundUri());
+            defaults &= ~Notification.DEFAULT_SOUND;
+        }
+        if (alert.hasSound()) {
+            if (alert.getSound()) {
+                defaults |= Notification.DEFAULT_SOUND;
+            } else {
+                defaults &= ~Notification.DEFAULT_SOUND;
+            }
+        }
+        builder.setDefaults(defaults);
+
+        builder.setContentIntent(pendingIntent);
+        return builder.build();
     }
 
     public static boolean showPotentialNotification(final Activity activity, Intent intent) {
