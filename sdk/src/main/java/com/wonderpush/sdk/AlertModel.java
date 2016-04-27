@@ -170,12 +170,12 @@ class AlertModel implements Cloneable {
         rtn.setTicker(wpAlert.optString("ticker", null));
         rtn.setHasTag(wpAlert.has("tag"));
         rtn.setTag(wpAlert.optString("tag", null));
-        if (wpAlert.has("autoOpen")) {
+        if (!wpAlert.isNull("autoOpen")) {
             rtn.setAutoOpen(wpAlert.optBoolean("autoOpen", false));
         } else {
             rtn.setAutoOpen(null);
         }
-        if (wpAlert.has("autoDrop")) {
+        if (!wpAlert.isNull("autoDrop")) {
             rtn.setAutoDrop(wpAlert.optBoolean("autoDrop", false));
         } else {
             rtn.setAutoDrop(null);
@@ -185,32 +185,32 @@ class AlertModel implements Cloneable {
         rtn.setColor(wpAlert.optString("color", null));
         rtn.setGroup(wpAlert.optString("group", null));
         rtn.setSortKey(wpAlert.optString("sortKey", null));
-        if (wpAlert.has("localOnly")) {
+        if (!wpAlert.isNull("localOnly")) {
             rtn.setLocalOnly(wpAlert.optBoolean("localOnly", false));
         } else {
             rtn.setLocalOnly(null);
         }
-        if (wpAlert.has("number")) {
+        if (!wpAlert.isNull("number")) {
             rtn.setNumber(wpAlert.optInt("number", 1));
         } else {
             rtn.setNumber(null);
         }
-        if (wpAlert.has("onlyAlertOnce")) {
+        if (!wpAlert.isNull("onlyAlertOnce")) {
             rtn.setOnlyAlertOnce(wpAlert.optBoolean("onlyAlertOnce", false));
         } else {
             rtn.setOnlyAlertOnce(null);
         }
-        if (wpAlert.has("when")) {
+        if (!wpAlert.isNull("when")) {
             rtn.setWhen(wpAlert.optLong("when", System.currentTimeMillis()));
         } else {
             rtn.setWhen(null);
         }
-        if (wpAlert.has("showWhen")) {
+        if (!wpAlert.isNull("showWhen")) {
             rtn.setShowWhen(wpAlert.optBoolean("showWhen", false));
         } else {
             rtn.setShowWhen(null);
         }
-        if (wpAlert.has("usesChronometer")) {
+        if (!wpAlert.isNull("usesChronometer")) {
             rtn.setUsesChronometer(wpAlert.optBoolean("usesChronometer", false));
         } else {
             rtn.setUsesChronometer(null);
@@ -466,7 +466,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getAutoOpen() {
-        return autoOpen != null && autoOpen.booleanValue();
+        return autoOpen != null && autoOpen;
     }
 
     public void setAutoOpen(Boolean autoOpen) {
@@ -478,7 +478,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getAutoDrop() {
-        return autoDrop != null && autoDrop.booleanValue();
+        return autoDrop != null && autoDrop;
     }
 
     public void setAutoDrop(Boolean autoDrop) {
@@ -550,7 +550,7 @@ class AlertModel implements Cloneable {
     }
 
     public int getColor() {
-        return color == null ? Notification.COLOR_DEFAULT : color.intValue();
+        return color == null ? NotificationCompat.COLOR_DEFAULT : color;
     }
 
     public void setColor(int color) {
@@ -586,7 +586,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getLocalOnly() {
-        return localOnly != null && localOnly.booleanValue();
+        return localOnly != null && localOnly;
     }
 
     public void setLocalOnly(Boolean localOnly) {
@@ -598,7 +598,7 @@ class AlertModel implements Cloneable {
     }
 
     public int getNumber() {
-        return number == null ? 0 : number.intValue();
+        return number == null ? 0 : number;
     }
 
     public void setNumber(Integer number) {
@@ -610,7 +610,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getOnlyAlertOnce() {
-        return onlyAlertOnce != null && onlyAlertOnce.booleanValue();
+        return onlyAlertOnce != null && onlyAlertOnce;
     }
 
     public void setOnlyAlertOnce(Boolean onlyAlertOnce) {
@@ -622,7 +622,7 @@ class AlertModel implements Cloneable {
     }
 
     public long getWhen() {
-        return when == null ? System.currentTimeMillis() : when.longValue();
+        return when == null ? System.currentTimeMillis() : when;
     }
 
     public void setWhen(Long when) {
@@ -634,7 +634,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getShowWhen() {
-        return showWhen != null && showWhen.booleanValue();
+        return showWhen != null && showWhen;
     }
 
     public void setShowWhen(Boolean showWhen) {
@@ -646,7 +646,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getUsesChronometer() {
-        return usesChronometer != null && usesChronometer.booleanValue();
+        return usesChronometer != null && usesChronometer;
     }
 
     public void setUsesChronometer(Boolean usesChronometer) {
@@ -658,7 +658,7 @@ class AlertModel implements Cloneable {
     }
 
     public int getVisibility() {
-        return visibility == null ? 0 : visibility.intValue();
+        return visibility == null ? 0 : visibility;
     }
 
     public void setVisibility(Integer visibility) {
@@ -682,7 +682,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getVibrate() {
-        return vibrate == null ? defaultVibrate : vibrate.booleanValue();
+        return vibrate == null ? defaultVibrate : vibrate;
     }
 
     public void setVibrate(Boolean vibrate) {
@@ -702,7 +702,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getLights() {
-        return lights == null ? defaultLight : lights.booleanValue();
+        return lights == null ? defaultLight : lights;
     }
 
     public void setLights(Boolean lights) {
@@ -714,7 +714,7 @@ class AlertModel implements Cloneable {
     }
 
     public int getLightsColor() {
-        return lightsColor == null ? defaultNotificationColor : lightsColor.intValue();
+        return lightsColor == null ? defaultNotificationColor : lightsColor;
     }
 
     public void setLightsColor(Integer lightsColor) {
@@ -734,7 +734,7 @@ class AlertModel implements Cloneable {
     }
 
     public int getLightsOn() {
-        return lightsOn == null ? defaultNotificationLedOn : lightsOn.intValue();
+        return lightsOn == null ? defaultNotificationLedOn : lightsOn;
     }
 
     public void setLightsOn(Integer lightsOn) {
@@ -746,7 +746,7 @@ class AlertModel implements Cloneable {
     }
 
     public int getLightsOff() {
-        return lightsOff == null ? defaultNotificationLedOff : lightsOff.intValue();
+        return lightsOff == null ? defaultNotificationLedOff : lightsOff;
     }
 
     public void setLightsOff(Integer lightsOff) {
@@ -758,7 +758,7 @@ class AlertModel implements Cloneable {
     }
 
     public boolean getSound() {
-        return sound == null ? defaultSound : sound.booleanValue();
+        return sound == null ? defaultSound : sound;
     }
 
     public void setSound(Boolean sound) {
