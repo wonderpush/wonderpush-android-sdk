@@ -188,7 +188,9 @@ class NotificationManager {
                 .setSmallIcon(iconResource)
                 .setCategory(alert.getCategory())
                 .setGroup(alert.getGroup())
+                //.setGroupSummary(alert.getGroupSummary())
                 .setSortKey(alert.getSortKey())
+                .setOngoing(alert.getOngoing())
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .bigText(alert.getText()));
         if (alert.hasLocalOnly()) {
@@ -216,6 +218,9 @@ class NotificationManager {
             for (String person : alert.getPersons()) {
                 builder.addPerson(person);
             }
+        }
+        if (alert.hasProgress()) {
+            builder.setProgress(alert.getProgressMax(), alert.getProgress(), alert.isProgressIndeterminate());
         }
 
         if (alert.hasLightsColor() || alert.hasLightsOn() || alert.hasLightsOff()) {

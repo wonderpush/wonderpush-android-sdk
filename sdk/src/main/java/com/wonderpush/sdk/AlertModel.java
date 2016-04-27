@@ -86,6 +86,7 @@ class AlertModel implements Cloneable {
     private String category;
     private Integer color;
     private String group;
+    //private Boolean groupSummary; // should actually be controlled automatically by the SDK, not from a standalone push notification
     private String sortKey;
     private Boolean localOnly;
     private Integer number;
@@ -102,6 +103,8 @@ class AlertModel implements Cloneable {
     private Integer lightsOff;
     private Boolean sound;
     private Uri soundUri;
+    private Boolean ongoing;
+    private Integer progress; // negative for "indeterminate"
     // Modify forCurrentSettings() when adding a field above
     private AlertModel foreground;
 
@@ -184,6 +187,11 @@ class AlertModel implements Cloneable {
         rtn.setCategory(wpAlert.optString("category", null));
         rtn.setColor(wpAlert.optString("color", null));
         rtn.setGroup(wpAlert.optString("group", null));
+        //if (!wpAlert.isNull("groupSummary")) {
+        //    rtn.setGroupSummary(wpAlert.optBoolean("groupSummary", false));
+        //} else {
+        //    rtn.setGroupSummary(null);
+        //}
         rtn.setSortKey(wpAlert.optString("sortKey", null));
         if (!wpAlert.isNull("localOnly")) {
             rtn.setLocalOnly(wpAlert.optBoolean("localOnly", false));
@@ -272,6 +280,18 @@ class AlertModel implements Cloneable {
             rtn.setSound(wpAlert.optBoolean("sound", defaultSound));
             rtn.setSoundUri((Uri) null);
         }
+        if (!wpAlert.isNull("ongoing")) {
+            rtn.setOngoing(wpAlert.optBoolean("ongoing", false));
+        } else {
+            rtn.setOngoing(null);
+        }
+        if (wpAlert.isNull("progress")) {
+            rtn.setProgress(null);
+        } else if (wpAlert.opt("progress") instanceof Boolean) {
+            rtn.setProgress(wpAlert.optBoolean("progress", false));
+        } else {
+            rtn.setProgress(wpAlert.optInt("progress"));
+        }
     }
 
     public AlertModel() {
@@ -321,6 +341,9 @@ class AlertModel implements Cloneable {
             if (getForeground().getGroup() != null) {
                 rtn.setGroup(getForeground().getGroup());
             }
+            //if (getForeground().hasGroupSummary()) {
+            //    rtn.setGroupSummary(getForeground().getGroupSummary());
+            //}
             if (getForeground().getSortKey() != null) {
                 rtn.setSortKey(getForeground().getSortKey());
             }
@@ -368,6 +391,16 @@ class AlertModel implements Cloneable {
             }
             if (getForeground().getSoundUri() != null) {
                 rtn.setSoundUri(getForeground().getSoundUri());
+            }
+            if (getForeground().hasOngoing()) {
+                rtn.setOngoing(getForeground().getOngoing());
+            }
+            if (getForeground().hasProgress()) {
+                if (getForeground().isProgressIndeterminate()) {
+                    rtn.setProgress(true);
+                } else {
+                    rtn.setProgress(getForeground().getProgress());
+                }
             }
         }
 
@@ -572,6 +605,18 @@ class AlertModel implements Cloneable {
     public void setGroup(String group) {
         this.group = group;
     }
+
+    //public boolean hasGroupSummary() {
+    //    return groupSummary;
+    //}
+    //
+    //public boolean getGroupSummary() {
+    //    return groupSummary != null && groupSummary;
+    //}
+    //
+    //public void setGroupSummary(Boolean groupSummary) {
+    //    this.groupSummary = groupSummary;
+    //}
 
     public String getSortKey() {
         return sortKey;
@@ -841,6 +886,46 @@ class AlertModel implements Cloneable {
                     setSound(defaultSound);
                 }
             }
+        }
+    }
+
+    public boolean hasOngoing() {
+        return ongoing != null;
+    }
+
+    public boolean getOngoing() {
+        return ongoing != null && ongoing;
+    }
+
+    public void setOngoing(Boolean ongoing) {
+        this.ongoing = ongoing;
+    }
+
+    public boolean hasProgress() {
+        return progress != null;
+    }
+
+    public boolean isProgressIndeterminate() {
+        return progress != null && progress < 0;
+    }
+
+    public int getProgress() {
+        return progress;
+    }
+
+    public int getProgressMax() {
+        return 100;
+    }
+
+    public void setProgress(Integer progress) { // number between 0 and 100, or -1 for indeterminate
+        this.progress = progress;
+    }
+
+    public void setProgress(boolean progress) { // true for indeterminate, false for no progress
+        if (progress) {
+            setProgress(-1);
+        } else {
+            setProgress(null);
         }
     }
 
