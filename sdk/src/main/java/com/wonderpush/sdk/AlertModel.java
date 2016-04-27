@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
+import android.text.Html;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -71,12 +72,13 @@ class AlertModel implements Cloneable {
         defaultNotificationLedOff = _defaultNotificationLedOff;
     }
 
+    private boolean html;
     // Modify forCurrentSettings() when adding a field below
-    private String title;
-    private String text;
-    private String subText;
-    private String info;
-    private String ticker;
+    private CharSequence title;
+    private CharSequence text;
+    private CharSequence subText;
+    private CharSequence info;
+    private CharSequence ticker;
     private String tag;
     private boolean tagPresent;
     private int priority;
@@ -132,6 +134,7 @@ class AlertModel implements Cloneable {
     }
 
     private static void fromJSON_toplevel(AlertModel rtn, JSONObject wpAlert) {
+        rtn.setHtml(wpAlert.optBoolean("html", false)); // must be done before fromJSON_common()
         fromJSON_common(rtn, wpAlert);
 
         if (wpAlert.isNull("priority")) {
@@ -427,44 +430,60 @@ class AlertModel implements Cloneable {
         return rtn;
     }
 
-    public String getTitle() {
+    protected CharSequence handleHtml(CharSequence input) {
+        if (isHtml() && input instanceof String) {
+            return Html.fromHtml((String) input); // images are unsupported in text, but unicode smileys are
+        } else {
+            return input;
+        }
+    }
+
+    public boolean isHtml() {
+        return html;
+    }
+
+    public void setHtml(boolean html) {
+        this.html = html;
+    }
+
+    public CharSequence getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setTitle(CharSequence title) {
+        this.title = handleHtml(title);
     }
 
-    public String getText() {
+    public CharSequence getText() {
         return text;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public void setText(CharSequence text) {
+        this.text = handleHtml(text);
     }
 
-    public String getSubText() {
+    public CharSequence getSubText() {
         return subText;
     }
 
-    public void setSubText(String subText) {
-        this.subText = subText;
+    public void setSubText(CharSequence subText) {
+        this.subText = handleHtml(subText);
     }
 
-    public String getInfo() {
+    public CharSequence getInfo() {
         return info;
     }
 
-    public void setInfo(String info) {
-        this.info = info;
+    public void setInfo(CharSequence info) {
+        this.info = handleHtml(info);
     }
 
-    public String getTicker() {
+    public CharSequence getTicker() {
         return ticker;
     }
 
-    public void setTicker(String ticker) {
-        this.ticker = ticker;
+    public void setTicker(CharSequence ticker) {
+        this.ticker = handleHtml(ticker);
     }
 
     public boolean hasTag() {
