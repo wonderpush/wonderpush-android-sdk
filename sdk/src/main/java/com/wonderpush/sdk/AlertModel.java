@@ -108,6 +108,7 @@ class AlertModel implements Cloneable {
     private Boolean ongoing;
     private Integer progress; // negative for "indeterminate"
     private Integer smallIcon;
+    private List<NotificationButtonModel> actions;
     // Modify forCurrentSettings() when adding a field above
     private AlertModel foreground;
 
@@ -301,6 +302,7 @@ class AlertModel implements Cloneable {
         } else {
             rtn.setSmallIcon(wpAlert.optString("smallIcon", null));
         }
+        rtn.setActions(wpAlert.optJSONArray("actions"));
     }
 
     public AlertModel() {
@@ -428,6 +430,35 @@ class AlertModel implements Cloneable {
             rtn.foreground = (AlertModel) foreground.clone();
         }
         return rtn;
+    }
+
+    /**
+     * @return A valid resource integer, or 0
+     */
+    protected int resolveResourceIdentifierOrZero(String resName, String resType) {
+        if (resName == null || resType == null) {
+            return 0;
+        }
+        int resId = WonderPush.getApplicationContext().getResources().getIdentifier(resName, resType, WonderPush.getApplicationContext().getPackageName());
+        WonderPush.logDebug("Resolving " + resName + " as " + resType + " resource of " + WonderPush.getApplicationContext().getPackageName() + ": " + resId);
+        if (resId == 0) {
+            resId = Resources.getSystem().getIdentifier(resName, resType, "android");
+            WonderPush.logDebug("Resolving " + resName + " as " + resType + " resource of android: " + resId);
+        }
+        return resId;
+    }
+
+    /**
+     * @return A valid resource integer, or null (instead of 0)
+     */
+    protected Integer resolveResourceIdentifierOrNull(String resName, String resType) {
+        int resId = resolveResourceIdentifierOrZero(resName, resType);
+        if (resId == 0) {
+            return null;
+        } else {
+            return resId;
+        }
+
     }
 
     protected CharSequence handleHtml(CharSequence input) {
@@ -896,8 +927,7 @@ class AlertModel implements Cloneable {
             setSoundUri((Uri) null);
         } else {
             // Resolve as a raw resource
-            int resId = WonderPush.getApplicationContext().getResources().getIdentifier(soundUri, "raw", WonderPush.getApplicationContext().getPackageName());
-            WonderPush.logDebug("Resolving " + soundUri + " as raw resource of " + WonderPush.getApplicationContext().getPackageName() + ": " + resId);
+            int resId = resolveResourceIdentifierOrZero(soundUri, "raw");
             if (resId != 0) {
                 setSoundUri(new Uri.Builder()
                         .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
@@ -973,14 +1003,29 @@ class AlertModel implements Cloneable {
         if (smallIcon == null) {
             setSmallIcon((Integer) null);
         } else {
-            // Resolve as a drawable resource
-            int resId = WonderPush.getApplicationContext().getResources().getIdentifier(smallIcon, "drawable", WonderPush.getApplicationContext().getPackageName());
-            WonderPush.logDebug("Resolving " + smallIcon + " as drawable resource of " + WonderPush.getApplicationContext().getPackageName() + ": " + resId);
-            if (resId != 0) {
-                setSmallIcon(resId);
-            } else {
-                setSmallIcon((Integer) null);
+            setSmallIcon(resolveResourceIdentifierOrNull(smallIcon, "drawable"));
+        }
+    }
+
+    public List<NotificationButtonModel> getActions() {
+        return actions;
+    }
+
+    public void setActions(List<NotificationButtonModel> actions) {
+        this.actions = actions;
+    }
+
+    public void setActions(JSONArray actionsJson) {
+        if (actionsJson == null) {
+            setActions((List<NotificationButtonModel>) null);
+        } else {
+            List<NotificationButtonModel> actions = new LinkedList<>();
+            for (int i = 0; i < actionsJson.length(); ++i) {
+                JSONObject action = actionsJson.optJSONObject(i);
+                if (action == null) continue;
+                actions.add(new NotificationButtonModel(this, action));
             }
+            setActions(actions);
         }
     }
 

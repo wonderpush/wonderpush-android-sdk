@@ -21,7 +21,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class NotificationManager {
 
@@ -52,6 +54,9 @@ class NotificationManager {
         boolean automaticallyHandled = false;
         Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();
         boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
+        String tag = generateLocalNotificationTag(notif);
+        int localNotificationId = generateLocalNotificationId(tag);
+        PendingIntentBuilder pendingIntentBuilder = new PendingIntentBuilder(notif, localNotificationId, intent, context, activity);
         if (notif.getAlert().forCurrentSettings(appInForeground).getAutoDrop()) {
             WonderPush.logDebug("Automatically dropping");
             automaticallyHandled = true;
@@ -59,8 +64,7 @@ class NotificationManager {
             WonderPush.logDebug("Automatically opening");
             // We can show the notification (send the pending intent) right away
             try {
-                PendingIntent pendingIntent = NotificationManager.buildPendingIntent(notif, intent, false, null, context, activity);
-                pendingIntent.send();
+                pendingIntentBuilder.buildForAutoOpen().send();
                 automaticallyHandled = true;
             } catch (PendingIntent.CanceledException e) {
                 Log.e(WonderPush.TAG, "Could not show notification", e);
@@ -70,83 +74,148 @@ class NotificationManager {
             // We should use a notification to warn the user, and wait for him to click it
             // before showing the notification (i.e.: the pending intent being sent)
             WonderPush.logDebug("Building notification");
-            PendingIntent pendingIntent = NotificationManager.buildPendingIntent(notif, intent, true, null, context, activity);
-            Notification notification = NotificationManager.buildNotification(notif, context, iconResource, pendingIntent);
+            Notification notification = buildNotification(notif, context, iconResource, pendingIntentBuilder);
 
             if (notification == null) {
                 WonderPush.logDebug("No notification is to be displayed");
                 // Fire an Intent to notify the application anyway (especially for `data` notifications)
                 try {
-                    Bundle extrasOverride = new Bundle();
-                    extrasOverride.putString("overrideTargetUrl",
-                            WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
-                                    + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST);
-                    PendingIntent broadcastPendingIntent = NotificationManager.buildPendingIntent(notif, intent, false, extrasOverride, context, activity);
-                    broadcastPendingIntent.send();
+                    pendingIntentBuilder.buildForWillOpenBroadcast().send();
                 } catch (PendingIntent.CanceledException e) {
                     Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
                 }
             } else {
-                String tag = notif.getAlert() != null && notif.getAlert().hasTag()
-                        ? notif.getAlert().getTag() : notif.getCampaignId();
-                notify(context, tag, notification);
+                notify(context, tag, localNotificationId, notification);
             }
         }
     }
 
-    protected static void notify(Context context, String tag, Notification notification) {
-        int localNotificationId = tag != null ? 0 : WonderPushConfiguration.getNextTaglessNotificationManagerId();
-        WonderPush.logDebug("Showing notification with tag " + (tag == null ? "(null)" : "\"" + tag + "\"") + " and id " + localNotificationId);
-        android.app.NotificationManager mNotificationManager = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(tag, localNotificationId, notification);
+    protected static String generateLocalNotificationTag(NotificationModel notif) {
+        return notif.getAlert() != null && notif.getAlert().hasTag()
+                ? notif.getAlert().getTag() : notif.getCampaignId();
     }
 
-    protected static PendingIntent buildPendingIntent(NotificationModel notif, Intent pushIntent, boolean fromUserInteraction,
-                                                      Bundle extrasOverride, Context context, Class<? extends Activity> activity) {
-        Intent resultIntent = new Intent();
-        if (WonderPushService.isProperlySetup()) {
-            resultIntent.setClass(context, WonderPushService.class);
-        } else if (activity != null) {
-            // Fallback to blindly launching the configured activity
-            resultIntent.setClass(context, activity);
-            resultIntent = new Intent(context, activity);
-        } // else We have nothing to propose!
-        if (activity != null) {
-            resultIntent.putExtra("activity", activity.getCanonicalName());
-        }
-        resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
-        resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
-        if (extrasOverride != null) {
-            resultIntent.putExtras(extrasOverride);
-        }
-
-        resultIntent.setAction(Intent.ACTION_MAIN);
-        resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | WonderPushCompatibilityHelper.getIntentFlagActivityNewDocument() | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        Uri dataUri = new Uri.Builder()
-                .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
-                .authority(WonderPush.INTENT_NOTIFICATION_AUTHORITY)
-                .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER, notif.getInputJSONString())
-                .build();
-        resultIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
-
-        PendingIntent resultPendingIntent;
-        if (WonderPushService.isProperlySetup()) {
-            resultPendingIntent = PendingIntent.getService(context, 0, resultIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+    protected static int generateLocalNotificationId(String tag) {
+        if (tag != null) {
+            return 0;
         } else {
-            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-            stackBuilder.addNextIntentWithParentStack(resultIntent);
-            resultPendingIntent = stackBuilder.getPendingIntent(0,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+            return WonderPushConfiguration.getNextTaglessNotificationManagerId();
+        }
+    }
+
+    protected static void notify(Context context, String tag, int localNotificationId, Notification notification) {
+        try {
+            WonderPush.logDebug("Showing notification with tag " + (tag == null ? "(null)" : "\"" + tag + "\"") + " and id " + localNotificationId);
+            android.app.NotificationManager mNotificationManager = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(tag, localNotificationId, notification);
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Failed to show the notification", ex);
+        }
+    }
+
+    protected static void cancel(Context context, String tag, int localNotificationId) {
+        try {
+            android.app.NotificationManager mNotificationManager = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.cancel(tag, localNotificationId);
+        } catch (Exception ex) {
+            WonderPush.logError("Failed to cancel the notification", ex);
+        }
+    }
+
+    protected static class PendingIntentBuilder {
+
+        private final NotificationModel notif;
+        private final int localNotificationId;
+        private final Intent pushIntent;
+        private final Context context;
+        private final Class<? extends Activity> activity;
+
+        public PendingIntentBuilder(NotificationModel notif, int localNotificationId, Intent pushIntent, Context context, Class<? extends Activity> activity) {
+            this.notif = notif;
+            this.localNotificationId = localNotificationId;
+            this.pushIntent = pushIntent;
+            this.context = context;
+            this.activity = activity;
         }
 
-        return resultPendingIntent;
+        public PendingIntent buildForAutoOpen() {
+            return buildPendingIntent(false, null, null);
+        }
+
+        public PendingIntent buildForDefault() {
+            return buildPendingIntent(true, null, null);
+        }
+
+        public PendingIntent buildForAction(int actionIndex) {
+            // The action index cannot be an extra or the PendingIntent of each action will be deduplicated
+            // @see Intent#filterEquals(android.content.Intent)
+            Map<String, String> extraQueryParams = new HashMap<>(1);
+            extraQueryParams.put(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX, String.valueOf(actionIndex));
+            return buildPendingIntent(true, null, extraQueryParams);
+        }
+
+        public PendingIntent buildForWillOpenBroadcast() {
+            Bundle extrasOverride = new Bundle();
+            extrasOverride.putString("overrideTargetUrl",
+                    WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
+                            + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST);
+            return buildPendingIntent(false, extrasOverride, null);
+        }
+
+        private PendingIntent buildPendingIntent(boolean fromUserInteraction, Bundle extrasOverride, Map<String, String> extraQueryParams) {
+            Intent resultIntent = new Intent();
+            if (WonderPushService.isProperlySetup()) {
+                resultIntent.setClass(context, WonderPushService.class);
+            } else if (activity != null) {
+                // Fallback to blindly launching the configured activity
+                resultIntent.setClass(context, activity);
+                resultIntent = new Intent(context, activity);
+            } // else We have nothing to propose!
+            if (activity != null) {
+                resultIntent.putExtra("activity", activity.getCanonicalName());
+            }
+            resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
+            resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
+            if (extrasOverride != null) {
+                resultIntent.putExtras(extrasOverride);
+            }
+
+            resultIntent.setAction(Intent.ACTION_MAIN);
+            resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | WonderPushCompatibilityHelper.getIntentFlagActivityNewDocument() | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+            Uri.Builder dataUriBuilder = new Uri.Builder()
+                    .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
+                    .authority(WonderPush.INTENT_NOTIFICATION_AUTHORITY)
+                    .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER, notif.getInputJSONString())
+                    .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_LOCAL_NOTIFICATION_ID, String.valueOf(localNotificationId))
+                    ;
+            if (extraQueryParams != null) {
+                for (Map.Entry<String, String> extraQueryParamEntry : extraQueryParams.entrySet()) {
+                    dataUriBuilder.appendQueryParameter(extraQueryParamEntry.getKey(), extraQueryParamEntry.getValue());
+                }
+            }
+            Uri dataUri = dataUriBuilder.build();
+            resultIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
+
+            PendingIntent resultPendingIntent;
+            if (WonderPushService.isProperlySetup()) {
+                resultPendingIntent = PendingIntent.getService(context, 0, resultIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+            } else {
+                TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+                stackBuilder.addNextIntentWithParentStack(resultIntent);
+                resultPendingIntent = stackBuilder.getPendingIntent(0,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+            }
+
+            return resultPendingIntent;
+        }
+
     }
 
     protected static Notification buildNotification(NotificationModel notif, Context context, int defaultIconResource,
-                                                    PendingIntent pendingIntent) {
+                                                    PendingIntentBuilder pendingIntentBuilder) {
         if (NotificationModel.Type.DATA.equals(notif.getType())) {
             return null;
         }
@@ -180,6 +249,7 @@ class NotificationManager {
         if (!canVibrate) defaults &= ~Notification.DEFAULT_VIBRATE;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
+                .setContentIntent(pendingIntentBuilder.buildForDefault())
                 .setAutoCancel(true)
                 .setContentTitle(alert.getTitle())
                 .setContentText(alert.getText())
@@ -263,7 +333,21 @@ class NotificationManager {
         }
         builder.setDefaults(defaults);
 
-        builder.setContentIntent(pendingIntent);
+        if (alert.getActions() != null) {
+            int i = 0;
+            for (NotificationButtonModel action : alert.getActions()) {
+                PendingIntent actionPendingIntent = pendingIntentBuilder.buildForAction(i);
+                int icon = action.icon;
+                if (icon == 0) {
+                    icon = android.R.color.transparent;
+                }
+                builder.addAction(
+                        new NotificationCompat.Action.Builder(icon, action.title, actionPendingIntent)
+                                .build());
+                ++i;
+            }
+        }
+
         return builder.build();
     }
 
@@ -274,6 +358,30 @@ class NotificationManager {
                 Log.e(TAG, "Failed to extract notification object");
                 return false;
             }
+
+            // Manually dismiss the notification and close the system drawer, when an action button is clicked.
+            // May be a kind of bug, or may be a feature when the associated PendingIntent resolves a Service instead of an Activity.
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            String localNotificationIdStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_LOCAL_NOTIFICATION_ID);
+            int localNotificationId = -1;
+            try {
+                localNotificationId = Integer.parseInt(localNotificationIdStr);
+            } catch (Exception ignored) { // NullPointerException | NumberFormatException
+                WonderPush.logError("Failed to parse localNotificationId " + localNotificationIdStr, ignored);
+            }
+            cancel(activity, generateLocalNotificationTag(notif), localNotificationId);
+
+            boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
+            Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
+            String actionIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX);
+            int _actionIndex = -1;
+            try {
+                _actionIndex = Integer.parseInt(actionIndexStr);
+            } catch (Exception ignored) { // NullPointerException | NumberFormatException
+                WonderPush.logError("Failed to parse actionIndex " + actionIndexStr, ignored);
+            }
+            final int actionIndex = _actionIndex;
+
             if (containsExplicitNotification(intent)) {
                 intent.setDataAndType(null, null);
             } else if (containsWillOpenNotification(intent)) {
@@ -293,20 +401,19 @@ class NotificationManager {
 
                 // Notify the application that the notification has been opened
                 Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
-                boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
                 notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
-                Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
                 notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
+                notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_ACTION_INDEX, actionIndex);
                 LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
 
                 if (WonderPush.isInitialized()) {
-                    handleOpenedNotification(activity, notif);
+                    handleOpenedNotification(activity, notif, actionIndex);
                 } else {
                     BroadcastReceiver receiver = new BroadcastReceiver() {
                         @Override
                         public void onReceive(Context context, Intent intent) {
                             try {
-                                handleOpenedNotification(context, notif);
+                                handleOpenedNotification(context, notif, actionIndex);
                             } catch (Exception ex) {
                                 Log.e(TAG, "Unexpected error on deferred handling of received notification", ex);
                             }
@@ -354,8 +461,16 @@ class NotificationManager {
                 ;
     }
 
-    private static void handleOpenedNotification(Context context, NotificationModel notif) {
-        handleNotificationActions(context, notif, notif.getActions()); // notification opened actions
+    private static void handleOpenedNotification(Context context, NotificationModel notif, int clickedActionIndex) {
+        if (clickedActionIndex < 0) {
+            handleNotificationActions(context, notif, notif.getActions()); // notification opened actions
+        } else {
+            try {
+                handleNotificationActions(context, notif, notif.getAlert().getActions().get(clickedActionIndex).actions); // specific notification button actions
+            } catch (Exception ex) {
+                Log.e(WonderPush.TAG, "Failed to run notification button actions for index " + clickedActionIndex, ex);
+            }
+        }
         InAppManager.handleInApp(context, notif);
     }
 

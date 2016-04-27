@@ -137,6 +137,13 @@ public class WonderPush {
     public static final String INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION = "wonderpushFromUserInteraction";
 
     /**
+     * The extra key indicating which action button the user clicked on the notification
+     * in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
+     */
+    public static final String INTENT_NOTIFICATION_OPENED_EXTRA_ACTION_INDEX =
+            "wonderpushActionIndex";
+
+    /**
      * Local intent broadcasted when a push notification created by the WonderPush SDK is to be opened,
      * but no activity is to be started.
      * This let's you handle {@code data} notifications or any deep linking yourself.
@@ -224,6 +231,16 @@ public class WonderPush {
      * Intent query parameter key for GCM notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER = "body";
+
+    /**
+     * Intent query parameter key for identifying which notification action button the user clicked.
+     */
+    protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX = "actionIndex";
+
+    /**
+     * Intent query parameter key for identifying which local notification id the user clicked.
+     */
+    protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER_LOCAL_NOTIFICATION_ID = "localNotificationId";
 
     /**
      * Intent action for notification button action `method`.
