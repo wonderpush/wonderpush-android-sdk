@@ -105,6 +105,7 @@ class AlertModel implements Cloneable {
     private Uri soundUri;
     private Boolean ongoing;
     private Integer progress; // negative for "indeterminate"
+    private Integer smallIcon;
     // Modify forCurrentSettings() when adding a field above
     private AlertModel foreground;
 
@@ -292,6 +293,11 @@ class AlertModel implements Cloneable {
         } else {
             rtn.setProgress(wpAlert.optInt("progress"));
         }
+        if (wpAlert.isNull("smallIcon")) {
+            rtn.setSmallIcon((Integer) null);
+        } else {
+            rtn.setSmallIcon(wpAlert.optString("smallIcon", null));
+        }
     }
 
     public AlertModel() {
@@ -401,6 +407,9 @@ class AlertModel implements Cloneable {
                 } else {
                     rtn.setProgress(getForeground().getProgress());
                 }
+            }
+            if (getForeground().hasSmallIcon()) {
+                rtn.setSmallIcon(getForeground().getSmallIcon());
             }
         }
 
@@ -926,6 +935,33 @@ class AlertModel implements Cloneable {
             setProgress(-1);
         } else {
             setProgress(null);
+        }
+    }
+
+    public boolean hasSmallIcon() {
+        return smallIcon != null && smallIcon != 0;
+    }
+
+    public int getSmallIcon() {
+        return smallIcon == null ? 0 : smallIcon;
+    }
+
+    public void setSmallIcon(Integer smallIcon) {
+        this.smallIcon = smallIcon;
+    }
+
+    public void setSmallIcon(String smallIcon) {
+        if (smallIcon == null) {
+            setSmallIcon((Integer) null);
+        } else {
+            // Resolve as a drawable resource
+            int resId = WonderPush.getApplicationContext().getResources().getIdentifier(smallIcon, "drawable", WonderPush.getApplicationContext().getPackageName());
+            WonderPush.logDebug("Resolving " + smallIcon + " as drawable resource of " + WonderPush.getApplicationContext().getPackageName() + ": " + resId);
+            if (resId != 0) {
+                setSmallIcon(resId);
+            } else {
+                setSmallIcon((Integer) null);
+            }
         }
     }
 

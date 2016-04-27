@@ -145,7 +145,7 @@ class NotificationManager {
         return resultPendingIntent;
     }
 
-    protected static Notification buildNotification(NotificationModel notif, Context context, int iconResource,
+    protected static Notification buildNotification(NotificationModel notif, Context context, int defaultIconResource,
                                                     PendingIntent pendingIntent) {
         if (NotificationModel.Type.DATA.equals(notif.getType())) {
             return null;
@@ -171,6 +171,9 @@ class NotificationManager {
             }
             alert.setTitle((String) (ai != null ? pm.getApplicationLabel(ai) : null));
         }
+        if (defaultIconResource == 0) {
+            defaultIconResource = R.drawable.ic_notifications_white_24dp;
+        }
 
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
         int defaults = Notification.DEFAULT_ALL;
@@ -185,7 +188,7 @@ class NotificationManager {
                 .setTicker(alert.getTicker())
                 .setPriority(alert.getPriority())
                 .setColor(alert.getColor())
-                .setSmallIcon(iconResource)
+                .setSmallIcon(alert.hasSmallIcon() && alert.getSmallIcon() != 0 ? alert.getSmallIcon() : defaultIconResource)
                 .setCategory(alert.getCategory())
                 .setGroup(alert.getGroup())
                 //.setGroupSummary(alert.getGroupSummary())
