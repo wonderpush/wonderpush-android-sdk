@@ -122,24 +122,60 @@ public class WonderPushService extends Service {
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
                         true);
 
+                // Restrict first to this application
+                activityIntent.setPackage(getApplicationContext().getPackageName());
+
                 if (targetUrl.toLowerCase().startsWith(WonderPush.INTENT_NOTIFICATION_SCHEME + ":")) {
-                    // Restrict to this application, as the wonderpush:// scheme may not be unique
-                    activityIntent.setPackage(getApplicationContext().getPackageName());
+                    // Use the WonderPush service within this application
+                    // MUST be done before: activityIntent.setPackage(getApplicationContext().getPackageName());
                     // Add some internal extra fields
                     activityIntent.putExtra("openPushNotificationIntent", intent);
+                    try {
+                        if (startService(activityIntent) != null) {
+                            launchSuccessful = true;
+                        }
+                    } catch (Exception ex) {
+                        WonderPush.logDebug("Failed to try notification deep link as a service", ex);
+                    }
+                    if (!launchSuccessful) {
+                        activityIntent.removeExtra("openPushNotificationIntent");
+                    }
+                }
+                if (!launchSuccessful) {
+                    // Try as an activity within the same package
+                    if (activityIntent.resolveActivity(getPackageManager()) != null) {
+                        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                        stackBuilder.addNextIntentWithParentStack(activityIntent);
+                        stackBuilder.startActivities();
+                        launchSuccessful = true;
+                    }
+                }
+                if (!launchSuccessful) {
+                    // Try as a service within the same package
+                    try {
+                        if (startService(activityIntent) != null) {
+                            launchSuccessful = true;
+                        }
+                    } catch (Exception ex) {
+                        WonderPush.logDebug("Failed to try notification deep link as a service", ex);
+                    }
                 }
 
-                // Try as an activity
-                if (activityIntent.resolveActivity(getPackageManager()) != null) {
+                // Remove restriction within this application
+                if (!launchSuccessful) {
+                    activityIntent.setPackage(null);
+                }
 
-                    TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-                    stackBuilder.addNextIntentWithParentStack(activityIntent);
-                    stackBuilder.startActivities();
-                    launchSuccessful = true;
-
-                } else if (activityIntent.getPackage() != null || activityIntent.getComponent() != null) {
-                    // startService() fails if the intent is not specified enough, hence the above checks
-
+                if (!launchSuccessful) {
+                    // Try as an activity
+                    if (activityIntent.resolveActivity(getPackageManager()) != null) {
+                        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                        stackBuilder.addNextIntentWithParentStack(activityIntent);
+                        stackBuilder.startActivities();
+                        launchSuccessful = true;
+                    }
+                }
+                if (!launchSuccessful) {
                     // Try as a service
                     try {
                         if (startService(activityIntent) != null) {
@@ -148,7 +184,6 @@ public class WonderPushService extends Service {
                     } catch (Exception ex) {
                         WonderPush.logDebug("Failed to try notification deep link as a service", ex);
                     }
-
                 }
 
                 if (!launchSuccessful) {
