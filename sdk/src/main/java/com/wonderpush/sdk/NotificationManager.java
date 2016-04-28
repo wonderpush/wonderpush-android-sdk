@@ -426,15 +426,14 @@ class NotificationManager {
         boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
         Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
         String actionIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX);
-        int _actionIndex = -1;
+        int actionIndex = -1;
         try {
             if (actionIndexStr != null) {
-                _actionIndex = Integer.parseInt(actionIndexStr);
+                actionIndex = Integer.parseInt(actionIndexStr);
             }
         } catch (Exception ignored) { // NumberFormatException
             WonderPush.logError("Failed to parse actionIndex " + actionIndexStr, ignored);
         }
-        final int actionIndex = _actionIndex;
 
         WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
         try {
@@ -442,6 +441,10 @@ class NotificationManager {
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", TimeSync.getTime());
+            if (actionIndex >= 0 && notif.getAlert() != null && notif.getAlert().getActions() != null && actionIndex < notif.getAlert().getActions().size()) {
+                NotificationButtonModel button = notif.getAlert().getActions().get(actionIndex);
+                trackData.put("buttonLabel", button.title);
+            }
             WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
             WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
