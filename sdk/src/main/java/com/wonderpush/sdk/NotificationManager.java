@@ -374,7 +374,7 @@ class NotificationManager {
         cancel(context, generateLocalNotificationTag(notif), localNotificationId);
     }
 
-    public static boolean showPotentialNotification(final Activity activity, Intent intent) {
+    public static boolean showPotentialNotification(Context context, Intent intent) {
         if (containsExplicitNotification(intent) || containsWillOpenNotificationAutomaticallyOpenable(intent)) {
             final NotificationModel notif = NotificationModel.fromLocalIntent(intent);
             if (notif == null) {
@@ -382,69 +382,13 @@ class NotificationManager {
                 return false;
             }
 
-            ensureNotificationDismissed(activity, intent, notif);
-
-            boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
-            Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
-            String actionIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX);
-            int _actionIndex = -1;
-            try {
-                if (actionIndexStr != null) {
-                    _actionIndex = Integer.parseInt(actionIndexStr);
-                }
-            } catch (Exception ignored) { // NumberFormatException
-                WonderPush.logError("Failed to parse actionIndex " + actionIndexStr, ignored);
-            }
-            final int actionIndex = _actionIndex;
-
-            if (containsExplicitNotification(intent)) {
-                intent.setDataAndType(null, null);
-            } else if (containsWillOpenNotification(intent)) {
-                // Keep it
-                //intent.removeExtra(INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
-            }
             sLastHandledIntentRef = new WeakReference<>(intent);
-            WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
-            try {
-                JSONObject trackData = new JSONObject();
-                trackData.put("campaignId", notif.getCampaignId());
-                trackData.put("notificationId", notif.getNotificationId());
-                trackData.put("actionDate", TimeSync.getTime());
-                WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
-                WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
-
-                // Notify the application that the notification has been opened
-                Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
-                notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
-                notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
-                notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_ACTION_INDEX, actionIndex);
-                LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
-
-                if (WonderPush.isInitialized()) {
-                    handleOpenedNotification(activity, notif, actionIndex);
-                } else {
-                    BroadcastReceiver receiver = new BroadcastReceiver() {
-                        @Override
-                        public void onReceive(Context context, Intent intent) {
-                            try {
-                                handleOpenedNotification(context, notif, actionIndex);
-                            } catch (Exception ex) {
-                                Log.e(TAG, "Unexpected error on deferred handling of received notification", ex);
-                            }
-                            LocalBroadcastManager.getInstance(context).unregisterReceiver(this);
-                        }
-                    };
-
-                    IntentFilter filter = new IntentFilter(WonderPush.INTENT_INTIALIZED);
-                    LocalBroadcastManager.getInstance(activity).registerReceiver(receiver, filter);
-                }
-
-                return true;
-            } catch (JSONException e) {
-                Log.e(TAG, "Failed to parse notification JSON object", e);
+            if (!WonderPushService.isProperlySetup()) {
+                handleOpenedNotificationFromService(context, intent, notif);
             }
 
+            InAppManager.handleInApp(context, notif);
         }
         return false;
     }
@@ -476,24 +420,66 @@ class NotificationManager {
                 ;
     }
 
-    private static void handleOpenedNotification(Context context, NotificationModel notif, int clickedActionIndex) {
-        if (clickedActionIndex < 0) {
-            handleNotificationActions(context, notif, notif.getActions()); // notification opened actions
-        } else {
-            try {
-                handleNotificationActions(context, notif, notif.getAlert().getActions().get(clickedActionIndex).actions); // specific notification button actions
-            } catch (Exception ex) {
-                Log.e(WonderPush.TAG, "Failed to run notification button actions for index " + clickedActionIndex, ex);
+    public static void handleOpenedNotificationFromService(Context context, Intent intent, NotificationModel notif) {
+        ensureNotificationDismissed(context, intent, notif);
+
+        boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
+        Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
+        String actionIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX);
+        int _actionIndex = -1;
+        try {
+            if (actionIndexStr != null) {
+                _actionIndex = Integer.parseInt(actionIndexStr);
             }
+        } catch (Exception ignored) { // NumberFormatException
+            WonderPush.logError("Failed to parse actionIndex " + actionIndexStr, ignored);
         }
-        InAppManager.handleInApp(context, notif);
+        final int actionIndex = _actionIndex;
+
+        WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
+        try {
+            JSONObject trackData = new JSONObject();
+            trackData.put("campaignId", notif.getCampaignId());
+            trackData.put("notificationId", notif.getNotificationId());
+            trackData.put("actionDate", TimeSync.getTime());
+            WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
+
+            WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
+
+            // Notify the application that the notification has been opened
+            Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
+            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
+            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
+            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_ACTION_INDEX, actionIndex);
+            LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
+
+            handleOpenedNotification(context, notif, actionIndex);
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to parse notification JSON object", e);
+        }
+    }
+
+    private static void handleOpenedNotification(Context context, NotificationModel notif, int clickedActionIndex) {
+        List<ActionModel> actions = null;
+        if (clickedActionIndex < 0) {
+            // Notification opened actions
+            actions = notif.getActions();
+        } else if (
+                notif.getAlert() != null
+                && notif.getAlert().getActions() != null
+                && clickedActionIndex < notif.getAlert().getActions().size()
+        ) {
+            // Notification button-specific actions
+            actions = notif.getAlert().getActions().get(clickedActionIndex).actions;
+        }
+        handleNotificationActions(context, notif, actions);
     }
 
     protected static void handleNotificationActions(Context context, NotificationModel notif, List<ActionModel> actions) {
-        try {
-            if (actions == null)
-                return;
+        if (actions == null)
+            return;
 
+        try {
             for (ActionModel action : actions) {
                 handleAction(context, notif, action);
             }

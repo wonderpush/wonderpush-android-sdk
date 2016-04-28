@@ -71,6 +71,7 @@ public class WonderPushService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        WonderPush.ensureInitialized(getApplicationContext());
         try {
             if (NotificationManager.containsExplicitNotification(intent)) {
                 handleOpenFromNotificationCenter(intent);
@@ -96,7 +97,7 @@ public class WonderPushService extends Service {
             return;
         }
 
-        NotificationManager.ensureNotificationDismissed(getApplicationContext(), intent, notif);
+        NotificationManager.handleOpenedNotificationFromService(getApplicationContext(), intent, notif);
 
         String targetUrl = notif.getTargetUrl();
         if (intent.hasExtra("overrideTargetUrl")) {
@@ -220,7 +221,6 @@ public class WonderPushService extends Service {
         }
         if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT.equals(singlePath)) {
 
-            // Broadcast locally that a notification is to be opened, and don't do anything else
             openNotificationDefaultBehavior(notificationOpenedIntent);
 
         } else if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST.equals(singlePath)) {
@@ -229,6 +229,10 @@ public class WonderPushService extends Service {
             Intent notificationWillOpenIntent = new Intent(WonderPush.INTENT_NOTIFICATION_WILL_OPEN);
             notificationWillOpenIntent.putExtras(intent.getExtras());
             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(notificationWillOpenIntent);
+
+        } else if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_NOOP.equals(singlePath)) {
+
+            // Noop!
 
         } else {
             Log.w(TAG, "Unhandled intent: " + intent);

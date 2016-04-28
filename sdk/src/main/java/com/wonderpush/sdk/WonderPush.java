@@ -171,6 +171,11 @@ public class WonderPush {
     protected static final String INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST = "broadcast";
 
     /**
+     * The first path segment for opening the notification without any UI action, not even the default activity.
+     */
+    protected static final String INTENT_NOTIFICATION_WILL_OPEN_PATH_NOOP = "noop";
+
+    /**
      * The extra key for the original received push notification intent in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
      */
     public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION =
