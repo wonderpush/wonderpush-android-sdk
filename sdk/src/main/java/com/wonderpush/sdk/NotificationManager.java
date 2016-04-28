@@ -151,7 +151,14 @@ class NotificationManager {
             // @see Intent#filterEquals(android.content.Intent)
             Map<String, String> extraQueryParams = new HashMap<>(1);
             extraQueryParams.put(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX, String.valueOf(actionIndex));
-            return buildPendingIntent(true, null, extraQueryParams);
+
+            Bundle extrasOverride = new Bundle();
+            String targetUrl = notif.getAlert().getActions().get(actionIndex).targetUrl;
+            if (targetUrl != null) {
+                extrasOverride.putString("overrideTargetUrl", targetUrl);
+            }
+
+            return buildPendingIntent(true, extrasOverride, extraQueryParams);
         }
 
         public PendingIntent buildForWillOpenBroadcast() {
@@ -351,6 +358,22 @@ class NotificationManager {
         return builder.build();
     }
 
+    public static void ensureNotificationDismissed(Context context, Intent intent, NotificationModel notif) {
+        // Manually dismiss the notification and close the system drawer, when an action button is clicked.
+        // May be a kind of bug, or may be a feature when the associated PendingIntent resolves a Service instead of an Activity.
+        context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        String localNotificationIdStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_LOCAL_NOTIFICATION_ID);
+        int localNotificationId = -1;
+        try {
+            if (localNotificationIdStr != null) {
+                localNotificationId = Integer.parseInt(localNotificationIdStr);
+            }
+        } catch (Exception ignored) { // NumberFormatException
+            WonderPush.logError("Failed to parse localNotificationId " + localNotificationIdStr, ignored);
+        }
+        cancel(context, generateLocalNotificationTag(notif), localNotificationId);
+    }
+
     public static boolean showPotentialNotification(final Activity activity, Intent intent) {
         if (containsExplicitNotification(intent) || containsWillOpenNotificationAutomaticallyOpenable(intent)) {
             final NotificationModel notif = NotificationModel.fromLocalIntent(intent);
@@ -359,25 +382,17 @@ class NotificationManager {
                 return false;
             }
 
-            // Manually dismiss the notification and close the system drawer, when an action button is clicked.
-            // May be a kind of bug, or may be a feature when the associated PendingIntent resolves a Service instead of an Activity.
-            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            String localNotificationIdStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_LOCAL_NOTIFICATION_ID);
-            int localNotificationId = -1;
-            try {
-                localNotificationId = Integer.parseInt(localNotificationIdStr);
-            } catch (Exception ignored) { // NullPointerException | NumberFormatException
-                WonderPush.logError("Failed to parse localNotificationId " + localNotificationIdStr, ignored);
-            }
-            cancel(activity, generateLocalNotificationTag(notif), localNotificationId);
+            ensureNotificationDismissed(activity, intent, notif);
 
             boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
             Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
             String actionIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX);
             int _actionIndex = -1;
             try {
-                _actionIndex = Integer.parseInt(actionIndexStr);
-            } catch (Exception ignored) { // NullPointerException | NumberFormatException
+                if (actionIndexStr != null) {
+                    _actionIndex = Integer.parseInt(actionIndexStr);
+                }
+            } catch (Exception ignored) { // NumberFormatException
                 WonderPush.logError("Failed to parse actionIndex " + actionIndexStr, ignored);
             }
             final int actionIndex = _actionIndex;

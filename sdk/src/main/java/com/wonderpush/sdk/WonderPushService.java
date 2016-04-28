@@ -96,6 +96,8 @@ public class WonderPushService extends Service {
             return;
         }
 
+        NotificationManager.ensureNotificationDismissed(getApplicationContext(), intent, notif);
+
         String targetUrl = notif.getTargetUrl();
         if (intent.hasExtra("overrideTargetUrl")) {
             targetUrl = intent.getStringExtra("overrideTargetUrl");

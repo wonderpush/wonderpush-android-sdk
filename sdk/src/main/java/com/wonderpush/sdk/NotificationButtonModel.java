@@ -10,6 +10,7 @@ class NotificationButtonModel {
 
     public int icon;
     public CharSequence title;
+    public String targetUrl;
     public List<ActionModel> actions;
 
     public NotificationButtonModel() {
@@ -23,6 +24,7 @@ class NotificationButtonModel {
 
         icon = parentAlert.resolveResourceIdentifierOrZero(data.optString("icon", null), "drawable");
         title = parentAlert.handleHtml(data.optString("title"));
+        targetUrl = data.optString("targetUrl");
         JSONArray actions = data.optJSONArray("actions");
         int actionCount = actions != null ? actions.length() : 0;
         this.actions = new ArrayList<>(actionCount);
