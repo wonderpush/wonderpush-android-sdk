@@ -140,8 +140,8 @@ public class WonderPush {
      * The extra key indicating which action button the user clicked on the notification
      * in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
      */
-    public static final String INTENT_NOTIFICATION_OPENED_EXTRA_ACTION_INDEX =
-            "wonderpushActionIndex";
+    public static final String INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX =
+            "wonderpushButtonIndex";
 
     /**
      * Local intent broadcasted when a push notification created by the WonderPush SDK is to be opened,
@@ -240,7 +240,7 @@ public class WonderPush {
     /**
      * Intent query parameter key for identifying which notification action button the user clicked.
      */
-    protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX = "actionIndex";
+    protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX = "buttonIndex";
 
     /**
      * Intent query parameter key for identifying which local notification id the user clicked.

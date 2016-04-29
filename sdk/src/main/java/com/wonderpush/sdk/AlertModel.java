@@ -108,7 +108,7 @@ class AlertModel implements Cloneable {
     private Boolean ongoing;
     private Integer progress; // negative for "indeterminate"
     private Integer smallIcon;
-    private List<NotificationButtonModel> actions;
+    private List<NotificationButtonModel> buttons;
     // Modify forCurrentSettings() when adding a field above
     private AlertModel foreground;
 
@@ -302,7 +302,7 @@ class AlertModel implements Cloneable {
         } else {
             rtn.setSmallIcon(wpAlert.optString("smallIcon", null));
         }
-        rtn.setActions(wpAlert.optJSONArray("actions"));
+        rtn.setButtons(wpAlert.optJSONArray("buttons"));
     }
 
     public AlertModel() {
@@ -1021,25 +1021,25 @@ class AlertModel implements Cloneable {
         }
     }
 
-    public List<NotificationButtonModel> getActions() {
-        return actions;
+    public List<NotificationButtonModel> getButtons() {
+        return buttons;
     }
 
-    public void setActions(List<NotificationButtonModel> actions) {
-        this.actions = actions;
+    public void setButtons(List<NotificationButtonModel> buttons) {
+        this.buttons = buttons;
     }
 
-    public void setActions(JSONArray actionsJson) {
-        if (actionsJson == null) {
-            setActions((List<NotificationButtonModel>) null);
+    public void setButtons(JSONArray buttonsJson) {
+        if (buttonsJson == null) {
+            setButtons((List<NotificationButtonModel>) null);
         } else {
-            List<NotificationButtonModel> actions = new LinkedList<>();
-            for (int i = 0; i < actionsJson.length(); ++i) {
-                JSONObject action = actionsJson.optJSONObject(i);
-                if (action == null) continue;
-                actions.add(new NotificationButtonModel(this, action));
+            List<NotificationButtonModel> buttons = new LinkedList<>();
+            for (int i = 0; i < buttonsJson.length(); ++i) {
+                JSONObject button = buttonsJson.optJSONObject(i);
+                if (button == null) continue;
+                buttons.add(new NotificationButtonModel(this, button));
             }
-            setActions(actions);
+            setButtons(buttons);
         }
     }
 

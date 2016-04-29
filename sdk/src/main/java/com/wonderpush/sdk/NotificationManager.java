@@ -3,10 +3,8 @@ package com.wonderpush.sdk;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -146,14 +144,14 @@ class NotificationManager {
             return buildPendingIntent(true, null, null);
         }
 
-        public PendingIntent buildForAction(int actionIndex) {
-            // The action index cannot be an extra or the PendingIntent of each action will be deduplicated
+        public PendingIntent buildForButton(int buttonIndex) {
+            // The button index cannot be an extra or the PendingIntent of each action will be deduplicated
             // @see Intent#filterEquals(android.content.Intent)
             Map<String, String> extraQueryParams = new HashMap<>(1);
-            extraQueryParams.put(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX, String.valueOf(actionIndex));
+            extraQueryParams.put(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX, String.valueOf(buttonIndex));
 
             Bundle extrasOverride = new Bundle();
-            String targetUrl = notif.getAlert().getActions().get(actionIndex).targetUrl;
+            String targetUrl = notif.getAlert().getButtons().get(buttonIndex).targetUrl;
             if (targetUrl != null) {
                 extrasOverride.putString("overrideTargetUrl", targetUrl);
             }
@@ -340,16 +338,16 @@ class NotificationManager {
         }
         builder.setDefaults(defaults);
 
-        if (alert.getActions() != null) {
+        if (alert.getButtons() != null) {
             int i = 0;
-            for (NotificationButtonModel action : alert.getActions()) {
-                PendingIntent actionPendingIntent = pendingIntentBuilder.buildForAction(i);
-                int icon = action.icon;
+            for (NotificationButtonModel button : alert.getButtons()) {
+                PendingIntent buttonPendingIntent = pendingIntentBuilder.buildForButton(i);
+                int icon = button.icon;
                 if (icon == 0) {
                     icon = android.R.color.transparent;
                 }
                 builder.addAction(
-                        new NotificationCompat.Action.Builder(icon, action.title, actionPendingIntent)
+                        new NotificationCompat.Action.Builder(icon, button.label, buttonPendingIntent)
                                 .build());
                 ++i;
             }
@@ -425,14 +423,14 @@ class NotificationManager {
 
         boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
         Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
-        String actionIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_ACTION_INDEX);
-        int actionIndex = -1;
+        String buttonIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX);
+        int buttonIndex = -1;
         try {
-            if (actionIndexStr != null) {
-                actionIndex = Integer.parseInt(actionIndexStr);
+            if (buttonIndexStr != null) {
+                buttonIndex = Integer.parseInt(buttonIndexStr);
             }
         } catch (Exception ignored) { // NumberFormatException
-            WonderPush.logError("Failed to parse actionIndex " + actionIndexStr, ignored);
+            WonderPush.logError("Failed to parse buttonIndex " + buttonIndexStr, ignored);
         }
 
         WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
@@ -441,9 +439,9 @@ class NotificationManager {
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", TimeSync.getTime());
-            if (actionIndex >= 0 && notif.getAlert() != null && notif.getAlert().getActions() != null && actionIndex < notif.getAlert().getActions().size()) {
-                NotificationButtonModel button = notif.getAlert().getActions().get(actionIndex);
-                trackData.put("buttonLabel", button.title);
+            if (buttonIndex >= 0 && notif.getAlert() != null && notif.getAlert().getButtons() != null && buttonIndex < notif.getAlert().getButtons().size()) {
+                NotificationButtonModel button = notif.getAlert().getButtons().get(buttonIndex);
+                trackData.put("buttonLabel", button.label);
             }
             WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
@@ -453,27 +451,27 @@ class NotificationManager {
             Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
             notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
             notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
-            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_ACTION_INDEX, actionIndex);
+            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX, buttonIndex);
             LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
 
-            handleOpenedNotification(context, notif, actionIndex);
+            handleOpenedNotification(context, notif, buttonIndex);
         } catch (JSONException e) {
             Log.e(TAG, "Failed to parse notification JSON object", e);
         }
     }
 
-    private static void handleOpenedNotification(Context context, NotificationModel notif, int clickedActionIndex) {
+    private static void handleOpenedNotification(Context context, NotificationModel notif, int clickedButtonIndex) {
         List<ActionModel> actions = null;
-        if (clickedActionIndex < 0) {
+        if (clickedButtonIndex < 0) {
             // Notification opened actions
             actions = notif.getActions();
         } else if (
                 notif.getAlert() != null
-                && notif.getAlert().getActions() != null
-                && clickedActionIndex < notif.getAlert().getActions().size()
+                && notif.getAlert().getButtons() != null
+                && clickedButtonIndex < notif.getAlert().getButtons().size()
         ) {
             // Notification button-specific actions
-            actions = notif.getAlert().getActions().get(clickedActionIndex).actions;
+            actions = notif.getAlert().getButtons().get(clickedButtonIndex).actions;
         }
         handleNotificationActions(context, notif, actions);
     }

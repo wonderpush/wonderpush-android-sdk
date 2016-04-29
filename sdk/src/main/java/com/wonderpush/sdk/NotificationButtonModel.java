@@ -9,7 +9,7 @@ import java.util.List;
 class NotificationButtonModel {
 
     public int icon;
-    public CharSequence title;
+    public CharSequence label;
     public String targetUrl;
     public List<ActionModel> actions;
 
@@ -23,7 +23,7 @@ class NotificationButtonModel {
         }
 
         icon = parentAlert.resolveIconIdentifier(data.optString("icon", null));
-        title = parentAlert.handleHtml(data.optString("title"));
+        label = parentAlert.handleHtml(data.optString("label"));
         targetUrl = data.optString("targetUrl");
         JSONArray actions = data.optJSONArray("actions");
         int actionCount = actions != null ? actions.length() : 0;
