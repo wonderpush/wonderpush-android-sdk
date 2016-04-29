@@ -22,7 +22,7 @@ class NotificationButtonModel {
             return;
         }
 
-        icon = parentAlert.resolveResourceIdentifierOrZero(data.optString("icon", null), "drawable");
+        icon = parentAlert.resolveIconIdentifier(data.optString("icon", null));
         title = parentAlert.handleHtml(data.optString("title"));
         targetUrl = data.optString("targetUrl");
         JSONArray actions = data.optJSONArray("actions");

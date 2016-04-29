@@ -433,9 +433,16 @@ class AlertModel implements Cloneable {
     }
 
     /**
+     * @return Transforms the invalid resource identifier 0 into null
+     */
+    protected Integer resourceIdOrNull(int resId) {
+        return resId == 0 ? null : resId;
+    }
+
+    /**
      * @return A valid resource integer, or 0
      */
-    protected int resolveResourceIdentifierOrZero(String resName, String resType) {
+    protected int resolveResourceIdentifier(String resName, String resType) {
         if (resName == null || resType == null) {
             return 0;
         }
@@ -448,17 +455,24 @@ class AlertModel implements Cloneable {
         return resId;
     }
 
-    /**
-     * @return A valid resource integer, or null (instead of 0)
-     */
-    protected Integer resolveResourceIdentifierOrNull(String resName, String resType) {
-        int resId = resolveResourceIdentifierOrZero(resName, resType);
-        if (resId == 0) {
-            return null;
-        } else {
-            return resId;
+    protected int resolveIconIdentifier(String resName) {
+        int rtn;
+        // Try as is
+        rtn = resolveResourceIdentifier(resName, "drawable");
+        if (rtn == 0) {
+            // Try fixing spaces
+            resName = resName.replaceAll(" ", "_");
+            rtn = resolveResourceIdentifier(resName, "drawable");
         }
-
+        if (rtn == 0) {
+            // Try bundled icon (ic_XXX_white_24dp)
+            rtn = resolveResourceIdentifier("ic_" + resName + "_white_24dp", "drawable");
+        }
+        if (rtn == 0) {
+            // Try system icon (ic_XXX)
+            rtn = resolveResourceIdentifier("ic_" + resName, "drawable");
+        }
+        return rtn;
     }
 
     protected CharSequence handleHtml(CharSequence input) {
@@ -927,7 +941,7 @@ class AlertModel implements Cloneable {
             setSoundUri((Uri) null);
         } else {
             // Resolve as a raw resource
-            int resId = resolveResourceIdentifierOrZero(soundUri, "raw");
+            int resId = resolveResourceIdentifier(soundUri, "raw");
             if (resId != 0) {
                 setSoundUri(new Uri.Builder()
                         .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
@@ -1003,7 +1017,7 @@ class AlertModel implements Cloneable {
         if (smallIcon == null) {
             setSmallIcon((Integer) null);
         } else {
-            setSmallIcon(resolveResourceIdentifierOrNull(smallIcon, "drawable"));
+            setSmallIcon(resourceIdOrNull(resolveIconIdentifier(smallIcon)));
         }
     }
 
