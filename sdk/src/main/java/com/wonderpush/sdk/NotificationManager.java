@@ -269,8 +269,7 @@ class NotificationManager {
                 //.setGroupSummary(alert.getGroupSummary())
                 .setSortKey(alert.getSortKey())
                 .setOngoing(alert.getOngoing())
-                .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText(alert.getText()));
+                ;
         if (alert.hasLocalOnly()) {
             builder.setLocalOnly(alert.getLocalOnly());
         }
@@ -351,6 +350,29 @@ class NotificationManager {
                                 .build());
                 ++i;
             }
+        }
+
+        switch (alert.getType()) {
+            case NONE:
+                // Explicitly no particular style
+                builder.setStyle(null);
+                break;
+            default:
+                Log.d(TAG, "Unhandled notification type " + alert.getType());
+                // $FALLTHROUGH
+            case NULL:
+                // No specific style configured
+                builder.setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(alert.getText()));
+                break;
+            case BIG_TEXT:
+                AlertBigTextModel alertBigText = (AlertBigTextModel) alert;
+                builder.setStyle(new NotificationCompat.BigTextStyle()
+                        .setBigContentTitle(alertBigText.getBigTitle())
+                        .bigText(alertBigText.getBigText())
+                        .setSummaryText(alertBigText.getSummaryText())
+                );
+                break;
         }
 
         return builder.build();

@@ -28,6 +28,63 @@ class AlertModel implements Cloneable {
 
     private static final String TAG = WonderPush.TAG;
 
+    interface Builder {
+        AlertModel build(JSONObject inputJSON);
+    }
+
+    enum Type {
+        // No specific style configured
+        NULL(null, new Builder() {
+            @Override
+            public AlertModel build(JSONObject inputJSON) {
+                return new AlertModel(inputJSON);
+            }
+        }),
+        // Explicitly no particular style
+        NONE("none", new Builder() {
+            @Override
+            public AlertModel build(JSONObject inputJSON) {
+                return new AlertModel(inputJSON);
+            }
+        }),
+        BIG_TEXT("bigText", new Builder() {
+            @Override
+            public AlertBigTextModel build(JSONObject inputJSON) {
+                return new AlertBigTextModel(inputJSON);
+            }
+        }),
+        ;
+
+        private final String type;
+        private final Builder builder;
+
+        Type(String type, Builder builder) {
+            this.type = type;
+            this.builder = builder;
+        }
+
+        @Override
+        public String toString() {
+            return type;
+        }
+
+        public Builder getBuilder() {
+            return builder;
+        }
+
+        public static Type fromString(String type) {
+            if (type == null) {
+                return NULL;
+            }
+            for (Type notificationType : Type.values()) {
+                if (type.equals(notificationType.type)) {
+                    return notificationType;
+                }
+            }
+            throw new IllegalArgumentException("Constant \"" + type + "\" is not a known notification type");
+        }
+    }
+
     private static final int MAX_ALLOWED_SOUND_FILESIZE = 1 * 1024 * 1024; // 1 MB
 
     private static boolean defaultVibrate = true;
@@ -72,6 +129,7 @@ class AlertModel implements Cloneable {
         defaultNotificationLedOff = _defaultNotificationLedOff;
     }
 
+    private Type type; // cannot be changed if foreground for easier coding
     private boolean html;
     // Modify forCurrentSettings() when adding a field below
     private CharSequence title;
@@ -125,8 +183,19 @@ class AlertModel implements Cloneable {
 
     public static AlertModel fromJSON(JSONObject wpAlert) {
         try {
-            AlertModel rtn = new AlertModel();
-            fromJSON_toplevel(rtn, wpAlert);
+            // Get the alert type
+            Type type = null;
+            try {
+                type = Type.fromString(wpAlert.optString("type", null));
+            } catch (Exception ex) {
+                WonderPush.logError("Failed to read notification alert type", ex);
+            }
+            if (type == null) {
+                type = Type.NONE;
+            }
+
+            // Instantiate the appropriate non-abstract subclass
+            AlertModel rtn = type.getBuilder().build(wpAlert);
             return rtn;
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while parsing a notification alert with JSON input " + wpAlert.toString(), e);
@@ -134,178 +203,182 @@ class AlertModel implements Cloneable {
         return null;
     }
 
-    private static void fromJSON_toplevel(AlertModel rtn, JSONObject wpAlert) {
-        rtn.setHtml(wpAlert.optBoolean("html", false)); // must be done before fromJSON_common()
-        fromJSON_common(rtn, wpAlert);
+    protected void fromJSONToplevel(JSONObject wpAlert) {
+        setType(wpAlert.optString("type", null)); // must be done before fromJSONCommon()
+        setHtml(wpAlert.optBoolean("html", false)); // must be done before fromJSONCommon()
+        fromJSONCommon(wpAlert);
 
         if (wpAlert.isNull("priority")) {
-            rtn.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            setPriority(NotificationCompat.PRIORITY_DEFAULT);
         } else if (wpAlert.opt("priority") instanceof String) {
-            rtn.setPriority(wpAlert.optString("priority"));
+            setPriority(wpAlert.optString("priority"));
         } else {
-            rtn.setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_DEFAULT));
+            setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_DEFAULT));
         }
-
 
         JSONObject wpAlertForeground = wpAlert.optJSONObject("foreground");
         if (wpAlertForeground == null) {
             wpAlertForeground = new JSONObject();
         }
         AlertModel foreground = new AlertModel();
-        fromJSON_foreground(foreground, wpAlertForeground);
-        rtn.setForeground(foreground);
+        foreground.fromJSONForeground(wpAlertForeground);
+        setForeground(foreground);
     }
 
-    private static void fromJSON_foreground(AlertModel rtn, JSONObject wpAlert) {
-        fromJSON_common(rtn, wpAlert);
+    protected void fromJSONForeground(JSONObject wpAlert) {
+        fromJSONCommon(wpAlert);
 
         if (wpAlert.isNull("priority")) {
-            rtn.setPriority(NotificationCompat.PRIORITY_HIGH);
+            setPriority(NotificationCompat.PRIORITY_HIGH);
         } else if (wpAlert.opt("priority") instanceof String) {
-            rtn.setPriority(wpAlert.optString("priority"));
+            setPriority(wpAlert.optString("priority"));
         } else {
-            rtn.setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_HIGH));
+            setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_HIGH));
         }
 
-        rtn.setForeground(null);
+        setForeground(null);
     }
 
-    private static void fromJSON_common(AlertModel rtn, JSONObject wpAlert) {
-        rtn.setTitle(wpAlert.optString("title", null));
-        rtn.setText(wpAlert.optString("text", null));
-        rtn.setSubText(wpAlert.optString("subText", null));
-        rtn.setInfo(wpAlert.optString("info", null));
-        rtn.setTicker(wpAlert.optString("ticker", null));
-        rtn.setHasTag(wpAlert.has("tag"));
-        rtn.setTag(wpAlert.optString("tag", null));
+    protected void fromJSONCommon(JSONObject wpAlert) {
+        setTitle(wpAlert.optString("title", null));
+        setText(wpAlert.optString("text", null));
+        setSubText(wpAlert.optString("subText", null));
+        setInfo(wpAlert.optString("info", null));
+        setTicker(wpAlert.optString("ticker", null));
+        setHasTag(wpAlert.has("tag"));
+        setTag(wpAlert.optString("tag", null));
         if (!wpAlert.isNull("autoOpen")) {
-            rtn.setAutoOpen(wpAlert.optBoolean("autoOpen", false));
+            setAutoOpen(wpAlert.optBoolean("autoOpen", false));
         } else {
-            rtn.setAutoOpen(null);
+            setAutoOpen(null);
         }
         if (!wpAlert.isNull("autoDrop")) {
-            rtn.setAutoDrop(wpAlert.optBoolean("autoDrop", false));
+            setAutoDrop(wpAlert.optBoolean("autoDrop", false));
         } else {
-            rtn.setAutoDrop(null);
+            setAutoDrop(null);
         }
-        rtn.setPersons(wpAlert.optJSONArray("persons"));
-        rtn.setCategory(wpAlert.optString("category", null));
-        rtn.setColor(wpAlert.optString("color", null));
-        rtn.setGroup(wpAlert.optString("group", null));
+        setPersons(wpAlert.optJSONArray("persons"));
+        setCategory(wpAlert.optString("category", null));
+        setColor(wpAlert.optString("color", null));
+        setGroup(wpAlert.optString("group", null));
         //if (!wpAlert.isNull("groupSummary")) {
-        //    rtn.setGroupSummary(wpAlert.optBoolean("groupSummary", false));
+        //    setGroupSummary(wpAlert.optBoolean("groupSummary", false));
         //} else {
-        //    rtn.setGroupSummary(null);
+        //    setGroupSummary(null);
         //}
-        rtn.setSortKey(wpAlert.optString("sortKey", null));
+        setSortKey(wpAlert.optString("sortKey", null));
         if (!wpAlert.isNull("localOnly")) {
-            rtn.setLocalOnly(wpAlert.optBoolean("localOnly", false));
+            setLocalOnly(wpAlert.optBoolean("localOnly", false));
         } else {
-            rtn.setLocalOnly(null);
+            setLocalOnly(null);
         }
         if (!wpAlert.isNull("number")) {
-            rtn.setNumber(wpAlert.optInt("number", 1));
+            setNumber(wpAlert.optInt("number", 1));
         } else {
-            rtn.setNumber(null);
+            setNumber(null);
         }
         if (!wpAlert.isNull("onlyAlertOnce")) {
-            rtn.setOnlyAlertOnce(wpAlert.optBoolean("onlyAlertOnce", false));
+            setOnlyAlertOnce(wpAlert.optBoolean("onlyAlertOnce", false));
         } else {
-            rtn.setOnlyAlertOnce(null);
+            setOnlyAlertOnce(null);
         }
         if (!wpAlert.isNull("when")) {
-            rtn.setWhen(wpAlert.optLong("when", System.currentTimeMillis()));
+            setWhen(wpAlert.optLong("when", System.currentTimeMillis()));
         } else {
-            rtn.setWhen(null);
+            setWhen(null);
         }
         if (!wpAlert.isNull("showWhen")) {
-            rtn.setShowWhen(wpAlert.optBoolean("showWhen", false));
+            setShowWhen(wpAlert.optBoolean("showWhen", false));
         } else {
-            rtn.setShowWhen(null);
+            setShowWhen(null);
         }
         if (!wpAlert.isNull("usesChronometer")) {
-            rtn.setUsesChronometer(wpAlert.optBoolean("usesChronometer", false));
+            setUsesChronometer(wpAlert.optBoolean("usesChronometer", false));
         } else {
-            rtn.setUsesChronometer(null);
+            setUsesChronometer(null);
         }
         if (wpAlert.isNull("visibility")) {
-            rtn.setVisibility((Integer) null);
+            setVisibility((Integer) null);
         } else if (wpAlert.opt("visibility") instanceof String) {
-            rtn.setVisibility(wpAlert.optString("visibility"));
+            setVisibility(wpAlert.optString("visibility"));
         } else {
-            rtn.setVisibility(wpAlert.optInt("visibility", NotificationCompat.VISIBILITY_PRIVATE));
+            setVisibility(wpAlert.optInt("visibility", NotificationCompat.VISIBILITY_PRIVATE));
         }
         if (wpAlert.isNull("lights")) {
-            rtn.setLights(null);
-            rtn.setLightsColor((Integer) null);
-            rtn.setLightsOn(null);
-            rtn.setLightsOff(null);
+            setLights(null);
+            setLightsColor((Integer) null);
+            setLightsOn(null);
+            setLightsOff(null);
         } else if (wpAlert.optJSONObject("lights") != null) {
             JSONObject lights = wpAlert.optJSONObject("lights");
-            rtn.setLights(null);
-            rtn.setLightsColor(lights.optString("color", null));
+            setLights(null);
+            setLightsColor(lights.optString("color", null));
             if (!(lights.opt("on") instanceof Number)) {
-                rtn.setLightsOn(null);
+                setLightsOn(null);
             } else {
-                rtn.setLightsOn(lights.optInt("on", defaultNotificationLedOn));
+                setLightsOn(lights.optInt("on", defaultNotificationLedOn));
             }
             if (!(lights.opt("off") instanceof Number)) {
-                rtn.setLightsOff(null);
+                setLightsOff(null);
             } else {
-                rtn.setLightsOff(lights.optInt("off", defaultNotificationLedOff));
+                setLightsOff(lights.optInt("off", defaultNotificationLedOff));
             }
         } else {
-            rtn.setLights(wpAlert.optBoolean("lights", defaultLight));
-            rtn.setLightsColor((Integer) null);
-            rtn.setLightsOn(null);
-            rtn.setLightsOff(null);
+            setLights(wpAlert.optBoolean("lights", defaultLight));
+            setLightsColor((Integer) null);
+            setLightsOn(null);
+            setLightsOff(null);
         }
         if (wpAlert.isNull("vibrate")) {
-            rtn.setVibrate(null);
-            rtn.setVibratePattern(null);
+            setVibrate(null);
+            setVibratePattern(null);
         } else if (wpAlert.optJSONArray("vibrate") != null) {
-            rtn.setVibrate(null);
+            setVibrate(null);
             JSONArray vibrate = wpAlert.optJSONArray("vibrate");
             long[] pattern = new long[vibrate.length()];
             for (int i = 0; i < vibrate.length(); ++i) {
                 pattern[i] = vibrate.optLong(i, 0);
             }
-            rtn.setVibratePattern(pattern);
+            setVibratePattern(pattern);
         } else {
-            rtn.setVibrate(wpAlert.optBoolean("vibrate", defaultVibrate));
-            rtn.setVibratePattern(null);
+            setVibrate(wpAlert.optBoolean("vibrate", defaultVibrate));
+            setVibratePattern(null);
         }
         if (wpAlert.isNull("sound")) {
-            rtn.setSound(null);
-            rtn.setSoundUri((Uri) null);
+            setSound(null);
+            setSoundUri((Uri) null);
         } else if (wpAlert.opt("sound") instanceof String) {
-            rtn.setSound(null);
-            rtn.setSoundUri(wpAlert.optString("sound", null));
+            setSound(null);
+            setSoundUri(wpAlert.optString("sound", null));
         } else {
-            rtn.setSound(wpAlert.optBoolean("sound", defaultSound));
-            rtn.setSoundUri((Uri) null);
+            setSound(wpAlert.optBoolean("sound", defaultSound));
+            setSoundUri((Uri) null);
         }
         if (!wpAlert.isNull("ongoing")) {
-            rtn.setOngoing(wpAlert.optBoolean("ongoing", false));
+            setOngoing(wpAlert.optBoolean("ongoing", false));
         } else {
-            rtn.setOngoing(null);
+            setOngoing(null);
         }
         if (wpAlert.isNull("progress")) {
-            rtn.setProgress(null);
+            setProgress(null);
         } else if (wpAlert.opt("progress") instanceof Boolean) {
-            rtn.setProgress(wpAlert.optBoolean("progress", false));
+            setProgress(wpAlert.optBoolean("progress", false));
         } else {
-            rtn.setProgress(wpAlert.optInt("progress"));
+            setProgress(wpAlert.optInt("progress"));
         }
         if (wpAlert.isNull("smallIcon")) {
-            rtn.setSmallIcon((Integer) null);
+            setSmallIcon((Integer) null);
         } else {
-            rtn.setSmallIcon(wpAlert.optString("smallIcon", null));
+            setSmallIcon(wpAlert.optString("smallIcon", null));
         }
-        rtn.setButtons(wpAlert.optJSONArray("buttons"));
+        setButtons(wpAlert.optJSONArray("buttons"));
     }
 
     public AlertModel() {
+    }
+
+    protected AlertModel(JSONObject inputJSON) {
+        fromJSONToplevel(inputJSON);
     }
 
     public AlertModel forCurrentSettings(boolean applicationIsForeground) {
@@ -318,109 +391,112 @@ class AlertModel implements Cloneable {
         }
 
         if (applicationIsForeground && getForeground() != null) {
-            if (getForeground().getText() != null) {
-                rtn.setText(getForeground().getText());
-            }
-            if (getForeground().getTitle() != null) {
-                rtn.setTitle(getForeground().getTitle());
-            }
-            if (getForeground().getSubText() != null) {
-                rtn.setSubText(getForeground().getSubText());
-            }
-            if (getForeground().getInfo() != null) {
-                rtn.setInfo(getForeground().getInfo());
-            }
-            if (getForeground().getTicker() != null) {
-                rtn.setTicker(getForeground().getTicker());
-            }
-            rtn.setPriority(getForeground().getPriority());
-            if (getForeground().hasAutoOpen()) {
-                rtn.setAutoOpen(getForeground().getAutoOpen());
-            }
-            if (getForeground().hasAutoDrop()) {
-                rtn.setAutoDrop(getForeground().getAutoDrop());
-            }
-            if (getForeground().getPersons() != null) {
-                rtn.setPersons(getForeground().getPersons());
-            }
-            if (getForeground().getCategory() != null) {
-                rtn.setCategory(getForeground().getCategory());
-            }
-            if (getForeground().hasColor()) {
-                rtn.setColor(getForeground().getColor());
-            }
-            if (getForeground().getGroup() != null) {
-                rtn.setGroup(getForeground().getGroup());
-            }
-            //if (getForeground().hasGroupSummary()) {
-            //    rtn.setGroupSummary(getForeground().getGroupSummary());
-            //}
-            if (getForeground().getSortKey() != null) {
-                rtn.setSortKey(getForeground().getSortKey());
-            }
-            if (getForeground().hasLocalOnly()) {
-                rtn.setLocalOnly(getForeground().getLocalOnly());
-            }
-            if (getForeground().hasNumber()) {
-                rtn.setNumber(getForeground().getNumber());
-            }
-            if (getForeground().hasOnlyAlertOnce()) {
-                rtn.setOnlyAlertOnce(getForeground().getOnlyAlertOnce());
-            }
-            if (getForeground().hasWhen()) {
-                rtn.setWhen(getForeground().getWhen());
-            }
-            if (getForeground().hasShowWhen()) {
-                rtn.setShowWhen(getForeground().getShowWhen());
-            }
-            if (getForeground().hasUsesChronometer()) {
-                rtn.setUsesChronometer(getForeground().getUsesChronometer());
-            }
-            if (getForeground().hasVisibility()) {
-                rtn.setVisibility(getForeground().getVisibility());
-            }
-            if (getForeground().hasLights()) {
-                rtn.setLights(getForeground().getLights());
-            }
-            if (getForeground().hasLightsColor()) {
-                rtn.setLightsColor(getForeground().getLightsColor());
-            }
-            if (getForeground().hasLightsOn()) {
-                rtn.setLightsOn(getForeground().getLightsOn());
-            }
-            if (getForeground().hasLightsOff()) {
-                rtn.setLightsOff(getForeground().getLightsOff());
-            }
-            if (getForeground().hasVibrate()) {
-                rtn.setVibrate(getForeground().getVibrate());
-            }
-            if (getForeground().getVibratePattern() != null) {
-                rtn.setVibratePattern(getForeground().getVibratePattern());
-            }
-            if (getForeground().hasSound()) {
-                rtn.setSound(getForeground().getSound());
-            }
-            if (getForeground().getSoundUri() != null) {
-                rtn.setSoundUri(getForeground().getSoundUri());
-            }
-            if (getForeground().hasOngoing()) {
-                rtn.setOngoing(getForeground().getOngoing());
-            }
-            if (getForeground().hasProgress()) {
-                if (getForeground().isProgressIndeterminate()) {
-                    rtn.setProgress(true);
-                } else {
-                    rtn.setProgress(getForeground().getProgress());
-                }
-            }
-            if (getForeground().hasSmallIcon()) {
-                rtn.setSmallIcon(getForeground().getSmallIcon());
-            }
+            rtn.forCurrentSettingsInternal(getForeground());
         }
-
         rtn.setForeground(null);
 
         return rtn;
+    }
+
+    protected void forCurrentSettingsInternal(AlertModel from) {
+        if (from.getText() != null) {
+            setText(from.getText());
+        }
+        if (from.getTitle() != null) {
+            setTitle(from.getTitle());
+        }
+        if (from.getSubText() != null) {
+            setSubText(from.getSubText());
+        }
+        if (from.getInfo() != null) {
+            setInfo(from.getInfo());
+        }
+        if (from.getTicker() != null) {
+            setTicker(from.getTicker());
+        }
+        setPriority(from.getPriority());
+        if (from.hasAutoOpen()) {
+            setAutoOpen(from.getAutoOpen());
+        }
+        if (from.hasAutoDrop()) {
+            setAutoDrop(from.getAutoDrop());
+        }
+        if (from.getPersons() != null) {
+            setPersons(from.getPersons());
+        }
+        if (from.getCategory() != null) {
+            setCategory(from.getCategory());
+        }
+        if (from.hasColor()) {
+            setColor(from.getColor());
+        }
+        if (from.getGroup() != null) {
+            setGroup(from.getGroup());
+        }
+        //if (from.hasGroupSummary()) {
+        //    setGroupSummary(from.getGroupSummary());
+        //}
+        if (from.getSortKey() != null) {
+            setSortKey(from.getSortKey());
+        }
+        if (from.hasLocalOnly()) {
+            setLocalOnly(from.getLocalOnly());
+        }
+        if (from.hasNumber()) {
+            setNumber(from.getNumber());
+        }
+        if (from.hasOnlyAlertOnce()) {
+            setOnlyAlertOnce(from.getOnlyAlertOnce());
+        }
+        if (from.hasWhen()) {
+            setWhen(from.getWhen());
+        }
+        if (from.hasShowWhen()) {
+            setShowWhen(from.getShowWhen());
+        }
+        if (from.hasUsesChronometer()) {
+            setUsesChronometer(from.getUsesChronometer());
+        }
+        if (from.hasVisibility()) {
+            setVisibility(from.getVisibility());
+        }
+        if (from.hasLights()) {
+            setLights(from.getLights());
+        }
+        if (from.hasLightsColor()) {
+            setLightsColor(from.getLightsColor());
+        }
+        if (from.hasLightsOn()) {
+            setLightsOn(from.getLightsOn());
+        }
+        if (from.hasLightsOff()) {
+            setLightsOff(from.getLightsOff());
+        }
+        if (from.hasVibrate()) {
+            setVibrate(from.getVibrate());
+        }
+        if (from.getVibratePattern() != null) {
+            setVibratePattern(from.getVibratePattern());
+        }
+        if (from.hasSound()) {
+            setSound(from.getSound());
+        }
+        if (from.getSoundUri() != null) {
+            setSoundUri(from.getSoundUri());
+        }
+        if (from.hasOngoing()) {
+            setOngoing(from.getOngoing());
+        }
+        if (from.hasProgress()) {
+            if (from.isProgressIndeterminate()) {
+                setProgress(true);
+            } else {
+                setProgress(from.getProgress());
+            }
+        }
+        if (from.hasSmallIcon()) {
+            setSmallIcon(from.getSmallIcon());
+        }
     }
 
     @Override
@@ -481,6 +557,22 @@ class AlertModel implements Cloneable {
         } else {
             return input;
         }
+    }
+
+    public boolean hasType() {
+        return type != null;
+    }
+
+    public Type getType() {
+        return type == null ? Type.NULL : type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public void setType(String type) {
+        setType(Type.fromString(type));
     }
 
     public boolean isHtml() {
