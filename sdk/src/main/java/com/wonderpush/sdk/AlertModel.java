@@ -4,22 +4,29 @@ import android.app.Notification;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 import android.text.Html;
+import android.util.Base64InputStream;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -87,6 +94,7 @@ class AlertModel implements Cloneable {
     }
 
     private static final int MAX_ALLOWED_SOUND_FILESIZE = 1 * 1024 * 1024; // 1 MB
+    private static final int MAX_ALLOWED_LARGEICON_FILESIZE = 2 * 1024 * 1024; // 2 MB
 
     private static boolean defaultVibrate = true;
     private static boolean defaultSound = true;
@@ -167,6 +175,7 @@ class AlertModel implements Cloneable {
     private Boolean ongoing;
     private Integer progress; // negative for "indeterminate"
     private Integer smallIcon;
+    private Bitmap largeIcon;
     private List<NotificationButtonModel> buttons;
     // Modify forCurrentSettings() and clone() when adding a field above
     private AlertModel foreground;
@@ -371,6 +380,11 @@ class AlertModel implements Cloneable {
         } else {
             setSmallIcon(wpAlert.optString("smallIcon", null));
         }
+        if (wpAlert.isNull("largeIcon")) {
+            setLargeIcon((Bitmap) null);
+        } else {
+            setLargeIcon(wpAlert.optString("largeIcon", null));
+        }
         setButtons(wpAlert.optJSONArray("buttons"));
     }
 
@@ -496,6 +510,9 @@ class AlertModel implements Cloneable {
         }
         if (from.hasSmallIcon()) {
             setSmallIcon(from.getSmallIcon());
+        }
+        if (from.getLargeIcon() != null) {
+            setLargeIcon(from.getLargeIcon());
         }
         if (from.getButtons() != null) {
             setButtons(from.getButtons());
@@ -999,7 +1016,7 @@ class AlertModel implements Cloneable {
 
     public void setSoundUri(Uri soundUri) {
         if (soundUri != null) {
-            String scheme = soundUri.getScheme().toLowerCase(Locale.ROOT);
+            String scheme = soundUri.getScheme() == null ? null : soundUri.getScheme().toLowerCase(Locale.ROOT);
             // Fetch external file (as the system RingtoneManager has no INTERNET permission, unlike us)
             // and convert it to a data URI
             if ("http".equals(scheme) || "https".equals(scheme)) {
@@ -1128,6 +1145,102 @@ class AlertModel implements Cloneable {
             setSmallIcon((Integer) null);
         } else {
             setSmallIcon(resourceIdOrNull(resolveIconIdentifier(smallIcon)));
+        }
+    }
+
+    public Bitmap getLargeIcon() {
+        return largeIcon;
+    }
+
+    public void setLargeIcon(Bitmap largeIcon) {
+        this.largeIcon = largeIcon;
+        if (largeIcon != null) {
+            WonderPush.logDebug("Large icon: " + largeIcon.getWidth() + "x" + largeIcon.getHeight());
+        }
+    }
+
+    public void setLargeIcon(String largeIcon) {
+        Uri largeIconUri;
+        int largeIconResId;
+        if (largeIcon == null) {
+            setLargeIcon((Bitmap) null);
+        } else {
+            largeIconUri = Uri.parse(largeIcon);
+            String scheme = largeIconUri.getScheme() == null ? null : largeIconUri.getScheme().toLowerCase(Locale.ROOT);
+            if ("http".equals(scheme) || "https".equals(scheme)) {
+                try {
+                    String filename = Integer.toHexString(largeIcon.hashCode());
+                    File cacheLargeIconsDir = new File(WonderPush.getApplicationContext().getCacheDir(), "largeIcons");
+                    cacheLargeIconsDir.mkdirs();
+                    File cached = new File(cacheLargeIconsDir, filename);
+                    // TODO handle If-Modified-Since
+                    if (!cached.exists()) {
+                        WonderPush.logDebug("Large icon: Will open URL: " + largeIcon);
+                        URLConnection conn = new URL(largeIcon).openConnection();
+                        InputStream is = (InputStream) conn.getContent();
+                        WonderPush.logDebug("Large icon: Content-Type: " + conn.getContentType());
+                        WonderPush.logDebug("Large icon: Content-Length: " + conn.getContentLength() + " bytes");
+                        if (conn.getContentLength() > MAX_ALLOWED_LARGEICON_FILESIZE) {
+                            throw new RuntimeException("Large icon file too large (" + conn.getContentLength() + " is over " + MAX_ALLOWED_LARGEICON_FILESIZE + " bytes)");
+                        }
+
+                        FileOutputStream outputStream = new FileOutputStream(cached);
+                        int read, ttl = 0;
+                        byte[] buffer = new byte[2048];
+                        while ((read = is.read(buffer)) != -1) {
+                            ttl += read;
+                            outputStream.write(buffer, 0, read);
+                        }
+                        outputStream.close();
+                        WonderPush.logDebug("Large icon: Finished reading " + ttl + " bytes");
+                    }
+                    WonderPush.logDebug("Large icon: Resolved as URL");
+                    setLargeIcon(BitmapFactory.decodeFile(cached.getAbsolutePath()));
+                } catch (Exception ex) {
+                    Log.e(WonderPush.TAG, "Failed to fetch large icon from URI " + largeIcon, ex);
+                    setLargeIcon((Bitmap) null);
+                }
+            } else if ("data".equals(scheme)) {
+                WonderPush.logDebug("Large icon: Resolved as data URI");
+                String sspEnc = largeIconUri.getEncodedSchemeSpecificPart(); // we must decode ourself to binary, not to text
+                String ssp;
+                try {
+                    ssp = URLDecoder.decode(sspEnc, "ISO-8859-1");
+                } catch (UnsupportedEncodingException ex) {
+                    WonderPush.logDebug("Large icon: Failed to decode scheme-specific part: " + sspEnc, ex);
+                    ssp = sspEnc;
+                }
+                byte[] bytes = null;
+                try {
+                    bytes = ssp.getBytes("ISO-8859-1");
+                } catch (UnsupportedEncodingException ignored) {}
+                if (bytes != null) {
+                    int offset = ssp.indexOf(',') + 1;
+                    InputStream in = new ByteArrayInputStream(bytes, offset, bytes.length - offset);
+                    String info = ssp.substring(0, offset - 1);
+                    if (info.endsWith(";base64")) {
+                        in = new Base64InputStream(in, 0);
+                    }
+                    setLargeIcon(BitmapFactory.decodeStream(in));
+                }
+            } else if ((largeIconResId = resolveResourceIdentifier(largeIcon, "drawable")) != 0) {
+                WonderPush.logDebug("Large icon: Resolved as drawable");
+                setLargeIcon(BitmapFactory.decodeResource(WonderPush.getApplicationContext().getResources(), largeIconResId));
+            } else if ((largeIconResId = resolveResourceIdentifier(largeIcon, "mipmap")) != 0) {
+                WonderPush.logDebug("Large icon: Resolved as mipmap");
+                setLargeIcon(BitmapFactory.decodeResource(WonderPush.getApplicationContext().getResources(), largeIconResId));
+            } else {
+                for (String suffix : new String[]{"", ".webp", ".png", ".jpg", ".jpeg", ".gif", ".bmp"}) {
+                    try {
+                        Bitmap bm = BitmapFactory.decodeStream(WonderPush.getApplicationContext().getResources().getAssets().open(largeIcon + suffix));
+                        if (bm != null) {
+                            WonderPush.logDebug("Large icon: Resolved as asset with suffix: \"" + suffix + "\"");
+                            setLargeIcon(bm);
+                            break;
+                        }
+                    } catch (IOException ignored) {}
+                }
+            }
         }
     }
 

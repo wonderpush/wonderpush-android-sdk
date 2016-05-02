@@ -264,6 +264,7 @@ class NotificationManager {
                 .setPriority(alert.getPriority())
                 .setColor(alert.getColor())
                 .setSmallIcon(alert.hasSmallIcon() && alert.getSmallIcon() != 0 ? alert.getSmallIcon() : defaultIconResource)
+                .setLargeIcon(alert.getLargeIcon())
                 .setCategory(alert.getCategory())
                 .setGroup(alert.getGroup())
                 //.setGroupSummary(alert.getGroupSummary())
