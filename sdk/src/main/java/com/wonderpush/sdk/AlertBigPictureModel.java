@@ -8,12 +8,12 @@ public class AlertBigPictureModel extends AlertModel {
 
     protected static final int MAX_ALLOWED_BIGPICTURE_FILESIZE = 5 * 1024 * 1024; // 5 MB
 
-    // Modify forCurrentSettings() when adding a field below
+    // Modify forCurrentSettings() and clone() when adding a field below
     private Bitmap bigLargeIcon;
     private Bitmap bigPicture;
     private CharSequence bigTitle;
     private CharSequence summaryText;
-    // Modify forCurrentSettings() when adding a field above
+    // Modify forCurrentSettings() and clone() when adding a field above
 
     public AlertBigPictureModel() {
     }

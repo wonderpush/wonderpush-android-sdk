@@ -4,11 +4,11 @@ import org.json.JSONObject;
 
 public class AlertBigTextModel extends AlertModel {
 
-    // Modify forCurrentSettings() when adding a field below
+    // Modify forCurrentSettings() and clone() when adding a field below
     private CharSequence bigText;
     private CharSequence bigTitle;
     private CharSequence summaryText;
-    // Modify forCurrentSettings() when adding a field above
+    // Modify forCurrentSettings() and clone() when adding a field above
 
     public AlertBigTextModel() {
     }

@@ -8,17 +8,29 @@ import java.util.List;
 
 public class AlertInboxModel extends AlertModel {
 
-    // Modify forCurrentSettings() when adding a field below
+    // Modify forCurrentSettings() and clone() when adding a field below
     private List<CharSequence> lines;
     private CharSequence bigTitle;
     private CharSequence summaryText;
-    // Modify forCurrentSettings() when adding a field above
+    // Modify forCurrentSettings() and clone() when adding a field above
 
     public AlertInboxModel() {
     }
 
     public AlertInboxModel(JSONObject inputJSON) {
         super(inputJSON);
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        AlertInboxModel rtn = (AlertInboxModel) super.clone();
+        if (lines != null) {
+            rtn.lines = new LinkedList<>();
+            for (CharSequence line : lines) {
+                rtn.lines.add(line);
+            }
+        }
+        return rtn;
     }
 
     @Override
