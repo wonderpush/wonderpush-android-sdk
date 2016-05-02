@@ -383,6 +383,21 @@ class NotificationManager {
                         .setSummaryText(alertBigPicture.getSummaryText() != null ? alertBigPicture.getSummaryText() : alert.getText())
                 );
                 break;
+            case INBOX:
+                AlertInboxModel alertInbox = (AlertInboxModel) alert;
+                NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle()
+                        .setBigContentTitle(alertInbox.getBigTitle()) // automatically falls back to alert.getTitle()
+                        .setSummaryText(alertInbox.getSummaryText());
+                if (alertInbox.getLines() != null) {
+                    for (CharSequence line : alertInbox.getLines()) {
+                        style.addLine(line);
+                    }
+                } else {
+                    // We could split the text by lines, but a CharSequence (in HTML mode) is impractical
+                    style.addLine(alert.getText());
+                }
+                builder.setStyle(style);
+                break;
         }
 
         return builder.build();

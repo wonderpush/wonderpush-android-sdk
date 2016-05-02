@@ -67,6 +67,12 @@ class AlertModel implements Cloneable {
                 return new AlertBigPictureModel(inputJSON);
             }
         }),
+        INBOX("inbox", new Builder() {
+            @Override
+            public AlertInboxModel build(JSONObject inputJSON) {
+                return new AlertInboxModel(inputJSON);
+            }
+        }),
         ;
 
         private final String type;
