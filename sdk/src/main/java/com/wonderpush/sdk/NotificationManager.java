@@ -369,18 +369,18 @@ class NotificationManager {
             case BIG_TEXT:
                 AlertBigTextModel alertBigText = (AlertBigTextModel) alert;
                 builder.setStyle(new NotificationCompat.BigTextStyle()
-                        .setBigContentTitle(alertBigText.getBigTitle())
-                        .bigText(alertBigText.getBigText())
+                        .setBigContentTitle(alertBigText.getBigTitle()) // automatically falls back to alert.getTitle()
+                        .bigText(alertBigText.getBigText() != null ? alertBigText.getBigText() : alert.getText())
                         .setSummaryText(alertBigText.getSummaryText())
                 );
                 break;
             case BIG_PICTURE:
                 AlertBigPictureModel alertBigPicture = (AlertBigPictureModel) alert;
                 builder.setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigLargeIcon(alertBigPicture.getBigLargeIcon())
+                        .bigLargeIcon(alertBigPicture.getBigLargeIcon() != null ? alertBigPicture.getBigLargeIcon() : alert.getLargeIcon())
                         .bigPicture(alertBigPicture.getBigPicture())
-                        .setBigContentTitle(alertBigPicture.getBigTitle())
-                        .setSummaryText(alertBigPicture.getSummaryText())
+                        .setBigContentTitle(alertBigPicture.getBigTitle()) // automatically falls back to alert.getTitle()
+                        .setSummaryText(alertBigPicture.getSummaryText() != null ? alertBigPicture.getSummaryText() : alert.getText())
                 );
                 break;
         }
