@@ -526,9 +526,7 @@ class AlertModel implements Cloneable {
         if (from.getLargeIcon() != null) {
             setLargeIcon(from.getLargeIcon());
         }
-        if (from.getButtons() != null) {
-            setButtons(from.getButtons());
-        }
+        // DO NOT vary buttons
     }
 
     @Override
