@@ -535,6 +535,9 @@ class AlertModel implements Cloneable {
     }
 
     protected int resolveIconIdentifier(String resName) {
+        if (resName == null) {
+            return 0;
+        }
         int rtn;
         // Try as is
         rtn = resolveResourceIdentifier(resName, "drawable");
