@@ -4,9 +4,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
-class NotificationButtonModel {
+class NotificationButtonModel implements Cloneable {
 
     public int icon;
     public CharSequence label;
@@ -34,4 +35,13 @@ class NotificationButtonModel {
         }
     }
 
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        NotificationButtonModel rtn = (NotificationButtonModel) super.clone();
+        rtn.actions = new LinkedList<>();
+        for (ActionModel action : actions) {
+            rtn.actions.add((ActionModel) action.clone());
+        }
+        return rtn;
+    }
 }

@@ -2,9 +2,10 @@ package com.wonderpush.sdk;
 
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
-class ActionModel {
+class ActionModel implements Cloneable {
 
     private static final String TAG = WonderPush.TAG;
 
@@ -68,6 +69,18 @@ class ActionModel {
         custom = data.optJSONObject("custom");
         method = data.optString("method", null);
         methodArg = data.optString("methodArg", null);
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        ActionModel rtn = (ActionModel) super.clone();
+        try {
+            rtn.event = new JSONObject(event.toString());
+        } catch (JSONException ignored) {}
+        try {
+            rtn.custom = new JSONObject(custom.toString());
+        } catch (JSONException ignored) {}
+        return rtn;
     }
 
     public Type getType() {

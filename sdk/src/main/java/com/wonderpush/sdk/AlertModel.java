@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -131,7 +132,7 @@ class AlertModel implements Cloneable {
 
     private Type type; // cannot be changed if foreground for easier coding
     private boolean html;
-    // Modify forCurrentSettings() when adding a field below
+    // Modify forCurrentSettings() and clone() when adding a field below
     private CharSequence title;
     private CharSequence text;
     private CharSequence subText;
@@ -167,7 +168,7 @@ class AlertModel implements Cloneable {
     private Integer progress; // negative for "indeterminate"
     private Integer smallIcon;
     private List<NotificationButtonModel> buttons;
-    // Modify forCurrentSettings() when adding a field above
+    // Modify forCurrentSettings() and clone() when adding a field above
     private AlertModel foreground;
 
     public static AlertModel fromOldFormatStringExtra(String alert) {
@@ -195,8 +196,7 @@ class AlertModel implements Cloneable {
             }
 
             // Instantiate the appropriate non-abstract subclass
-            AlertModel rtn = type.getBuilder().build(wpAlert);
-            return rtn;
+            return type.getBuilder().build(wpAlert);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while parsing a notification alert with JSON input " + wpAlert.toString(), e);
         }
@@ -507,6 +507,18 @@ class AlertModel implements Cloneable {
         AlertModel rtn = (AlertModel) super.clone();
         if (foreground != null) {
             rtn.foreground = (AlertModel) foreground.clone();
+        }
+        if (persons != null) {
+            rtn.persons = new LinkedList<>(persons);
+        }
+        if (vibratePattern != null) {
+            rtn.vibratePattern = Arrays.copyOf(vibratePattern, vibratePattern.length);
+        }
+        if (buttons != null) {
+            rtn.buttons = new LinkedList<>();
+            for (NotificationButtonModel button : buttons) {
+                rtn.buttons.add((NotificationButtonModel) button.clone());
+            }
         }
         return rtn;
     }
