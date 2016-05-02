@@ -586,6 +586,112 @@ class AlertModel implements Cloneable {
         return rtn;
     }
 
+    protected File fetchHTTPResource(Uri uri, int maxSizeAllowed, String cacheSubfolder, String logPrefix) {
+        String scheme = uri.getScheme() == null ? null : uri.getScheme().toLowerCase(Locale.ROOT);
+        if ("http".equals(scheme) || "https".equals(scheme)) {
+            try {
+                String filename = Integer.toHexString(uri.toString().hashCode());
+                File cacheLargeIconsDir = new File(WonderPush.getApplicationContext().getCacheDir(), cacheSubfolder);
+                cacheLargeIconsDir.mkdirs();
+                File cached = new File(cacheLargeIconsDir, filename);
+                // TODO handle If-Modified-Since
+                // TODO limit cached files size
+                if (!cached.exists()) {
+                    WonderPush.logDebug(logPrefix + ": Will open URL: " + uri);
+                    URLConnection conn = new URL(uri.toString()).openConnection();
+                    InputStream is = (InputStream) conn.getContent();
+                    WonderPush.logDebug(logPrefix + ": Content-Type: " + conn.getContentType());
+                    WonderPush.logDebug(logPrefix + ": Content-Length: " + conn.getContentLength() + " bytes");
+                    if (conn.getContentLength() > maxSizeAllowed) {
+                        throw new RuntimeException(logPrefix + " file too large (" + conn.getContentLength() + " is over " + maxSizeAllowed + " bytes)");
+                    }
+
+                    FileOutputStream outputStream = new FileOutputStream(cached);
+                    int read, ttl = 0;
+                    byte[] buffer = new byte[2048];
+                    while ((read = is.read(buffer)) != -1) {
+                        ttl += read;
+                        if (ttl > maxSizeAllowed) {
+                            throw new RuntimeException(logPrefix + " file too large (max " + maxSizeAllowed + " bytes allowed)");
+                        }
+                        outputStream.write(buffer, 0, read);
+                    }
+                    outputStream.close();
+                    WonderPush.logDebug(logPrefix + ": Finished reading " + ttl + " bytes");
+                }
+                WonderPush.logDebug(logPrefix + ": Resolved as URL");
+                return cached;
+            } catch (Exception ex) {
+                Log.e(WonderPush.TAG, logPrefix + ": Failed to fetch from URI " + uri, ex);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    protected InputStream decodeDataUri(Uri uri, String logPrefix) {
+        String scheme = uri.getScheme() == null ? null : uri.getScheme().toLowerCase(Locale.ROOT);
+        if ("data".equals(scheme)) {
+            WonderPush.logDebug(logPrefix + ": Resolved as data URI");
+            String sspEnc = uri.getEncodedSchemeSpecificPart(); // we must decode ourself to binary, not to text
+            String ssp;
+            try {
+                ssp = URLDecoder.decode(sspEnc, "ISO-8859-1");
+            } catch (UnsupportedEncodingException ex) {
+                WonderPush.logDebug(logPrefix + ": Failed to decode scheme-specific part: " + sspEnc, ex);
+                ssp = sspEnc;
+            }
+            byte[] bytes = null;
+            try {
+                bytes = ssp.getBytes("ISO-8859-1");
+            } catch (UnsupportedEncodingException ignored) {
+            }
+            if (bytes != null) {
+                int offset = ssp.indexOf(',') + 1;
+                InputStream in = new ByteArrayInputStream(bytes, offset, bytes.length - offset);
+                String info = ssp.substring(0, offset - 1);
+                if (info.endsWith(";base64")) {
+                    in = new Base64InputStream(in, 0);
+                }
+                return in;
+            }
+        }
+        return null;
+    }
+
+    protected Bitmap resolveBitmapFromString(String value, int maxSizeAllowed, String cacheSubfolder, String logPrefix) {
+        if (value == null) {
+            return null;
+        }
+        Uri uri;
+        File cached;
+        InputStream stream;
+        int resId;
+        uri = Uri.parse(value);
+        if ((cached = fetchHTTPResource(uri, maxSizeAllowed, cacheSubfolder, logPrefix)) != null) {
+            return BitmapFactory.decodeFile(cached.getAbsolutePath());
+        } else if ((stream = decodeDataUri(uri, logPrefix)) != null) {
+            return BitmapFactory.decodeStream(stream);
+        } else if ((resId = resolveResourceIdentifier(value, "drawable")) != 0) {
+            WonderPush.logDebug(logPrefix + ": Resolved as drawable");
+            return BitmapFactory.decodeResource(WonderPush.getApplicationContext().getResources(), resId);
+        } else if ((resId = resolveResourceIdentifier(value, "mipmap")) != 0) {
+            WonderPush.logDebug(logPrefix + ": Resolved as mipmap");
+            return BitmapFactory.decodeResource(WonderPush.getApplicationContext().getResources(), resId);
+        } else {
+            for (String suffix : new String[]{"", ".webp", ".png", ".jpg", ".jpeg", ".gif", ".bmp"}) {
+                try {
+                    Bitmap bm = BitmapFactory.decodeStream(WonderPush.getApplicationContext().getResources().getAssets().open(value + suffix));
+                    if (bm != null) {
+                        WonderPush.logDebug(logPrefix + ": Resolved as asset with suffix: \"" + suffix + "\"");
+                        return bm;
+                    }
+                } catch (IOException ignored) {}
+            }
+        }
+        return null;
+    }
+
     protected CharSequence handleHtml(CharSequence input) {
         if (isHtml() && input instanceof String) {
             return Html.fromHtml((String) input); // images are unsupported in text, but unicode smileys are
@@ -1017,46 +1123,20 @@ class AlertModel implements Cloneable {
     public void setSoundUri(Uri soundUri) {
         if (soundUri != null) {
             String scheme = soundUri.getScheme() == null ? null : soundUri.getScheme().toLowerCase(Locale.ROOT);
-            // Fetch external file (as the system RingtoneManager has no INTERNET permission, unlike us)
-            // and convert it to a data URI
             if ("http".equals(scheme) || "https".equals(scheme)) {
-                try {
-                    String filename = Integer.toHexString(soundUri.toString().hashCode());
-                    File cacheSoundsDir = new File(WonderPush.getApplicationContext().getCacheDir(), "sounds");
-                    cacheSoundsDir.mkdirs();
-                    File cached = new File(cacheSoundsDir, filename);
-                    // TODO handle If-Modified-Since
-                    if (!cached.exists()) {
-                        WonderPush.logDebug("Sound: Will open URL: " + soundUri);
-                        URLConnection conn = new URL(soundUri.toString()).openConnection();
-                        InputStream is = (InputStream) conn.getContent();
-                        WonderPush.logDebug("Sound: Content-Type: " + conn.getContentType());
-                        WonderPush.logDebug("Sound: Content-Length: " + conn.getContentLength() + " bytes");
-                        if (conn.getContentLength() > MAX_ALLOWED_SOUND_FILESIZE) {
-                            throw new RuntimeException("Sound file too large (" + conn.getContentLength() + " is over " + MAX_ALLOWED_SOUND_FILESIZE + " bytes)");
-                        }
-
-                        FileOutputStream outputStream = new FileOutputStream(cached);
-                        int read, ttl = 0;
-                        byte[] buffer = new byte[2048];
-                        while ((read = is.read(buffer)) != -1) {
-                            ttl += read;
-                            outputStream.write(buffer, 0, read);
-                        }
-                        outputStream.close();
-                        WonderPush.logDebug("Sound: Finished reading " + ttl + " bytes");
-                    }
+                // Fetch external file (as the system RingtoneManager has no INTERNET permission, unlike us)
+                // and convert it to a URI
+                File soundCached = fetchHTTPResource(soundUri, MAX_ALLOWED_SOUND_FILESIZE, "sounds", "Sound");
+                if (soundCached != null) {
                     soundUri = FileProvider.getUriForFile(
                             WonderPush.getApplicationContext(),
                             WonderPush.getApplicationContext().getPackageName() + ".wonderpush.fileprovider",
-                            cached);
+                            soundCached);
                     WonderPush.getApplicationContext().grantUriPermission("com.android.systemui", soundUri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     WonderPush.logDebug("Sound: new URI: " + soundUri);
-                } catch (Exception ex) {
-                    Log.e(WonderPush.TAG, "Failed to fetch sound from URI " + soundUri, ex);
+                } else {
                     setSound(true);
                     setSoundUri((Uri) null);
-                    return;
                 }
             }
         }
@@ -1160,88 +1240,7 @@ class AlertModel implements Cloneable {
     }
 
     public void setLargeIcon(String largeIcon) {
-        Uri largeIconUri;
-        int largeIconResId;
-        if (largeIcon == null) {
-            setLargeIcon((Bitmap) null);
-        } else {
-            largeIconUri = Uri.parse(largeIcon);
-            String scheme = largeIconUri.getScheme() == null ? null : largeIconUri.getScheme().toLowerCase(Locale.ROOT);
-            if ("http".equals(scheme) || "https".equals(scheme)) {
-                try {
-                    String filename = Integer.toHexString(largeIcon.hashCode());
-                    File cacheLargeIconsDir = new File(WonderPush.getApplicationContext().getCacheDir(), "largeIcons");
-                    cacheLargeIconsDir.mkdirs();
-                    File cached = new File(cacheLargeIconsDir, filename);
-                    // TODO handle If-Modified-Since
-                    if (!cached.exists()) {
-                        WonderPush.logDebug("Large icon: Will open URL: " + largeIcon);
-                        URLConnection conn = new URL(largeIcon).openConnection();
-                        InputStream is = (InputStream) conn.getContent();
-                        WonderPush.logDebug("Large icon: Content-Type: " + conn.getContentType());
-                        WonderPush.logDebug("Large icon: Content-Length: " + conn.getContentLength() + " bytes");
-                        if (conn.getContentLength() > MAX_ALLOWED_LARGEICON_FILESIZE) {
-                            throw new RuntimeException("Large icon file too large (" + conn.getContentLength() + " is over " + MAX_ALLOWED_LARGEICON_FILESIZE + " bytes)");
-                        }
-
-                        FileOutputStream outputStream = new FileOutputStream(cached);
-                        int read, ttl = 0;
-                        byte[] buffer = new byte[2048];
-                        while ((read = is.read(buffer)) != -1) {
-                            ttl += read;
-                            outputStream.write(buffer, 0, read);
-                        }
-                        outputStream.close();
-                        WonderPush.logDebug("Large icon: Finished reading " + ttl + " bytes");
-                    }
-                    WonderPush.logDebug("Large icon: Resolved as URL");
-                    setLargeIcon(BitmapFactory.decodeFile(cached.getAbsolutePath()));
-                } catch (Exception ex) {
-                    Log.e(WonderPush.TAG, "Failed to fetch large icon from URI " + largeIcon, ex);
-                    setLargeIcon((Bitmap) null);
-                }
-            } else if ("data".equals(scheme)) {
-                WonderPush.logDebug("Large icon: Resolved as data URI");
-                String sspEnc = largeIconUri.getEncodedSchemeSpecificPart(); // we must decode ourself to binary, not to text
-                String ssp;
-                try {
-                    ssp = URLDecoder.decode(sspEnc, "ISO-8859-1");
-                } catch (UnsupportedEncodingException ex) {
-                    WonderPush.logDebug("Large icon: Failed to decode scheme-specific part: " + sspEnc, ex);
-                    ssp = sspEnc;
-                }
-                byte[] bytes = null;
-                try {
-                    bytes = ssp.getBytes("ISO-8859-1");
-                } catch (UnsupportedEncodingException ignored) {}
-                if (bytes != null) {
-                    int offset = ssp.indexOf(',') + 1;
-                    InputStream in = new ByteArrayInputStream(bytes, offset, bytes.length - offset);
-                    String info = ssp.substring(0, offset - 1);
-                    if (info.endsWith(";base64")) {
-                        in = new Base64InputStream(in, 0);
-                    }
-                    setLargeIcon(BitmapFactory.decodeStream(in));
-                }
-            } else if ((largeIconResId = resolveResourceIdentifier(largeIcon, "drawable")) != 0) {
-                WonderPush.logDebug("Large icon: Resolved as drawable");
-                setLargeIcon(BitmapFactory.decodeResource(WonderPush.getApplicationContext().getResources(), largeIconResId));
-            } else if ((largeIconResId = resolveResourceIdentifier(largeIcon, "mipmap")) != 0) {
-                WonderPush.logDebug("Large icon: Resolved as mipmap");
-                setLargeIcon(BitmapFactory.decodeResource(WonderPush.getApplicationContext().getResources(), largeIconResId));
-            } else {
-                for (String suffix : new String[]{"", ".webp", ".png", ".jpg", ".jpeg", ".gif", ".bmp"}) {
-                    try {
-                        Bitmap bm = BitmapFactory.decodeStream(WonderPush.getApplicationContext().getResources().getAssets().open(largeIcon + suffix));
-                        if (bm != null) {
-                            WonderPush.logDebug("Large icon: Resolved as asset with suffix: \"" + suffix + "\"");
-                            setLargeIcon(bm);
-                            break;
-                        }
-                    } catch (IOException ignored) {}
-                }
-            }
-        }
+        setLargeIcon(resolveBitmapFromString(largeIcon, MAX_ALLOWED_LARGEICON_FILESIZE, "largeIcons", "Large icon"));
     }
 
     public List<NotificationButtonModel> getButtons() {
