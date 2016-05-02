@@ -359,7 +359,7 @@ class NotificationManager {
                 builder.setStyle(null);
                 break;
             default:
-                Log.d(TAG, "Unhandled notification type " + alert.getType());
+                Log.e(TAG, "Unhandled notification type " + alert.getType());
                 // $FALLTHROUGH
             case NULL:
                 // No specific style configured
@@ -372,6 +372,15 @@ class NotificationManager {
                         .setBigContentTitle(alertBigText.getBigTitle())
                         .bigText(alertBigText.getBigText())
                         .setSummaryText(alertBigText.getSummaryText())
+                );
+                break;
+            case BIG_PICTURE:
+                AlertBigPictureModel alertBigPicture = (AlertBigPictureModel) alert;
+                builder.setStyle(new NotificationCompat.BigPictureStyle()
+                        .bigLargeIcon(alertBigPicture.getBigLargeIcon())
+                        .bigPicture(alertBigPicture.getBigPicture())
+                        .setBigContentTitle(alertBigPicture.getBigTitle())
+                        .setSummaryText(alertBigPicture.getSummaryText())
                 );
                 break;
         }

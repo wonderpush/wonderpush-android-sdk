@@ -1,11 +1,16 @@
 package com.wonderpush.sdk;
 
+import android.graphics.Bitmap;
+
 import org.json.JSONObject;
 
 public class AlertBigPictureModel extends AlertModel {
 
+    protected static final int MAX_ALLOWED_BIGPICTURE_FILESIZE = 5 * 1024 * 1024; // 5 MB
+
     // Modify forCurrentSettings() when adding a field below
-    private CharSequence bigText;
+    private Bitmap bigLargeIcon;
+    private Bitmap bigPicture;
     private CharSequence bigTitle;
     private CharSequence summaryText;
     // Modify forCurrentSettings() when adding a field above
@@ -20,8 +25,9 @@ public class AlertBigPictureModel extends AlertModel {
     @Override
     protected void fromJSONCommon(JSONObject wpAlert) {
         super.fromJSONCommon(wpAlert);
+        setBigLargeIcon(wpAlert.optString("bigLargeIcon", null));
+        setBigPicture(wpAlert.optString("bigPicture", null));
         setBigTitle(wpAlert.optString("bigTitle", null));
-        setBigText(wpAlert.optString("bigText", null));
         setSummaryText(wpAlert.optString("summaryText", null));
     }
 
@@ -30,8 +36,11 @@ public class AlertBigPictureModel extends AlertModel {
         super.forCurrentSettingsInternal(_from);
         if (_from instanceof AlertBigPictureModel) {
             AlertBigPictureModel from = (AlertBigPictureModel) _from;
-            if (from.getBigText() != null) {
-                setText(from.getBigText());
+            if (from.getBigLargeIcon() != null) {
+                setBigLargeIcon(from.getBigLargeIcon());
+            }
+            if (from.getBigPicture() != null) {
+                setBigPicture(from.getBigPicture());
             }
             if (from.getBigTitle() != null) {
                 setTitle(from.getBigTitle());
@@ -42,12 +51,34 @@ public class AlertBigPictureModel extends AlertModel {
         }
     }
 
-    public CharSequence getBigText() {
-        return bigText;
+    public Bitmap getBigLargeIcon() {
+        return bigLargeIcon;
     }
 
-    public void setBigText(CharSequence bigText) {
-        this.bigText = handleHtml(bigText);
+    public void setBigLargeIcon(Bitmap bigLargeIcon) {
+        this.bigLargeIcon = bigLargeIcon;
+        if (bigLargeIcon != null) {
+            WonderPush.logDebug("Big large icon: " + bigLargeIcon.getWidth() + "x" + bigLargeIcon.getHeight());
+        }
+    }
+
+    public void setBigLargeIcon(String bigLargeIcon) {
+        setBigLargeIcon(resolveBitmapFromString(bigLargeIcon, MAX_ALLOWED_LARGEICON_FILESIZE, "largeIcons", "Big large icon"));
+    }
+
+    public Bitmap getBigPicture() {
+        return bigPicture;
+    }
+
+    public void setBigPicture(Bitmap bigPicture) {
+        this.bigPicture = bigPicture;
+        if (bigPicture != null) {
+            WonderPush.logDebug("Big picture: " + bigPicture.getWidth() + "x" + bigPicture.getHeight());
+        }
+    }
+
+    public void setBigPicture(String bigPicture) {
+        setBigPicture(resolveBitmapFromString(bigPicture, MAX_ALLOWED_BIGPICTURE_FILESIZE, "bigPictures", "Big picture"));
     }
 
     public CharSequence getBigTitle() {

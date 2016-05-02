@@ -61,6 +61,12 @@ class AlertModel implements Cloneable {
                 return new AlertBigTextModel(inputJSON);
             }
         }),
+        BIG_PICTURE("bigPicture", new Builder() {
+            @Override
+            public AlertBigPictureModel build(JSONObject inputJSON) {
+                return new AlertBigPictureModel(inputJSON);
+            }
+        }),
         ;
 
         private final String type;
@@ -93,8 +99,8 @@ class AlertModel implements Cloneable {
         }
     }
 
-    private static final int MAX_ALLOWED_SOUND_FILESIZE = 1 * 1024 * 1024; // 1 MB
-    private static final int MAX_ALLOWED_LARGEICON_FILESIZE = 2 * 1024 * 1024; // 2 MB
+    protected static final int MAX_ALLOWED_SOUND_FILESIZE = 1 * 1024 * 1024; // 1 MB
+    protected static final int MAX_ALLOWED_LARGEICON_FILESIZE = 2 * 1024 * 1024; // 2 MB
 
     private static boolean defaultVibrate = true;
     private static boolean defaultSound = true;
