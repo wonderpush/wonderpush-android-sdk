@@ -6,8 +6,6 @@ import org.json.JSONObject;
 
 class AlertBigPictureModel extends AlertModel {
 
-    protected static final int MAX_ALLOWED_BIGPICTURE_FILESIZE = 5 * 1024 * 1024; // 5 MB
-
     // Modify forCurrentSettings() and clone() when adding a field below
     private Bitmap bigLargeIcon;
     private Bitmap bigPicture;
@@ -63,7 +61,7 @@ class AlertBigPictureModel extends AlertModel {
     }
 
     public void setBigLargeIcon(String bigLargeIcon) {
-        setBigLargeIcon(resolveBitmapFromString(bigLargeIcon, MAX_ALLOWED_LARGEICON_FILESIZE, "largeIcons", "Big large icon"));
+        setBigLargeIcon(resolveLargeIconFromString(bigLargeIcon, "Big large icon"));
     }
 
     public Bitmap getBigPicture() {
@@ -78,7 +76,7 @@ class AlertBigPictureModel extends AlertModel {
     }
 
     public void setBigPicture(String bigPicture) {
-        setBigPicture(resolveBitmapFromString(bigPicture, MAX_ALLOWED_BIGPICTURE_FILESIZE, "bigPictures", "Big picture"));
+        setBigPicture(resolveBigPictureFromString(bigPicture, "Big picture"));
     }
 
     public CharSequence getBigTitle() {

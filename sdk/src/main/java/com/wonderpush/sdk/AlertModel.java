@@ -105,9 +105,6 @@ class AlertModel implements Cloneable {
         }
     }
 
-    protected static final int MAX_ALLOWED_SOUND_FILESIZE = 1 * 1024 * 1024; // 1 MB
-    protected static final int MAX_ALLOWED_LARGEICON_FILESIZE = 2 * 1024 * 1024; // 2 MB
-
     private static boolean defaultVibrate = true;
     private static boolean defaultSound = true;
     private static boolean defaultLight = true;
@@ -596,49 +593,6 @@ class AlertModel implements Cloneable {
         return rtn;
     }
 
-    protected File fetchHTTPResource(Uri uri, int maxSizeAllowed, String cacheSubfolder, String logPrefix) {
-        String scheme = uri.getScheme() == null ? null : uri.getScheme().toLowerCase(Locale.ROOT);
-        if ("http".equals(scheme) || "https".equals(scheme)) {
-            try {
-                String filename = Integer.toHexString(uri.toString().hashCode());
-                File cacheLargeIconsDir = new File(WonderPush.getApplicationContext().getCacheDir(), cacheSubfolder);
-                cacheLargeIconsDir.mkdirs();
-                File cached = new File(cacheLargeIconsDir, filename);
-                // TODO handle If-Modified-Since
-                // TODO limit cached files size
-                if (!cached.exists()) {
-                    WonderPush.logDebug(logPrefix + ": Will open URL: " + uri);
-                    URLConnection conn = new URL(uri.toString()).openConnection();
-                    InputStream is = (InputStream) conn.getContent();
-                    WonderPush.logDebug(logPrefix + ": Content-Type: " + conn.getContentType());
-                    WonderPush.logDebug(logPrefix + ": Content-Length: " + conn.getContentLength() + " bytes");
-                    if (conn.getContentLength() > maxSizeAllowed) {
-                        throw new RuntimeException(logPrefix + " file too large (" + conn.getContentLength() + " is over " + maxSizeAllowed + " bytes)");
-                    }
-
-                    FileOutputStream outputStream = new FileOutputStream(cached);
-                    int read, ttl = 0;
-                    byte[] buffer = new byte[2048];
-                    while ((read = is.read(buffer)) != -1) {
-                        ttl += read;
-                        if (ttl > maxSizeAllowed) {
-                            throw new RuntimeException(logPrefix + " file too large (max " + maxSizeAllowed + " bytes allowed)");
-                        }
-                        outputStream.write(buffer, 0, read);
-                    }
-                    outputStream.close();
-                    WonderPush.logDebug(logPrefix + ": Finished reading " + ttl + " bytes");
-                }
-                WonderPush.logDebug(logPrefix + ": Resolved as URL");
-                return cached;
-            } catch (Exception ex) {
-                Log.e(WonderPush.TAG, logPrefix + ": Failed to fetch from URI " + uri, ex);
-                return null;
-            }
-        }
-        return null;
-    }
-
     protected InputStream decodeDataUri(Uri uri, String logPrefix) {
         String scheme = uri.getScheme() == null ? null : uri.getScheme().toLowerCase(Locale.ROOT);
         if ("data".equals(scheme)) {
@@ -669,17 +623,29 @@ class AlertModel implements Cloneable {
         return null;
     }
 
-    protected Bitmap resolveBitmapFromString(String value, int maxSizeAllowed, String cacheSubfolder, String logPrefix) {
+    protected Bitmap resolveLargeIconFromString(String value, String logPrefix) {
         if (value == null) {
             return null;
         }
-        Uri uri;
-        File cached;
+        return resolveBitmapFromString(value, CacheUtil.fetchLargeIcon(Uri.parse(value), logPrefix), logPrefix);
+    }
+
+    protected Bitmap resolveBigPictureFromString(String value, String logPrefix) {
+        if (value == null) {
+            return null;
+        }
+        return resolveBitmapFromString(value, CacheUtil.fetchBigPicture(Uri.parse(value), logPrefix), logPrefix);
+    }
+
+    private Bitmap resolveBitmapFromString(String value, File httpResolvedFile, String logPrefix) {
+        if (value == null) {
+            return null;
+        }
+        Uri uri = Uri.parse(value);
         InputStream stream;
         int resId;
-        uri = Uri.parse(value);
-        if ((cached = fetchHTTPResource(uri, maxSizeAllowed, cacheSubfolder, logPrefix)) != null) {
-            return BitmapFactory.decodeFile(cached.getAbsolutePath());
+        if (httpResolvedFile != null) {
+            return BitmapFactory.decodeFile(httpResolvedFile.getAbsolutePath());
         } else if ((stream = decodeDataUri(uri, logPrefix)) != null) {
             return BitmapFactory.decodeStream(stream);
         } else if ((resId = resolveResourceIdentifier(value, "drawable")) != 0) {
@@ -1136,7 +1102,7 @@ class AlertModel implements Cloneable {
             if ("http".equals(scheme) || "https".equals(scheme)) {
                 // Fetch external file (as the system RingtoneManager has no INTERNET permission, unlike us)
                 // and convert it to a URI
-                File soundCached = fetchHTTPResource(soundUri, MAX_ALLOWED_SOUND_FILESIZE, "sounds", "Sound");
+                File soundCached = CacheUtil.fetchSound(soundUri, "Sound");
                 if (soundCached != null) {
                     soundUri = FileProvider.getUriForFile(
                             WonderPush.getApplicationContext(),
@@ -1250,7 +1216,7 @@ class AlertModel implements Cloneable {
     }
 
     public void setLargeIcon(String largeIcon) {
-        setLargeIcon(resolveBitmapFromString(largeIcon, MAX_ALLOWED_LARGEICON_FILESIZE, "largeIcons", "Large icon"));
+        setLargeIcon(resolveLargeIconFromString(largeIcon, "Large icon"));
     }
 
     public List<NotificationButtonModel> getButtons() {
