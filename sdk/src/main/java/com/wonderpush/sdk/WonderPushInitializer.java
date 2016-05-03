@@ -5,10 +5,30 @@ import android.content.Context;
 /**
  * Interface for the self-initialization of the SDK.
  *
- * <p>You must implement this interface and register your implementation in the {@code AndroidManifest.xml} as follows:</p>
- * <pre><code>&lt;application&gt;
- *    &lt;meta-data android:name="wonderpushInitializerClass" android:value="com.package.YourWonderPushInitializerImpl"/&gt;
- *&lt;/application&gt;</code></pre>
+ * <p>
+ *     You must implement this interface in a class named {@code WonderPushInitializerImpl}
+ *     and placed directly in your Android application package.
+ * </p>
+ *
+ * <p>
+ *     You can actually customize the name and location of the implementation by adding the
+ *     following in your {@code AndroidManifest.xml}:
+ * </p>
+ * <pre><code>&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+ *    xmlns:tools="http://schemas.android.com/tools"
+ *    package="COM.YOUR.PACKAGE"&gt;
+ *
+ *    &lt;application&gt;
+ *
+ *        &lt;!-- Permits the SDK to initialize itself whenever needed, without need for your application to launch --&gt;
+ *        &lt;meta-data
+ *            tools:node="replace"
+ *            android:name="wonderpushInitializerClass"
+ *            android:value="COM.SOME.OTHER.PACKAGE.MyWonderPushInitializerCustomClassName" /&gt;
+ *
+ *    &lt;/application&gt;
+ *
+ *&lt;/manifest&gt;</code></pre>
  */
 public interface WonderPushInitializer {
 
