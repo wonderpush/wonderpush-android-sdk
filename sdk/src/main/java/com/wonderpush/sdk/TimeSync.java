@@ -2,7 +2,7 @@ package com.wonderpush.sdk;
 
 import android.os.SystemClock;
 
-public class TimeSync {
+class TimeSync {
 
     private static long startupDateToServerDateOffset = 0;
     private static long startupDateToServerDateUncertainty = Long.MAX_VALUE;

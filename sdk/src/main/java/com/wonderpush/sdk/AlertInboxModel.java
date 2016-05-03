@@ -6,7 +6,7 @@ import org.json.JSONObject;
 import java.util.LinkedList;
 import java.util.List;
 
-public class AlertInboxModel extends AlertModel {
+class AlertInboxModel extends AlertModel {
 
     // Modify forCurrentSettings() and clone() when adding a field below
     private List<CharSequence> lines;

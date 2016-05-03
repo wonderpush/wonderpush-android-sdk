@@ -2,7 +2,7 @@ package com.wonderpush.sdk;
 
 import org.json.JSONObject;
 
-public class AlertBigTextModel extends AlertModel {
+class AlertBigTextModel extends AlertModel {
 
     // Modify forCurrentSettings() and clone() when adding a field below
     private CharSequence bigText;

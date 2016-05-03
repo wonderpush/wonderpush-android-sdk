@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 
 import org.json.JSONObject;
 
-public class AlertBigPictureModel extends AlertModel {
+class AlertBigPictureModel extends AlertModel {
 
     protected static final int MAX_ALLOWED_BIGPICTURE_FILESIZE = 5 * 1024 * 1024; // 5 MB
 
