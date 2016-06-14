@@ -660,14 +660,18 @@ public class WonderPush {
      */
     public static void trackEvent(String type, JSONObject customData) {
         try {
-            if (type == null || type.length() == 0 || type.charAt(0) == '@') {
-                throw new IllegalArgumentException("Bad event type");
-            }
-            sendEvent(type, null, customData);
-            onInteraction();
+            trackEvent(type, null, customData);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while tracking user event of type \"" + type + "\"", e);
         }
+    }
+
+    protected static void trackEvent(String type, JSONObject eventData, JSONObject customData) {
+        if (type == null || type.length() == 0 || type.charAt(0) == '@') {
+            throw new IllegalArgumentException("Bad event type");
+        }
+        sendEvent(type, eventData, customData);
+        onInteraction();
     }
 
     protected static void trackInternalEvent(String type, JSONObject eventData) {

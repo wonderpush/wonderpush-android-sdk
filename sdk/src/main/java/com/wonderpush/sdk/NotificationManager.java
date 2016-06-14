@@ -556,7 +556,7 @@ class NotificationManager {
                     handleRatingAction(context, action);
                     break;
                 case TRACK_EVENT:
-                    handleTrackEventAction(action);
+                    handleTrackEventAction(notif, action);
                     break;
                 case UPDATE_INSTALLATION:
                     handleUpdateInstallationAction(action);
@@ -606,7 +606,7 @@ class NotificationManager {
         }
     }
 
-    protected static void handleTrackEventAction(ActionModel action) {
+    protected static void handleTrackEventAction(NotificationModel notif, ActionModel action) {
         JSONObject event = action.getEvent();
         if (event == null) {
             Log.e(TAG, "Got no event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
@@ -616,7 +616,14 @@ class NotificationManager {
             Log.e(TAG, "Got no type in the event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
             return;
         }
-        WonderPush.trackEvent(event.optString("type", null), event.optJSONObject("custom"));
+        JSONObject trackingData = new JSONObject();
+        try {
+            trackingData.putOpt("campaignId", notif.getCampaignId());
+            trackingData.putOpt("notificationId", notif.getNotificationId());
+        } catch (JSONException ex) {
+            Log.e(TAG, "Unexpected error while adding notification tracking info in trackEvent", ex);
+        }
+        WonderPush.trackEvent(event.optString("type", null), trackingData, event.optJSONObject("custom"));
     }
 
     protected static void handleUpdateInstallationAction(ActionModel action) {
