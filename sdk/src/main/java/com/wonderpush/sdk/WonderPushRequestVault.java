@@ -110,9 +110,7 @@ class WonderPushRequestVault {
                             }
                         });
                         WonderPushRestClient.requestAuthenticated(request);
-                    } catch (InterruptedException e) {
-                        Log.d(TAG, "Vault interrupted", e);
-                    }
+                    } catch (InterruptedException ignored) {}
                 }
             }
         };
