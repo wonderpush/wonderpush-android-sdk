@@ -189,10 +189,14 @@ class InstallationManager {
 
             String propertiesString = properties.toString();
             String cachedPropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
-            long cachedPropertiesDate = WonderPushConfiguration.getCachedInstallationCorePropertiesDate();
-            if (!propertiesString.equals(cachedPropertiesString)) {
+            String cachedPropertiesAccessToken = WonderPushConfiguration.getCachedInstallationCorePropertiesAccessToken();
+            if (!propertiesString.equals(cachedPropertiesString)
+                    || cachedPropertiesAccessToken == null && WonderPushConfiguration.getAccessToken() != null
+                    || cachedPropertiesAccessToken != null && !cachedPropertiesAccessToken.equals(WonderPushConfiguration.getAccessToken())
+            ) {
                 WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
                 WonderPushConfiguration.setCachedInstallationCoreProperties(propertiesString);
+                WonderPushConfiguration.setCachedInstallationCorePropertiesAccessToken(WonderPushConfiguration.getAccessToken());
                 updateInstallation(properties, false);
             }
         } catch (JSONException ex) {

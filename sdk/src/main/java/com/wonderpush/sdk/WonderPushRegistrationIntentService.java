@@ -64,6 +64,9 @@ public class WonderPushRegistrationIntentService extends IntentService {
                     // Last associated with an other userId?
                     || WonderPushConfiguration.getUserId() == null && WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId() != null
                     || WonderPushConfiguration.getUserId() != null && !WonderPushConfiguration.getUserId().equals(WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId())
+                    // Last associated with an other access token?
+                    || WonderPushConfiguration.getAccessToken() == null && WonderPushConfiguration.getCachedGCMRegistrationIdAccessToken() != null
+                    || WonderPushConfiguration.getAccessToken() != null && !WonderPushConfiguration.getAccessToken().equals(WonderPushConfiguration.getCachedGCMRegistrationIdAccessToken())
             ) {
                 JSONObject properties = new JSONObject();
                 JSONObject pushToken = new JSONObject();
@@ -74,6 +77,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
                 InstallationManager.updateInstallation(properties, false);
                 WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
                 WonderPushConfiguration.setCachedGCMRegistrationIdAssociatedUserId(WonderPushConfiguration.getUserId());
+                WonderPushConfiguration.setCachedGCMRegistrationIdAccessToken(WonderPushConfiguration.getAccessToken());
             }
         } catch (JSONException e) {
             Log.e(WonderPush.TAG, "Failed to update push token to WonderPush", e);

@@ -22,6 +22,7 @@ class WonderPushConfiguration {
 
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_NAME = "__cached_installation_core_properties";
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME = "__cached_installation_core_properties_date";
+    private static final String CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME = "__cached_installation_core_properties_access_token";
 
     private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME = "__cached_installation_custom_properties_written";
     private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME = "__cached_installation_custom_properties_written_date";
@@ -32,6 +33,7 @@ class WonderPushConfiguration {
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME = "__wonderpush_gcm_registration_id_date";
     private static final String CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME = "__wonderpush_gcm_registration_id_associated_to_user_id";
+    private static final String CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME = "__wonderpush_gcm_registration_id_access_token";
     private static final String GCM_REGISTRATION_APP_VERSION_PREF_NAME = "__wonderpush_gcm_registration_app_version";
     private static final String GCM_REGISTRATION_APP_VERSION_FOR_UPDATE_RECEIVER_PREF_NAME = "__wonderpush_gcm_registration_app_version_for_update_receiver";
     private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
@@ -80,6 +82,7 @@ class WonderPushConfiguration {
             currentUserArchive.putOpt(NOTIFICATION_ENABLED_PREF_NAME, getNotificationEnabled());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, getCachedInstallationCoreProperties());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, getCachedInstallationCorePropertiesDate());
+            currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, getCachedInstallationCorePropertiesAccessToken());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME, getCachedInstallationCustomPropertiesWritten());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME, getCachedInstallationCustomPropertiesWrittenDate());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME, getCachedInstallationCustomPropertiesUpdated());
@@ -111,6 +114,7 @@ class WonderPushConfiguration {
         setNotificationEnabled(newUserArchive.optBoolean(NOTIFICATION_ENABLED_PREF_NAME, true));
         setCachedInstallationCoreProperties(newUserArchive.optString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, null));
         setCachedInstallationCorePropertiesDate(newUserArchive.optLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME));
+        setCachedInstallationCorePropertiesAccessToken(newUserArchive.optString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, null));
         setCachedInstallationCustomPropertiesWritten(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME));
         setCachedInstallationCustomPropertiesWrittenDate(newUserArchive.optLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME));
         setCachedInstallationCustomPropertiesUpdated(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME));
@@ -363,6 +367,23 @@ class WonderPushConfiguration {
     }
 
     /**
+     * Get the cached installation core properties stored in the user's shared preferences.
+     */
+    protected static String getCachedInstallationCorePropertiesAccessToken() {
+        return getString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME);
+    }
+
+    /**
+     * Set the cached installation core properties access token stored in the user's shared preferences.
+     *
+     * @param cachedInstallationCorePropertiesAccessToken
+     *            The cached installation core properties access token to be stored
+     */
+    protected static void setCachedInstallationCorePropertiesAccessToken(String cachedInstallationCorePropertiesAccessToken) {
+        putString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, cachedInstallationCorePropertiesAccessToken);
+    }
+
+    /**
      * Get the partial object representing the written installation code properties so far stored in the user's shared preferences.
      * This object is updated whenever grouped updates are performed.
      */
@@ -497,6 +518,23 @@ class WonderPushConfiguration {
      */
     protected static void setCachedGCMRegistrationIdAssociatedUserId(String userId) {
         putString(CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME, userId);
+    }
+
+    /**
+     * Get the cached registration id access token stored in the user's shared preferences.
+     */
+    protected static String getCachedGCMRegistrationIdAccessToken() {
+        return getString(CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME);
+    }
+
+    /**
+     * Set the cached registration id access token as stored in the user's shared preferences.
+     *
+     * @param cachedGCMRegistrationIdAccessToken
+     *            The cached registration id access token to be stored
+     */
+    protected static void setCachedGCMRegistrationIdAccessToken(String cachedGCMRegistrationIdAccessToken) {
+        putString(CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME, cachedGCMRegistrationIdAccessToken);
     }
 
     /**

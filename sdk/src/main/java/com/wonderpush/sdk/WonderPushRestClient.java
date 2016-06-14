@@ -485,9 +485,12 @@ class WonderPushRestClient {
                                     // Make sure to switch back to the current user now
                                     WonderPushConfiguration.changeUserId(prevUserId);
                                 }
+                                sIsFetchingAnonymousAccessToken = false;
+
+                                InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
+                                WonderPushGcmClient.registerForPushNotification(WonderPush.getApplicationContext());
 
                                 // call handlers
-                                sIsFetchingAnonymousAccessToken = false;
                                 if (null != handler) {
                                     handler.onSuccess(statusCode, response);
                                 }
