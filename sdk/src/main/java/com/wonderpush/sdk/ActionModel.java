@@ -74,12 +74,16 @@ class ActionModel implements Cloneable {
     @Override
     protected Object clone() throws CloneNotSupportedException {
         ActionModel rtn = (ActionModel) super.clone();
-        try {
-            rtn.event = new JSONObject(event.toString());
-        } catch (JSONException ignored) {}
-        try {
-            rtn.custom = new JSONObject(custom.toString());
-        } catch (JSONException ignored) {}
+        if (event != null) {
+            try {
+                rtn.event = new JSONObject(event.toString());
+            } catch (JSONException ignored) {}
+        }
+        if (custom != null) {
+            try {
+                rtn.custom = new JSONObject(custom.toString());
+            } catch (JSONException ignored) {}
+        }
         return rtn;
     }
 
