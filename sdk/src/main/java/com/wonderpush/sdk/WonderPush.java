@@ -82,7 +82,7 @@ public class WonderPush {
 
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
-    protected static final String SDK_SHORT_VERSION = "2.2.1"; // reset to .1.0.0 when bumping API_INT
+    protected static final String SDK_SHORT_VERSION = "2.2.2-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
     protected static final String SDK_VERSION = "Android-" + API_INT + "." + SDK_SHORT_VERSION;
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
 
