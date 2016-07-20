@@ -12,7 +12,7 @@ class NotificationUrlModel extends NotificationModel {
 
     @Override
     protected void readFromJSONObject(JSONObject wpData) {
-        setUrl(wpData.optString("url", null));
+        setUrl(JSONUtil.getString(wpData, "url"));
     }
 
     public String getUrl() {

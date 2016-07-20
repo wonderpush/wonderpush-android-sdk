@@ -37,8 +37,8 @@ class AlertInboxModel extends AlertModel {
     protected void fromJSONCommon(JSONObject wpAlert) {
         super.fromJSONCommon(wpAlert);
         setLines(wpAlert.optJSONArray("lines"));
-        setBigTitle(wpAlert.optString("bigTitle", null));
-        setSummaryText(wpAlert.optString("summaryText", null));
+        setBigTitle(JSONUtil.getString(wpAlert, "bigTitle"));
+        setSummaryText(JSONUtil.getString(wpAlert, "summaryText"));
     }
 
     @Override

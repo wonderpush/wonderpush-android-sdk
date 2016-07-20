@@ -205,7 +205,7 @@ class AlertModel implements Cloneable {
             // Get the alert type
             Type type = null;
             try {
-                type = Type.fromString(wpAlert.optString("type", null));
+                type = Type.fromString(JSONUtil.getString(wpAlert, "type"));
             } catch (Exception ex) {
                 WonderPush.logError("Failed to read notification alert type", ex);
             }
@@ -222,7 +222,7 @@ class AlertModel implements Cloneable {
     }
 
     protected void fromJSONToplevel(JSONObject wpAlert) {
-        setType(wpAlert.optString("type", null)); // must be done before fromJSONCommon()
+        setType(JSONUtil.getString(wpAlert, "type")); // must be done before fromJSONCommon()
         setHtml(wpAlert.optBoolean("html", false)); // must be done before fromJSONCommon()
         fromJSONCommon(wpAlert);
 
@@ -258,13 +258,13 @@ class AlertModel implements Cloneable {
     }
 
     protected void fromJSONCommon(JSONObject wpAlert) {
-        setTitle(wpAlert.optString("title", null));
-        setText(wpAlert.optString("text", null));
-        setSubText(wpAlert.optString("subText", null));
-        setInfo(wpAlert.optString("info", null));
-        setTicker(wpAlert.optString("ticker", null));
+        setTitle(JSONUtil.getString(wpAlert, "title"));
+        setText(JSONUtil.getString(wpAlert, "text"));
+        setSubText(JSONUtil.getString(wpAlert, "subText"));
+        setInfo(JSONUtil.getString(wpAlert, "info"));
+        setTicker(JSONUtil.getString(wpAlert, "ticker"));
         setHasTag(wpAlert.has("tag"));
-        setTag(wpAlert.optString("tag", null));
+        setTag(JSONUtil.getString(wpAlert, "tag"));
         if (!wpAlert.isNull("autoOpen")) {
             setAutoOpen(wpAlert.optBoolean("autoOpen", false));
         } else {
@@ -276,15 +276,15 @@ class AlertModel implements Cloneable {
             setAutoDrop(null);
         }
         setPersons(wpAlert.optJSONArray("persons"));
-        setCategory(wpAlert.optString("category", null));
-        setColor(wpAlert.optString("color", null));
-        setGroup(wpAlert.optString("group", null));
+        setCategory(JSONUtil.getString(wpAlert, "category"));
+        setColor(JSONUtil.getString(wpAlert, "color"));
+        setGroup(JSONUtil.getString(wpAlert, "group"));
         //if (!wpAlert.isNull("groupSummary")) {
         //    setGroupSummary(wpAlert.optBoolean("groupSummary", false));
         //} else {
         //    setGroupSummary(null);
         //}
-        setSortKey(wpAlert.optString("sortKey", null));
+        setSortKey(JSONUtil.getString(wpAlert, "sortKey"));
         if (!wpAlert.isNull("localOnly")) {
             setLocalOnly(wpAlert.optBoolean("localOnly", false));
         } else {
@@ -330,7 +330,7 @@ class AlertModel implements Cloneable {
         } else if (wpAlert.optJSONObject("lights") != null) {
             JSONObject lights = wpAlert.optJSONObject("lights");
             setLights(null);
-            setLightsColor(lights.optString("color", null));
+            setLightsColor(JSONUtil.getString(lights, "color"));
             if (!(lights.opt("on") instanceof Number)) {
                 setLightsOn(null);
             } else {
@@ -367,7 +367,7 @@ class AlertModel implements Cloneable {
             setSoundUri((Uri) null);
         } else if (wpAlert.opt("sound") instanceof String) {
             setSound(null);
-            setSoundUri(wpAlert.optString("sound", null));
+            setSoundUri(JSONUtil.getString(wpAlert, "sound"));
         } else {
             setSound(wpAlert.optBoolean("sound", defaultSound));
             setSoundUri((Uri) null);
@@ -387,12 +387,12 @@ class AlertModel implements Cloneable {
         if (wpAlert.isNull("smallIcon")) {
             setSmallIcon((Integer) null);
         } else {
-            setSmallIcon(wpAlert.optString("smallIcon", null));
+            setSmallIcon(JSONUtil.getString(wpAlert, "smallIcon"));
         }
         if (wpAlert.isNull("largeIcon")) {
             setLargeIcon((Bitmap) null);
         } else {
-            setLargeIcon(wpAlert.optString("largeIcon", null));
+            setLargeIcon(JSONUtil.getString(wpAlert, "largeIcon"));
         }
         setButtons(wpAlert.optJSONArray("buttons"));
     }

@@ -182,7 +182,7 @@ abstract class NotificationModel {
             // Get the notification type
             Type type;
             try {
-                type = NotificationModel.Type.fromString(wpData.optString("type", null));
+                type = NotificationModel.Type.fromString(JSONUtil.getString(wpData, "type"));
             } catch (Exception ex) {
                 WonderPush.logError("Failed to read notification type", ex);
                 if (wpData.has("alert") || extras != null && extras.containsKey("alert")) {
@@ -201,10 +201,10 @@ abstract class NotificationModel {
 
             // Read common fields
             rtn.setType(type);
-            rtn.setTargetedInstallation(wpData.optString("@", null));
-            rtn.setCampaignId(wpData.optString("c", null));
-            rtn.setNotificationId(wpData.optString("n", null));
-            rtn.setTargetUrl(wpData.optString("targetUrl", null));
+            rtn.setTargetedInstallation(JSONUtil.getString(wpData, "@"));
+            rtn.setCampaignId(JSONUtil.getString(wpData, "c"));
+            rtn.setNotificationId(JSONUtil.getString(wpData, "n"));
+            rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", true));
 
             // Read notification content
@@ -227,7 +227,7 @@ abstract class NotificationModel {
             }
 
             // Read common in-app fields
-            rtn.setTitle(wpData.optString("title", null));
+            rtn.setTitle(JSONUtil.getString(wpData, "title"));
 
             JSONArray buttons = wpData.optJSONArray("buttons");
             int buttonCount = buttons != null ? buttons.length() : 0;

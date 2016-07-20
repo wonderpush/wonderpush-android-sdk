@@ -613,7 +613,7 @@ class NotificationManager {
             Log.e(TAG, "Got no event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
             return;
         }
-        if (!event.has("type") || event.optString("type", null) == null) {
+        if (!event.has("type") || JSONUtil.getString(event, "type") == null) {
             Log.e(TAG, "Got no type in the event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
             return;
         }
@@ -624,7 +624,7 @@ class NotificationManager {
         } catch (JSONException ex) {
             Log.e(TAG, "Unexpected error while adding notification tracking info in trackEvent", ex);
         }
-        WonderPush.trackEvent(event.optString("type", null), trackingData, event.optJSONObject("custom"));
+        WonderPush.trackEvent(JSONUtil.getString(event, "type"), trackingData, event.optJSONObject("custom"));
     }
 
     protected static void handleUpdateInstallationAction(ActionModel action) {

@@ -13,8 +13,8 @@ class NotificationHtmlModel extends NotificationModel {
 
     @Override
     protected void readFromJSONObject(JSONObject wpData) {
-        message = wpData.optString("message", null);
-        baseUrl = wpData.optString("baseUrl", null);
+        message = JSONUtil.getString(wpData, "message");
+        baseUrl = JSONUtil.getString(wpData, "baseUrl");
     }
 
     public String getMessage() {

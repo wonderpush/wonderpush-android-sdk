@@ -13,7 +13,7 @@ class NotificationMapModel extends NotificationModel {
 
     @Override
     protected void readFromJSONObject(JSONObject wpData) {
-        message = wpData.optString("message", null);
+        message = JSONUtil.getString(wpData, "message");
         map = Map.fromJSONObject(wpData.optJSONObject("map"));
     }
 
@@ -84,8 +84,8 @@ class NotificationMapModel extends NotificationModel {
 
         protected void readFromJSONObject(JSONObject wpPlace) {
             point = Point.fromJSONObject(wpPlace.optJSONObject("point"));
-            name = wpPlace.optString("name", null);
-            query = wpPlace.optString("query", null);
+            name = JSONUtil.getString(wpPlace, "name");
+            query = JSONUtil.getString(wpPlace, "query");
             if (wpPlace.has("zoom")) {
                 zoom = wpPlace.optInt("zoom", 0);
             }

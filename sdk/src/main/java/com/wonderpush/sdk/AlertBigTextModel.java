@@ -20,9 +20,9 @@ class AlertBigTextModel extends AlertModel {
     @Override
     protected void fromJSONCommon(JSONObject wpAlert) {
         super.fromJSONCommon(wpAlert);
-        setBigTitle(wpAlert.optString("bigTitle", null));
-        setBigText(wpAlert.optString("bigText", null));
-        setSummaryText(wpAlert.optString("summaryText", null));
+        setBigTitle(JSONUtil.getString(wpAlert, "bigTitle"));
+        setBigText(JSONUtil.getString(wpAlert, "bigText"));
+        setSummaryText(JSONUtil.getString(wpAlert, "summaryText"));
     }
 
     @Override

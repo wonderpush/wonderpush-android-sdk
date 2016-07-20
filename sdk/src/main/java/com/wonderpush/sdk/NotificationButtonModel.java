@@ -23,7 +23,7 @@ class NotificationButtonModel implements Cloneable {
             return;
         }
 
-        icon = parentAlert.resolveIconIdentifier(data.optString("icon", null));
+        icon = parentAlert.resolveIconIdentifier(JSONUtil.getString(data, "icon"));
         label = parentAlert.handleHtml(data.optString("label"));
         targetUrl = data.optString("targetUrl");
         JSONArray actions = data.optJSONArray("actions");

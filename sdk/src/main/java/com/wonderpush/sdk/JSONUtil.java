@@ -146,4 +146,12 @@ class JSONUtil {
         }
     }
 
+    protected static String getString(JSONObject object, String field) {
+        if (!object.has(field) || object.isNull(field)) {
+            return null;
+        } else {
+            return object.optString(field, null);
+        }
+    }
+
 }

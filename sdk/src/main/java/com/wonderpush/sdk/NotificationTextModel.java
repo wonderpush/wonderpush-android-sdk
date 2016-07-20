@@ -12,7 +12,7 @@ class NotificationTextModel extends NotificationModel {
 
     @Override
     protected void readFromJSONObject(JSONObject wpData) {
-        message = wpData.optString("message", null);
+        message = JSONUtil.getString(wpData, "message");
     }
 
     public String getMessage() {

@@ -438,7 +438,7 @@ class WonderPushRestClient {
                         // Parse response
                         JSONObject json = response.getJSONObject();
                         if (json != null && json.has("token") && json.has("data")) {
-                            String token = json.optString("token", null);
+                            String token = JSONUtil.getString(json, "token");
                             JSONObject data = json.optJSONObject("data");
                             if (data != null && data.has("installationId")) {
                                 String prevUserId = WonderPushConfiguration.getUserId();
@@ -446,9 +446,9 @@ class WonderPushRestClient {
                                     // Make sure we alter the storage of the appropriate user
                                     WonderPushConfiguration.changeUserId(userId);
 
-                                    String sid = data.optString("sid", null);
-                                    String installationId = data.optString("installationId", null);
-                                    String userId = data.optString("userId", null);
+                                    String sid = JSONUtil.getString(data, "sid");
+                                    String installationId = JSONUtil.getString(data, "installationId");
+                                    String userId = JSONUtil.getString(data, "userId");
 
                                     // Store access token
                                     WonderPushConfiguration.setAccessToken(token);
@@ -575,9 +575,9 @@ class WonderPushRestClient {
         }
 
         public Request(JSONObject data) throws JSONException {
-            mUserId = data.has("userId") ? data.optString("userId", null) : WonderPushConfiguration.getUserId();
+            mUserId = data.has("userId") ? JSONUtil.getString(data, "userId") : WonderPushConfiguration.getUserId();
             try {
-                mMethod = HttpMethod.valueOf(data.optString("method", null));
+                mMethod = HttpMethod.valueOf(JSONUtil.getString(data, "method"));
             } catch (IllegalArgumentException ex) {
                 mMethod = HttpMethod.values()[data.getInt("method")];
             }

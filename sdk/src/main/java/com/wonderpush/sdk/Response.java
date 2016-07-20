@@ -39,7 +39,7 @@ class Response {
         if (error == null) {
             return null;
         }
-        return error.optString("message", null);
+        return JSONUtil.getString(error, "message");
     }
 
     public int getErrorStatus() {

@@ -59,16 +59,16 @@ class ActionModel implements Cloneable {
         }
 
         try {
-            type = Type.fromString(data.optString("type", null));
+            type = Type.fromString(JSONUtil.getString(data, "type"));
         } catch (IllegalArgumentException e) {
             Log.w(TAG, "Unknown button action", e);
             type = null;
         }
-        url = data.optString("url", null);
+        url = JSONUtil.getString(data, "url");
         event = data.optJSONObject("event");
         custom = data.optJSONObject("custom");
-        method = data.optString("method", null);
-        methodArg = data.optString("methodArg", null);
+        method = JSONUtil.getString(data, "method");
+        methodArg = JSONUtil.getString(data, "methodArg");
     }
 
     @Override

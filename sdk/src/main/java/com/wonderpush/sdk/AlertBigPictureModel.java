@@ -23,10 +23,10 @@ class AlertBigPictureModel extends AlertModel {
     @Override
     protected void fromJSONCommon(JSONObject wpAlert) {
         super.fromJSONCommon(wpAlert);
-        setBigLargeIcon(wpAlert.optString("bigLargeIcon", null));
-        setBigPicture(wpAlert.optString("bigPicture", null));
-        setBigTitle(wpAlert.optString("bigTitle", null));
-        setSummaryText(wpAlert.optString("summaryText", null));
+        setBigLargeIcon(JSONUtil.getString(wpAlert, "bigLargeIcon"));
+        setBigPicture(JSONUtil.getString(wpAlert, "bigPicture"));
+        setBigTitle(JSONUtil.getString(wpAlert, "bigTitle"));
+        setSummaryText(JSONUtil.getString(wpAlert, "summaryText"));
     }
 
     @Override
