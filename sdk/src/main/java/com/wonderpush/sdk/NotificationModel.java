@@ -179,13 +179,25 @@ abstract class NotificationModel {
             throws NotTargetedForThisInstallationException
     {
         try {
+            // Read notification content
+            JSONObject wpAlert = wpData.optJSONObject("alert");
+            AlertModel alert = null;
+            if (wpAlert != null) {
+                alert = AlertModel.fromJSON(wpAlert);
+            } else if (extras != null) {
+                alert = AlertModel.fromOldFormatStringExtra(extras.getString("alert")); // <= v1.1.0.0 format
+            } else {
+                // We are probably parsing an opened notification and the extras was not given.
+                // We are not interested in showing a notification anyway, the in-app message is what's important now.
+            }
+
             // Get the notification type
             Type type;
             try {
                 type = NotificationModel.Type.fromString(JSONUtil.getString(wpData, "type"));
             } catch (Exception ex) {
                 WonderPush.logError("Failed to read notification type", ex);
-                if (wpData.has("alert") || extras != null && extras.containsKey("alert")) {
+                if (alert != null && (alert.getText() != null || alert.getTitle() != null)) { // must be the same test as NotificationManager.buildNotification
                     type = NotificationModel.Type.SIMPLE;
                 } else {
                     type = NotificationModel.Type.DATA;
@@ -201,22 +213,12 @@ abstract class NotificationModel {
 
             // Read common fields
             rtn.setType(type);
+            rtn.setAlert(alert);
             rtn.setTargetedInstallation(JSONUtil.getString(wpData, "@"));
             rtn.setCampaignId(JSONUtil.getString(wpData, "c"));
             rtn.setNotificationId(JSONUtil.getString(wpData, "n"));
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", true));
-
-            // Read notification content
-            JSONObject wpAlert = wpData.optJSONObject("alert");
-            if (wpAlert != null) {
-                rtn.setAlert(AlertModel.fromJSON(wpAlert));
-            } else if (extras != null) {
-                rtn.setAlert(AlertModel.fromOldFormatStringExtra(extras.getString("alert"))); // <= v1.1.0.0 format
-            } else {
-                // We are probably parsing an opened notification and the extras was not given.
-                // We are not interested in showing a notification anyway, the in-app message is what's important now.
-            }
 
             // Read actions
             JSONArray actions = wpData.optJSONArray("actions");

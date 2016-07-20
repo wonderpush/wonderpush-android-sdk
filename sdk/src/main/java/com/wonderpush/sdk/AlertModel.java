@@ -190,6 +190,7 @@ class AlertModel implements Cloneable {
     private AlertModel foreground;
 
     public static AlertModel fromOldFormatStringExtra(String alert) {
+        if (alert == null) return null;
         try {
             JSONObject wpAlert = new JSONObject();
             wpAlert.putOpt("text", alert);
@@ -201,6 +202,7 @@ class AlertModel implements Cloneable {
     }
 
     public static AlertModel fromJSON(JSONObject wpAlert) {
+        if (wpAlert == null) return null;
         try {
             // Get the alert type
             Type type = null;
