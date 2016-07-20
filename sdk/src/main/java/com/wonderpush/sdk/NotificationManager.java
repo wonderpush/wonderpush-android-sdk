@@ -55,10 +55,11 @@ class NotificationManager {
         String tag = generateLocalNotificationTag(notif);
         int localNotificationId = generateLocalNotificationId(tag);
         PendingIntentBuilder pendingIntentBuilder = new PendingIntentBuilder(notif, localNotificationId, intent, context, activity);
-        if (notif.getAlert().forCurrentSettings(appInForeground).getAutoDrop()) {
+        AlertModel alert = notif.getAlert() == null ? null : notif.getAlert().forCurrentSettings(appInForeground);
+        if (alert != null && alert.getAutoDrop()) {
             WonderPush.logDebug("Automatically dropping");
             automaticallyHandled = true;
-        } else if (notif.getAlert().forCurrentSettings(appInForeground).getAutoOpen()) {
+        } else if (alert != null && alert.getAutoOpen()) {
             WonderPush.logDebug("Automatically opening");
             // We can show the notification (send the pending intent) right away
             try {
