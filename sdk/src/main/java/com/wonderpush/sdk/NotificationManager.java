@@ -79,7 +79,11 @@ class NotificationManager {
                 WonderPush.logDebug("No notification is to be displayed");
                 // Fire an Intent to notify the application anyway (especially for `data` notifications)
                 try {
-                    pendingIntentBuilder.buildForWillOpenBroadcast().send();
+                    if (notif.getType() == NotificationModel.Type.DATA) {
+                        pendingIntentBuilder.buildForDataNotificationWillOpenBroadcast().send();
+                    } else {
+                        pendingIntentBuilder.buildForWillOpenBroadcast().send();
+                    }
                 } catch (PendingIntent.CanceledException e) {
                     Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
                 }
@@ -158,6 +162,31 @@ class NotificationManager {
             }
 
             return buildPendingIntent(true, extrasOverride, extraQueryParams);
+        }
+
+        public PendingIntent buildForDataNotificationWillOpenBroadcast() {
+            if (!WonderPushService.isProperlySetup()) {
+                return buildPendingIntent(false, null, null);
+            }
+
+            Intent activityIntent = new Intent();
+            activityIntent.setAction(Intent.ACTION_VIEW);
+            activityIntent.setData(Uri.parse(WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
+                    + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST));
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                    pushIntent);
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
+                    notif.getType().toString());
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                    false);
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+                    true);
+
+            // Restrict first to this application
+            activityIntent.setPackage(context.getPackageName());
+
+            return PendingIntent.getService(context, 0, activityIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
         }
 
         public PendingIntent buildForWillOpenBroadcast() {
@@ -432,6 +461,10 @@ class NotificationManager {
 
             if (!WonderPushService.isProperlySetup()) {
                 handleOpenedNotificationFromService(context, intent, notif);
+            } else if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
+                    intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
+                // Track data notification opens, and display any in-app
+                handleOpenedManuallyDisplayedDataNotification(context, intent, notif);
             }
 
             InAppManager.handleInApp(context, notif);
@@ -469,46 +502,65 @@ class NotificationManager {
     public static void handleOpenedNotificationFromService(Context context, Intent intent, NotificationModel notif) {
         ensureNotificationDismissed(context, intent, notif);
 
-        boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
-        Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
-        String buttonIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX);
-        int buttonIndex = -1;
-        try {
-            if (buttonIndexStr != null) {
-                buttonIndex = Integer.parseInt(buttonIndexStr);
-            }
-        } catch (Exception ignored) { // NumberFormatException
-            WonderPush.logError("Failed to parse buttonIndex " + buttonIndexStr, ignored);
-        }
-
         WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
+        trackOpenedNotification(intent, notif);
+        notifyNotificationOpened(intent);
+        handleOpenedNotification(context, intent, notif);
+    }
+
+    public static void handleOpenedManuallyDisplayedDataNotification(Context context, Intent intent, NotificationModel notif) {
+        WonderPush.logDebug("Handling opened manually displayed data notification: " + notif.getInputJSONString());
+        trackOpenedNotification(intent, notif);
+        notifyNotificationOpened(intent);
+        handleOpenedNotification(context, intent, notif);
+    }
+
+    private static void trackOpenedNotification(Intent intent, NotificationModel notif) {
+        int clickedButtonIndex = getClickedButtonIndex(intent);
         try {
             JSONObject trackData = new JSONObject();
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", TimeSync.getTime());
-            if (buttonIndex >= 0 && notif.getAlert() != null && notif.getAlert().getButtons() != null && buttonIndex < notif.getAlert().getButtons().size()) {
-                NotificationButtonModel button = notif.getAlert().getButtons().get(buttonIndex);
+            if (clickedButtonIndex >= 0 && notif.getAlert() != null && notif.getAlert().getButtons() != null && clickedButtonIndex < notif.getAlert().getButtons().size()) {
+                NotificationButtonModel button = notif.getAlert().getButtons().get(clickedButtonIndex);
                 trackData.put("buttonLabel", button.label);
             }
             WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
             WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
-
-            // Notify the application that the notification has been opened
-            Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
-            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
-            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
-            notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX, buttonIndex);
-            LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
-
-            handleOpenedNotification(context, notif, buttonIndex);
         } catch (JSONException e) {
             Log.e(TAG, "Failed to parse notification JSON object", e);
         }
     }
 
-    private static void handleOpenedNotification(Context context, NotificationModel notif, int clickedButtonIndex) {
+    private static int getClickedButtonIndex(Intent intent) {
+        String buttonIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX);
+        try {
+            if (buttonIndexStr != null) {
+                return Integer.parseInt(buttonIndexStr);
+            }
+        } catch (Exception ignored) { // NumberFormatException
+            WonderPush.logError("Failed to parse buttonIndex " + buttonIndexStr, ignored);
+        }
+        return -1;
+    }
+
+    private static void notifyNotificationOpened(Intent intent) {
+        boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
+        Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
+        int buttonIndex = getClickedButtonIndex(intent);
+
+        // Notify the application that the notification has been opened
+        Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
+        notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
+        notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
+        notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX, buttonIndex);
+        LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
+    }
+
+    private static void handleOpenedNotification(Context context, Intent intent, NotificationModel notif) {
+        int clickedButtonIndex = getClickedButtonIndex(intent);
         List<ActionModel> actions = null;
         if (clickedButtonIndex < 0) {
             // Notification opened actions
