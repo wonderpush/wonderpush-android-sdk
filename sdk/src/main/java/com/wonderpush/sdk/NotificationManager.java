@@ -535,13 +535,15 @@ class NotificationManager {
     }
 
     private static int getClickedButtonIndex(Intent intent) {
-        String buttonIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX);
-        try {
-            if (buttonIndexStr != null) {
-                return Integer.parseInt(buttonIndexStr);
+        if (intent.getData() != null) {
+            String buttonIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX);
+            try {
+                if (buttonIndexStr != null) {
+                    return Integer.parseInt(buttonIndexStr);
+                }
+            } catch (Exception ignored) { // NumberFormatException
+                WonderPush.logError("Failed to parse buttonIndex " + buttonIndexStr, ignored);
             }
-        } catch (Exception ignored) { // NumberFormatException
-            WonderPush.logError("Failed to parse buttonIndex " + buttonIndexStr, ignored);
         }
         return -1;
     }
