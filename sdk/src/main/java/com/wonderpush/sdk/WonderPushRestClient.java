@@ -88,7 +88,9 @@ class WonderPushRestClient {
      * called only if the network is present when the request is first run.
      *
      * @param resource
+     *            The resource path, starting with /
      * @param params
+     *            AsyncHttpClient request parameters
      */
     protected static void postEventually(String resource, RequestParams params) {
         final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, null);
@@ -162,8 +164,6 @@ class WonderPushRestClient {
      * Runs the specified request and ensure a valid access token is fetched if
      * necessary beforehand, or afterwards (and re-run the request) if the request
      * fails for auth reasons.
-     *
-     * @param request
      */
     protected static void requestAuthenticated(final Request request) {
         if (null == request) {
@@ -246,8 +246,6 @@ class WonderPushRestClient {
 
     /**
      * Thin wrapper to the {@link AsyncHttpClient} library.
-     *
-     * @param request
      */
     private static void request(final Request request) {
         if (null == request) {
@@ -558,7 +556,7 @@ class WonderPushRestClient {
     /**
      * A serializable object that represents a request to the WonderPush API.
      */
-    protected static class Request implements Cloneable {
+    protected static class Request {
 
         String mUserId;
         HttpMethod mMethod;

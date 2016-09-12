@@ -17,7 +17,7 @@ class ActivityLifecycleMonitor {
 
     private static final Monitor sSingleton;
     private static boolean sActivityLifecycleCallbacksRegistered;
-    private static WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<>();
+    private static final WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<>();
 
     static {
         Monitor monitor = null;

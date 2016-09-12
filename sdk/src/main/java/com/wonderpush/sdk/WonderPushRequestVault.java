@@ -46,9 +46,6 @@ class WonderPushRequestVault {
 
     /**
      * Save a request in the vault for future retry
-     *
-     * @param request
-     * @throws JSONException
      */
     protected void put(WonderPushRestClient.Request request, long delayMs) {
         long notBeforeRealTimeElapsed = delayMs <= 0 ? delayMs : SystemClock.elapsedRealtime() + delayMs;

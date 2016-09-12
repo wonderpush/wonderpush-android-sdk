@@ -18,13 +18,10 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -104,9 +101,9 @@ class AlertModel implements Cloneable {
         }
     }
 
-    private static boolean defaultVibrate = true;
-    private static boolean defaultSound = true;
-    private static boolean defaultLight = true;
+    private static final boolean defaultVibrate = true;
+    private static final boolean defaultSound = true;
+    private static final boolean defaultLight = true;
 
     // https://android.googlesource.com/device/lge/mako/+/master/overlay/frameworks/base/core/res/res/values/config.xml
     private static final int defaultNotificationColor;

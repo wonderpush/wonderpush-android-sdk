@@ -79,8 +79,6 @@ class QueryStringParser {
      * This method iterates over the parameters until a parameter with
      * a matching name has been found. Note that the current parameter is not
      * considered.
-     *
-     * @param names
      */
     public boolean search(Collection<String> names) {
         while (next()) {

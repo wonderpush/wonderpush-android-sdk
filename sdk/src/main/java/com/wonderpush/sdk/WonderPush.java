@@ -55,7 +55,7 @@ public class WonderPush {
 
     private static Looper sLooper;
     private static Handler sDeferHandler;
-    protected static ScheduledExecutorService sScheduledExecutor;
+    protected static final ScheduledExecutorService sScheduledExecutor;
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
         new Thread(new Runnable() {
@@ -359,7 +359,7 @@ public class WonderPush {
      */
     public static boolean showPotentialNotification(final Activity activity, Intent intent) {
         try {
-            NotificationManager.showPotentialNotification(activity, intent);
+            return NotificationManager.showPotentialNotification(activity, intent);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while showing potential notification", e);
         }

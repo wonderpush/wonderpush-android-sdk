@@ -14,7 +14,6 @@ class WonderPushDialogBuilder {
 
     public interface OnChoice {
         /**
-         * @param dialog
          * @param which The clicked button or null.
          */
         void onChoice(WonderPushDialogBuilder dialog, ButtonModel which);
@@ -36,11 +35,6 @@ class WonderPushDialogBuilder {
      * Read styled attributes, they will defined in an AlertDialog shown by the given activity.
      * You must call {@link TypedArray#recycle()} after having read the desired attributes.
      * @see Context#obtainStyledAttributes(android.util.AttributeSet, int[], int, int)
-     * @param activity
-     * @param attrs
-     * @param defStyleAttr
-     * @param defStyleRef
-     * @return
      */
     @SuppressLint("Recycle")
     public static TypedArray getDialogStyledAttributes(Context activity, int[] attrs, int defStyleAttr, int defStyleRef) {
@@ -59,12 +53,6 @@ class WonderPushDialogBuilder {
 
         defaultTitle = this.activity.getApplicationInfo().name;
         defaultIcon  = this.activity.getApplicationInfo().icon;
-
-        commonSetup();
-    }
-
-    private void commonSetup() {
-        // onDismissListener has moved to show() for backward compatibility
     }
 
     public Context getContext() {

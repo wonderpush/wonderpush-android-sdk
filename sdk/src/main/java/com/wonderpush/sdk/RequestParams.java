@@ -76,6 +76,7 @@ class RequestParams extends com.loopj.android.http.RequestParams implements Parc
     }
 
     // Only redeclared for package private access
+    @SuppressWarnings("EmptyMethod")
     @Override
     protected List<BasicNameValuePair> getParamsList() {
         return super.getParamsList();

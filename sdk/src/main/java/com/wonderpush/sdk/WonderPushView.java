@@ -56,7 +56,7 @@ class WonderPushView extends FrameLayout {
     ViewGroup mErrorLayout;
     TextView mMessageView;
     ProgressBar mProgressBar;
-    WonderPushWebCallbackHandler mWebCallbackHandler = new WonderPushWebCallbackHandler();
+    final WonderPushWebCallbackHandler mWebCallbackHandler = new WonderPushWebCallbackHandler();
     ImageButton mCloseButton;
     boolean mUseCloseButton;
     WonderPushView mSubview;
@@ -152,7 +152,7 @@ class WonderPushView extends FrameLayout {
             // as well as hardware acceleration support.
             @Override
             public boolean onConsoleMessage(ConsoleMessage cm) {
-                Log.d(TAG, "javascript Error: " + String.format("%s @ %d: %s", cm.message(), cm.lineNumber(), cm.sourceId()));
+                Log.d(TAG, "javascript Error: " + String.format(Locale.ROOT, "%s @ %d: %s", cm.message(), cm.lineNumber(), cm.sourceId()));
                 return true;
             }
         });
@@ -250,8 +250,6 @@ class WonderPushView extends FrameLayout {
 
     /**
      * Sets the resource for the web content displayed in this WonderPushView's WebView.
-     *
-     * @param resource
      */
     public void setResource(String resource) {
         setResource(resource, null);
@@ -259,9 +257,6 @@ class WonderPushView extends FrameLayout {
 
     /**
      * Sets the resource for the web content displayed in this WonderPushView's WebView.
-     *
-     * @param resource
-     * @param params
      */
     public void setResource(String resource, RequestParams params) {
         if (null == resource) {
@@ -380,6 +375,7 @@ class WonderPushView extends FrameLayout {
         }
 
         @Override
+        @TargetApi(Build.VERSION_CODES.M)
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
             Log.i(TAG, "API 23 onReceivedError(WebView, WebResourceRequest, WebResourceError) called");
@@ -476,12 +472,12 @@ class WonderPushView extends FrameLayout {
                 if (404 == status) {
                     return false;
                 }
-                // Generic errors
-                if (handleGenericError(uri, status, code)) {
-                    return true;
-                }
                 // Invalid SID
                 if (handleInvalidSIDError(uri, status, code)) {
+                    return true;
+                }
+                // Generic errors
+                if (handleGenericError(uri, status, code)) {
                     return true;
                 }
                 // HTTPS required

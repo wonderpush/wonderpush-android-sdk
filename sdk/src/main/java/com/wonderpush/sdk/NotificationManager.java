@@ -273,7 +273,7 @@ class NotificationManager {
             } catch (NullPointerException e) {
                 ai = null;
             }
-            alert.setTitle((String) (ai != null ? pm.getApplicationLabel(ai) : null));
+            alert.setTitle(ai != null ? pm.getApplicationLabel(ai) : null);
         }
         if (defaultIconResource == 0) {
             defaultIconResource = R.drawable.ic_notifications_white_24dp;
@@ -468,6 +468,7 @@ class NotificationManager {
             }
 
             InAppManager.handleInApp(context, notif);
+            return true;
         }
         return false;
     }

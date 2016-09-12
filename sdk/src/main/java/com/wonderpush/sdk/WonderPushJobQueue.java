@@ -35,7 +35,7 @@ class WonderPushJobQueue {
 
     }
 
-    private static WonderPushJobQueue sDefaultQueue = new WonderPushJobQueue("DefaultWonderPushJobQueue", DEFAULT_CAPACITY);
+    private static final WonderPushJobQueue sDefaultQueue = new WonderPushJobQueue("DefaultWonderPushJobQueue", DEFAULT_CAPACITY);
 
     /**
      * Returns the default job queue.
@@ -75,7 +75,6 @@ class WonderPushJobQueue {
     /**
      * Creates and stores a job in the queue based on the provided description
      *
-     * @param jobDescription
      * @return The stored job or null if something went wrong (the queue is full for instance)
      */
     protected Job postJobWithDescription(JSONObject jobDescription, long notBeforeRealtimeElapsed) {
@@ -87,7 +86,6 @@ class WonderPushJobQueue {
     /**
      * Stores an existing job in the queue.
      *
-     * @param job
      * @return The input job or null if something went wrong (the queue is full for instance)
      */
     protected Job post(Job job) {

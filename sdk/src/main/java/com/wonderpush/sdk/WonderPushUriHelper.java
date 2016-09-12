@@ -17,7 +17,6 @@ class WonderPushUriHelper {
     /**
      * Extracts the resource path from a Uri.
      *
-     * @param uri
      * @return The resource path for that Uri, starting with a '/' after the API
      *         version number. null if the provided Uri is not a WonderPush uri
      *         (isAPIUri returns false).
@@ -78,8 +77,6 @@ class WonderPushUriHelper {
 
     /**
      * Extracts the query parameters as {@link RequestParams}
-     *
-     * @param uri
      */
     protected static RequestParams getParams(Uri uri) {
         RequestParams params = new RequestParams();
@@ -96,8 +93,6 @@ class WonderPushUriHelper {
 
     /**
      * Checks that the provided URI points to the WonderPush REST server
-     *
-     * @param uri
      */
     protected static boolean isAPIUri(Uri uri) {
         if (uri == null) {
