@@ -163,6 +163,7 @@ signing {
 task androidJavadocs(type: Javadoc) {
     title = 'WonderPush Android SDK Reference'
     source = 'src/main/java/com/wonderpush/sdk' //android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.sourceSets.main.java.srcDirs.join(File.pathSeparator))
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
     options.overview = project.rootDir.path + '/overview.html'
     options.showFromPublic()
