@@ -5,8 +5,8 @@ project.group = 'com.wonderpush'
 project.archivesBaseName = 'wonderpush-android-sdk'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.2"
 
     lintOptions {
         abortOnError false
@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 23
+        targetSdkVersion 24
         consumerProguardFiles 'proguard-exported.pro'
         manifestPlaceholders = [
                 wonderpushGradleApplicationId: '${applicationId}',
@@ -36,8 +36,8 @@ android {
 
 dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
-    compile 'com.android.support:support-v4:23.3.0'
-    compile 'com.google.android.gms:play-services-gcm:8.4.0'
+    compile 'com.android.support:support-v4:24.2.0' // needless to use `support-compat` because play-services-gcm:9.4.0 depends on the monolithic support-v4 (version 23.0.0)
+    compile 'com.google.android.gms:play-services-gcm:9.4.0'
 }
 
 if (file('local.gradle').exists()) {
