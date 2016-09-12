@@ -142,7 +142,7 @@ class WonderPushView extends FrameLayout {
         mUseCloseButton = true;
 
         // Create the web view
-        mWebView = new WebView(getContext());
+        mWebView = new CustomWebView(getContext());
         mWebView.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -598,6 +598,20 @@ class WonderPushView extends FrameLayout {
             mErrorLayout.setVisibility(View.GONE);
         }
 
+    }
+
+}
+
+class CustomWebView extends WebView {
+
+    public CustomWebView(Context context) {
+        super(context);
+    }
+
+    @Override
+    public boolean onCheckIsTextEditor() {
+        // Permits the keyboard to show up when a text field is focused
+        return true;
     }
 
 }
