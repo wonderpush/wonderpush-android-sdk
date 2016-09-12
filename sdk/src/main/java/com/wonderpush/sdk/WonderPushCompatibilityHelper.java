@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.text.Html;
 import android.view.Gravity;
 import android.view.View;
 import android.webkit.WebView;
@@ -64,6 +65,16 @@ class WonderPushCompatibilityHelper {
             return resources.getColor(identifier, null);
         } else {
             return resources.getColor(identifier);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.N)
+    @SuppressWarnings("deprecation")
+    public static CharSequence fromHtml(String source) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return Html.fromHtml(source, 0); // FROM_HTML_MODE_LEGACY
+        } else {
+            return Html.fromHtml(source);
         }
     }
 

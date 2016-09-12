@@ -10,7 +10,6 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
-import android.text.Html;
 import android.util.Base64InputStream;
 import android.util.Log;
 
@@ -672,7 +671,7 @@ class AlertModel implements Cloneable {
 
     protected CharSequence handleHtml(CharSequence input) {
         if (isHtml() && input instanceof String) {
-            return Html.fromHtml((String) input); // images are unsupported in text, but unicode smileys are
+            return WonderPushCompatibilityHelper.fromHtml((String) input); // images are unsupported in text, but unicode smileys are
         } else {
             return input;
         }
