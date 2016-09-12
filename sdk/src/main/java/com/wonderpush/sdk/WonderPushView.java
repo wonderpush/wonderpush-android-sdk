@@ -1,12 +1,14 @@
 package com.wonderpush.sdk;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.AttributeSet;
@@ -315,15 +317,24 @@ class WonderPushView extends FrameLayout {
         private Timer mWebviewTimer;
 
         @Override
+        @SuppressWarnings("deprecation")
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            Uri uri = Uri.parse(url);
+            return _shouldOverrideUrlLoading(Uri.parse(url));
+        }
 
+        @Override
+        @TargetApi(Build.VERSION_CODES.N)
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            return _shouldOverrideUrlLoading(request.getUrl());
+        }
+
+        private boolean _shouldOverrideUrlLoading(Uri uri) {
             // Handle market URLs
             // https://play.google.com/store/apps/details?id=com.example.foobar
             if ("market".equals(uri.getScheme())
                     || "play.google.com".equals(uri.getHost())) {
 
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url.replace(
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri.toString().replace(
                         "https://play.google.com/store/apps", "market:/")));
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 WonderPush.getApplicationContext().startActivity(intent);
