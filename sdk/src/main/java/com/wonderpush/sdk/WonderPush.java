@@ -82,7 +82,7 @@ public class WonderPush {
 
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
-    protected static final String SDK_SHORT_VERSION = "2.2.3-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
+    protected static final String SDK_SHORT_VERSION = "2.3.0-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
     protected static final String SDK_VERSION = "Android-" + API_INT + "." + SDK_SHORT_VERSION;
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
 
@@ -119,6 +119,21 @@ public class WonderPush {
      * Local intent broadcasted when the WonderPush SDK has been initialized and network is reachable.
      */
     public static final String INTENT_INTIALIZED = "wonderpushInitialized";
+
+    /**
+     * Local intent broadcasted when the push token has changed.
+     */
+    public static final String INTENT_PUSH_TOKEN_CHANGED = "wonderpushPushTokenChanged";
+
+    /**
+     * The extra key for the previously known push token, can be null.
+     */
+    public static final String INTENT_PUSH_TOKEN_CHANGED_EXTRA_OLD_KNOWN_PUSH_TOKEN = "wonderpushOldPushToken";
+
+    /**
+     * The extra key for the new push token, can be null.
+     */
+    public static final String INTENT_PUSH_TOKEN_CHANGED_EXTRA_PUSH_TOKEN = "wonderpushPushToken";
 
     /**
      * Local intent broadcasted when a push notification created by the WonderPush SDK has been opened.

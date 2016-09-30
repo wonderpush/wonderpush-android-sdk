@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GoogleCloudMessaging;
@@ -56,6 +57,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
 
     private void storeRegistrationId(String senderIds, String registrationId) {
         WonderPushConfiguration.initialize(this);
+        String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
         try {
             if (
                     // New registration id
@@ -88,6 +90,14 @@ public class WonderPushRegistrationIntentService extends IntentService {
         WonderPushConfiguration.setGCMRegistrationId(registrationId);
         WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
         WonderPushConfiguration.setGCMRegistrationAppVersion(InstallationManager.getApplicationVersionCode());
+
+        if (oldRegistrationId == null && registrationId != null
+                || oldRegistrationId != null && !oldRegistrationId.equals(registrationId)) {
+            Intent pushTokenChangedIntent = new Intent(WonderPush.INTENT_PUSH_TOKEN_CHANGED);
+            pushTokenChangedIntent.putExtra(WonderPush.INTENT_PUSH_TOKEN_CHANGED_EXTRA_OLD_KNOWN_PUSH_TOKEN, oldRegistrationId);
+            pushTokenChangedIntent.putExtra(WonderPush.INTENT_PUSH_TOKEN_CHANGED_EXTRA_PUSH_TOKEN, registrationId);
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(pushTokenChangedIntent);
+        }
     }
 
 }
