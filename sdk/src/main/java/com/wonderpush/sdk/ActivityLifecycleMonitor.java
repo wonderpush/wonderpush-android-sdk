@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
 /**
@@ -81,7 +82,7 @@ class ActivityLifecycleMonitor {
         private long stopLastDate;
         private long destroyLastDate;
 
-        private Activity lastResumedActivity;
+        private WeakReference<Activity> lastResumedActivityRef = new WeakReference<>(null);
 
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
@@ -110,7 +111,7 @@ class ActivityLifecycleMonitor {
             if (!hasResumedActivities()) {
                 resumeFirstDate = TimeSync.getTime();
             }
-            lastResumedActivity = activity;
+            lastResumedActivityRef = new WeakReference<>(activity);
             ++resumeCount;
             WonderPush.onInteraction();
         }
@@ -159,7 +160,7 @@ class ActivityLifecycleMonitor {
         }
 
         protected Activity getLastResumedActivity() {
-            return lastResumedActivity;
+            return lastResumedActivityRef.get();
         }
 
         protected long getCreateFirstDate() {
