@@ -65,6 +65,15 @@ class ActivityLifecycleMonitor {
         return candidate;
     }
 
+    protected static Activity getLastStoppedActivity() {
+        Activity candidate = null;
+        if (sActivityLifecycleCallbacksRegistered
+                && sSingleton != null) {
+            candidate = sSingleton.getLastStoppedActivity();
+        }
+        return candidate;
+    }
+
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     static class Monitor implements Application.ActivityLifecycleCallbacks {
 
@@ -83,6 +92,7 @@ class ActivityLifecycleMonitor {
         private long destroyLastDate;
 
         private WeakReference<Activity> lastResumedActivityRef = new WeakReference<>(null);
+        private WeakReference<Activity> lastStoppedActivityRef = new WeakReference<>(null);
 
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
@@ -131,6 +141,9 @@ class ActivityLifecycleMonitor {
             if (!hasStartedActivities()) {
                 stopLastDate = TimeSync.getTime();
             }
+            if (!activity.isFinishing()) {
+                lastStoppedActivityRef = new WeakReference<>(activity);
+            }
             WonderPush.onInteraction();
         }
 
@@ -161,6 +174,10 @@ class ActivityLifecycleMonitor {
 
         protected Activity getLastResumedActivity() {
             return lastResumedActivityRef.get();
+        }
+
+        protected Activity getLastStoppedActivity() {
+            return lastStoppedActivityRef.get();
         }
 
         protected long getCreateFirstDate() {

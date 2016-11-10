@@ -147,6 +147,9 @@ public class WonderPushService extends Service {
                     if (resolvedActivity != null) {
 
                         Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
+                        if (activity == null) {
+                            activity = ActivityLifecycleMonitor.getLastStoppedActivity();
+                        }
                         if (activity != null && !activity.isFinishing()) {
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
@@ -194,6 +197,9 @@ public class WonderPushService extends Service {
                     // Try as an activity
                     if (activityIntent.resolveActivity(getPackageManager()) != null) {
                         Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
+                        if (activity == null) {
+                            activity = ActivityLifecycleMonitor.getLastStoppedActivity();
+                        }
                         if (activity != null && !activity.isFinishing()) {
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
