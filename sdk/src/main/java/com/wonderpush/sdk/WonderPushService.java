@@ -143,11 +143,35 @@ public class WonderPushService extends Service {
                 }
                 if (!launchSuccessful) {
                     // Try as an activity within the same package
-                    if (activityIntent.resolveActivity(getPackageManager()) != null) {
-                        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-                        stackBuilder.addNextIntentWithParentStack(activityIntent);
-                        stackBuilder.startActivities();
+                    ComponentName resolvedActivity = activityIntent.resolveActivity(getPackageManager());
+                    if (resolvedActivity != null) {
+
+                        Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
+                        if (activity != null && !activity.isFinishing()) {
+                            // We have a current activity stack, keep it
+                            activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
+                            startActivity(activityIntent);
+                        } else {
+                            // We must start a new task
+                            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                            stackBuilder.addNextIntentWithParentStack(activityIntent);
+                            if (stackBuilder.getIntentCount() == 1) {
+                                // The target activity has no parent
+                                String defaultActivityCanonicalName = intent.getExtras().getString("activity");
+                                Class<? extends Activity> defaultActivityClass = Class.forName(defaultActivityCanonicalName).asSubclass(Activity.class);
+                                if (!resolvedActivity.getClassName().equals(defaultActivityCanonicalName)) {
+                                    // Add the default activity as parent of the target activity
+                                    // it has otherwise no parent and pressing back would close the application
+                                    Intent defaultActivityIntent = new Intent(this, defaultActivityClass);
+                                    stackBuilder = TaskStackBuilder.create(this);
+                                    stackBuilder.addNextIntentWithParentStack(defaultActivityIntent);
+                                    stackBuilder.addNextIntent(activityIntent);
+                                } // the target activity is already the default activity, don't add anything to the parent stack
+                            }
+                            stackBuilder.startActivities();
+                        }
                         launchSuccessful = true;
+
                     }
                 }
                 if (!launchSuccessful) {
@@ -169,9 +193,17 @@ public class WonderPushService extends Service {
                 if (!launchSuccessful) {
                     // Try as an activity
                     if (activityIntent.resolveActivity(getPackageManager()) != null) {
-                        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-                        stackBuilder.addNextIntentWithParentStack(activityIntent);
-                        stackBuilder.startActivities();
+                        Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
+                        if (activity != null && !activity.isFinishing()) {
+                            // We have a current activity stack, keep it
+                            activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
+                            startActivity(activityIntent);
+                        } else {
+                            // We must start a new task
+                            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                            stackBuilder.addNextIntentWithParentStack(activityIntent);
+                            stackBuilder.startActivities();
+                        }
                         launchSuccessful = true;
                     }
                 }
