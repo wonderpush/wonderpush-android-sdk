@@ -107,6 +107,7 @@ public class WonderPushService extends Service {
         if (targetUrl != null && (
                 fromUserInteraction || NotificationModel.Type.DATA.equals(notif.getType())
         )) {
+            WonderPush.logDebug("Handing targetUrl of opened notification: " + targetUrl);
 
             try {
                 // Launch the activity associated with the given target url
@@ -132,6 +133,7 @@ public class WonderPushService extends Service {
                     activityIntent.putExtra("openPushNotificationIntent", intent);
                     try {
                         if (startService(activityIntent) != null) {
+                            WonderPush.logDebug("Delivered opened notification to the WonderPushService");
                             launchSuccessful = true;
                         }
                     } catch (Exception ex) {
@@ -145,12 +147,14 @@ public class WonderPushService extends Service {
                     // Try as an activity within the same package
                     ComponentName resolvedActivity = activityIntent.resolveActivity(getPackageManager());
                     if (resolvedActivity != null) {
+                        WonderPush.logDebug("Target URL resolved to internal activity: " + resolvedActivity.getClassName());
 
                         Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
                         if (activity == null) {
                             activity = ActivityLifecycleMonitor.getLastStoppedActivity();
                         }
                         if (activity != null && !activity.isFinishing()) {
+                            WonderPush.logDebug("Delivered opened notification on top of the last/current activity: " + activity.getClass().getCanonicalName());
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
                             activity.startActivity(activityIntent);
@@ -163,6 +167,7 @@ public class WonderPushService extends Service {
                                 String defaultActivityCanonicalName = intent.getExtras().getString("activity");
                                 Class<? extends Activity> defaultActivityClass = Class.forName(defaultActivityCanonicalName).asSubclass(Activity.class);
                                 if (!resolvedActivity.getClassName().equals(defaultActivityCanonicalName)) {
+                                    WonderPush.logDebug("Injecting the default activity as parent to the orphan target activity to avoid closing app on the user pressing back");
                                     // Add the default activity as parent of the target activity
                                     // it has otherwise no parent and pressing back would close the application
                                     Intent defaultActivityIntent = new Intent(this, defaultActivityClass);
@@ -171,6 +176,7 @@ public class WonderPushService extends Service {
                                     stackBuilder.addNextIntent(activityIntent);
                                 } // the target activity is already the default activity, don't add anything to the parent stack
                             }
+                            WonderPush.logDebug("Delivered opened notification using a new task");
                             stackBuilder.startActivities();
                         }
                         launchSuccessful = true;
@@ -181,6 +187,7 @@ public class WonderPushService extends Service {
                     // Try as a service within the same package
                     try {
                         if (startService(activityIntent) != null) {
+                            WonderPush.logDebug("Delivered opened notification to a service within the application");
                             launchSuccessful = true;
                         }
                     } catch (Exception ex) {
@@ -201,12 +208,14 @@ public class WonderPushService extends Service {
                             activity = ActivityLifecycleMonitor.getLastStoppedActivity();
                         }
                         if (activity != null && !activity.isFinishing()) {
+                            WonderPush.logDebug("Delivered opened notification to an activity outside the app on top of last/current activity: " + activity.getClass().getCanonicalName());
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
                             activity.startActivity(activityIntent);
                             // Show the potential in-app when the user comes back on the application
                             WonderPush.showPotentialNotification(activity, intent);
                         } else {
+                            WonderPush.logDebug("Delivered opened notification using a new task to an activity outside the app");
                             // We must start a new task
                             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
                             stackBuilder.addNextIntentWithParentStack(activityIntent);
@@ -219,6 +228,7 @@ public class WonderPushService extends Service {
                     // Try as a service
                     try {
                         if (startService(activityIntent) != null) {
+                            WonderPush.logDebug("Delivered opened notification to a service outside the application");
                             launchSuccessful = true;
                         }
                     } catch (Exception ex) {
@@ -260,10 +270,12 @@ public class WonderPushService extends Service {
         Activity lastStoppedActivity = ActivityLifecycleMonitor.getLastStoppedActivity();
         if (activity != null && !activity.isFinishing()) {
 
+            WonderPush.logDebug("Show notification on top of current activity: " + activity.getClass().getCanonicalName());
             WonderPush.showPotentialNotification(ActivityLifecycleMonitor.getCurrentActivity(), intent);
 
         } else if (lastStoppedActivity != null && !lastStoppedActivity.isFinishing()) {
 
+            WonderPush.logDebug("Bringing last activity to front and show notification: " + lastStoppedActivity.getClass().getCanonicalName());
             // We have a current activity stack, keep it
             // Merely bring the last activity back to front
             Intent activityIntent = new Intent();
@@ -291,6 +303,7 @@ public class WonderPushService extends Service {
             activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
             stackBuilder.addNextIntentWithParentStack(activityIntent);
+            WonderPush.logDebug("Starting new task");
             stackBuilder.startActivities();
 
         }
