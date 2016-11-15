@@ -204,6 +204,8 @@ public class WonderPushService extends Service {
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
                             activity.startActivity(activityIntent);
+                            // Show the potential in-app when the user comes back on the application
+                            WonderPush.showPotentialNotification(activity, intent);
                         } else {
                             // We must start a new task
                             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
