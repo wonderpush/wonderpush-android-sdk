@@ -255,9 +255,26 @@ public class WonderPushService extends Service {
 
     private boolean openNotificationDefaultBehavior(Intent intent) {
         Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
+        Activity lastStoppedActivity = ActivityLifecycleMonitor.getLastStoppedActivity();
         if (activity != null && !activity.isFinishing()) {
 
             WonderPush.showPotentialNotification(ActivityLifecycleMonitor.getCurrentActivity(), intent);
+
+        } else if (lastStoppedActivity != null && !lastStoppedActivity.isFinishing()) {
+
+            // We have a current activity stack, keep it
+            // Merely bring the last activity back to front
+            Intent activityIntent = new Intent();
+            activityIntent.setClass(lastStoppedActivity, lastStoppedActivity.getClass());
+            // Do not deliver the notification this way, the SDK can't monitor onNewIntent()
+            // and would rely on it calling setIntent() for onResume() to be able to automatically show the notification
+            //     activityIntent.setDataAndType(intent.getData(), intent.getType());
+            activityIntent.setAction(Intent.ACTION_MAIN);
+            activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity, just get it back to front
+            startActivity(activityIntent);
+            // We must display the notification ourselves
+            WonderPush.showPotentialNotification(lastStoppedActivity, intent);
 
         } else {
 
