@@ -262,14 +262,17 @@ public class WonderPushService extends Service {
         } else {
 
             String desiredActivity = intent.getExtras().getString("activity");
+            Intent activityIntent = new Intent();
+            activityIntent.setPackage(getApplicationContext().getPackageName());
             if (desiredActivity != null) {
-                Intent activityIntent = new Intent();
                 activityIntent.setClassName(getApplicationContext(), desiredActivity);
-                activityIntent.fillIn(intent, 0);
-                TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-                stackBuilder.addNextIntentWithParentStack(activityIntent);
-                stackBuilder.startActivities();
             }
+            activityIntent.setDataAndType(intent.getData(), intent.getType());
+            activityIntent.setAction(Intent.ACTION_MAIN);
+            activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+            stackBuilder.addNextIntentWithParentStack(activityIntent);
+            stackBuilder.startActivities();
 
         }
         return true;
