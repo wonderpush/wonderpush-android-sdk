@@ -153,7 +153,7 @@ public class WonderPushService extends Service {
                         if (activity != null && !activity.isFinishing()) {
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
-                            startActivity(activityIntent);
+                            activity.startActivity(activityIntent);
                         } else {
                             // We must start a new task
                             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
@@ -203,7 +203,7 @@ public class WonderPushService extends Service {
                         if (activity != null && !activity.isFinishing()) {
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
-                            startActivity(activityIntent);
+                            activity.startActivity(activityIntent);
                         } else {
                             // We must start a new task
                             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
