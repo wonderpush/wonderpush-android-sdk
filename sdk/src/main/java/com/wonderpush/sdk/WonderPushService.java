@@ -286,7 +286,7 @@ public class WonderPushService extends Service {
             activityIntent.setAction(Intent.ACTION_MAIN);
             activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity, just get it back to front
-            startActivity(activityIntent);
+            lastStoppedActivity.startActivity(activityIntent);
             // We must display the notification ourselves
             WonderPush.showPotentialNotification(lastStoppedActivity, intent);
 
