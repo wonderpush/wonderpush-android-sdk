@@ -278,7 +278,10 @@ public class WonderPushService extends Service {
             WonderPush.logDebug("Bringing last activity to front and show notification: " + lastStoppedActivity.getClass().getCanonicalName());
             // We have a current activity stack, keep it
             // Merely bring the last activity back to front
+            // Do like getPackageManager().getLaunchIntentForPackage(getPackageName()),
+            // but specifies the desired activity and avoids any null return value issue
             Intent activityIntent = new Intent();
+            activityIntent.setPackage(getPackageName());
             activityIntent.setClass(lastStoppedActivity, lastStoppedActivity.getClass());
             // Do not deliver the notification this way, the SDK can't monitor onNewIntent()
             // and would rely on it calling setIntent() for onResume() to be able to automatically show the notification
@@ -286,6 +289,7 @@ public class WonderPushService extends Service {
             activityIntent.setAction(Intent.ACTION_MAIN);
             activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity, just get it back to front
+            activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);   // reuse any task started with a matching intent (as we don't use FLAG_ACTIVITY_MULTIPLE_TASK)
             lastStoppedActivity.startActivity(activityIntent);
             // We must display the notification ourselves
             WonderPush.showPotentialNotification(lastStoppedActivity, intent);
