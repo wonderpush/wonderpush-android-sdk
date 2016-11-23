@@ -157,7 +157,12 @@ public class WonderPushService extends Service {
                             WonderPush.logDebug("Delivered opened notification on top of the last/current activity: " + activity.getClass().getCanonicalName());
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
+                            activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);   // reuse any task started with a matching intent (as we don't use FLAG_ACTIVITY_MULTIPLE_TASK)
                             activity.startActivity(activityIntent);
+                            if (resolvedActivity.getClassName().equals(activity.getClass().getCanonicalName())) {
+                                WonderPush.logDebug("Was already the last activity, showing notification on top of the current activity");
+                                WonderPush.showPotentialNotification(activity, activityIntent);
+                            }
                         } else {
                             // We must start a new task
                             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
