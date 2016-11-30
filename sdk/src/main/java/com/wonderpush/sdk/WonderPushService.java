@@ -258,7 +258,7 @@ public class WonderPushService extends Service {
         if (!launchSuccessful) {
 
             try {
-                launchSuccessful = openNotificationDefaultBehavior(intent);
+                launchSuccessful = openNotificationDefaultBehavior(intent, notif);
             } catch (Exception ex) {
                 Log.e(TAG, "Unexpected error while opening notification using default behavior", ex);
             }
@@ -271,6 +271,15 @@ public class WonderPushService extends Service {
     }
 
     private boolean openNotificationDefaultBehavior(Intent intent) {
+        NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+        if (notif == null) {
+            Log.e(TAG, "openNotificationDefaultBehavior() could not extract notification from intent: " + intent);
+            return false;
+        }
+        return openNotificationDefaultBehavior(intent, notif);
+    }
+
+    private boolean openNotificationDefaultBehavior(Intent intent, NotificationModel notif) {
         Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
         Activity lastStoppedActivity = ActivityLifecycleMonitor.getLastStoppedActivity();
         if (activity != null && !activity.isFinishing()) {
@@ -307,7 +316,17 @@ public class WonderPushService extends Service {
             if (desiredActivity != null) {
                 activityIntent.setClassName(getApplicationContext(), desiredActivity);
             }
-            activityIntent.setDataAndType(intent.getData(), intent.getType());
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                    intent.getParcelableExtra("receivedPushNotificationIntent"));
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
+                    notif.getType().toString());
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                    intent.getBooleanExtra("fromUserInteraction", true));
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+                    true);
+            // The following line should not be done: it exposes protected constants and URI.
+            // Implementors should rely on the previous extras instead
+            activityIntent.setDataAndType(intent.getData(), intent.getType()); // TODO: Remove in v1.3.x.x
             activityIntent.setAction(Intent.ACTION_MAIN);
             activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
