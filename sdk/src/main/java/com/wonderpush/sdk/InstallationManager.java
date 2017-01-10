@@ -187,15 +187,23 @@ class InstallationManager {
 
             properties.put("device", device);
 
-            String propertiesString = properties.toString();
             String cachedPropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
+            JSONObject cachedProperties = null;
+            if (cachedPropertiesString != null) {
+                try {
+                    cachedProperties = new JSONObject(cachedPropertiesString);
+                } catch (JSONException ex) {
+                    Log.e(TAG, "Unexpected error while parsing cached core properties", ex);
+                    Log.e(TAG, "Input was: " + cachedPropertiesString);
+                }
+            }
             String cachedPropertiesAccessToken = WonderPushConfiguration.getCachedInstallationCorePropertiesAccessToken();
-            if (!propertiesString.equals(cachedPropertiesString)
+            if (!JSONUtil.equals(properties, cachedProperties)
                     || cachedPropertiesAccessToken == null && WonderPushConfiguration.getAccessToken() != null
                     || cachedPropertiesAccessToken != null && !cachedPropertiesAccessToken.equals(WonderPushConfiguration.getAccessToken())
             ) {
                 WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
-                WonderPushConfiguration.setCachedInstallationCoreProperties(propertiesString);
+                WonderPushConfiguration.setCachedInstallationCoreProperties(properties.toString());
                 WonderPushConfiguration.setCachedInstallationCorePropertiesAccessToken(WonderPushConfiguration.getAccessToken());
                 updateInstallation(properties, false);
             }
