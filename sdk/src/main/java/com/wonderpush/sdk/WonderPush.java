@@ -1261,6 +1261,11 @@ public class WonderPush {
     @SuppressWarnings("unused")
     public static void setNotificationEnabled(boolean status) {
         try {
+            logDebug("Set notification enabled: " + status);
+            if (status == WonderPushConfiguration.getNotificationEnabled()) {
+                logDebug("Set notification enabled: no change to apply");
+                return;
+            }
             String value = status
                     ? INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
                     : INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
