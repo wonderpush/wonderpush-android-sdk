@@ -53,7 +53,7 @@ class WonderPushConfiguration {
 
     private static Context sContext;
 
-    protected static void initialize(Context context) {
+    static void initialize(Context context) {
         sContext = context.getApplicationContext();
     }
 
@@ -65,7 +65,7 @@ class WonderPushConfiguration {
         return sContext;
     }
 
-    protected static void changeUserId(String newUserId) {
+    static void changeUserId(String newUserId) {
         if (newUserId == null && getUserId() == null
                 || newUserId != null && newUserId.equals(getUserId())) {
             // No userId change
@@ -129,7 +129,7 @@ class WonderPushConfiguration {
     /**
      * Gets the WonderPush shared preferences for that application.
      */
-    protected static SharedPreferences getSharedPreferences() {
+    static SharedPreferences getSharedPreferences() {
         if (null == getApplicationContext())
             return null;
         return getApplicationContext().getSharedPreferences(PREF_FILE, 0);
@@ -223,7 +223,7 @@ class WonderPushConfiguration {
     /**
      * Get the user id stored in the user's shared preferences.
      */
-    protected static String getUserId() {
+    static String getUserId() {
         return getString(USER_ID_PREF_NAME);
     }
 
@@ -233,7 +233,7 @@ class WonderPushConfiguration {
      * @param userId
      *            The user id to be stored
      */
-    protected static void setUserId(String userId) {
+    static void setUserId(String userId) {
         putString(USER_ID_PREF_NAME, userId);
     }
 
@@ -242,7 +242,7 @@ class WonderPushConfiguration {
      * For instance when the user id changes, the device will get a new identity, so we must clear the old one.
      * When we face an invalid access token or SID error, we must also clear the stored information.
      */
-    protected static void invalidateCredentials() {
+    static void invalidateCredentials() {
         setAccessToken(null);
         setInstallationId(null);
         setSID(null);
@@ -251,7 +251,7 @@ class WonderPushConfiguration {
     /**
      * Get the access token associated to a given user's shared preferences.
      */
-    protected static String getAccessTokenForUserId(String userId) {
+    static String getAccessTokenForUserId(String userId) {
         if (userId == null && getUserId() == null
                 || userId != null && userId.equals(getUserId())) {
             return getAccessToken();
@@ -267,7 +267,7 @@ class WonderPushConfiguration {
     /**
      * Get the access token stored in the user's shared preferences.
      */
-    protected static String getAccessToken() {
+    static String getAccessToken() {
         return getString(ACCESS_TOKEN_PREF_NAME);
     }
 
@@ -277,14 +277,14 @@ class WonderPushConfiguration {
      * @param accessToken
      *            The access token to be stored
      */
-    protected static void setAccessToken(String accessToken) {
+    static void setAccessToken(String accessToken) {
         putString(ACCESS_TOKEN_PREF_NAME, accessToken);
     }
 
     /**
      * Get the installation id stored in the user's shared preferences.
      */
-    protected static String getInstallationId() {
+    static String getInstallationId() {
         return getString(INSTALLATION_ID_PREF_NAME);
     }
 
@@ -294,14 +294,14 @@ class WonderPushConfiguration {
      * @param installationId
      *            The installation id to be stored
      */
-    protected static void setInstallationId(String installationId) {
+    static void setInstallationId(String installationId) {
         putString(INSTALLATION_ID_PREF_NAME, installationId);
     }
 
     /**
      * Get the SID stored in the user's shared preferences.
      */
-    protected static String getSID() {
+    static String getSID() {
         return getString(SID_PREF_NAME);
     }
 
@@ -311,14 +311,14 @@ class WonderPushConfiguration {
      * @param sid
      *            The SID to be stored
      */
-    protected static void setSID(String sid) {
+    static void setSID(String sid) {
         putString(SID_PREF_NAME, sid);
     }
 
     /**
      * Get the notification enabled stored in the user's shared preferences.
      */
-    protected static boolean getNotificationEnabled() {
+    static boolean getNotificationEnabled() {
         return getBoolean(NOTIFICATION_ENABLED_PREF_NAME, true);
     }
 
@@ -328,14 +328,14 @@ class WonderPushConfiguration {
      * @param status
      *            The notification enabled status to be stored
      */
-    protected static void setNotificationEnabled(boolean status) {
+    static void setNotificationEnabled(boolean status) {
         putBoolean(NOTIFICATION_ENABLED_PREF_NAME, status);
     }
 
     /**
      * Get the cached installation core properties stored in the user's shared preferences.
      */
-    protected static String getCachedInstallationCoreProperties() {
+    static String getCachedInstallationCoreProperties() {
         return getString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME);
     }
 
@@ -345,14 +345,14 @@ class WonderPushConfiguration {
      * @param cachedInstallationCoreProperties
      *            The cached installation core properties to be stored
      */
-    protected static void setCachedInstallationCoreProperties(String cachedInstallationCoreProperties) {
+    static void setCachedInstallationCoreProperties(String cachedInstallationCoreProperties) {
         putString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, cachedInstallationCoreProperties);
     }
 
     /**
      * Get the cached installation core properties date stored in the user's shared preferences.
      */
-    protected static long getCachedInstallationCorePropertiesDate() {
+    static long getCachedInstallationCorePropertiesDate() {
         return getLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, 0);
     }
 
@@ -362,14 +362,14 @@ class WonderPushConfiguration {
      * @param cachedInstallationCorePropertiesDate
      *            The cached installation core properties date to be stored
      */
-    protected static void setCachedInstallationCorePropertiesDate(long cachedInstallationCorePropertiesDate) {
+    static void setCachedInstallationCorePropertiesDate(long cachedInstallationCorePropertiesDate) {
         putLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, cachedInstallationCorePropertiesDate);
     }
 
     /**
      * Get the cached installation core properties stored in the user's shared preferences.
      */
-    protected static String getCachedInstallationCorePropertiesAccessToken() {
+    static String getCachedInstallationCorePropertiesAccessToken() {
         return getString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME);
     }
 
@@ -379,7 +379,7 @@ class WonderPushConfiguration {
      * @param cachedInstallationCorePropertiesAccessToken
      *            The cached installation core properties access token to be stored
      */
-    protected static void setCachedInstallationCorePropertiesAccessToken(String cachedInstallationCorePropertiesAccessToken) {
+    static void setCachedInstallationCorePropertiesAccessToken(String cachedInstallationCorePropertiesAccessToken) {
         putString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, cachedInstallationCorePropertiesAccessToken);
     }
 
@@ -387,7 +387,7 @@ class WonderPushConfiguration {
      * Get the partial object representing the written installation code properties so far stored in the user's shared preferences.
      * This object is updated whenever grouped updates are performed.
      */
-    protected static JSONObject getCachedInstallationCustomPropertiesWritten() {
+    static JSONObject getCachedInstallationCustomPropertiesWritten() {
         return getJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME);
     }
 
@@ -397,14 +397,14 @@ class WonderPushConfiguration {
      * @param cachedInstallationCustomPropertiesWritten
      *            The partial object representing the written installation code properties so far to be stored.
      */
-    protected static void setCachedInstallationCustomPropertiesWritten(JSONObject cachedInstallationCustomPropertiesWritten) {
+    static void setCachedInstallationCustomPropertiesWritten(JSONObject cachedInstallationCustomPropertiesWritten) {
         putJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME, cachedInstallationCustomPropertiesWritten);
     }
 
     /**
      * Get the date of the last write to installation custom properties that has been performed.
      */
-    protected static long getCachedInstallationCustomPropertiesWrittenDate() {
+    static long getCachedInstallationCustomPropertiesWrittenDate() {
         return getLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME, 0);
     }
 
@@ -413,7 +413,7 @@ class WonderPushConfiguration {
      * @param cachedInstallationCustomPropertiesWrittenDate
      *            The date of the last write to installation custom properties that has been performed to store.
      */
-    protected static void setCachedInstallationCustomPropertiesWrittenDate(long cachedInstallationCustomPropertiesWrittenDate) {
+    static void setCachedInstallationCustomPropertiesWrittenDate(long cachedInstallationCustomPropertiesWrittenDate) {
         putLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME, cachedInstallationCustomPropertiesWrittenDate);
     }
 
@@ -421,7 +421,7 @@ class WonderPushConfiguration {
      * Get the partial object representing the updated installation code properties stored in the user's shared preferences.
      * This object is updated whenever updates are demanded, whether delayed for grouping or already written.
      */
-    protected static JSONObject getCachedInstallationCustomPropertiesUpdated() {
+    static JSONObject getCachedInstallationCustomPropertiesUpdated() {
         return getJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME);
     }
 
@@ -431,7 +431,7 @@ class WonderPushConfiguration {
      * @param cachedInstallationCustomPropertiesUpdated
      *            The partial object representing the updated installation code properties to be stored.
      */
-    protected static void setCachedInstallationCustomPropertiesUpdated(JSONObject cachedInstallationCustomPropertiesUpdated) {
+    static void setCachedInstallationCustomPropertiesUpdated(JSONObject cachedInstallationCustomPropertiesUpdated) {
         putJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME, cachedInstallationCustomPropertiesUpdated);
     }
 
@@ -439,7 +439,7 @@ class WonderPushConfiguration {
      * Get the date of the last update to {@link #getCachedInstallationCustomPropertiesUpdated()}.
      * This is the date of the last non-noop write to installation custom properties that has been delayed for grouping.
      */
-    protected static long getCachedInstallationCustomPropertiesUpdatedDate() {
+    static long getCachedInstallationCustomPropertiesUpdatedDate() {
         return getLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME, 0);
     }
 
@@ -449,14 +449,14 @@ class WonderPushConfiguration {
      * @param cachedInstallationCustomPropertiesUpdatedDate
      *            The date of the last update to {@link #getCachedInstallationCustomPropertiesUpdated()}.
      */
-    protected static void setCachedInstallationCustomPropertiesUpdatedDate(long cachedInstallationCustomPropertiesUpdatedDate) {
+    static void setCachedInstallationCustomPropertiesUpdatedDate(long cachedInstallationCustomPropertiesUpdatedDate) {
         putLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME, cachedInstallationCustomPropertiesUpdatedDate);
     }
 
     /**
      * The date of the first non-noop write to installation custom properties that has been delayed for grouping.
      */
-    protected static long getCachedInstallationCustomPropertiesFirstDelayedWrite() {
+    static long getCachedInstallationCustomPropertiesFirstDelayedWrite() {
         return getLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME, 0);
     }
 
@@ -465,14 +465,14 @@ class WonderPushConfiguration {
      * @param cachedInstallationCustomPropertiesFirstDelayedWrite
      *            The date of the first non-noop write to installation custom properties that has been delayed for grouping to store.
      */
-    protected static void setCachedInstallationCustomPropertiesFirstDelayedWrite(long cachedInstallationCustomPropertiesFirstDelayedWrite) {
+    static void setCachedInstallationCustomPropertiesFirstDelayedWrite(long cachedInstallationCustomPropertiesFirstDelayedWrite) {
         putLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME, cachedInstallationCustomPropertiesFirstDelayedWrite);
     }
 
     /**
      * Get the registration id stored in the user's shared preferences.
      */
-    protected static String getGCMRegistrationId() {
+    static String getGCMRegistrationId() {
         return getString(GCM_REGISTRATION_ID_PREF_NAME);
     }
 
@@ -482,14 +482,14 @@ class WonderPushConfiguration {
      * @param registrationId
      *            The registration id to be stored
      */
-    protected static void setGCMRegistrationId(String registrationId) {
+    static void setGCMRegistrationId(String registrationId) {
         putString(GCM_REGISTRATION_ID_PREF_NAME, registrationId);
     }
 
     /**
      * Get the cached registration id date stored in the user's shared preferences.
      */
-    protected static long getCachedGCMRegistrationIdDate() {
+    static long getCachedGCMRegistrationIdDate() {
         return getLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, 0);
     }
 
@@ -499,14 +499,14 @@ class WonderPushConfiguration {
      * @param cachedGCMRegistrationIdDate
      *            The cached registration id date to be stored
      */
-    protected static void setCachedGCMRegistrationIdDate(long cachedGCMRegistrationIdDate) {
+    static void setCachedGCMRegistrationIdDate(long cachedGCMRegistrationIdDate) {
         putLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, cachedGCMRegistrationIdDate);
     }
 
     /**
      * Get the user id the registration id was associated with in the user's shared preferences.
      */
-    protected static String getCachedGCMRegistrationIdAssociatedUserId() {
+    static String getCachedGCMRegistrationIdAssociatedUserId() {
         return getString(CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME);
     }
 
@@ -516,14 +516,14 @@ class WonderPushConfiguration {
      * @param userId
      *            The associated user id to be stored
      */
-    protected static void setCachedGCMRegistrationIdAssociatedUserId(String userId) {
+    static void setCachedGCMRegistrationIdAssociatedUserId(String userId) {
         putString(CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME, userId);
     }
 
     /**
      * Get the cached registration id access token stored in the user's shared preferences.
      */
-    protected static String getCachedGCMRegistrationIdAccessToken() {
+    static String getCachedGCMRegistrationIdAccessToken() {
         return getString(CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME);
     }
 
@@ -533,14 +533,14 @@ class WonderPushConfiguration {
      * @param cachedGCMRegistrationIdAccessToken
      *            The cached registration id access token to be stored
      */
-    protected static void setCachedGCMRegistrationIdAccessToken(String cachedGCMRegistrationIdAccessToken) {
+    static void setCachedGCMRegistrationIdAccessToken(String cachedGCMRegistrationIdAccessToken) {
         putString(CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME, cachedGCMRegistrationIdAccessToken);
     }
 
     /**
      * Get the application version stored in the user's shared preferences.
      */
-    protected static int getGCMRegistrationAppVersion() {
+    static int getGCMRegistrationAppVersion() {
         return getInt(GCM_REGISTRATION_APP_VERSION_PREF_NAME, Integer.MIN_VALUE);
     }
 
@@ -550,14 +550,14 @@ class WonderPushConfiguration {
      * @param appVersion
      *            The application version to be stored
      */
-    protected static void setGCMRegistrationAppVersion(int appVersion) {
+    static void setGCMRegistrationAppVersion(int appVersion) {
         putInt(GCM_REGISTRATION_APP_VERSION_PREF_NAME, appVersion);
     }
 
     /**
      * Get the registration sender ids stored in the user's shared preferences.
      */
-    protected static String getGCMRegistrationSenderIds() {
+    static String getGCMRegistrationSenderIds() {
         return getString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME);
     }
 
@@ -567,14 +567,14 @@ class WonderPushConfiguration {
      * @param senderIds
      *            The registration sender ids to be stored
      */
-    protected static void setGCMRegistrationSenderIds(String senderIds) {
+    static void setGCMRegistrationSenderIds(String senderIds) {
         putString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME, senderIds);
     }
 
     /**
      * Get the last received notification information stored in the user's shared preferences.
      */
-    protected static JSONObject getLastReceivedNotificationInfoJson() {
+    static JSONObject getLastReceivedNotificationInfoJson() {
         return getJSONObject(LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME);
     }
 
@@ -584,14 +584,14 @@ class WonderPushConfiguration {
      * @param info
      *            The last received notification information to be stored
      */
-    protected static void setLastReceivedNotificationInfoJson(JSONObject info) {
+    static void setLastReceivedNotificationInfoJson(JSONObject info) {
         putJSONObject(LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME, info);
     }
 
     /**
      * Get the last opened notification information stored in the user's shared preferences.
      */
-    protected static JSONObject getLastOpenedNotificationInfoJson() {
+    static JSONObject getLastOpenedNotificationInfoJson() {
         return getJSONObject(LAST_OPENED_NOTIFICATION_INFO_JSON_PREF_NAME);
     }
 
@@ -601,14 +601,14 @@ class WonderPushConfiguration {
      * @param info
      *            The last opened notification information to be stored
      */
-    protected static void setLastOpenedNotificationInfoJson(JSONObject info) {
+    static void setLastOpenedNotificationInfoJson(JSONObject info) {
         putJSONObject(LAST_OPENED_NOTIFICATION_INFO_JSON_PREF_NAME, info);
     }
 
     /**
      * Get the last interaction date timestamp in milliseconds stored in the user's shared preferences.
      */
-    protected static long getLastInteractionDate() {
+    static long getLastInteractionDate() {
         return getLong(LAST_INTERACTION_DATE_PREF_NAME, 0);
     }
 
@@ -617,14 +617,14 @@ class WonderPushConfiguration {
      * @param date
      *            The last interaction date to be stored
      */
-    protected static void setLastInteractionDate(long date) {
+    static void setLastInteractionDate(long date) {
         putLong(LAST_INTERACTION_DATE_PREF_NAME, date);
     }
 
     /**
      * Get the last app-open date timestamp in milliseconds stored in the user's shared preferences.
      */
-    protected static long getLastAppOpenDate() {
+    static long getLastAppOpenDate() {
         return getLong(LAST_APPOPEN_DATE_PREF_NAME, 0);
     }
 
@@ -633,14 +633,14 @@ class WonderPushConfiguration {
      * @param date
      *            The last app-open date to be stored
      */
-    protected static void setLastAppOpenDate(long date) {
+    static void setLastAppOpenDate(long date) {
         putLong(LAST_APPOPEN_DATE_PREF_NAME, date);
     }
 
     /**
      * Get the last app-open information stored in the user's shared preferences.
      */
-    protected static JSONObject getLastAppOpenInfoJson() {
+    static JSONObject getLastAppOpenInfoJson() {
         return getJSONObject(LAST_APPOPEN_INFO_PREF_NAME);
     }
 
@@ -649,14 +649,14 @@ class WonderPushConfiguration {
      * @param info
      *            The last app-open information to be stored
      */
-    protected static void setLastAppOpenInfoJson(JSONObject info) {
+    static void setLastAppOpenInfoJson(JSONObject info) {
         putJSONObject(LAST_APPOPEN_INFO_PREF_NAME, info);
     }
 
     /**
      * Get the last app-close date timestamp in milliseconds stored in the user's shared preferences.
      */
-    protected static long getLastAppCloseDate() {
+    static long getLastAppCloseDate() {
         return getLong(LAST_APPCLOSE_DATE_PREF_NAME, 0);
     }
 
@@ -665,14 +665,14 @@ class WonderPushConfiguration {
      * @param date
      *            The last app-close date to be stored
      */
-    protected static void setLastAppCloseDate(long date) {
+    static void setLastAppCloseDate(long date) {
         putLong(LAST_APPCLOSE_DATE_PREF_NAME, date);
     }
 
     /**
      * Get the last known device date to WonderPush time offset in milliseconds stored in the user's shared preferences.
      */
-    protected static long getDeviceDateSyncOffset() {
+    static long getDeviceDateSyncOffset() {
         return getLong(DEVICE_DATE_SYNC_OFFSET_PREF_NAME, 0);
     }
 
@@ -681,14 +681,14 @@ class WonderPushConfiguration {
      * @param offset
      *            The last known device date to WonderPush time offset to be stored
      */
-    protected static void setDeviceDateSyncOffset(long offset) {
+    static void setDeviceDateSyncOffset(long offset) {
         putLong(DEVICE_DATE_SYNC_OFFSET_PREF_NAME, offset);
     }
 
     /**
      * Get the last known device date to WonderPush time uncertainty in milliseconds stored in the user's shared preferences.
      */
-    protected static long getDeviceDateSyncUncertainty() {
+    static long getDeviceDateSyncUncertainty() {
         return getLong(DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME, Long.MAX_VALUE);
     }
 
@@ -697,14 +697,14 @@ class WonderPushConfiguration {
      * @param uncertainty
      *            The last known device date to WonderPush time uncertainty to be stored
      */
-    protected static void setDeviceDateSyncUncertainty(long uncertainty) {
+    static void setDeviceDateSyncUncertainty(long uncertainty) {
         putLong(DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME, uncertainty);
     }
 
     /**
      * Retrieves the next notification id to use in NotificationManager for showing a tag-less notifications.
      */
-    protected static int getNextTaglessNotificationManagerId() {
+    static int getNextTaglessNotificationManagerId() {
         int id = getInt(LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME, 0);
         ++id;
         putInt(LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME, id);
