@@ -48,6 +48,7 @@ class InstallationManager {
     }
 
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
+        WonderPush.logDebug("putInstallationCustomProperties(" + customProperties + ")");
         JSONObject updatedRef = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
         if (updatedRef == null) updatedRef = new JSONObject();
         JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();

@@ -624,7 +624,9 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static synchronized JSONObject getInstallationCustomProperties() {
-        return InstallationManager.getInstallationCustomProperties();
+        JSONObject rtn = InstallationManager.getInstallationCustomProperties();
+        WonderPush.logDebug("getInstallationCustomProperties() -> " + rtn);
+        return rtn;
     }
 
     /**
@@ -709,6 +711,7 @@ public class WonderPush {
      */
     public static void trackEvent(String type, JSONObject customData) {
         try {
+            WonderPush.logDebug("trackEvent(" + type + ", " + customData + ")");
             trackEvent(type, null, customData);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while tracking user event of type \"" + type + "\"", e);
@@ -913,6 +916,7 @@ public class WonderPush {
      */
     public static void initialize(final Context context, final String clientId, String clientSecret) {
         try {
+            WonderPush.logDebug("initialize(" + context.getClass().getSimpleName() + ", " + clientId + ", <redacted clientSecret>)");
             if (!sIsInitialized || (
                     clientId != null && clientSecret != null && (!clientId.equals(sClientId) || !clientSecret.equals(sClientSecret))
             )) {
@@ -961,6 +965,7 @@ public class WonderPush {
     }
 
     private static void initForNewUser(final String userId) {
+        WonderPush.logDebug("initForNewUser(" + userId + ")");
         sIsReady = false;
         if (WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite() != 0) {
             // Flush any delayed write for old user
