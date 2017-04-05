@@ -623,7 +623,7 @@ public class WonderPush {
      * Returns the latest known custom properties attached to the current installation object stored by WonderPush.
      */
     @SuppressWarnings("unused")
-    public static JSONObject getInstallationCustomProperties() {
+    public static synchronized JSONObject getInstallationCustomProperties() {
         return InstallationManager.getInstallationCustomProperties();
     }
 
@@ -647,6 +647,40 @@ public class WonderPush {
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while putting installation custom properties", e);
         }
+    }
+
+    static synchronized void receivedFullInstallationCustomPropertiesFromServer(JSONObject custom, long installationUpdateDate) {
+        WonderPush.logDebug("Synchronizing installation custom fields");
+        WonderPush.logDebug("Received custom: " + custom);
+        if (custom == null) custom = new JSONObject();
+        JSONObject customUpdated = null;
+        try {
+            customUpdated = new JSONObject(custom.toString());
+        } catch (JSONException ex) {
+            WonderPush.logError("Unexpected error while cloning custom properties", ex);
+        }
+        if (customUpdated == null) customUpdated = new JSONObject();
+        JSONObject written = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
+        JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+        WonderPush.logDebug("We had custom: " + WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated());
+        if (written == null) written = new JSONObject();
+        if (updated == null) updated = new JSONObject();
+        long writtenDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesWrittenDate();
+        long updatedDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdatedDate();
+        // Apply any yet unapplied changes over the read value
+        try {
+            JSONObject customUnappliedDiff = JSONUtil.diff(written, updated);
+            WonderPush.logDebug("Pending custom diff was: " + customUnappliedDiff);
+            JSONUtil.merge(customUpdated, customUnappliedDiff);
+            WonderPush.logDebug("New custom after applying pending diff: " + customUpdated);
+        } catch (JSONException ex) {
+            WonderPush.logError("Unexpected error while calculating custom properties diff", ex);
+        }
+        WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdated(customUpdated);
+        WonderPush.logDebug("We now have custom: " + WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated());
+        WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(custom);
+        WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdatedDate(Math.max(updatedDate, installationUpdateDate));
+        WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(Math.max(writtenDate, installationUpdateDate));
     }
 
     /**
