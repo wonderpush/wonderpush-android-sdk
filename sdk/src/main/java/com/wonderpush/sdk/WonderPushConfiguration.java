@@ -278,6 +278,7 @@ class WonderPushConfiguration {
      *            The access token to be stored
      */
     static void setAccessToken(String accessToken) {
+        WonderPush.logDebug("Setting accessToken = " + accessToken);
         putString(ACCESS_TOKEN_PREF_NAME, accessToken);
     }
 
@@ -295,6 +296,7 @@ class WonderPushConfiguration {
      *            The installation id to be stored
      */
     static void setInstallationId(String installationId) {
+        WonderPush.logDebug("Setting installationId = " + installationId);
         putString(INSTALLATION_ID_PREF_NAME, installationId);
     }
 
@@ -312,6 +314,7 @@ class WonderPushConfiguration {
      *            The SID to be stored
      */
     static void setSID(String sid) {
+        WonderPush.logDebug("Setting sid = " + sid);
         putString(SID_PREF_NAME, sid);
     }
 

@@ -458,9 +458,11 @@ class WonderPushRestClient {
                                     if (installation != null) {
                                         Long installationUpdateDate = installation.optLong("updateDate", 0);
                                         JSONObject custom = installation.optJSONObject("custom");
+                                        WonderPush.logDebug("Received custom: " + custom);
                                         JSONObject customUpdated = installation.optJSONObject("custom");
                                         JSONObject written = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
                                         JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
+                                        WonderPush.logDebug("We had custom: " + WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated());
                                         if (custom == null) custom = new JSONObject();
                                         if (customUpdated == null) customUpdated = new JSONObject();
                                         if (written == null) written = new JSONObject();
@@ -470,11 +472,14 @@ class WonderPushRestClient {
                                         // Apply any yet unapplied changes over the read value
                                         try {
                                             JSONObject customUnappliedDiff = JSONUtil.diff(written, updated);
+                                            WonderPush.logDebug("Pending custom diff was: " + customUnappliedDiff);
                                             JSONUtil.merge(customUpdated, customUnappliedDiff);
+                                            WonderPush.logDebug("New custom after applying pending diff: " + customUpdated);
                                         } catch (JSONException ex) {
                                             WonderPush.logError("Unexpected error while calculating custom properties diff", ex);
                                         }
                                         WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdated(customUpdated);
+                                        WonderPush.logDebug("We now have custom: " + WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated());
                                         WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(custom);
                                         WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdatedDate(Math.max(updatedDate, installationUpdateDate));
                                         WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(Math.max(writtenDate, installationUpdateDate));
