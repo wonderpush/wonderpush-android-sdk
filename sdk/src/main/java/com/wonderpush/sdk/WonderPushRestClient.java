@@ -459,12 +459,17 @@ class WonderPushRestClient {
                                         Long installationUpdateDate = installation.optLong("updateDate", 0);
                                         JSONObject custom = installation.optJSONObject("custom");
                                         WonderPush.logDebug("Received custom: " + custom);
-                                        JSONObject customUpdated = installation.optJSONObject("custom");
+                                        if (custom == null) custom = new JSONObject();
+                                        JSONObject customUpdated = null;
+                                        try {
+                                            customUpdated = new JSONObject(custom.toString());
+                                        } catch (JSONException ex) {
+                                            WonderPush.logError("Unexpected error while cloning custom properties", ex);
+                                        }
+                                        if (customUpdated == null) customUpdated = new JSONObject();
                                         JSONObject written = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
                                         JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
                                         WonderPush.logDebug("We had custom: " + WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated());
-                                        if (custom == null) custom = new JSONObject();
-                                        if (customUpdated == null) customUpdated = new JSONObject();
                                         if (written == null) written = new JSONObject();
                                         if (updated == null) updated = new JSONObject();
                                         long writtenDate = WonderPushConfiguration.getCachedInstallationCustomPropertiesWrittenDate();
