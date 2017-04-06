@@ -158,7 +158,7 @@ public class WonderPushService extends Service {
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);   // reuse any task started with a matching intent (as we don't use FLAG_ACTIVITY_MULTIPLE_TASK)
-                            activity.startActivity(activityIntent);
+                            getApplicationContext().startActivity(activityIntent);
                             if (resolvedActivity.getClassName().equals(activity.getClass().getCanonicalName())) {
                                 WonderPush.logDebug("Was already the last activity, showing notification on top of the current activity");
                                 WonderPush.showPotentialNotification(activity, activityIntent);
@@ -216,7 +216,7 @@ public class WonderPushService extends Service {
                             WonderPush.logDebug("Delivered opened notification to an activity outside the app on top of last/current activity: " + activity.getClass().getCanonicalName());
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
-                            activity.startActivity(activityIntent);
+                            getApplicationContext().startActivity(activityIntent);
                             // Show the potential in-app when the user comes back on the application
                             WonderPush.showPotentialNotification(activity, intent);
                         } else {
@@ -304,7 +304,7 @@ public class WonderPushService extends Service {
             activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity, just get it back to front
             activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);   // reuse any task started with a matching intent (as we don't use FLAG_ACTIVITY_MULTIPLE_TASK)
-            lastStoppedActivity.startActivity(activityIntent);
+            getApplicationContext().startActivity(activityIntent);
             // We must display the notification ourselves
             WonderPush.showPotentialNotification(lastStoppedActivity, intent);
 
