@@ -15,8 +15,8 @@ class Sync {
     }
 
     private JSONObject sdkState;
-    private JSONObject srvState;
-    private JSONObject sdkPutAcc;
+    private JSONObject serverState;
+    private JSONObject putAccumulator;
     private JSONObject inflightDiff;
     private boolean scheduledPatchCall;
     private boolean inflightPatchCall;
@@ -25,17 +25,17 @@ class Sync {
         this(null, null, null, false);
     }
 
-    public Sync(JSONObject sdkState, JSONObject srvState, JSONObject sdkPutAcc) {
-        this(sdkState, srvState, sdkPutAcc, false);
+    public Sync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator) {
+        this(sdkState, serverState, putAccumulator, false);
     }
 
-    Sync(JSONObject sdkState, JSONObject srvState, JSONObject sdkPutAcc, boolean scheduledPatchCall) {
+    Sync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, boolean scheduledPatchCall) {
         if (sdkState == null) sdkState = new JSONObject();
-        if (srvState == null) srvState = new JSONObject();
-        if (sdkPutAcc == null) sdkPutAcc = new JSONObject();
+        if (serverState == null) serverState = new JSONObject();
+        if (putAccumulator == null) putAccumulator = new JSONObject();
         this.sdkState = sdkState;
-        this.srvState = srvState;
-        this.sdkPutAcc = sdkPutAcc;
+        this.serverState = serverState;
+        this.putAccumulator = putAccumulator;
         this.scheduledPatchCall = scheduledPatchCall;
     }
 
@@ -49,17 +49,17 @@ class Sync {
 
     public synchronized void put(JSONObject diff) throws JSONException {
         JSONUtil.merge(sdkState, diff);
-        JSONUtil.merge(sdkPutAcc, diff);
+        JSONUtil.merge(putAccumulator, diff);
         schedulePatchCallAndSave();
     }
 
     public synchronized void recvState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
-        srvState = JSONUtil.deepCopy(receivedState);
-        sdkState = JSONUtil.deepCopy(srvState);
+        serverState = JSONUtil.deepCopy(receivedState);
+        sdkState = JSONUtil.deepCopy(serverState);
         if (resetSdkState) {
-            sdkPutAcc = new JSONObject();
+            putAccumulator = new JSONObject();
         } else {
-            JSONUtil.merge(sdkState, sdkPutAcc);
+            JSONUtil.merge(sdkState, putAccumulator);
             JSONUtil.merge(sdkState, inflightDiff);
         }
         schedulePatchCallAndSave(); // FIXME do right away, no schedule?
@@ -67,7 +67,7 @@ class Sync {
 
     public synchronized void recvDiff(JSONObject diff) throws JSONException {
         // The diff is already server-side, by contract
-        JSONUtil.merge(srvState, diff);
+        JSONUtil.merge(serverState, diff);
         put(diff);
     }
 
@@ -100,14 +100,14 @@ class Sync {
         }
         scheduledPatchCall = false;
 
-        inflightDiff = JSONUtil.diff(srvState, sdkState);
+        inflightDiff = JSONUtil.diff(serverState, sdkState);
         if (inflightDiff.length() == 0) {
             return;
         }
         inflightPatchCall = true;
 
-        final JSONObject oldSdkPutAcc = sdkPutAcc;
-        sdkPutAcc = new JSONObject();
+        final JSONObject oldPutAccumulator = putAccumulator;
+        putAccumulator = new JSONObject();
 
         server.patchInstallation(inflightDiff, new ResponseHandler() {
             @Override
@@ -115,10 +115,10 @@ class Sync {
                 synchronized (Sync.this) {
                     inflightPatchCall = false;
                     try {
-                        JSONUtil.merge(srvState, inflightDiff);
+                        JSONUtil.merge(serverState, inflightDiff);
                         inflightDiff = new JSONObject();
                     } catch (JSONException ex) {
-                        WonderPush.logError("Failed to copy sdkPutAcc", ex);
+                        WonderPush.logError("Failed to copy putAccumulator", ex);
                     }
                     schedulePatchCallAndSave();
                 }
@@ -129,11 +129,11 @@ class Sync {
                 synchronized (Sync.this) {
                     inflightPatchCall = false;
                     try {
-                        JSONUtil.merge(oldSdkPutAcc, sdkPutAcc);
+                        JSONUtil.merge(oldPutAccumulator, putAccumulator);
                     } catch (JSONException ex) {
-                        WonderPush.logError("Failed to merge sdkPutAcc into oldSdkPutAcc", ex);
+                        WonderPush.logError("Failed to merge putAccumulator into oldPutAccumulator", ex);
                     }
-                    sdkPutAcc = oldSdkPutAcc;
+                    putAccumulator = oldPutAccumulator;
                     schedulePatchCallAndSave();
                 }
             }
@@ -144,8 +144,8 @@ class Sync {
     public synchronized String toString() {
         return this.getClass().getSimpleName()
                 + "<sdkState:" + sdkState
-                + ",srvState:" + srvState
-                + ",sdkPutAcc:" + sdkPutAcc
+                + ",serverState:" + serverState
+                + ",putAccumulator:" + putAccumulator
                 + ",inflightDiff:" + inflightDiff
                 + ",scheduledPatchCall:" + scheduledPatchCall
                 + ",inflightPatchCall:" + inflightPatchCall
