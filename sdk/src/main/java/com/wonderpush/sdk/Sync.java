@@ -56,10 +56,12 @@ class Sync {
         schedulePatchCallAndSave();
     }
 
-    public synchronized void recvState(JSONObject receivedState) throws JSONException {
+    public synchronized void recvState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
         srvState = JSONUtil.deepCopy(receivedState);
-        //sdkPutAcc = new JSONObject();
-        //srvPutAcc = new JSONObject();
+        if (resetSdkState) {
+            sdkPutAcc = new JSONObject();
+            srvPutAcc = new JSONObject();
+        }
         sdkState = JSONUtil.deepCopy(srvState);
         JSONUtil.merge(sdkState, srvPutAcc);
         schedulePatchCallAndSave(); // FIXME do right away, no schedule?

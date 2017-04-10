@@ -9,6 +9,10 @@ import java.util.Iterator;
 class JSONUtil {
 
     protected static void merge(JSONObject base, JSONObject diff) throws JSONException {
+        merge(base, diff, true);
+    }
+
+    protected static void merge(JSONObject base, JSONObject diff, boolean nullFieldRemoves) throws JSONException {
         if (base == null) throw new NullPointerException();
         if (diff == null) return;
 
@@ -22,16 +26,20 @@ class JSONUtil {
                 } else if (vDiff instanceof JSONArray) {
                     vDiff = new JSONArray(vDiff.toString());
                 }
-                base.put(key, vDiff);
+                if (vDiff != null || nullFieldRemoves) {
+                    base.put(key, vDiff);
+                }
             } else if (vDiff instanceof JSONObject) {
                 Object vBase = base.get(key);
                 if (vBase instanceof JSONObject) {
-                    merge((JSONObject)vBase, (JSONObject)vDiff);
+                    merge((JSONObject)vBase, (JSONObject)vDiff, nullFieldRemoves);
                 } else {
                     base.put(key, vDiff);
                 }
             } else if (vDiff instanceof JSONArray) {
                 base.put(key, new JSONArray(vDiff.toString()));
+            } else if ((vDiff == null || vDiff == JSONObject.NULL) && nullFieldRemoves) {
+                base.remove(key);
             } else {
                 base.put(key, vDiff);
             }
@@ -89,6 +97,10 @@ class JSONUtil {
         }
 
         return rtn;
+    }
+
+    protected static void stripNulls(JSONObject object) throws JSONException {
+        merge(object, object, true);
     }
 
     protected static boolean equals(JSONObject a, JSONObject b) {
