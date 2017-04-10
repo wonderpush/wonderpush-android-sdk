@@ -38,6 +38,9 @@ dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
     compile 'com.android.support:support-v4:24.2.0' // needless to use `support-compat` because play-services-gcm:9.4.0 depends on the monolithic support-v4 (version 23.0.0)
     compile 'com.google.android.gms:play-services-gcm:9.4.0'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.json:json:20160810'
 }
 
 if (file('local.gradle').exists()) {

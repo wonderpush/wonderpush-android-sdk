@@ -154,4 +154,11 @@ class JSONUtil {
         }
     }
 
+    protected static JSONObject deepCopy(JSONObject from) throws JSONException {
+        if (from == null) {
+            return null;
+        }
+        return new JSONObject(from.toString());
+    }
+
 }
