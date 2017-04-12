@@ -96,7 +96,9 @@ class Sync {
 
     private synchronized void callPatch(Server server) throws JSONException {
         if (inflightPatchCall) {
-            scheduledPatchCall = true;
+            if (!scheduledPatchCall) {
+                schedulePatchCallAndSave();
+            }
             return;
         }
         scheduledPatchCall = false;
@@ -110,6 +112,7 @@ class Sync {
         inflightPutAccumulator = putAccumulator;
         putAccumulator = new JSONObject();
 
+        save();
         server.patchInstallation(inflightDiff, new ResponseHandler() {
             @Override
             public void onSuccess() {
@@ -132,7 +135,7 @@ class Sync {
         } catch (JSONException ex) {
             WonderPush.logError("Failed to copy putAccumulator", ex);
         }
-        schedulePatchCallAndSave();
+        save();
     }
 
     private synchronized void callPatch_onFailure() {
