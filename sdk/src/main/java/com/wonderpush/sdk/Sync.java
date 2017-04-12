@@ -18,6 +18,7 @@ class Sync {
     private JSONObject serverState;
     private JSONObject putAccumulator;
     private JSONObject inflightDiff;
+    private JSONObject inflightPutAccumulator;
     private boolean scheduledPatchCall;
     private boolean inflightPatchCall;
 
@@ -106,38 +107,44 @@ class Sync {
         }
         inflightPatchCall = true;
 
-        final JSONObject oldPutAccumulator = putAccumulator;
+        inflightPutAccumulator = putAccumulator;
         putAccumulator = new JSONObject();
 
         server.patchInstallation(inflightDiff, new ResponseHandler() {
             @Override
             public void onSuccess() {
-                synchronized (Sync.this) {
-                    inflightPatchCall = false;
-                    try {
-                        JSONUtil.merge(serverState, inflightDiff);
-                        inflightDiff = new JSONObject();
-                    } catch (JSONException ex) {
-                        WonderPush.logError("Failed to copy putAccumulator", ex);
-                    }
-                    schedulePatchCallAndSave();
-                }
+                callPatch_onSuccess();
             }
 
             @Override
             public void onFailure() {
-                synchronized (Sync.this) {
-                    inflightPatchCall = false;
-                    try {
-                        JSONUtil.merge(oldPutAccumulator, putAccumulator);
-                    } catch (JSONException ex) {
-                        WonderPush.logError("Failed to merge putAccumulator into oldPutAccumulator", ex);
-                    }
-                    putAccumulator = oldPutAccumulator;
-                    schedulePatchCallAndSave();
-                }
+                callPatch_onFailure();
             }
         });
+    }
+
+    private synchronized void callPatch_onSuccess() {
+        inflightPatchCall = false;
+        inflightPutAccumulator = new JSONObject();
+        try {
+            JSONUtil.merge(serverState, inflightDiff);
+            inflightDiff = new JSONObject();
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to copy putAccumulator", ex);
+        }
+        schedulePatchCallAndSave();
+    }
+
+    private synchronized void callPatch_onFailure() {
+        inflightPatchCall = false;
+        try {
+            JSONUtil.merge(inflightPutAccumulator, putAccumulator);
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to merge putAccumulator into oldPutAccumulator", ex);
+        }
+        putAccumulator = inflightPutAccumulator;
+        inflightPutAccumulator = new JSONObject();
+        schedulePatchCallAndSave();
     }
 
     @Override
@@ -147,6 +154,7 @@ class Sync {
                 + ",serverState:" + serverState
                 + ",putAccumulator:" + putAccumulator
                 + ",inflightDiff:" + inflightDiff
+                + ",inflightPutAccumulator:" + inflightPutAccumulator
                 + ",scheduledPatchCall:" + scheduledPatchCall
                 + ",inflightPatchCall:" + inflightPatchCall
                 + ">";
