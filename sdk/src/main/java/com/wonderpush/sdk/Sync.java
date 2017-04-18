@@ -50,7 +50,7 @@ class Sync {
 
     public synchronized void put(JSONObject diff) throws JSONException {
         JSONUtil.merge(sdkState, diff);
-        JSONUtil.merge(putAccumulator, diff);
+        JSONUtil.merge(putAccumulator, diff, false);
         schedulePatchCallAndSave();
     }
 
@@ -141,7 +141,7 @@ class Sync {
     private synchronized void callPatch_onFailure() {
         inflightPatchCall = false;
         try {
-            JSONUtil.merge(inflightPutAccumulator, putAccumulator);
+            JSONUtil.merge(inflightPutAccumulator, putAccumulator, false);
         } catch (JSONException ex) {
             WonderPush.logError("Failed to merge putAccumulator into oldPutAccumulator", ex);
         }

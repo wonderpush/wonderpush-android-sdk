@@ -484,8 +484,8 @@ public class SyncTest {
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
         assertSynced();
 
-        sync.put(new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
-        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+        sync.put(new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
         // Pending diff is: {"AA":2, "AAA":null, "B":2, "BB":2, "BBB":2}
 
         Assert.assertFalse(sync.hasInflightPatchCall());
@@ -493,20 +493,20 @@ public class SyncTest {
 
         sync.recvState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), false);
         // "A"   is removed
-        // "AA"  is not removed because it's part of the pending diff
+        // "AA"  is removed even if part of the pending diff, because server state does not have it
         // "AAA" is not updated because it's part of the pending diff
         // "B"   is not removed because it's part of the pending diff
         // "BB"  is not removed because it's part of the pending diff
         // "BBB" is not updated because it's part of the pending diff
         // "C"   is added
         // Pending diff is unchanged because it has the priority for conflict resolution
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
-        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
         assertSyncedPotentialNoopScheduledPatchCall();
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
     }
 
     @Test
@@ -515,31 +515,31 @@ public class SyncTest {
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
         assertSynced();
 
-        sync.put(new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
-        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+        sync.put(new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
 
         Assert.assertFalse(sync.hasInflightPatchCall());
         Assert.assertTrue(sync.hasScheduledPatchCall());
 
         sync.recvState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), false);
         // "A"   is removed
-        // "AA"  is not removed because it's part of the pending diff
+        // "AA"  is removed even if part of the pending diff, because server state does not have it
         // "AAA" is not updated because it's part of the pending diff
         // "B"   is not removed because it's part of the pending diff
         // "BB"  is not removed because it's part of the pending diff
         // "BBB" is not updated because it's part of the pending diff
         // "C"   is added
         // Pending diff is unchanged because it has the priority for conflict resolution
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
-        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
-        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
         assertSyncedPotentialNoopScheduledPatchCall();
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
     }
 
     @Test
@@ -548,13 +548,13 @@ public class SyncTest {
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
         assertSynced();
 
-        sync.put(new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
-        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+        sync.put(new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
 
         Assert.assertFalse(sync.hasInflightPatchCall());
         Assert.assertTrue(sync.hasScheduledPatchCall());
 
-        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
             protected void _patchInstallation_do() throws Exception {
                 sync.recvState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), false);
@@ -565,13 +565,13 @@ public class SyncTest {
                 // "BB"  is not removed because it's part of the inflight diff
                 // "BBB" is not updated because it's part of the inflight diff
                 // "C"   is added
-                JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+                JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
             }
         });
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
         assertSyncedAfterRecvState();
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
     }
 
     @Test
@@ -580,34 +580,34 @@ public class SyncTest {
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
         assertSynced();
 
-        sync.put(new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
-        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+        sync.put(new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
 
         Assert.assertFalse(sync.hasInflightPatchCall());
         Assert.assertTrue(sync.hasScheduledPatchCall());
 
-        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
             protected void _patchInstallation_do() throws Exception {
                 sync.recvState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), false);
                 // "A"   is removed
-                // "AA"  is not removed because it's part of the inflight diff
+                // "AA"  is removed even if part of the inflight diff, because server state does not have it
                 // "AAA" is not updated because it's part of the inflight diff
                 // "B"   is not removed because it's part of the inflight diff
                 // "BB"  is not removed because it's part of the inflight diff
                 // "BBB" is not updated because it's part of the inflight diff
                 // "C"   is added
                 // Pending diff is unchanged because it has the priority for conflict resolution
-                JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+                JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
             }
         });
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
-        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
 
         assertSyncedPotentialNoopScheduledPatchCall();
-        JSONUtilTest.assertEquals(new JSONObject("{\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
+        JSONUtilTest.assertEquals(new JSONObject("{\"B\":2,\"BB\":2,\"BBB\":2,\"C\":3}"), sync.getSdkState());
     }
 
     /* ****************************************************** *
