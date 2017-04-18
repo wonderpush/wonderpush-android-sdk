@@ -3,7 +3,7 @@ package com.wonderpush.sdk;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-class Sync {
+class JSONSync {
 
     interface ResponseHandler {
         void onSuccess();
@@ -22,15 +22,15 @@ class Sync {
     private boolean scheduledPatchCall;
     private boolean inflightPatchCall;
 
-    Sync() {
+    JSONSync() {
         this(null, null, null, false);
     }
 
-    public Sync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator) {
+    public JSONSync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator) {
         this(sdkState, serverState, putAccumulator, false);
     }
 
-    Sync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, boolean scheduledPatchCall) {
+    JSONSync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, boolean scheduledPatchCall) {
         if (sdkState == null) sdkState = new JSONObject();
         if (serverState == null) serverState = new JSONObject();
         if (putAccumulator == null) putAccumulator = new JSONObject();
@@ -64,13 +64,13 @@ class Sync {
         schedulePatchCallAndSave();
     }
 
-    public synchronized void recvSrvState(JSONObject srvState) throws JSONException {
+    public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
         JSONUtil.stripNulls(srvState);
         serverState = JSONUtil.deepCopy(srvState);
         schedulePatchCallAndSave();
     }
 
-    public synchronized void recvState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
+    public synchronized void receiveState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
         JSONUtil.stripNulls(receivedState);
         serverState = JSONUtil.deepCopy(receivedState);
         sdkState = JSONUtil.deepCopy(serverState);
@@ -83,7 +83,7 @@ class Sync {
         schedulePatchCallAndSave();
     }
 
-    public synchronized void recvDiff(JSONObject diff) throws JSONException {
+    public synchronized void receiveDiff(JSONObject diff) throws JSONException {
         // The diff is already server-side, by contract
         JSONUtil.merge(serverState, diff);
         put(diff);
