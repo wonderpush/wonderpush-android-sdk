@@ -26,7 +26,7 @@ class JSONUtil {
                 } else if (vDiff instanceof JSONArray) {
                     vDiff = new JSONArray(vDiff.toString());
                 }
-                if (vDiff != null || nullFieldRemoves) {
+                if ((vDiff != null && vDiff != JSONObject.NULL) || !nullFieldRemoves) {
                     base.put(key, vDiff);
                 }
             } else if (vDiff instanceof JSONObject) {
