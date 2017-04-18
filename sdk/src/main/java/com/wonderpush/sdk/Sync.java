@@ -54,6 +54,11 @@ class Sync {
         schedulePatchCallAndSave();
     }
 
+    public synchronized void recvSrvState(JSONObject srvState) throws JSONException {
+        serverState = JSONUtil.deepCopy(srvState);
+        schedulePatchCallAndSave();
+    }
+
     public synchronized void recvState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
         serverState = JSONUtil.deepCopy(receivedState);
         sdkState = JSONUtil.deepCopy(serverState);
@@ -63,7 +68,7 @@ class Sync {
             JSONUtil.merge(sdkState, putAccumulator);
             JSONUtil.merge(sdkState, inflightDiff);
         }
-        schedulePatchCallAndSave(); // FIXME do right away, no schedule?
+        schedulePatchCallAndSave();
     }
 
     public synchronized void recvDiff(JSONObject diff) throws JSONException {

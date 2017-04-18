@@ -717,4 +717,144 @@ public class SyncTest {
         JSONUtilTest.assertEquals(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), sync.getSdkState());
     }
 
+    /* *************************************************** *
+     * Test recvSrvState() behavior wrt server patch calls *
+     * *************************************************** */
+
+    private void assertSyncedAfterRecvSrvState() throws JSONException {
+        // Be laxer with this final state check
+        //assertNoopScheduledPatchCall();
+        //assertSynced();
+        assertSyncedPotentialNoopScheduledPatchCall();
+    }
+
+    @Test
+    public void recvSrvStateFromInitialState() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.recvSrvState(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"));
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+
+        Assert.assertFalse(sync.hasInflightPatchCall());
+        Assert.assertTrue(sync.hasScheduledPatchCall());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"A\":null,\"AA\":null,\"AAA\":null}")));
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedAfterRecvSrvState();
+    }
+
+    @Test
+    public void recvSrvStateFromNonEmptyState() throws JSONException {
+        singlePutSuccess();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
+        assertSynced();
+
+        sync.recvSrvState(new JSONObject("{\"A\":1,\"AAA\":2,\"B\":2,\"BB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
+
+        Assert.assertFalse(sync.hasInflightPatchCall());
+        Assert.assertTrue(sync.hasScheduledPatchCall());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":1,\"AAA\":1,\"B\":null,\"BB\":null}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
+        assertSyncedAfterRecvSrvState();
+    }
+
+    @Test
+    public void recvSrvStatePendingPut() throws JSONException {
+        singlePutSuccess();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
+        assertSynced();
+
+        sync.put(new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+        // Pending diff is: {"AA":2, "AAA":null, "B":2, "BB":2, "BBB":2}
+
+        Assert.assertFalse(sync.hasInflightPatchCall());
+        Assert.assertTrue(sync.hasScheduledPatchCall());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        sync.recvSrvState(new JSONObject("{\"AAA\":3,\"BB\":2,\"BBB\":3,\"C\":3}"));
+        // "A" is added because it has vanished
+        // "AA" is kept because it has vanished
+        // "AAA" is kept because the underlying value still has not the desired value
+        // "B" is kept because it has vanished
+        // "BB" is removed because it has now the desired value
+        // "C" is added because it has appeared
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"A\":1,\"AA\":2,\"AAA\":null,\"B\":2,\"BBB\":2,\"C\":null}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        assertSyncedAfterRecvSrvState();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+    }
+
+    @Test
+    public void recvSrvStateInflightPutSuccess() throws JSONException {
+        singlePutSuccess();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
+        assertSynced();
+
+        sync.put(new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        Assert.assertFalse(sync.hasInflightPatchCall());
+        Assert.assertTrue(sync.hasScheduledPatchCall());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
+            @Override
+            protected void _patchInstallation_do() throws Exception {
+                sync.recvSrvState(new JSONObject("{\"AAA\":3,\"BB\":2,\"BBB\":3,\"C\":3}"));
+                // "A" is added because it has vanished
+                // "C" is added because it has appeared
+                // The rest will be properly applied and will be discarded on success
+                JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+            }
+        });
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"A\":1,\"C\":null}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        assertSyncedAfterRecvSrvState();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+    }
+
+    @Test
+    public void recvSrvStateInflightPutFailure() throws JSONException {
+        singlePutSuccess();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
+        assertSynced();
+
+        sync.put(new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        Assert.assertFalse(sync.hasInflightPatchCall());
+        Assert.assertTrue(sync.hasScheduledPatchCall());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
+            @Override
+            protected void _patchInstallation_do() throws Exception {
+                sync.recvSrvState(new JSONObject("{\"AAA\":3,\"BB\":2,\"BBB\":3,\"C\":3}"));
+                // "A" is added because it has vanished
+                // "AA" is kept because it has vanished
+                // "AAA" is kept because the underlying value still has not the desired value
+                // "B" is kept because it has vanished
+                // "BB" is removed because it has now the desired value
+                // "C" is added because it has appeared
+                JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+            }
+        });
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"A\":1,\"AA\":2,\"AAA\":null,\"B\":2,\"BBB\":2,\"C\":null}")));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+
+        assertSyncedAfterRecvSrvState();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
+    }
+
 }
