@@ -11,7 +11,26 @@ public class JSONSyncTest {
 
     private JSONSync sync;
 
-    private static abstract class MockServer implements JSONSync.Server {
+    private static class MockCallbacks implements JSONSync.Callbacks {
+        private MockServer server;
+
+        void setServer(MockServer server) {
+            this.server = server;
+        }
+
+        @Override
+        public void save(JSONObject state) {}
+
+        @Override
+        public void schedulePatchCall() {}
+
+        @Override
+        public void serverPatchInstallation(JSONObject diff, JSONSync.ResponseHandler handler) {
+            server.serverPatchInstallation(diff, handler);
+        }
+    }
+
+    private static abstract class MockServer {
 
         private boolean called = false;
 
@@ -19,29 +38,28 @@ public class JSONSyncTest {
             return called;
         }
 
-        @Override
-        public final void patchInstallation(JSONObject diff, JSONSync.ResponseHandler handler) {
+        final void serverPatchInstallation(JSONObject diff, JSONSync.ResponseHandler handler) {
             Assert.assertFalse("Server mock object must not be reused", called);
             called = true;
-            _patchInstallation_diff(diff);
+            _serverPatchInstallation_diff(diff);
             try {
-                _patchInstallation_do();
+                _serverPatchInstallation_do();
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
-            _patchInstallation_handler(handler);
+            _serverPatchInstallation_handler(handler);
         }
 
-        protected void _patchInstallation_diff(JSONObject diff) {}
-        protected void _patchInstallation_do() throws Exception {}
-        protected void _patchInstallation_handler(JSONSync.ResponseHandler handler) {}
+        protected void _serverPatchInstallation_diff(JSONObject diff) {}
+        protected void _serverPatchInstallation_do() throws Exception {}
+        protected void _serverPatchInstallation_handler(JSONSync.ResponseHandler handler) {}
     }
 
     private class ServerAssertNotCalled extends MockServer {
 
         @Override
-        public void _patchInstallation_diff(JSONObject diff) {
-            Assert.fail("Server.patchInstallation should not be called\nGot diff: " + diff + "\nSync state: " + sync);
+        public void _serverPatchInstallation_diff(JSONObject diff) {
+            Assert.fail("serverPatchInstallation should not be called\nGot diff: " + diff + "\nSync state: " + sync);
         }
 
     }
@@ -57,12 +75,12 @@ public class JSONSyncTest {
         }
 
         @Override
-        public void _patchInstallation_diff(JSONObject diff) {
+        public void _serverPatchInstallation_diff(JSONObject diff) {
             JSONUtilTest.assertEquals(message, expectedDiff, diff);
         }
 
         @Override
-        public void _patchInstallation_handler(JSONSync.ResponseHandler handler) {
+        public void _serverPatchInstallation_handler(JSONSync.ResponseHandler handler) {
             handler.onSuccess();
         }
 
@@ -78,27 +96,31 @@ public class JSONSyncTest {
         }
 
         @Override
-        public void _patchInstallation_diff(JSONObject diff) {
+        public void _serverPatchInstallation_diff(JSONObject diff) {
             JSONUtilTest.assertEquals(message, expectedDiff, diff);
         }
 
         @Override
-        public void _patchInstallation_handler(JSONSync.ResponseHandler handler) {
+        public void _serverPatchInstallation_handler(JSONSync.ResponseHandler handler) {
             handler.onFailure();
         }
 
     }
 
+    private MockCallbacks callbacks;
+
     @Before
     public void setup() {
-        sync = new JSONSync();
+        callbacks = new MockCallbacks();
+        sync = new JSONSync(callbacks);
     }
 
     private void assertSynced() throws JSONException {
         Assert.assertFalse(sync.hasInflightPatchCall());
         Assert.assertFalse(sync.hasScheduledPatchCall());
         MockServer server = new ServerAssertNotCalled();
-        Assert.assertFalse(sync.performScheduledPatchCall(server));
+        callbacks.setServer(server);
+        Assert.assertFalse(sync.performScheduledPatchCall());
         Assert.assertFalse(server.isCalled());
     }
 
@@ -118,12 +140,14 @@ public class JSONSyncTest {
     private void assertNoopScheduledPatchCall() throws JSONException {
         Assert.assertFalse(sync.hasInflightPatchCall());
         MockServer server = new ServerAssertNotCalled();
-        Assert.assertTrue(sync.performScheduledPatchCall(server));
+        callbacks.setServer(server);
+        Assert.assertTrue(sync.performScheduledPatchCall());
         Assert.assertFalse(server.isCalled());
     }
 
     private void assertPerformScheduledPatchCallWith(MockServer server) throws JSONException {
-        Assert.assertTrue(sync.performScheduledPatchCall(server));
+        callbacks.setServer(server);
+        Assert.assertTrue(sync.performScheduledPatchCall());
         Assert.assertTrue(server.isCalled());
     }
 
@@ -264,7 +288,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.put(new JSONObject("{\"AA\":null,\"AAA\":2,\"B\":2,\"BB\":2}"));
                 JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AAA\":2,\"B\":2,\"BB\":2}"), sync.getSdkState());
             }
@@ -288,7 +312,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.put(new JSONObject("{\"AA\":null,\"AAA\":2,\"B\":2,\"BB\":2}"));
                 JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AAA\":2,\"B\":2,\"BB\":2}"), sync.getSdkState());
             }
@@ -401,7 +425,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveDiff(new JSONObject("{\"AAA\":3,\"BB\":3,\"C\":3}"));
                 JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"AAA\":3,\"B\":2,\"BB\":3,\"C\":3}"), sync.getSdkState());
                 // Pending diff becomes: {"AAA":3, "BB":3} (keys common to inflight diff and received diff with values from received diff)
@@ -436,7 +460,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveDiff(new JSONObject("{\"AAA\":3,\"BB\":3,\"C\":3}"));
                 JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":2,\"AAA\":3,\"B\":2,\"BB\":3,\"C\":3}"), sync.getSdkState());
                 // Pending diff becomes: {"AAA":3, "BB":3} (keys common to inflight diff and received diff with values from received diff)
@@ -572,7 +596,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), false);
                 // "A"   is removed
                 // "AA"  is not removed because it's part of the inflight diff
@@ -604,7 +628,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), false);
                 // "A"   is removed
                 // "AA"  is removed even if part of the inflight diff, because server state does not have it
@@ -701,7 +725,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), true);
                 JSONUtilTest.assertEquals(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), sync.getSdkState());
             }
@@ -730,7 +754,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveState(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), true);
                 JSONUtilTest.assertEquals(new JSONObject("{\"AAA\":3,\"BBB\":3,\"C\":3}"), sync.getSdkState());
             }
@@ -840,7 +864,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndSuccess(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveServerState(new JSONObject("{\"AAA\":3,\"BB\":2,\"BBB\":3,\"C\":3}"));
                 // "A" is added because it has vanished
                 // "C" is added because it has appeared
@@ -871,7 +895,7 @@ public class JSONSyncTest {
 
         assertPerformScheduledPatchCallWith(new ServerAssertDiffAndFailure(null, new JSONObject("{\"AA\":2,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}")) {
             @Override
-            protected void _patchInstallation_do() throws Exception {
+            protected void _serverPatchInstallation_do() throws Exception {
                 sync.receiveServerState(new JSONObject("{\"AAA\":3,\"BB\":2,\"BBB\":3,\"C\":3}"));
                 // "A" is added because it has vanished
                 // "AA" is kept because it has vanished

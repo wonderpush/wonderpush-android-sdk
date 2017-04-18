@@ -10,10 +10,13 @@ class JSONSync {
         void onFailure();
     }
 
-    interface Server {
-        void patchInstallation(JSONObject diff, ResponseHandler handler);
+    interface Callbacks {
+        void save(JSONObject state);
+        void schedulePatchCall();
+        void serverPatchInstallation(JSONObject diff, ResponseHandler handler);
     }
 
+    private Callbacks callbacks;
     private JSONObject sdkState;
     private JSONObject serverState;
     private JSONObject putAccumulator;
@@ -22,15 +25,17 @@ class JSONSync {
     private boolean scheduledPatchCall;
     private boolean inflightPatchCall;
 
-    JSONSync() {
-        this(null, null, null, false);
+    JSONSync(Callbacks callbacks) {
+        this(callbacks, null, null, null, false);
     }
 
-    public JSONSync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator) {
-        this(sdkState, serverState, putAccumulator, false);
+    public JSONSync(Callbacks callbacks, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator) {
+        this(callbacks, sdkState, serverState, putAccumulator, false);
     }
 
-    JSONSync(JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, boolean scheduledPatchCall) {
+    JSONSync(Callbacks callbacks, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, boolean scheduledPatchCall) {
+        if (callbacks == null) throw new NullPointerException("callbacks cannot be null");
+        this.callbacks = callbacks;
         if (sdkState == null) sdkState = new JSONObject();
         if (serverState == null) serverState = new JSONObject();
         if (putAccumulator == null) putAccumulator = new JSONObject();
@@ -55,7 +60,9 @@ class JSONSync {
     }
 
     private synchronized void save() {
+        JSONObject state = new JSONObject();
         // TODO
+        callbacks.save(state);
     }
 
     public synchronized void put(JSONObject diff) throws JSONException {
@@ -92,7 +99,7 @@ class JSONSync {
     private synchronized void schedulePatchCallAndSave() {
         scheduledPatchCall = true;
         save();
-        // TODO schedule
+        callbacks.schedulePatchCall();
     }
 
     synchronized boolean hasScheduledPatchCall() {
@@ -103,15 +110,15 @@ class JSONSync {
         return inflightPatchCall;
     }
 
-    synchronized boolean performScheduledPatchCall(Server server) throws JSONException {
+    synchronized boolean performScheduledPatchCall() throws JSONException {
         if (scheduledPatchCall) {
-            callPatch(server);
+            callPatch();
             return true;
         }
         return false;
     }
 
-    private synchronized void callPatch(Server server) throws JSONException {
+    private synchronized void callPatch() throws JSONException {
         if (inflightPatchCall) {
             if (!scheduledPatchCall) {
                 schedulePatchCallAndSave();
@@ -130,7 +137,7 @@ class JSONSync {
         putAccumulator = new JSONObject();
 
         save();
-        server.patchInstallation(inflightDiff, new ResponseHandler() {
+        callbacks.serverPatchInstallation(inflightDiff, new ResponseHandler() {
             @Override
             public void onSuccess() {
                 callPatch_onSuccess();
