@@ -139,6 +139,13 @@ public class SyncTest {
     }
 
     @Test
+    public void singlePutNull() throws JSONException {
+        sync.put(new JSONObject("{\"A\":null}"));
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedPotentialNoopScheduledPatchCall();
+    }
+
+    @Test
     public void singlePutSuccess() throws JSONException {
         sync.put(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"));
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AA\":1,\"AAA\":1}"), sync.getSdkState());
@@ -459,6 +466,15 @@ public class SyncTest {
     }
 
     @Test
+    public void rectStateNullFromInitialState() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.recvState(new JSONObject("{\"A\":null}"), false);
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedAfterRecvState();
+    }
+
+    @Test
     public void rectStateFromInitialState() throws JSONException {
         assertSynced();
         JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
@@ -622,6 +638,15 @@ public class SyncTest {
     }
 
     @Test
+    public void recvStateResetNullFromInitialState() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.recvState(new JSONObject("{\"A\":null}"), true);
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedAfterRecvStateReset();
+    }
+
+    @Test
     public void recvStateResetFromInitialState() throws JSONException {
         assertSynced();
         JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
@@ -725,6 +750,15 @@ public class SyncTest {
         // Be laxer with this final state check
         //assertNoopScheduledPatchCall();
         //assertSynced();
+        assertSyncedPotentialNoopScheduledPatchCall();
+    }
+
+    @Test
+    public void recvSrvStateNullField() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.recvSrvState(new JSONObject("{\"A\":null}"));
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
         assertSyncedPotentialNoopScheduledPatchCall();
     }
 

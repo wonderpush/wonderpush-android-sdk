@@ -34,6 +34,16 @@ class Sync {
         if (sdkState == null) sdkState = new JSONObject();
         if (serverState == null) serverState = new JSONObject();
         if (putAccumulator == null) putAccumulator = new JSONObject();
+        try {
+            JSONUtil.stripNulls(sdkState);
+        } catch (JSONException ex) {
+            WonderPush.logError("Unexpected JSON error while removing null fields on sdkState", ex);
+        }
+        try {
+            JSONUtil.stripNulls(serverState);
+        } catch (JSONException ex) {
+            WonderPush.logError("Unexpected JSON error while removing null fields on serverState", ex);
+        }
         this.sdkState = sdkState;
         this.serverState = serverState;
         this.putAccumulator = putAccumulator;
@@ -55,11 +65,13 @@ class Sync {
     }
 
     public synchronized void recvSrvState(JSONObject srvState) throws JSONException {
+        JSONUtil.stripNulls(srvState);
         serverState = JSONUtil.deepCopy(srvState);
         schedulePatchCallAndSave();
     }
 
     public synchronized void recvState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
+        JSONUtil.stripNulls(receivedState);
         serverState = JSONUtil.deepCopy(receivedState);
         sdkState = JSONUtil.deepCopy(serverState);
         if (resetSdkState) {
