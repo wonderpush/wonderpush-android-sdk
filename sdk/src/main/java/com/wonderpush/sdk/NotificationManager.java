@@ -32,7 +32,7 @@ class NotificationManager {
     protected static void onReceivedNotification(Context context, Intent intent, int iconResource, Class<? extends Activity> activity, NotificationModel notif) {
         String loggedInstallationId = WonderPushConfiguration.getInstallationId();
         if (notif.getTargetedInstallation() != null && !notif.getTargetedInstallation().equals(loggedInstallationId)) {
-            WonderPush.logDebug("Received notification is not targetted at the current installation (" + notif.getTargetedInstallation() + " does not match current installation " + loggedInstallationId + ")");
+            WonderPush.logDebug("Received notification is not targeted at the current installation (" + notif.getTargetedInstallation() + " does not match current installation " + loggedInstallationId + ")");
             return;
         }
 
@@ -48,6 +48,8 @@ class NotificationManager {
         } catch (JSONException ex) {
             WonderPush.logError("Unexpected error while tracking notification received", ex);
         }
+
+        handleNotificationActions(context, notif, notif.getReceiveActions());
 
         boolean automaticallyHandled = false;
         Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();

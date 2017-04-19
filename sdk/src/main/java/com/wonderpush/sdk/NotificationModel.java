@@ -104,6 +104,7 @@ abstract class NotificationModel {
     private Type type;
     private AlertModel alert;
     private String targetUrl;
+    public List<ActionModel> receiveActions = new ArrayList<>();
     public List<ActionModel> actions = new ArrayList<>();
     private boolean receipt;
 
@@ -220,7 +221,15 @@ abstract class NotificationModel {
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", true));
 
-            // Read actions
+            // Read receive actions
+            JSONArray receiveActions = wpData.optJSONArray("receiveActions");
+            int receiveActionCount = receiveActions != null ? receiveActions.length() : 0;
+            for (int i = 0 ; i < receiveActionCount ; ++i) {
+                JSONObject action = receiveActions.optJSONObject(i);
+                rtn.addReceiveAction(new ActionModel(action));
+            }
+
+            // Read at open actions
             JSONArray actions = wpData.optJSONArray("actions");
             int actionCount = actions != null ? actions.length() : 0;
             for (int i = 0 ; i < actionCount ; ++i) {
@@ -306,6 +315,20 @@ abstract class NotificationModel {
 
     public void setTargetUrl(String targetUrl) {
         this.targetUrl = targetUrl;
+    }
+
+    public List<ActionModel> getReceiveActions() {
+        return receiveActions;
+    }
+
+    public void setReceiveActions(List<ActionModel> receiveActions) {
+        this.receiveActions = receiveActions;
+    }
+
+    public void addReceiveAction(ActionModel action) {
+        if (action != null) {
+            receiveActions.add(action);
+        }
     }
 
     public List<ActionModel> getActions() {
