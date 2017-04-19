@@ -26,6 +26,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.HttpEntity;
 import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
@@ -36,11 +37,12 @@ class WonderPushRestClient {
 
     private static final String TAG = WonderPushRestClient.class.getSimpleName();
 
-    private enum HttpMethod {
+    enum HttpMethod {
         GET,
         PUT,
         POST,
         DELETE,
+        PATCH,
         // APPEND ONLY!
     }
 
@@ -53,6 +55,24 @@ class WonderPushRestClient {
     private static final List<ResponseHandler> sPendingHandlers = new ArrayList<>();
 
     private static final AsyncHttpClient sClient = new AsyncHttpClient();
+
+    /**
+     * A request
+     *
+     * @param userId
+     *            The userId to perform this request for
+     * @param method
+     *            The HTTP method to use
+     * @param resource
+     *            The resource path, starting with /
+     * @param params
+     *            AsyncHttpClient request parameters
+     * @param responseHandler
+     *            An AsyncHttpClient response handler
+     */
+    protected static void requestForUser(String userId, HttpMethod method, String resource, RequestParams params, ResponseHandler responseHandler) {
+        requestAuthenticated(new Request(userId, method, resource, params, responseHandler));
+    }
 
     /**
      * A GET request
@@ -276,6 +296,18 @@ class WonderPushRestClient {
 
                 // Handler
                 final ResponseHandler handler = request.getHandler();
+                HttpEntity entity = null;
+                if (request.getParams() != null) {
+                    try {
+                        entity = request.getParams() != null ? request.getParams().getEntity(null) : null;
+                    } catch (IOException ex) {
+                        WonderPush.logError("Failed to create HttpEntity from params " + request.getParams(), ex);
+                        if (handler != null) {
+                            handler.onFailure(ex, new Response(""));
+                        }
+                        return;
+                    }
+                }
                 final long sendDate = SystemClock.elapsedRealtime();
                 JsonHttpResponseHandler jsonHandler = new JsonHttpResponseHandler() {
                     @Override
@@ -342,20 +374,19 @@ class WonderPushRestClient {
                         sClient.get(null, url, headers, request.getParams(), jsonHandler);
                         break;
                     case PUT:
-                        try {
-                            sClient.put(null, url, headers,
-                                    request.getParams() != null ? request.getParams().getEntity(jsonHandler) : null,
-                                    contentType, jsonHandler);
-                        } catch (IOException ex) {
-                            Log.e(TAG, "Unexpected error while performing request " + request, ex);
-                        }
+                        sClient.put(null, url, headers, entity, contentType, jsonHandler);
                         break;
                     case POST:
-                        sClient.post(null, url, headers, request.getParams(), contentType, jsonHandler);
+                        sClient.post(null, url, headers, entity, contentType, jsonHandler);
+                        break;
+                    case PATCH:
+                        sClient.patch(null, url, headers, entity, contentType, jsonHandler);
                         break;
                     case DELETE:
                         sClient.delete(null, url, headers, jsonHandler);
                         break;
+                    default:
+                        jsonHandler.sendFailureMessage(0, null, null, new UnsupportedOperationException("Unhandled method " + request.getMethod()));
                 }
             }
         }, 0);
@@ -456,9 +487,8 @@ class WonderPushRestClient {
 
                                     JSONObject installation = json.optJSONObject("_installation");
                                     if (installation != null) {
-                                        long installationUpdateDate = installation.optLong("updateDate", 0);
                                         JSONObject custom = installation.optJSONObject("custom");
-                                        WonderPush.receivedFullInstallationCustomPropertiesFromServer(custom, installationUpdateDate);
+                                        WonderPush.receivedFullInstallationCustomPropertiesFromServer(custom);
                                     }
                                 } finally {
                                     // Make sure to switch back to the current user now

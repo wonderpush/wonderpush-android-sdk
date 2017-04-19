@@ -16,6 +16,16 @@ class JSONSync {
         void serverPatchInstallation(JSONObject diff, ResponseHandler handler);
     }
 
+    private static final String SAVED_STATE_FIELD__SYNC_STATE_VERSION = "_syncStateVersion";
+    private static final int SAVED_STATE_STATE_VERSION_1 = 1;
+    private static final String SAVED_STATE_FIELD_SDK_STATE = "sdkState";
+    private static final String SAVED_STATE_FIELD_SERVER_STATE = "serverState";
+    private static final String SAVED_STATE_FIELD_PUT_ACCUMULATOR = "putAccumulator";
+    private static final String SAVED_STATE_FIELD_INFLIGHT_DIFF = "inflightDiff";
+    private static final String SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR = "inflightPutAccumulator";
+    private static final String SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL = "scheduledPatchCall";
+    private static final String SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL = "inflightPatchCall";
+
     private Callbacks callbacks;
     private JSONObject sdkState;
     private JSONObject serverState;
@@ -26,19 +36,54 @@ class JSONSync {
     private boolean inflightPatchCall;
 
     JSONSync(Callbacks callbacks) {
-        this(callbacks, null, null, null, false);
+        this(callbacks, null, null, null, null, null, false, false);
     }
 
-    public JSONSync(Callbacks callbacks, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator) {
-        this(callbacks, sdkState, serverState, putAccumulator, false);
+    private static JSONObject _initDiffServerAndSdkState(JSONObject sdkState, JSONObject serverState) {
+        if (sdkState == null) sdkState = new JSONObject();
+        if (serverState == null) serverState = new JSONObject();
+        JSONObject diff;
+        try {
+            diff = JSONUtil.diff(serverState, sdkState);
+        } catch (JSONException ex) {
+            WonderPush.logError("Error while diffing serverState " + serverState + " with sdkState " + sdkState + ". Falling back to full sdkState", ex);
+            try {
+                diff = JSONUtil.deepCopy(sdkState);
+            } catch (JSONException ex2) {
+                WonderPush.logError("Error while cloning sdkState " + sdkState + ". Falling back to empty diff", ex2);
+                diff = new JSONObject();
+            }
+        }
+        return diff;
     }
 
-    JSONSync(Callbacks callbacks, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, boolean scheduledPatchCall) {
+    static JSONSync fromSdkStateAndServerState(Callbacks callbacks, JSONObject sdkState, JSONObject serverState) {
+        return new JSONSync(callbacks, sdkState, serverState, _initDiffServerAndSdkState(serverState, sdkState), null, null, true /*schedule a patch call*/, false);
+    }
+
+    static JSONSync fromSavedState(Callbacks callbacks, JSONObject savedState) throws JSONException {
+        if (savedState == null) savedState = new JSONObject();
+        int version = savedState.has(SAVED_STATE_FIELD_SDK_STATE) ? savedState.getInt(SAVED_STATE_FIELD__SYNC_STATE_VERSION) : SAVED_STATE_STATE_VERSION_1;
+        return new JSONSync(
+                callbacks,
+                savedState.has(SAVED_STATE_FIELD_SDK_STATE)                ? savedState.getJSONObject(SAVED_STATE_FIELD_SDK_STATE)                : null,
+                savedState.has(SAVED_STATE_FIELD_SERVER_STATE)             ? savedState.getJSONObject(SAVED_STATE_FIELD_SERVER_STATE)             : null,
+                savedState.has(SAVED_STATE_FIELD_PUT_ACCUMULATOR)          ? savedState.getJSONObject(SAVED_STATE_FIELD_PUT_ACCUMULATOR)          : null,
+                savedState.has(SAVED_STATE_FIELD_INFLIGHT_DIFF)            ? savedState.getJSONObject(SAVED_STATE_FIELD_INFLIGHT_DIFF)            : null,
+                savedState.has(SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR) ? savedState.getJSONObject(SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR) : null,
+                savedState.has(SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL)     ? savedState.getBoolean(SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL)        : true,
+                savedState.has(SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL)      ? savedState.getBoolean(SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL)         : false
+        );
+    }
+
+    JSONSync(Callbacks callbacks, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator, boolean scheduledPatchCall, boolean inflightPatchCall) {
         if (callbacks == null) throw new NullPointerException("callbacks cannot be null");
-        this.callbacks = callbacks;
         if (sdkState == null) sdkState = new JSONObject();
         if (serverState == null) serverState = new JSONObject();
         if (putAccumulator == null) putAccumulator = new JSONObject();
+        if (inflightDiff == null) inflightDiff = new JSONObject();
+        if (inflightPutAccumulator == null) inflightPutAccumulator = new JSONObject();
+
         try {
             JSONUtil.stripNulls(sdkState);
         } catch (JSONException ex) {
@@ -49,20 +94,40 @@ class JSONSync {
         } catch (JSONException ex) {
             WonderPush.logError("Unexpected JSON error while removing null fields on serverState", ex);
         }
+
+        this.callbacks = callbacks;
         this.sdkState = sdkState;
         this.serverState = serverState;
         this.putAccumulator = putAccumulator;
+        this.inflightDiff = inflightDiff;
+        this.inflightPutAccumulator = inflightPutAccumulator;
         this.scheduledPatchCall = scheduledPatchCall;
+        this.inflightPatchCall = inflightPatchCall;
+
+        if (this.inflightPatchCall) {
+            callPatch_onFailure();
+        }
     }
 
-    public JSONObject getSdkState() throws JSONException {
+    public synchronized JSONObject getSdkState() throws JSONException {
         return JSONUtil.deepCopy(sdkState);
     }
 
     private synchronized void save() {
-        JSONObject state = new JSONObject();
-        // TODO
-        callbacks.save(state);
+        try {
+            JSONObject state = new JSONObject();
+            state.put(SAVED_STATE_FIELD__SYNC_STATE_VERSION,      SAVED_STATE_STATE_VERSION_1);
+            state.put(SAVED_STATE_FIELD_SDK_STATE,                sdkState);
+            state.put(SAVED_STATE_FIELD_SERVER_STATE,             serverState);
+            state.put(SAVED_STATE_FIELD_PUT_ACCUMULATOR,          putAccumulator);
+            state.put(SAVED_STATE_FIELD_INFLIGHT_DIFF,            inflightDiff);
+            state.put(SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR, inflightPutAccumulator);
+            state.put(SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL,     scheduledPatchCall);
+            state.put(SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL,      inflightPatchCall);
+            callbacks.save(state);
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to build state object for saving installation custom for " + this, ex);
+        }
     }
 
     public synchronized void put(JSONObject diff) throws JSONException {
@@ -72,14 +137,14 @@ class JSONSync {
     }
 
     public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
-        JSONUtil.stripNulls(srvState);
         serverState = JSONUtil.deepCopy(srvState);
+        JSONUtil.stripNulls(serverState);
         schedulePatchCallAndSave();
     }
 
     public synchronized void receiveState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
-        JSONUtil.stripNulls(receivedState);
         serverState = JSONUtil.deepCopy(receivedState);
+        JSONUtil.stripNulls(serverState);
         sdkState = JSONUtil.deepCopy(serverState);
         if (resetSdkState) {
             putAccumulator = new JSONObject();
@@ -110,7 +175,7 @@ class JSONSync {
         return inflightPatchCall;
     }
 
-    synchronized boolean performScheduledPatchCall() throws JSONException {
+    synchronized boolean performScheduledPatchCall() {
         if (scheduledPatchCall) {
             callPatch();
             return true;
@@ -118,22 +183,37 @@ class JSONSync {
         return false;
     }
 
-    private synchronized void callPatch() throws JSONException {
+    private synchronized void callPatch() {
         if (inflightPatchCall) {
             if (!scheduledPatchCall) {
+                WonderPush.logDebug("Server PATCH call already inflight, scheduling a new one");
                 schedulePatchCallAndSave();
+            } else {
+                WonderPush.logDebug("Server PATCH call already inflight, and already scheduled");
             }
+            save();
             return;
         }
         scheduledPatchCall = false;
 
-        inflightDiff = JSONUtil.diff(serverState, sdkState);
+        try {
+            inflightDiff = JSONUtil.diff(serverState, sdkState);
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to diff server state and sdk state to send installation custom diff", ex);
+            inflightDiff = new JSONObject();
+        }
         if (inflightDiff.length() == 0) {
+            WonderPush.logDebug("No diff to send to server");
+            save();
             return;
         }
         inflightPatchCall = true;
 
-        inflightPutAccumulator = putAccumulator;
+        try {
+            inflightPutAccumulator = JSONUtil.deepCopy(putAccumulator);
+        } catch (JSONException e) {
+            inflightPutAccumulator = putAccumulator;
+        }
         putAccumulator = new JSONObject();
 
         save();
@@ -176,14 +256,14 @@ class JSONSync {
 
     @Override
     public synchronized String toString() {
-        return this.getClass().getSimpleName()
-                + "<sdkState:" + sdkState
+        return "JSONSync"
+                + "{sdkState:" + sdkState
                 + ",serverState:" + serverState
                 + ",putAccumulator:" + putAccumulator
                 + ",inflightDiff:" + inflightDiff
                 + ",inflightPutAccumulator:" + inflightPutAccumulator
                 + ",scheduledPatchCall:" + scheduledPatchCall
                 + ",inflightPatchCall:" + inflightPatchCall
-                + ">";
+                + "}";
     }
 }

@@ -7,6 +7,10 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 class WonderPushConfiguration {
 
     private static final String PREF_FILE = "wonderpush";
@@ -29,6 +33,7 @@ class WonderPushConfiguration {
     private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME = "__cached_installation_custom_properties_updated";
     private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME = "__cached_installation_custom_properties_updated_date";
     private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME = "__cached_installation_custom_properties_first_delayed_write_date";
+    private static final String INSTALLATION_CUSTOM_SYNC_STATE_PER_USER_ID_PREF_NAME = "__installation_sync_state_per_user_id";
 
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME = "__wonderpush_gcm_registration_id_date";
@@ -235,6 +240,22 @@ class WonderPushConfiguration {
      */
     static void setUserId(String userId) {
         putString(USER_ID_PREF_NAME, userId);
+    }
+
+    static List<String> listKnownUserIds() {
+        List<String> rtn = new ArrayList<>();
+        JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
+        if (usersArchive == null) usersArchive = new JSONObject();
+        Iterator<String> it = usersArchive.keys();
+        while (it.hasNext()) {
+            String userId = it.next();
+            if (userId != null && userId.length() == 0) userId = null;
+            rtn.add(userId);
+        }
+        if (!rtn.contains(getUserId())) {
+            rtn.add(getUserId());
+        }
+        return rtn;
     }
 
     /**
@@ -471,6 +492,24 @@ class WonderPushConfiguration {
     static void setCachedInstallationCustomPropertiesFirstDelayedWrite(long cachedInstallationCustomPropertiesFirstDelayedWrite) {
         putLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME, cachedInstallationCustomPropertiesFirstDelayedWrite);
     }
+
+    /**
+     * Get the saved state of installation custom sync for all users.
+     */
+    static JSONObject getInstallationCustomSyncStatePerUserId() {
+        return getJSONObject(INSTALLATION_CUSTOM_SYNC_STATE_PER_USER_ID_PREF_NAME);
+    }
+
+    /**
+     * Set the saved state of installation custom sync for all users.
+     *
+     * @param installationCustomSyncStatePerUserId
+     *            The saved state of installation custom sync for all users to be stored.
+     */
+    static void setInstallationCustomSyncStatePerUserId(JSONObject installationCustomSyncStatePerUserId) {
+        putJSONObject(INSTALLATION_CUSTOM_SYNC_STATE_PER_USER_ID_PREF_NAME, installationCustomSyncStatePerUserId);
+    }
+
 
     /**
      * Get the registration id stored in the user's shared preferences.

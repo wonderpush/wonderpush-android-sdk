@@ -39,83 +39,21 @@ class InstallationManager {
      */
     protected static final long CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY = 20 * 1000;
 
-    private static ScheduledFuture<Void> putInstallationCustomPropertiesDelayedTask;
-
     public static JSONObject getInstallationCustomProperties() {
-        JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
-        if (updated == null) updated = new JSONObject();
-        return updated;
+        try {
+            return JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to read installation custom properties", ex);
+            return new JSONObject();
+        }
     }
 
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
-        WonderPush.logDebug("putInstallationCustomProperties(" + customProperties + ")");
-        JSONObject updatedRef = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
-        if (updatedRef == null) updatedRef = new JSONObject();
-        JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
-        if (updated == null) updated = new JSONObject();
         try {
-            JSONUtil.merge(updated, customProperties);
+            JSONSyncInstallationCustom.forCurrentUser().put(customProperties);
         } catch (JSONException ex) {
-            WonderPush.logError("Unexpected error while merging custom properties", ex);
+            WonderPush.logError("Failed to put installation custom properties " + customProperties, ex);
         }
-        if (!JSONUtil.equals(updatedRef, updated)) {
-            if (putInstallationCustomPropertiesDelayedTask != null) {
-                putInstallationCustomPropertiesDelayedTask.cancel(false);
-            }
-            long nowRT = SystemClock.elapsedRealtime();
-            long now = System.currentTimeMillis();
-            long firstWrite = WonderPushConfiguration.getCachedInstallationCustomPropertiesFirstDelayedWrite();
-            if (firstWrite == 0) {
-                WonderPushConfiguration.setCachedInstallationCustomPropertiesFirstDelayedWrite(nowRT);
-                firstWrite = nowRT;
-            }
-            WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdated(updated);
-            WonderPushConfiguration.setCachedInstallationCustomPropertiesUpdatedDate(now);
-            putInstallationCustomPropertiesDelayedTask = WonderPush.sScheduledExecutor.schedule(
-                    new Callable<Void>() {
-                        @Override
-                        public Void call() {
-                            try {
-                                putInstallationCustomProperties_inner();
-                            } catch (Exception ex) {
-                                Log.e(TAG, "Unexpected error on scheduled task", ex);
-                            }
-                            return null;
-                        }
-                    },
-                    Math.min(CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY,
-                            firstWrite + CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY - nowRT),
-                    TimeUnit.MILLISECONDS);
-        }
-    }
-
-    protected static synchronized void putInstallationCustomProperties_inner() {
-        JSONObject written = WonderPushConfiguration.getCachedInstallationCustomPropertiesWritten();
-        JSONObject updated = WonderPushConfiguration.getCachedInstallationCustomPropertiesUpdated();
-        JSONObject customProperties;
-        try {
-            customProperties = JSONUtil.diff(written, updated);
-        } catch (JSONException ex) {
-            WonderPush.logError("Unexpected error while calculating custom properties diff, using whole value", ex);
-            customProperties = updated;
-        }
-        if (customProperties != null && customProperties.length() > 0) {
-            try {
-                JSONObject properties = new JSONObject();
-                try {
-                    properties.put("custom", customProperties);
-                } catch (JSONException e) {
-                    Log.e(TAG, "Unexpected error while updating installation core properties", e);
-                }
-                updateInstallation(properties, false);
-                long now = System.currentTimeMillis();
-                WonderPushConfiguration.setCachedInstallationCustomPropertiesWritten(updated);
-                WonderPushConfiguration.setCachedInstallationCustomPropertiesWrittenDate(now);
-            } catch (Exception ex) {
-                WonderPush.logError("Unexpected error while putting custom properties", ex);
-            }
-        }
-        WonderPushConfiguration.setCachedInstallationCustomPropertiesFirstDelayedWrite(0);
     }
 
     static void updateInstallation(JSONObject properties, boolean overwrite) {
