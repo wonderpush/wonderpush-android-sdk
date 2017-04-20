@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
@@ -45,28 +46,38 @@ class CacheUtil {
                 // TODO handle If-Modified-Since
                 if (!cached.exists()) {
 
-                    WonderPush.logDebug(logPrefix + ": Will open URL: " + uri);
-                    URLConnection conn = new URL(uri.toString()).openConnection();
-                    InputStream is = (InputStream) conn.getContent();
-                    WonderPush.logDebug(logPrefix + ": Content-Type: " + conn.getContentType());
-                    WonderPush.logDebug(logPrefix + ": Content-Length: " + conn.getContentLength() + " bytes");
-                    if (conn.getContentLength() > maxFileSize) {
-                        throw new RuntimeException(logPrefix + " file too large (" + conn.getContentLength() + " is over " + maxFileSize + " bytes)");
-                    }
-
-                    FileOutputStream outputStream = new FileOutputStream(cached);
-                    int read, ttl = 0;
-                    byte[] buffer = new byte[2048];
-                    while ((read = is.read(buffer)) != -1) {
-                        ttl += read;
-                        if (ttl > maxFileSize) {
-                            throw new RuntimeException(logPrefix + " file too large (max " + maxFileSize + " bytes allowed)");
+                    boolean success = false;
+                    try {
+                        WonderPush.logDebug(logPrefix + ": Will open URL: " + uri);
+                        URLConnection conn = new URL(uri.toString()).openConnection();
+                        InputStream is = (InputStream) conn.getContent();
+                        WonderPush.logDebug(logPrefix + ": Content-Type: " + conn.getContentType());
+                        WonderPush.logDebug(logPrefix + ": Content-Length: " + conn.getContentLength() + " bytes");
+                        if (conn.getContentLength() > maxFileSize) {
+                            throw new RuntimeException(logPrefix + " file too large (" + conn.getContentLength() + " is over " + maxFileSize + " bytes)");
                         }
-                        outputStream.write(buffer, 0, read);
-                    }
-                    outputStream.close();
-                    WonderPush.logDebug(logPrefix + ": Finished reading " + ttl + " bytes");
 
+                        FileOutputStream outputStream = new FileOutputStream(cached);
+                        int read, ttl = 0;
+                        byte[] buffer = new byte[2048];
+                        while ((read = is.read(buffer)) != -1) {
+                            ttl += read;
+                            if (ttl > maxFileSize) {
+                                throw new RuntimeException(logPrefix + " file too large (max " + maxFileSize + " bytes allowed)");
+                            }
+                            outputStream.write(buffer, 0, read);
+                        }
+                        outputStream.close();
+                        success = true;
+                        WonderPush.logDebug(logPrefix + ": Finished reading " + ttl + " bytes");
+                    } catch (IOException ex) {
+                        Log.e(WonderPush.TAG, "Error while fetching resource " + uri, ex);
+                    }
+
+                    if (!success) {
+                        cached.delete();
+                        cached = null;
+                    }
                     expireCache(cacheSubfolder, maxCacheSize);
                 }
 

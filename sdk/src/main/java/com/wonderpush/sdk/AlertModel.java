@@ -14,6 +14,7 @@ import android.util.Base64InputStream;
 import android.util.Log;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
@@ -59,8 +60,21 @@ class AlertModel implements Cloneable {
         }),
         BIG_PICTURE("bigPicture", new Builder() {
             @Override
-            public AlertBigPictureModel build(JSONObject inputJSON) {
-                return new AlertBigPictureModel(inputJSON);
+            public AlertModel build(JSONObject inputJSON) {
+                AlertBigPictureModel rtn = new AlertBigPictureModel(inputJSON);
+                // Fallback to BIG_TEXT if we could not fetch the big picture, to avoid a large blank space and a 1-lined text.
+                if (rtn.getBigPicture() != null) {
+                    return rtn;
+                }
+                Log.d(WonderPush.TAG, "No big picture for a bigPicture notification, falling back to bigText");
+                try {
+                    inputJSON.put("type", BIG_TEXT.toString());
+                } catch (JSONException ex) {
+                    WonderPush.logError("Failed to override notification alert type from bigPicture to bigText", ex);
+                }
+                AlertModel rtn2 = BIG_TEXT.builder.build(inputJSON);
+                rtn2.setType(BIG_TEXT);
+                return rtn2;
             }
         }),
         INBOX("inbox", new Builder() {
