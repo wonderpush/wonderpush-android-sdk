@@ -47,7 +47,7 @@ class NotificationManager {
             }
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
         } catch (JSONException ex) {
-            WonderPush.logError("Unexpected error while tracking notification received", ex);
+            Log.e(WonderPush.TAG, "Unexpected error while tracking notification received", ex);
         }
 
         handleNotificationActions(context, notif, notif.getReceiveActions());
@@ -712,7 +712,7 @@ class NotificationManager {
                 JSONSyncInstallationCustom.forCurrentUser().put(custom);
             }
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to handle action " + ActionModel.Type.UPDATE_INSTALLATION, ex);
+            Log.e(WonderPush.TAG, "Failed to handle action " + ActionModel.Type.UPDATE_INSTALLATION, ex);
         }
     }
 
@@ -724,13 +724,13 @@ class NotificationManager {
             WonderPush.get("/installation", null, new ResponseHandler() {
                 @Override
                 public void onFailure(Throwable ex, Response errorResponse) {
-                    WonderPush.logError("Failed to fetch installation for running action " + ActionModel.Type.RESYNC_INSTALLATION + ", got " + errorResponse, ex);
+                    Log.e(WonderPush.TAG, "Failed to fetch installation for running action " + ActionModel.Type.RESYNC_INSTALLATION + ", got " + errorResponse, ex);
                 }
 
                 @Override
                 public void onSuccess(Response response) {
                     if (response.isError()) {
-                        WonderPush.logError("Failed to fetch installation for running action " + ActionModel.Type.RESYNC_INSTALLATION + ", got " + response);
+                        Log.e(WonderPush.TAG, "Failed to fetch installation for running action " + ActionModel.Type.RESYNC_INSTALLATION + ", got " + response);
                     } else {
                         ActionModel enrichedAction = null;
                         try {
@@ -776,8 +776,8 @@ class NotificationManager {
             } else {
                 JSONSyncInstallationCustom.forCurrentUser().receiveServerState(custom);
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Failed to resync installation", ex);
         }
 
         // Refresh core properties
@@ -889,7 +889,7 @@ class NotificationManager {
         try {
             custom.put("ignore_sdkStateDump", stateDump);
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to add state dump to event custom", ex);
+            Log.e(WonderPush.TAG, "Failed to add state dump to event custom", ex);
         }
         WonderPush.trackInternalEvent("@DEBUG_DUMP_STATE", null, custom);
     }

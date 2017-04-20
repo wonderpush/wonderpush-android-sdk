@@ -105,7 +105,7 @@ class WonderPushConfiguration {
             usersArchive.put(getUserId() == null ? "" : getUserId(), currentUserArchive);
             putJSONObject(PER_USER_ARCHIVE_PREF_NAME, usersArchive);
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to save current user preferences", ex);
+            Log.e(WonderPush.TAG, "Failed to save current user preferences", ex);
         }
         // Load new user preferences
         WonderPush.logDebug("loading storage for user " + newUserId);
@@ -140,7 +140,7 @@ class WonderPushConfiguration {
             try {
                 rtn.put(entry.getKey(), value);
             } catch (JSONException ex) {
-                WonderPush.logError("Failed to add key " + entry.getKey() + " to state dump for value: " + entry.getValue(), ex);
+                Log.e(WonderPush.TAG, "Failed to add key " + entry.getKey() + " to state dump for value: " + entry.getValue(), ex);
             }
         }
         return rtn;

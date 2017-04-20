@@ -43,7 +43,7 @@ class InstallationManager {
         try {
             return JSONSyncInstallationCustom.forCurrentUser().getSdkState();
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to read installation custom properties", ex);
+            Log.e(WonderPush.TAG, "Failed to read installation custom properties", ex);
             return new JSONObject();
         }
     }
@@ -52,7 +52,7 @@ class InstallationManager {
         try {
             JSONSyncInstallationCustom.forCurrentUser().put(customProperties);
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to put installation custom properties " + customProperties, ex);
+            Log.e(WonderPush.TAG, "Failed to put installation custom properties " + customProperties, ex);
         }
     }
 

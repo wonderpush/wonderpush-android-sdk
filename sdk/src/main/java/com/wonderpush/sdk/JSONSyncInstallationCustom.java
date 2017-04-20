@@ -1,6 +1,7 @@
 package com.wonderpush.sdk;
 
 import android.os.SystemClock;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -69,7 +70,7 @@ class JSONSyncInstallationCustom {
                     }
                 }
             } catch (Exception ex) {
-                WonderPush.logError("Unexpected error while initializing installation customs", ex);
+                Log.e(WonderPush.TAG, "Unexpected error while initializing installation customs", ex);
             } finally {
                 WonderPushConfiguration.changeUserId(oldUserId);
             }
@@ -117,7 +118,7 @@ class JSONSyncInstallationCustom {
         try {
             sync = JSONSync.fromSavedState(new Callbacks(), savedState);
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to restore installation custom from saved state for user " + userId + " and state " + savedState, ex);
+            Log.e(WonderPush.TAG, "Failed to restore installation custom from saved state for user " + userId + " and state " + savedState, ex);
             sync = new JSONSync(new Callbacks());
         }
         this.sync = sync;
@@ -140,7 +141,7 @@ class JSONSyncInstallationCustom {
         try {
             installationCustomSyncStatePerUserId.put(key, state);
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to save installation custom sync state for user " + userId + " and value " + state, ex);
+            Log.e(WonderPush.TAG, "Failed to save installation custom sync state for user " + userId + " and value " + state, ex);
         }
         WonderPushConfiguration.setInstallationCustomSyncStatePerUserId(installationCustomSyncStatePerUserId);
     }
@@ -159,7 +160,7 @@ class JSONSyncInstallationCustom {
                         try {
                             _performScheduledPatchCall();
                         } catch (Exception ex) {
-                            WonderPush.logError("Unexpected error on scheduled task", ex);
+                            Log.e(WonderPush.TAG, "Unexpected error on scheduled task", ex);
                         }
                         return null;
                     }
@@ -184,7 +185,7 @@ class JSONSyncInstallationCustom {
             WonderPushRestClient.requestForUser(userId, WonderPushRestClient.HttpMethod.PATCH, "/installation", parameters, new ResponseHandler() {
                 @Override
                 public void onFailure(Throwable ex, Response errorResponse) {
-                    WonderPush.logError("Failed to send installation custom diff, got " + errorResponse, ex);
+                    Log.e(WonderPush.TAG, "Failed to send installation custom diff, got " + errorResponse, ex);
                     handler.onFailure();
                 }
 
@@ -192,20 +193,20 @@ class JSONSyncInstallationCustom {
                 public void onSuccess(Response response) {
                     try {
                         if (response.isError() || !response.getJSONObject().has("success") || !response.getJSONObject().getBoolean("success")) {
-                            WonderPush.logError("Failed to send installation custom diff, got " + response);
+                            Log.e(WonderPush.TAG, "Failed to send installation custom diff, got " + response);
                             handler.onFailure();
                         } else {
                             WonderPush.logDebug("Succeeded to send diff for user " + userId + ": " + diff);
                             handler.onSuccess();
                         }
                     } catch (JSONException ex) {
-                        WonderPush.logError("Failed to read success field from response " + response, ex);
+                        Log.e(WonderPush.TAG, "Failed to read success field from response " + response, ex);
                         handler.onFailure();
                     }
                 }
             });
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to build PATCH body", ex);
+            Log.e(WonderPush.TAG, "Failed to build PATCH body", ex);
         }
     }
 

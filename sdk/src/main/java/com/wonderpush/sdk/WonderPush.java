@@ -657,7 +657,7 @@ public class WonderPush {
         try {
             JSONSyncInstallationCustom.forCurrentUser().receiveState(custom, false);
         } catch (JSONException ex) {
-            WonderPush.logError("Failed to receive custom from server", ex);
+            Log.e(WonderPush.TAG, "Failed to receive custom from server", ex);
         }
     }
 

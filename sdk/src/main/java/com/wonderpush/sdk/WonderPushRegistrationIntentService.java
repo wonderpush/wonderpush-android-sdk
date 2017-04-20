@@ -43,7 +43,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
             InstanceID instanceID = InstanceID.getInstance(this);
             String token = instanceID.getToken(pushSenderId, GoogleCloudMessaging.INSTANCE_ID_SCOPE, null);
             if (token == null) {
-                WonderPush.logError("Device could not register");
+                Log.e(WonderPush.TAG, "Device could not register");
             } else {
                 WonderPush.logDebug("Device registered, registration ID=" + token);
             }
