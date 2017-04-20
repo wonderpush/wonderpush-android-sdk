@@ -46,7 +46,9 @@ class ActionModel implements Cloneable {
     private Type type;
     private String url;
     private JSONObject event; // has "type" and optionally "custom" keys
+    private JSONObject installation; // contains a "custom" key
     private JSONObject custom;
+    private Boolean appliedServerSide;
     private String method;
     private String methodArg;
 
@@ -66,9 +68,17 @@ class ActionModel implements Cloneable {
         }
         url = JSONUtil.getString(data, "url");
         event = data.optJSONObject("event");
+        installation = data.optJSONObject("installation");
         custom = data.optJSONObject("custom");
+        appliedServerSide = optBool(data, "appliedServerSide", null);
         method = JSONUtil.getString(data, "method");
         methodArg = JSONUtil.getString(data, "methodArg");
+    }
+
+    private static Boolean optBool(JSONObject object, String field, Boolean defaultValue) {
+        Object value = object.opt(field);
+        if (!(value instanceof Boolean)) return defaultValue;
+        return (Boolean) value;
     }
 
     @Override
@@ -77,6 +87,11 @@ class ActionModel implements Cloneable {
         if (event != null) {
             try {
                 rtn.event = new JSONObject(event.toString());
+            } catch (JSONException ignored) {}
+        }
+        if (installation != null) {
+            try {
+                rtn.installation = JSONUtil.deepCopy(installation);
             } catch (JSONException ignored) {}
         }
         if (custom != null) {
@@ -111,12 +126,32 @@ class ActionModel implements Cloneable {
         this.event = event;
     }
 
+    public JSONObject getInstallation() {
+        return installation;
+    }
+
+    public void setInstallation(JSONObject installation) {
+        this.installation = installation;
+    }
+
     public JSONObject getCustom() {
         return custom;
     }
 
     public void setCustom(JSONObject custom) {
         this.custom = custom;
+    }
+
+    public Boolean getAppliedServerSide() {
+        return appliedServerSide;
+    }
+
+    public boolean getAppliedServerSide(boolean defaultValue) {
+        return appliedServerSide != null ? appliedServerSide : defaultValue;
+    }
+
+    public void setAppliedServerSide(Boolean appliedServerSide) {
+        this.appliedServerSide = appliedServerSide;
     }
 
     protected String getMethod() {

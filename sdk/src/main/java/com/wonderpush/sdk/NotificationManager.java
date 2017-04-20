@@ -600,6 +600,7 @@ class NotificationManager {
                 // Skip unrecognized action types
                 return;
             }
+            WonderPush.logDebug("Running action " + action.getType());
             switch (action.getType()) {
                 case CLOSE:
                     // Noop
@@ -685,7 +686,8 @@ class NotificationManager {
     }
 
     protected static void handleUpdateInstallationAction(ActionModel action) {
-        JSONObject custom = action.getCustom();
+        JSONObject installation = action.getInstallation();
+        JSONObject custom = installation != null ? installation.optJSONObject("custom") : action.getCustom();
         if (custom == null) {
             Log.e(TAG, "Got no installation custom properties to update for a " + ActionModel.Type.UPDATE_INSTALLATION + " action");
             return;
@@ -694,7 +696,17 @@ class NotificationManager {
             WonderPush.logDebug("Empty installation custom properties for an update, for a " + ActionModel.Type.UPDATE_INSTALLATION + " action");
             return;
         }
-        InstallationManager.putInstallationCustomProperties(custom);
+        try {
+            if (action.getAppliedServerSide(false)) {
+                WonderPush.logDebug("Received server custom properties diff: " + custom);
+                JSONSyncInstallationCustom.forCurrentUser().receiveDiff(custom);
+            } else {
+                WonderPush.logDebug("Putting custom properties diff: " + custom);
+                JSONSyncInstallationCustom.forCurrentUser().put(custom);
+            }
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to handle action " + ActionModel.Type.UPDATE_INSTALLATION, ex);
+        }
     }
 
     protected static void handleMethodAction(ActionModel action) {
