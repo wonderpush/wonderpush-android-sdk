@@ -466,6 +466,7 @@ class WonderPushRestClient {
                     public void onSuccess(int statusCode, Response response) {
                         // Parse response
                         JSONObject json = response.getJSONObject();
+                        WonderPush.logDebug("Got access token response: " + json);
                         if (json != null && json.has("token") && json.has("data")) {
                             String token = JSONUtil.getString(json, "token");
                             JSONObject data = json.optJSONObject("data");
