@@ -645,7 +645,7 @@ public class WonderPush {
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
         try {
             InstallationManager.putInstallationCustomProperties(customProperties);
-            onInteraction();
+            onSDKInteraction();
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while putting installation custom properties", e);
         }
@@ -699,7 +699,7 @@ public class WonderPush {
             throw new IllegalArgumentException("Bad event type");
         }
         sendEvent(type, eventData, customData);
-        onInteraction();
+        onSDKInteraction();
     }
 
     protected static void trackInternalEvent(String type, JSONObject eventData) {
@@ -754,7 +754,16 @@ public class WonderPush {
         postEventually(eventEndpoint, parameters);
     }
 
-    protected static void onInteraction() {
+    protected static void onSDKInteraction() {
+        if (ActivityLifecycleMonitor.isSupported()) {
+            // Leave the activity lifecycle monitor do his job
+            // This prevents spurious @APP_OPENs, for instance when the Application class calls trackEvent() or putInstallationCustomProperties()
+            return;
+        }
+        onInteraction(false);
+    }
+
+    protected static void onInteraction(boolean leaving) {
         long lastInteractionDate = WonderPushConfiguration.getLastInteractionDate();
         long lastAppOpenDate = WonderPushConfiguration.getLastAppOpenDate();
         long lastAppCloseDate = WonderPushConfiguration.getLastAppCloseDate();
@@ -766,57 +775,72 @@ public class WonderPush {
         long lastOpenedNotificationDate = lastOpenedNotificationInfo.optLong("actionDate", Long.MAX_VALUE);
         long now = TimeSync.getTime();
 
-        if (
+        boolean shouldInjectAppOpen =
                 now - lastInteractionDate >= DIFFERENT_SESSION_REGULAR_MIN_TIME_GAP
                 || (
                         lastReceivedNotificationDate > lastInteractionDate
                         && now - lastInteractionDate >= DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP
                 )
-        ) {
-            // We will track a new app open event
+        ;
 
-            // We must first close the possibly still-open previous session
-            if (lastAppCloseDate < lastAppOpenDate) {
-                JSONObject closeInfo = WonderPushConfiguration.getLastAppOpenInfoJson();
-                if (closeInfo == null) {
-                    closeInfo = new JSONObject();
-                }
-                long appCloseDate = lastInteractionDate;
-                try {
-                    closeInfo.put("actionDate", appCloseDate);
-                    closeInfo.put("openedTime", appCloseDate - lastAppOpenDate);
-                } catch (JSONException e) {
-                    logDebug("Failed to fill @APP_CLOSE information", e);
-                }
-                // trackInternalEvent("@APP_CLOSE", closeInfo);
-                WonderPushConfiguration.setLastAppCloseDate(appCloseDate);
+        if (leaving) {
+
+            if (shouldInjectAppOpen) {
+                // Keep the old date as this new interaction is only for a closing activity
+            } else {
+                // Note the current time as the most accurate hint of last interaction
+                WonderPushConfiguration.setLastInteractionDate(now);
             }
 
-            // Track the new app open event
-            JSONObject openInfo = new JSONObject();
-            // Add the elapsed time between the last received notification
-            if (lastReceivedNotificationDate <= now) {
-                try {
-                    openInfo.put("lastReceivedNotificationTime", now - lastReceivedNotificationDate);
-                } catch (JSONException e) {
-                    logDebug("Failed to fill @APP_OPEN previous notification information", e);
+        } else {
+
+            if (shouldInjectAppOpen) {
+                // We will track a new app open event
+
+                // We must first close the possibly still-open previous session
+                if (lastAppCloseDate < lastAppOpenDate) {
+                    JSONObject closeInfo = WonderPushConfiguration.getLastAppOpenInfoJson();
+                    if (closeInfo == null) {
+                        closeInfo = new JSONObject();
+                    }
+                    long appCloseDate = lastInteractionDate;
+                    try {
+                        closeInfo.put("actionDate", appCloseDate);
+                        closeInfo.put("openedTime", appCloseDate - lastAppOpenDate);
+                    } catch (JSONException e) {
+                        logDebug("Failed to fill @APP_CLOSE information", e);
+                    }
+                    // trackInternalEvent("@APP_CLOSE", closeInfo);
+                    WonderPushConfiguration.setLastAppCloseDate(appCloseDate);
                 }
-            }
-            // Add the information of the clicked notification
-            if (now - lastOpenedNotificationDate < 10 * 1000) { // allow a few seconds between click on the notification and the call to this method
-                try {
-                    openInfo.putOpt("notificationId", lastOpenedNotificationInfo.opt("notificationId"));
-                    openInfo.putOpt("campaignId", lastOpenedNotificationInfo.opt("campaignId"));
-                } catch (JSONException e) {
-                    logDebug("Failed to fill @APP_OPEN opened notification information", e);
+
+                // Track the new app open event
+                JSONObject openInfo = new JSONObject();
+                // Add the elapsed time between the last received notification
+                if (lastReceivedNotificationDate <= now) {
+                    try {
+                        openInfo.put("lastReceivedNotificationTime", now - lastReceivedNotificationDate);
+                    } catch (JSONException e) {
+                        logDebug("Failed to fill @APP_OPEN previous notification information", e);
+                    }
                 }
+                // Add the information of the clicked notification
+                if (now - lastOpenedNotificationDate < 10 * 1000) { // allow a few seconds between click on the notification and the call to this method
+                    try {
+                        openInfo.putOpt("notificationId", lastOpenedNotificationInfo.opt("notificationId"));
+                        openInfo.putOpt("campaignId", lastOpenedNotificationInfo.opt("campaignId"));
+                    } catch (JSONException e) {
+                        logDebug("Failed to fill @APP_OPEN opened notification information", e);
+                    }
+                }
+                trackInternalEvent("@APP_OPEN", openInfo);
+                WonderPushConfiguration.setLastAppOpenDate(now);
+                WonderPushConfiguration.setLastAppOpenInfoJson(openInfo);
             }
-            trackInternalEvent("@APP_OPEN", openInfo);
-            WonderPushConfiguration.setLastAppOpenDate(now);
-            WonderPushConfiguration.setLastAppOpenInfoJson(openInfo);
+
+            WonderPushConfiguration.setLastInteractionDate(now);
+
         }
-
-        WonderPushConfiguration.setLastInteractionDate(now);
     }
 
     /**
@@ -996,7 +1020,7 @@ public class WonderPush {
         ActivityLifecycleMonitor.addTrackedActivity(activity);
 
         showPotentialNotification(activity, activity.getIntent());
-        onInteraction(); // keep after onCreateMainActivity() as a possible received notification's information is needed
+        onInteraction(false); // keep after onCreateMainActivity() as a possible received notification's information is needed
     }
 
     /**

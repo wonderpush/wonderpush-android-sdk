@@ -32,7 +32,7 @@ class ActivityLifecycleMonitor {
         sSingleton = monitor;
     }
 
-    private static boolean isSupported() {
+    static boolean isSupported() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
     }
 
@@ -113,7 +113,7 @@ class ActivityLifecycleMonitor {
                 startFirstDate = TimeSync.getTime();
             }
             ++startCount;
-            WonderPush.onInteraction();
+            WonderPush.onInteraction(false);
         }
 
         @Override
@@ -123,7 +123,7 @@ class ActivityLifecycleMonitor {
             }
             lastResumedActivityRef = new WeakReference<>(activity);
             ++resumeCount;
-            WonderPush.onInteraction();
+            WonderPush.onInteraction(false);
         }
 
         @Override
@@ -132,7 +132,7 @@ class ActivityLifecycleMonitor {
             if (!hasResumedActivities()) {
                 pausedLastDate = TimeSync.getTime();
             }
-            WonderPush.onInteraction();
+            WonderPush.onInteraction(true);
         }
 
         @Override
@@ -144,7 +144,7 @@ class ActivityLifecycleMonitor {
             if (!activity.isFinishing()) {
                 lastStoppedActivityRef = new WeakReference<>(activity);
             }
-            WonderPush.onInteraction();
+            WonderPush.onInteraction(true);
         }
 
         @Override
@@ -157,7 +157,6 @@ class ActivityLifecycleMonitor {
             if (!hasCreatedActivities()) {
                 destroyLastDate = TimeSync.getTime();
             }
-            WonderPush.onInteraction();
         }
 
         protected boolean hasResumedActivities() {
