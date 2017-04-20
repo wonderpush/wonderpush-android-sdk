@@ -100,7 +100,17 @@ class JSONUtil {
     }
 
     protected static void stripNulls(JSONObject object) throws JSONException {
-        merge(object, object, true);
+        if (object == null) return;
+        Iterator<String> it = object.keys();
+        while (it.hasNext()) {
+            String key = it.next();
+            Object value = object.opt(key);
+            if (value == null || value == JSONObject.NULL) {
+                it.remove();
+            } else if (value instanceof JSONObject) {
+                stripNulls((JSONObject) value);
+            } // leave JSONArrays (and any sub-objects) untouched
+        }
     }
 
     protected static boolean equals(JSONObject a, JSONObject b) {

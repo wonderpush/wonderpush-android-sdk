@@ -95,4 +95,31 @@ public class JSONUtilTest {
         );
     }
 
+    @Test
+    public void assertStripNullsOnNull() throws JSONException {
+        JSONUtil.stripNulls(null); // must not throw
+    }
+
+    @Test
+    public void assertStripNullsConcurrentModificationException() throws JSONException {
+        // Test for ConcurrentModificationException when reading key `c` after removing key `b`
+        JSONObject obj = new JSONObject("{\"a\":1,\"b\":null,\"c\":3}");
+        JSONUtil.stripNulls(obj);
+        assertEquals(new JSONObject("{\"a\":1,\"c\":3}"), obj);
+    }
+
+    @Test
+    public void assertStripNullsArraysUntouched() throws JSONException {
+        JSONObject obj  = new JSONObject("{\"a\":[1,null,3,{\"a\":null}]}");
+        JSONUtil.stripNulls(obj);
+        assertEquals(new JSONObject("{\"a\":[1,null,3,{\"a\":null}]}"), obj);
+    }
+
+    @Test
+    public void assertStripNullsSubObjects() throws JSONException {
+        JSONObject obj = new JSONObject("{\"parent\":{\"a\":1,\"b\":null,\"c\":3}}");
+        JSONUtil.stripNulls(obj);
+        assertEquals(new JSONObject("{\"parent\":{\"a\":1,\"c\":3}}"), obj);
+    }
+
 }
