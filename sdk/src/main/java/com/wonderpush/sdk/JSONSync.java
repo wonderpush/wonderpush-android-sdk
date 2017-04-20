@@ -131,18 +131,21 @@ class JSONSync {
     }
 
     public synchronized void put(JSONObject diff) throws JSONException {
+        if (diff == null) diff = new JSONObject();
         JSONUtil.merge(sdkState, diff);
         JSONUtil.merge(putAccumulator, diff, false);
         schedulePatchCallAndSave();
     }
 
     public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
+        if (srvState == null) srvState = new JSONObject();
         serverState = JSONUtil.deepCopy(srvState);
         JSONUtil.stripNulls(serverState);
         schedulePatchCallAndSave();
     }
 
     public synchronized void receiveState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
+        if (receivedState == null) receivedState = new JSONObject();
         serverState = JSONUtil.deepCopy(receivedState);
         JSONUtil.stripNulls(serverState);
         sdkState = JSONUtil.deepCopy(serverState);
@@ -156,6 +159,7 @@ class JSONSync {
     }
 
     public synchronized void receiveDiff(JSONObject diff) throws JSONException {
+        if (diff == null) diff = new JSONObject();
         // The diff is already server-side, by contract
         JSONUtil.merge(serverState, diff);
         put(diff);

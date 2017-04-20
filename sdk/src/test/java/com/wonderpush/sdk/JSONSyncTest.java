@@ -163,7 +163,14 @@ public class JSONSyncTest {
     }
 
     @Test
-    public void singlePutNull() throws JSONException {
+    public void singlePutNullObject() throws JSONException {
+        sync.put(null);
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedPotentialNoopScheduledPatchCall();
+    }
+
+    @Test
+    public void singlePutNullField() throws JSONException {
         sync.put(new JSONObject("{\"A\":null}"));
         JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
         assertSyncedPotentialNoopScheduledPatchCall();
@@ -338,6 +345,15 @@ public class JSONSyncTest {
     }
 
     @Test
+    public void recvDiffNullObject() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.receiveDiff(null);
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedAfterRecvDiff();
+    }
+
+    @Test
     public void recvDiffFromInitialState() throws JSONException {
         assertSynced();
         JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
@@ -490,7 +506,16 @@ public class JSONSyncTest {
     }
 
     @Test
-    public void rectStateNullFromInitialState() throws JSONException {
+    public void rectStateNullObject() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.receiveState(null, false);
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedAfterRecvState();
+    }
+
+    @Test
+    public void rectStateNullFieldFromInitialState() throws JSONException {
         assertSynced();
         JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
         sync.receiveState(new JSONObject("{\"A\":null}"), false);
@@ -662,7 +687,16 @@ public class JSONSyncTest {
     }
 
     @Test
-    public void recvStateResetNullFromInitialState() throws JSONException {
+    public void recvStateResetNullObject() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.receiveState(null, true);
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
+        assertSyncedAfterRecvStateReset();
+    }
+
+    @Test
+    public void recvStateResetNullFieldFromInitialState() throws JSONException {
         assertSynced();
         JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
         sync.receiveState(new JSONObject("{\"A\":null}"), true);
@@ -774,6 +808,15 @@ public class JSONSyncTest {
         // Be laxer with this final state check
         //assertNoopScheduledPatchCall();
         //assertSynced();
+        assertSyncedPotentialNoopScheduledPatchCall();
+    }
+
+    @Test
+    public void recvSrvStateNullObject() throws JSONException {
+        assertSynced();
+        JSONUtilTest.assertEquals(new JSONObject(), sync.getSdkState());
+        sync.receiveServerState(null);
+        JSONUtilTest.assertEquals(new JSONObject("{}"), sync.getSdkState());
         assertSyncedPotentialNoopScheduledPatchCall();
     }
 
