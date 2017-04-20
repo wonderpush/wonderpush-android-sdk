@@ -58,6 +58,7 @@ class WonderPushConfiguration {
     private static final String LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME = "__last_tagless_notification_manager_id";
 
     private static final String OVERRIDE_SET_LOGGING_PREF_NAME = "__override_set_logging";
+    private static final String OVERRIDE_NOTIFICATION_RECEIPT_PREF_NAME = "__override_notification_receipt";
 
     private static Context sContext;
 
@@ -800,6 +801,25 @@ class WonderPushConfiguration {
             remove(OVERRIDE_SET_LOGGING_PREF_NAME);
         } else {
             putBoolean(OVERRIDE_SET_LOGGING_PREF_NAME, value);
+        }
+    }
+
+    /**
+     * Retrieves whether to override notification receipts.
+     */
+    static Boolean getOverrideNotificationReceipt() {
+        if (!has(OVERRIDE_NOTIFICATION_RECEIPT_PREF_NAME)) return null;
+        return getBoolean(OVERRIDE_NOTIFICATION_RECEIPT_PREF_NAME, false);
+    }
+
+    /**
+     * Sets whether to override notification receipts.
+     */
+    static void setOverrideNotificationReceipt(Boolean value) {
+        if (value == null) {
+            remove(OVERRIDE_NOTIFICATION_RECEIPT_PREF_NAME);
+        } else {
+            putBoolean(OVERRIDE_NOTIFICATION_RECEIPT_PREF_NAME, value);
         }
     }
 

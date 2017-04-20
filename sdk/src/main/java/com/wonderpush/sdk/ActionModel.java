@@ -20,6 +20,7 @@ class ActionModel implements Cloneable {
         MAP_OPEN("mapOpen"),
         _DUMP_STATE("_dumpState"),
         _OVERRIDE_SET_LOGGING("_overrideSetLogging"),
+        _OVERRIDE_NOTIFICATION_RECEIPT("_overrideNotificationReceipt"),
         ;
 
         private final String type;

@@ -37,20 +37,25 @@ class NotificationManager {
             return;
         }
 
+        handleNotificationActions(context, notif, notif.getReceiveActions());
+
         try {
             final JSONObject trackData = new JSONObject();
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", TimeSync.getTime());
-            if (notif.getReceipt()) {
+            boolean notifReceipt = notif.getReceipt();
+            Boolean overrideNotificationReceipt = WonderPushConfiguration.getOverrideNotificationReceipt();
+            if (overrideNotificationReceipt != null) {
+                notifReceipt = overrideNotificationReceipt;
+            }
+            if (notifReceipt) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
             }
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Unexpected error while tracking notification received", ex);
         }
-
-        handleNotificationActions(context, notif, notif.getReceiveActions());
 
         boolean automaticallyHandled = false;
         Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();
@@ -633,6 +638,9 @@ class NotificationManager {
                 case _OVERRIDE_SET_LOGGING:
                     handleOverrideSetLoggingAction(action);
                     break;
+                case _OVERRIDE_NOTIFICATION_RECEIPT:
+                    handleOverrideNotificationReceiptAction(action);
+                    break;
                 default:
                     Log.w(TAG, "Unhandled action \"" + action.getType() + "\"");
                     break;
@@ -902,6 +910,12 @@ class NotificationManager {
         Log.d(WonderPush.TAG, "OVERRIDE setLogging: " + value);
         WonderPushConfiguration.setOverrideSetLogging(value);
         WonderPush.applyOverrideLogging(value);
+    }
+
+    private static void handleOverrideNotificationReceiptAction(ActionModel action) {
+        Boolean value = action.getForce();
+        Log.d(WonderPush.TAG, "OVERRIDE notification receipt: " + value);
+        WonderPushConfiguration.setOverrideNotificationReceipt(value);
     }
 
 }
