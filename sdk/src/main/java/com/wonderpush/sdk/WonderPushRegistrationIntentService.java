@@ -1,6 +1,7 @@
 package com.wonderpush.sdk;
 
 import android.app.IntentService;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -47,7 +48,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
                 WonderPush.logDebug("Device registered, registration ID=" + token);
             }
 
-            storeRegistrationId(pushSenderId, token);
+            storeRegistrationId(this, pushSenderId, token);
         } catch (Exception e) {
             Log.w(TAG, "Could not register for push notifications", e);
             // If an exception happens while fetching the new token or updating our registration data
@@ -55,8 +56,8 @@ public class WonderPushRegistrationIntentService extends IntentService {
         }
     }
 
-    private void storeRegistrationId(String senderIds, String registrationId) {
-        WonderPushConfiguration.initialize(this);
+    static void storeRegistrationId(Context context, String senderIds, String registrationId) {
+        WonderPushConfiguration.initialize(context);
         String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
         try {
             if (
@@ -75,7 +76,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
                 pushToken.put("data", registrationId);
                 properties.put("pushToken", pushToken);
 
-                WonderPush.ensureInitialized(this);
+                WonderPush.ensureInitialized(context);
                 InstallationManager.updateInstallation(properties, false);
                 WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
                 WonderPushConfiguration.setCachedGCMRegistrationIdAssociatedUserId(WonderPushConfiguration.getUserId());
@@ -96,7 +97,7 @@ public class WonderPushRegistrationIntentService extends IntentService {
             Intent pushTokenChangedIntent = new Intent(WonderPush.INTENT_PUSH_TOKEN_CHANGED);
             pushTokenChangedIntent.putExtra(WonderPush.INTENT_PUSH_TOKEN_CHANGED_EXTRA_OLD_KNOWN_PUSH_TOKEN, oldRegistrationId);
             pushTokenChangedIntent.putExtra(WonderPush.INTENT_PUSH_TOKEN_CHANGED_EXTRA_PUSH_TOKEN, registrationId);
-            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(pushTokenChangedIntent);
+            LocalBroadcastManager.getInstance(context).sendBroadcast(pushTokenChangedIntent);
         }
     }
 

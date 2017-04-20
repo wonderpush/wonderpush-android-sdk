@@ -20,6 +20,7 @@ import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -620,6 +621,9 @@ class NotificationManager {
                 case UPDATE_INSTALLATION:
                     handleUpdateInstallationAction(action);
                     break;
+                case RESYNC_INSTALLATION:
+                    handleResyncInstallationAction(action);
+                    break;
                 case METHOD:
                     handleMethodAction(action);
                     break;
@@ -707,6 +711,85 @@ class NotificationManager {
         } catch (JSONException ex) {
             WonderPush.logError("Failed to handle action " + ActionModel.Type.UPDATE_INSTALLATION, ex);
         }
+    }
+
+    protected static void handleResyncInstallationAction(final ActionModel action) {
+        if (action.getInstallation() != null) {
+            handleResyncInstallationAction_inner(action);
+        } else {
+            WonderPush.logDebug("Fetching installation for action " + ActionModel.Type.RESYNC_INSTALLATION);
+            WonderPush.get("/installation", null, new ResponseHandler() {
+                @Override
+                public void onFailure(Throwable ex, Response errorResponse) {
+                    WonderPush.logError("Failed to fetch installation for running action " + ActionModel.Type.RESYNC_INSTALLATION + ", got " + errorResponse, ex);
+                }
+
+                @Override
+                public void onSuccess(Response response) {
+                    if (response.isError()) {
+                        WonderPush.logError("Failed to fetch installation for running action " + ActionModel.Type.RESYNC_INSTALLATION + ", got " + response);
+                    } else {
+                        ActionModel enrichedAction = null;
+                        try {
+                            enrichedAction = (ActionModel) action.clone();
+                        } catch (CloneNotSupportedException ex) {
+                            WonderPush.logError("Failed to clone action " + action, ex);
+                            enrichedAction = action;
+                        }
+                        JSONObject installation = response.getJSONObject();
+                        Iterator<String> it = installation.keys();
+                        while (it.hasNext()) {
+                            String key = it.next();
+                            if (key.startsWith("_")) {
+                                it.remove();
+                            }
+                        }
+                        WonderPush.logDebug("Got installation: " + installation);
+                        enrichedAction.setInstallation(installation);
+                        handleResyncInstallationAction_inner(enrichedAction);
+                    }
+                }
+            });
+        }
+    }
+
+    private static void handleResyncInstallationAction_inner(ActionModel action) {
+        JSONObject installation = action.getInstallation();
+        JSONObject custom = installation == null ? null : installation.optJSONObject("custom");
+        if (custom == null) {
+            if (installation != null) {
+                // If an installation has no custom, use {}
+                custom = new JSONObject();
+            } else { // we still have no installation
+                Log.e(TAG, "Got no installation custom properties to resync with for a " + ActionModel.Type.RESYNC_INSTALLATION + " action");
+                return;
+            }
+        }
+
+        // Take or reset custom
+        try {
+            if (action.getReset(false)) {
+                JSONSyncInstallationCustom.forCurrentUser().receiveState(custom, action.getForce(false));
+            } else {
+                JSONSyncInstallationCustom.forCurrentUser().receiveServerState(custom);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        // Refresh core properties
+        WonderPushConfiguration.setCachedInstallationCoreProperties(null);
+        InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
+
+        // Refresh push token
+        String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
+        WonderPushConfiguration.setGCMRegistrationId(null);
+        WonderPushRegistrationIntentService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
+
+        // Refresh preferences
+        boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();
+        WonderPushConfiguration.setNotificationEnabled(!notificationEnabled);
+        WonderPush.setNotificationEnabled(notificationEnabled);
     }
 
     protected static void handleMethodAction(ActionModel action) {

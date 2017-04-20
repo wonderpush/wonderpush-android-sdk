@@ -13,6 +13,7 @@ class ActionModel implements Cloneable {
         CLOSE("close"),
         TRACK_EVENT("trackEvent"),
         UPDATE_INSTALLATION("updateInstallation"),
+        RESYNC_INSTALLATION("resyncInstallation"),
         METHOD("method"),
         LINK("link"),
         RATING("rating"),
@@ -49,6 +50,8 @@ class ActionModel implements Cloneable {
     private JSONObject installation; // contains a "custom" key
     private JSONObject custom;
     private Boolean appliedServerSide;
+    private Boolean reset;
+    private Boolean force;
     private String method;
     private String methodArg;
 
@@ -71,6 +74,8 @@ class ActionModel implements Cloneable {
         installation = data.optJSONObject("installation");
         custom = data.optJSONObject("custom");
         appliedServerSide = optBool(data, "appliedServerSide", null);
+        reset = optBool(data, "reset", null);
+        force = optBool(data, "force", null);
         method = JSONUtil.getString(data, "method");
         methodArg = JSONUtil.getString(data, "methodArg");
     }
@@ -152,6 +157,30 @@ class ActionModel implements Cloneable {
 
     public void setAppliedServerSide(Boolean appliedServerSide) {
         this.appliedServerSide = appliedServerSide;
+    }
+
+    public Boolean getForce() {
+        return force;
+    }
+
+    public boolean getForce(boolean defaultValue) {
+        return force != null ? force : defaultValue;
+    }
+
+    public void setForce(Boolean force) {
+        this.force = force;
+    }
+
+    public Boolean getReset() {
+        return reset;
+    }
+
+    public boolean getReset(boolean defaultValue) {
+        return reset != null ? reset : defaultValue;
+    }
+
+    public void setReset(Boolean reset) {
+        this.reset = reset;
     }
 
     protected String getMethod() {
