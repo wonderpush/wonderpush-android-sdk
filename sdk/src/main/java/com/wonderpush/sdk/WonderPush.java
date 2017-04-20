@@ -65,7 +65,15 @@ public class WonderPush {
                 Looper.prepare();
                 sLooper = Looper.myLooper();
                 sDeferHandler = new Handler(sLooper);
-                Looper.loop();
+                for (;;) {
+                    try {
+                        Looper.loop();
+                    } catch (Exception ex) {
+                        Log.e(WonderPush.TAG, "Uncaught exception in WonderPush defer handler", ex);
+                        continue; // loop on exceptions
+                    }
+                    break; // allow normal exits
+                }
             }
         }, "WonderPush").start();
         sScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
