@@ -173,4 +173,42 @@ class JSONUtil {
         return new JSONObject(from.toString());
     }
 
+    static Object parseAllJSONStrings(Object base) {
+        if (base instanceof JSONObject) {
+            JSONObject rtn = new JSONObject();
+            Iterator<String> it = ((JSONObject) base).keys();
+            while (it.hasNext()) {
+                String key = it.next();
+                try {
+                    rtn.put(key, parseAllJSONStrings(((JSONObject) base).opt(key)));
+                } catch (JSONException ex) {
+                    WonderPush.logError("Failed to copy key " + key, ex);
+                }
+            }
+            return rtn;
+        }
+        if (base instanceof JSONArray) {
+            JSONArray rtn = new JSONArray();
+            for (int i = 0; i < ((JSONArray) base).length(); ++i) {
+                try {
+                    rtn.put(i, parseAllJSONStrings(((JSONArray) base).opt(i)));
+                } catch (JSONException ex) {
+                    WonderPush.logError("Failed to copy value at index " + i, ex);
+                }
+            }
+            return rtn;
+        }
+        if (base instanceof String && ((String) base).startsWith("{") && ((String) base).endsWith("}")) {
+            try {
+                return parseAllJSONStrings(new JSONObject((String) base));
+            } catch (JSONException ex) {}
+        }
+        if (base instanceof String && ((String) base).startsWith("[") && ((String) base).endsWith("]")) {
+            try {
+                return parseAllJSONStrings(new JSONArray((String) base));
+            } catch (JSONException ex) {}
+        }
+        return base;
+    }
+
 }

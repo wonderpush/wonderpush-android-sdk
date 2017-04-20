@@ -18,6 +18,7 @@ class ActionModel implements Cloneable {
         LINK("link"),
         RATING("rating"),
         MAP_OPEN("mapOpen"),
+        _DUMP_STATE("_dumpState"),
         ;
 
         private final String type;

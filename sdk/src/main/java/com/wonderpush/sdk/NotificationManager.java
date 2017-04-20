@@ -627,6 +627,9 @@ class NotificationManager {
                 case METHOD:
                     handleMethodAction(action);
                     break;
+                case _DUMP_STATE:
+                    handleDumpStateAction(action);
+                    break;
                 default:
                     Log.w(TAG, "Unhandled action \"" + action.getType() + "\"");
                     break;
@@ -876,6 +879,19 @@ class NotificationManager {
             Log.e(NotificationManager.TAG, "Unexpected error while opening map", e);
             Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private static void handleDumpStateAction(ActionModel action) {
+        JSONObject stateDump = WonderPushConfiguration.dumpState();
+        Log.d(WonderPush.TAG, "STATE DUMP: " + stateDump);
+        if (stateDump == null) stateDump = new JSONObject();
+        JSONObject custom = new JSONObject();
+        try {
+            custom.put("ignore_sdkStateDump", stateDump);
+        } catch (JSONException ex) {
+            WonderPush.logError("Failed to add state dump to event custom", ex);
+        }
+        WonderPush.trackInternalEvent("@DEBUG_DUMP_STATE", null, custom);
     }
 
 }

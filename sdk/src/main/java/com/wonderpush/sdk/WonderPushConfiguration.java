@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 class WonderPushConfiguration {
 
@@ -129,6 +130,20 @@ class WonderPushConfiguration {
         setLastAppOpenDate(newUserArchive.optLong(LAST_APPOPEN_DATE_PREF_NAME));
         setLastAppOpenInfoJson(newUserArchive.optJSONObject(LAST_APPOPEN_INFO_PREF_NAME));
         setLastAppCloseDate(newUserArchive.optLong(LAST_APPCLOSE_DATE_PREF_NAME));
+    }
+
+    static JSONObject dumpState() {
+        JSONObject rtn = new JSONObject();
+        SharedPreferences prefs = getSharedPreferences();
+        for (Map.Entry<String, ?> entry : prefs.getAll().entrySet()) {
+            Object value = JSONUtil.parseAllJSONStrings(entry.getValue());
+            try {
+                rtn.put(entry.getKey(), value);
+            } catch (JSONException ex) {
+                WonderPush.logError("Failed to add key " + entry.getKey() + " to state dump for value: " + entry.getValue(), ex);
+            }
+        }
+        return rtn;
     }
 
     /**
