@@ -57,6 +57,8 @@ class WonderPushConfiguration {
 
     private static final String LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME = "__last_tagless_notification_manager_id";
 
+    private static final String OVERRIDE_SET_LOGGING_PREF_NAME = "__override_set_logging";
+
     private static Context sContext;
 
     static void initialize(Context context) {
@@ -153,6 +155,20 @@ class WonderPushConfiguration {
         if (null == getApplicationContext())
             return null;
         return getApplicationContext().getSharedPreferences(PREF_FILE, 0);
+    }
+
+    private static boolean has(String key) {
+        SharedPreferences prefs = getSharedPreferences();
+        if (prefs == null) {
+            return false;
+        }
+        return prefs.contains(key);
+    }
+
+    private static void remove(String key) {
+        SharedPreferences.Editor editor = getSharedPreferences().edit();
+        editor.remove(key);
+        editor.apply();
     }
 
     private static String getString(String key) {
@@ -767,4 +783,24 @@ class WonderPushConfiguration {
         putInt(LAST_TAGLESS_NOTIFICATION_MANAGER_ID_PREF_NAME, id);
         return id;
     }
+
+    /**
+     * Retrieves whether to override logging.
+     */
+    static Boolean getOverrideSetLogging() {
+        if (!has(OVERRIDE_SET_LOGGING_PREF_NAME)) return null;
+        return getBoolean(OVERRIDE_SET_LOGGING_PREF_NAME, false);
+    }
+
+    /**
+     * Sets whether to override logging.
+     */
+    static void setOverrideSetLogging(Boolean value) {
+        if (value == null) {
+            remove(OVERRIDE_SET_LOGGING_PREF_NAME);
+        } else {
+            putBoolean(OVERRIDE_SET_LOGGING_PREF_NAME, value);
+        }
+    }
+
 }

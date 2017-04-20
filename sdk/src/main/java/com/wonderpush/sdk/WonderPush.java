@@ -49,6 +49,7 @@ public class WonderPush {
 
     static final String TAG = WonderPush.class.getSimpleName();
     protected static boolean SHOW_DEBUG = false;
+    private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
     private static Context sApplicationContext;
     protected static Application sApplication;
@@ -299,6 +300,16 @@ public class WonderPush {
         throw new IllegalAccessError("You should not instantiate this class!");
     }
 
+    static void applyOverrideLogging(Boolean value) {
+        if (value != null) {
+            Log.d(TAG, "OVERRIDE setLogging(" + value + ")");
+            setLogging(value);
+            SHOW_DEBUG_OVERRIDDEN = true;
+        } else {
+            SHOW_DEBUG_OVERRIDDEN = false;
+        }
+    }
+
     /**
      * Whether to enable debug logging.
      *
@@ -308,7 +319,9 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static void setLogging(boolean enable) {
-        WonderPush.SHOW_DEBUG = enable;
+        if (!SHOW_DEBUG_OVERRIDDEN) {
+            WonderPush.SHOW_DEBUG = enable;
+        }
     }
 
     protected static void logDebug(String debug) {
@@ -930,6 +943,7 @@ public class WonderPush {
                 sBaseURL = PRODUCTION_API_URL;
 
                 WonderPushConfiguration.initialize(getApplicationContext());
+                applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallationCustom.initialize();
                 WonderPushRequestVault.initialize();
 

@@ -630,6 +630,9 @@ class NotificationManager {
                 case _DUMP_STATE:
                     handleDumpStateAction(action);
                     break;
+                case _OVERRIDE_SET_LOGGING:
+                    handleOverrideSetLoggingAction(action);
+                    break;
                 default:
                     Log.w(TAG, "Unhandled action \"" + action.getType() + "\"");
                     break;
@@ -892,6 +895,13 @@ class NotificationManager {
             Log.e(WonderPush.TAG, "Failed to add state dump to event custom", ex);
         }
         WonderPush.trackInternalEvent("@DEBUG_DUMP_STATE", null, custom);
+    }
+
+    private static void handleOverrideSetLoggingAction(ActionModel action) {
+        Boolean value = action.getForce();
+        Log.d(WonderPush.TAG, "OVERRIDE setLogging: " + value);
+        WonderPushConfiguration.setOverrideSetLogging(value);
+        WonderPush.applyOverrideLogging(value);
     }
 
 }

@@ -19,6 +19,7 @@ class ActionModel implements Cloneable {
         RATING("rating"),
         MAP_OPEN("mapOpen"),
         _DUMP_STATE("_dumpState"),
+        _OVERRIDE_SET_LOGGING("_overrideSetLogging"),
         ;
 
         private final String type;
