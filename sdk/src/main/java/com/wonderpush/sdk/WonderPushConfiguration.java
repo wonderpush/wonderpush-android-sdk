@@ -24,6 +24,7 @@ class WonderPushConfiguration {
     private static final String USER_ID_PREF_NAME = "__user_id";
 
     private static final String NOTIFICATION_ENABLED_PREF_NAME = "__wonderpush_notification_enabled";
+    private static final String CHANNEL_PREFERENCES_PREF_NAME = "__wonderpush_channel_preferences";
 
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_NAME = "__cached_installation_core_properties";
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME = "__cached_installation_core_properties_date";
@@ -89,6 +90,7 @@ class WonderPushConfiguration {
             currentUserArchive.putOpt(INSTALLATION_ID_PREF_NAME, getInstallationId());
             currentUserArchive.putOpt(USER_ID_PREF_NAME, getUserId());
             currentUserArchive.putOpt(NOTIFICATION_ENABLED_PREF_NAME, getNotificationEnabled());
+            currentUserArchive.putOpt(CHANNEL_PREFERENCES_PREF_NAME, getChannelPreferences());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, getCachedInstallationCoreProperties());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, getCachedInstallationCorePropertiesDate());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, getCachedInstallationCorePropertiesAccessToken());
@@ -121,6 +123,7 @@ class WonderPushConfiguration {
         setInstallationId(newUserArchive.optString(INSTALLATION_ID_PREF_NAME, null));
         setUserId(newUserId);
         setNotificationEnabled(newUserArchive.optBoolean(NOTIFICATION_ENABLED_PREF_NAME, true));
+        setChannelPreferences(newUserArchive.optJSONObject(CHANNEL_PREFERENCES_PREF_NAME));
         setCachedInstallationCoreProperties(newUserArchive.optString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, null));
         setCachedInstallationCorePropertiesDate(newUserArchive.optLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME));
         setCachedInstallationCorePropertiesAccessToken(newUserArchive.optString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, null));
@@ -386,6 +389,23 @@ class WonderPushConfiguration {
      */
     static void setNotificationEnabled(boolean status) {
         putBoolean(NOTIFICATION_ENABLED_PREF_NAME, status);
+    }
+
+    /**
+     * Get the notification channel preferences in the user's shared preferences.
+     */
+    static JSONObject getChannelPreferences() {
+        return getJSONObject(CHANNEL_PREFERENCES_PREF_NAME);
+    }
+
+    /**
+     * Set the notification channel preferences in the user's shared preferences.
+     *
+     * @param value
+     *            The notification channel preferences to be stored
+     */
+    static void setChannelPreferences(JSONObject value) {
+        putJSONObject(CHANNEL_PREFERENCES_PREF_NAME, value);
     }
 
     /**

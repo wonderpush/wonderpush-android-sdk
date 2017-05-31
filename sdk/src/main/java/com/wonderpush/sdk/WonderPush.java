@@ -951,6 +951,7 @@ public class WonderPush {
                 sBaseURL = PRODUCTION_API_URL;
 
                 WonderPushConfiguration.initialize(getApplicationContext());
+                WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallationCustom.initialize();
                 WonderPushRequestVault.initialize();

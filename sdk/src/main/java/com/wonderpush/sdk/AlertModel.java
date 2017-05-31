@@ -157,6 +157,7 @@ class AlertModel implements Cloneable {
         defaultNotificationLedOff = _defaultNotificationLedOff;
     }
 
+    private String channel;
     private Type type; // cannot be changed if foreground for easier coding
     private boolean html;
     // Modify forCurrentSettings() and clone() when adding a field below
@@ -234,6 +235,7 @@ class AlertModel implements Cloneable {
     }
 
     protected void fromJSONToplevel(JSONObject wpAlert) {
+        setChannel(JSONUtil.getString(wpAlert, "channel"));
         setType(JSONUtil.getString(wpAlert, "type")); // must be done before fromJSONCommon()
         setHtml(wpAlert.optBoolean("html", false)); // must be done before fromJSONCommon()
         fromJSONCommon(wpAlert);
@@ -686,6 +688,18 @@ class AlertModel implements Cloneable {
         } else {
             return input;
         }
+    }
+
+    public boolean hasChannel() {
+        return channel != null;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
     }
 
     public boolean hasType() {

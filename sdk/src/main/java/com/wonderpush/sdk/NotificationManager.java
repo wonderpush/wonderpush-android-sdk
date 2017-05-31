@@ -7,9 +7,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -287,10 +290,32 @@ class NotificationManager {
             defaultIconResource = R.drawable.ic_notifications_white_24dp;
         }
 
+        String channel = alert.getChannel();
+        if (channel == null) {
+            // If no channel is set, use the default one
+            channel = WonderPushUserPreferences.getDefaultChannelId();
+        }
+        WonderPushChannelPreference channelPreference = WonderPushUserPreferences.getChannelPreference(channel);
+        if (channelPreference == null) {
+            // If the desired channel does not exist, use an empty one to not override anything
+            // The channel may be an existing Android O notification channel
+            channelPreference = new WonderPushChannelPreference("", null);
+            // TODO if (Android ≥ O) { WonderPushUserPreferences.ensureDefaultChannelExists(); use default channel; }
+        }
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
+        boolean lights = true;
+        boolean lightsCustomized = false;
+        boolean vibrates = true;
+        boolean vibratesCustomPattern = false;
+        boolean noisy = true;
+        boolean noisyCustomUri = false;
         int defaults = Notification.DEFAULT_ALL;
-        if (!canVibrate) defaults &= ~Notification.DEFAULT_VIBRATE;
+        if (!canVibrate) {
+            defaults &= ~Notification.DEFAULT_VIBRATE;
+            vibrates = false;
+        }
 
+        // TODO Set Android O notification channel
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
                 .setContentIntent(pendingIntentBuilder.buildForDefault())
                 .setAutoCancel(true)
@@ -340,40 +365,193 @@ class NotificationManager {
         }
 
         if (alert.hasLightsColor() || alert.hasLightsOn() || alert.hasLightsOff()) {
+            lights = true;
+            lightsCustomized = true;
             builder.setLights(alert.getLightsColor(), alert.getLightsOn(), alert.getLightsOff());
             defaults &= ~Notification.DEFAULT_LIGHTS;
-        }
-        if (alert.hasLights()) {
+        } else if (alert.hasLights()) {
             if (alert.getLights()) {
+                lights = true;
+                lightsCustomized = false;
                 defaults |= Notification.DEFAULT_LIGHTS;
             } else {
+                lights = false;
                 defaults &= ~Notification.DEFAULT_LIGHTS;
             }
         }
         if (canVibrate) {
             if (alert.getVibratePattern() != null) {
+                vibrates = true;
+                vibratesCustomPattern = true;
                 builder.setVibrate(alert.getVibratePattern());
                 defaults &= ~Notification.DEFAULT_VIBRATE;
-            }
-            if (alert.hasVibrate()) {
+            } else if (alert.hasVibrate()) {
                 if (alert.getVibrate()) {
+                    vibrates = true;
                     defaults |= Notification.DEFAULT_VIBRATE;
                 } else {
+                    vibrates = false;
                     defaults &= ~Notification.DEFAULT_VIBRATE;
                 }
             }
         }
         if (alert.getSoundUri() != null) {
+            noisy = true;
+            noisyCustomUri = true;
             builder.setSound(alert.getSoundUri());
             defaults &= ~Notification.DEFAULT_SOUND;
-        }
-        if (alert.hasSound()) {
+        } else if (alert.hasSound()) {
             if (alert.getSound()) {
+                noisy = true;
                 defaults |= Notification.DEFAULT_SOUND;
             } else {
+                noisy = false;
                 defaults &= ~Notification.DEFAULT_SOUND;
             }
         }
+
+        // Apply channel preferences for importance
+        if (channelPreference.getImportance() != null) {
+            switch (channelPreference.getImportance()) {
+                case NotificationManagerCompat.IMPORTANCE_MAX:
+                    builder.setPriority(NotificationCompat.PRIORITY_MAX);
+                    break;
+                case NotificationManagerCompat.IMPORTANCE_HIGH:
+                    builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+                    break;
+                case NotificationManagerCompat.IMPORTANCE_DEFAULT:
+                    builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                    break;
+                case NotificationManagerCompat.IMPORTANCE_LOW:
+                    builder.setPriority(NotificationCompat.PRIORITY_LOW);
+                    break;
+                case NotificationManagerCompat.IMPORTANCE_MIN:
+                case NotificationManagerCompat.IMPORTANCE_NONE:
+                    builder.setPriority(NotificationCompat.PRIORITY_MIN);
+                    break;
+                case NotificationManagerCompat.IMPORTANCE_UNSPECIFIED:
+                    // noop
+                    break;
+                default:
+                    if (channelPreference.getImportance() < NotificationManagerCompat.IMPORTANCE_NONE) {
+                        builder.setPriority(NotificationCompat.PRIORITY_MIN);
+                    } else if (channelPreference.getImportance() > NotificationManagerCompat.IMPORTANCE_MAX) {
+                        builder.setPriority(NotificationCompat.PRIORITY_MAX);
+                    }
+                    break;
+            }
+        }
+
+        // Apply channel preferences for lights
+        if (channelPreference.getLights() != null) {
+            if (channelPreference.getLights()) {
+                if (!lights) {
+                    lights = true;
+                    lightsCustomized = false;
+                    defaults |= Notification.DEFAULT_LIGHTS;
+                }
+            } else {
+                if (lights) {
+                    lights = false;
+                    builder.setLights(Color.TRANSPARENT, 0, 0);
+                    defaults &= ~Notification.DEFAULT_LIGHTS;
+                }
+            }
+        }
+        if (lights && channelPreference.getLightColor() != null) {
+            if (channelPreference.getLightColor() == Color.TRANSPARENT) {
+                lights = false;
+                builder.setLights(Color.TRANSPARENT, 0, 0);
+                defaults &= ~Notification.DEFAULT_LIGHTS;
+            } else {
+                lightsCustomized = true;
+                builder.setLights(channelPreference.getLightColor(), alert.getLightsOn(), alert.getLightsOff());
+                defaults &= ~Notification.DEFAULT_LIGHTS;
+            }
+        }
+
+        // Apply channel preferences for vibration
+        if (canVibrate) {
+            if (channelPreference.getVibrate() != null) {
+                if (channelPreference.getVibrate()) {
+                    if (!vibrates) {
+                        vibrates = true;
+                        defaults |= Notification.DEFAULT_VIBRATE;
+                    }
+                } else {
+                    if (vibrates) {
+                        vibrates = false;
+                        vibratesCustomPattern = false;
+                        defaults &= ~Notification.DEFAULT_VIBRATE;
+                        builder.setVibrate(null);
+                    }
+                }
+            }
+            if (vibrates && channelPreference.getVibrationPattern() != null) {
+                vibrates = true;
+                vibratesCustomPattern = true;
+                defaults &= ~Notification.DEFAULT_VIBRATE;
+                builder.setVibrate(channelPreference.getVibrationPattern());
+            }
+        }
+
+        // Apply channel preferences for sound
+        if (channelPreference.getSound() != null) {
+            if (channelPreference.getSound()) {
+                if (!noisy) {
+                    noisy = true;
+                    defaults |= Notification.DEFAULT_SOUND;
+                }
+            } else {
+                if (noisy) {
+                    noisy = false;
+                    defaults &= ~Notification.DEFAULT_SOUND;
+                    builder.setSound(null);
+                }
+            }
+        }
+        if (noisy && channelPreference.getSoundUri() != null) {
+            defaults &= ~Notification.DEFAULT_SOUND;
+            builder.setSound(channelPreference.getSoundUri());
+        }
+
+        // Apply channel preferences for vibration in silent mode
+        if (channelPreference.getVibrateInSilentMode() != null) {
+            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            if (am.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE) {
+                if (channelPreference.getVibrateInSilentMode()) {
+                    if (!vibrates && !noisy) {
+                        vibrates = true;
+                        defaults |= Notification.DEFAULT_VIBRATE;
+                    }
+                } else {
+                    if (vibrates || noisy) {
+                        vibrates = false;
+                        noisy = false;
+                        defaults &= ~Notification.DEFAULT_VIBRATE;
+                        defaults &= ~Notification.DEFAULT_SOUND;
+                        builder.setSound(null);
+                        builder.setVibrate(null);
+                    }
+                }
+            }
+        }
+
+        // Apply channel preferences for lockscreen visibility
+        if (channelPreference.getLockscreenVisibility() != null) {
+            builder.setVisibility(channelPreference.getLockscreenVisibility());
+        }
+
+        // Apply channel preferences for color
+        if (channelPreference.getColor() != null) {
+            builder.setColor(channelPreference.getColor());
+        }
+
+        // Apply channel preferences for local only
+        if (channelPreference.getLocalOnly() != null) {
+            builder.setLocalOnly(channelPreference.getLocalOnly());
+        }
+
         builder.setDefaults(defaults);
 
         if (alert.getButtons() != null) {
