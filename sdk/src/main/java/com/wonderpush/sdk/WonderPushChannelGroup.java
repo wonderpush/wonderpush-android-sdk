@@ -6,11 +6,32 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * A grouping of related notification channels. e.g., channels that all belong to a single account.
+ *
+ * <p>
+ *     <b>BETA</b> -
+ *     <i>This API is marked beta and may change without prior notice to reflect any changes
+ *     made to the Android O APIs.</i>
+ * </p>
+ *
+ * <p>
+ *     This class mimicks the {@link android.app.android.app.NotificationChannelGroup} class to permit
+ *     exposing its benefits to devices prior to Android O.
+ * </p>
+ *
+ * @see android.app.android.app.NotificationChannelGroup
+ */
 public class WonderPushChannelGroup implements Cloneable {
 
     private final String id;
     private String name;
 
+    /**
+     * Creates a notification channel group.
+     * @param id The id of the group. Must be unique per package. the value may be truncated if it is too long.
+     * @see android.app.NotificationChannelGroup#NotificationChannelGroup(java.lang.String, java.lang.CharSequence)
+     */
     public WonderPushChannelGroup(@NonNull String id) {
         if (id == null) throw new NullPointerException("WonderPushChannelPreference id cannot be null");
         this.id = id;
@@ -63,14 +84,31 @@ public class WonderPushChannelGroup implements Cloneable {
         }
     }
 
+    /**
+     * Returns the id of this channel group.
+     * @return The id of this channel group.
+     * @see android.app.NotificationChannelGroup#getId()
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Returns the user visible name of this channel group.
+     * @return The user visible name of this channel group.
+     * @see android.app.NotificationChannelGroup#getName()
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the user visible name of this channel group.
+     * @param name The user visible name of the group.
+     *             The recommended maximum length is 40 characters; the value may be truncated if it is too long.
+     * @return The channel group object for chaining setters.
+     * @see android.app.NotificationChannelGroup#getName()
+     */
     public WonderPushChannelGroup setName(String name) {
         this.name = name;
         return this;

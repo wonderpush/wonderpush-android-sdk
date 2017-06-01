@@ -1,5 +1,6 @@
 package com.wonderpush.sdk;
 
+import android.content.Context;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -12,6 +13,31 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Manage Android notification channel and user preferences.
+ *
+ * <p>
+ *     Starting with Android O, you will have to implement Notification Channels.
+ *     This class helps you in this process.
+ * <p>
+ *
+ * </p>
+ *     <a href="https://developer.android.com/preview/features/notification-channels.html">Read more about Android O Notification Channels</a>.
+ * </p>
+ *
+ * <p>You must call {@link WonderPush#initialize(Context)} before using this class.</p>
+ *
+ * <p>
+ *     Prior to Android O, the SDK can handle every aspect of the notification.
+ *     Starting with Android O, the user is in charge of the importance of notifications,
+ *     whether they should vibrate or emit a sound, etc.<br/>
+ *     In order to ease the transition as well as bring Android O notification channels benefits
+ *     to previous versions of Android, use this class to define channels.<br/>
+ *     The channels and groups defined here will be matched to Android O channels as soon as the
+ *     device OS is upgraded. The application is free to manage notification groups and channels
+ *     by itself and it needs not make this class aware of them.
+ * </p>
+ */
 public class WonderPushUserPreferences {
 
     private static final String DEFAULT_CHANNEL_NAME = "default";
@@ -116,10 +142,37 @@ public class WonderPushUserPreferences {
         }
     }
 
+    /**
+     * Get the default channel id.
+     *
+     * <p>
+     *     The default channel is used when a received notification is not explicitly bound to a channel,
+     *     and as the default notification channel from Android O, as they are mandatory.
+     * </p>
+     *
+     * <p>
+     *     The default channel is initially created to an empty {@link WonderPushChannelPreference},
+     *     meaning that the SDK won't apply any changes to the notifications (prior to Android O).
+     * </p>
+     *
+     * @return The default channel id.
+     */
     public static synchronized String getDefaultChannelId() {
         return sDefaultChannelId;
     }
 
+    /**
+     * Set the default channel id.
+     *
+     * <p>
+     *     This function does not enforce the existence of the given channel until a notification
+     *     is to be posted to the default channel.
+     *     This way you are free to call this function either before or after creating the given
+     *     channel, either using this class or directly using Android O APIs.
+     * </p>
+     *
+     * @param id The identifier of the default channel.
+     */
     public static synchronized void setDefaultChannelId(String id) {
         try {
             if (_setDefaultChannelId(id)) {
@@ -147,6 +200,13 @@ public class WonderPushUserPreferences {
         }
     }
 
+    /**
+     * Get a channel group.
+     * @param groupId The identifier of the channel group to get.
+     * @return The channel group, if it has previously been created using this class,
+     *      {@code null} otherwise, in particular if an Android {@link android.app.android.app.NotificationChannelGroup}
+     *      exists but has not been registered with this class.
+     */
     public static synchronized WonderPushChannelGroup getChannelGroup(String groupId) {
         try {
             WonderPushChannelGroup rtn = sChannelGroups.get(groupId);
@@ -165,6 +225,13 @@ public class WonderPushUserPreferences {
         }
     }
 
+    /**
+     * Remove a channel group.
+     *
+     * <p>Remove a channel group both from this class registry and from Android.</p>
+     *
+     * @param groupId The identifier of the channel group to remove.
+     */
     public static synchronized void removeChannelGroup(String groupId) {
         try {
             if (_removeChannelGroup(groupId)) {
@@ -181,6 +248,13 @@ public class WonderPushUserPreferences {
         return prev != null;
     }
 
+    /**
+     * Create or update a channel group.
+     *
+     * <p>Creates or updates a channel group both in this class registry and in Android.</p>
+     *
+     * @param channelGroup The channel group to create or update.
+     */
     public static synchronized void putChannelGroup(WonderPushChannelGroup channelGroup) {
         try {
             if (_putChannelGroup(channelGroup)) {
@@ -198,6 +272,16 @@ public class WonderPushUserPreferences {
         return prev == null || !prev.equals(channelGroup);
     }
 
+    /**
+     * Create, update and remove channel existing groups to match the given channel groups.
+     *
+     * <p>Creates, updates and removes channel groups both in this class registry and in Android.</p>
+     *
+     * <p>Any non listed, previously existing channel group will be removed.</p>
+     *
+     * @param channelGroups The channel groups to create or update.
+     *                      Any non listed, previously existing channel group will be removed.
+     */
     public static synchronized void setChannelGroups(Collection<WonderPushChannelGroup> channelGroups) {
         if (channelGroups == null) return;
         boolean save = false;
@@ -224,6 +308,13 @@ public class WonderPushUserPreferences {
         }
     }
 
+    /**
+     * Get a channel preference.
+     * @param channelId The identifier of the channel to get.
+     * @return The channel, if it has previously been created using this class,
+     *      {@code null} otherwise, in particular if an Android {@link android.app.android.app.NotificationChannel}
+     *      exists but has not been registered with this class.
+     */
     public static synchronized WonderPushChannelPreference getChannelPreference(String channelId) {
         try {
             WonderPushChannelPreference rtn = sChannelPreferences.get(channelId);
@@ -242,6 +333,13 @@ public class WonderPushUserPreferences {
         }
     }
 
+    /**
+     * Remove a channel preference.
+     *
+     * <p>Remove a channel both from this class registry and from Android.</p>
+     *
+     * @param channelId The identifier of the channel to remove.
+     */
     public static synchronized void removeChannelPreference(String channelId) {
         try {
             if (_removeChannelPreference(channelId)) {
@@ -258,6 +356,13 @@ public class WonderPushUserPreferences {
         return prev != null;
     }
 
+    /**
+     * Create or update a channel preference.
+     *
+     * <p>Creates or updates a channel both in this class registry and in Android.</p>
+     *
+     * @param channelPreference The channel to create or update.
+     */
     public static synchronized void putChannelPreference(WonderPushChannelPreference channelPreference) {
         try {
             if (_putChannelPreference(channelPreference)) {
@@ -275,6 +380,16 @@ public class WonderPushUserPreferences {
         return prev == null || !prev.equals(channelPreference);
     }
 
+    /**
+     * Create, update and remove channels to match the given channels.
+     *
+     * <p>Creates, updates and removes channels both in this class registry and in Android.</p>
+     *
+     * <p>Any non listed, previously existing channel will be removed.</p>
+     *
+     * @param channelPreferences The channels to create or update.
+     *                           Any non listed, previously existing channel will be removed.
+     */
     public static synchronized void setChannelPreferences(Collection<WonderPushChannelPreference> channelPreferences) {
         if (channelPreferences == null) return;
         boolean save = false;

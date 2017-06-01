@@ -9,6 +9,30 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 
+/**
+ * A representation of settings that apply to a collection of similarly themed notifications.
+ *
+ * <p>
+ *     <b>BETA</b> -
+ *     <i>This API is marked beta and may change without prior notice to reflect any changes
+ *     made to the Android O APIs.</i>
+ * </p>
+ *
+ * <p>
+ *     This class mimicks the {@link android.app.android.app.NotificationChannel} class to permit
+ *     exposing its benefits to devices prior to Android O.
+ *     Contrary to the latter, this class permits to override only a few aspects of the notification.
+ * </p>
+ *
+ * <p>
+ *     It also contains some additions that may no longer be available under Android O where the user
+ *     is in full control of these settings, such as preventing a notification that usually makes a
+ *     sound or vibrates to vibrate while the device is in silent mode.<br/>
+ *     Some feature like the color should remain configurable using this class under Android O.
+ * </p>
+ *
+ * @see android.app.android.app.NotificationChannel
+ */
 public class WonderPushChannelPreference implements Cloneable {
 
     private final String id;
@@ -39,6 +63,14 @@ public class WonderPushChannelPreference implements Cloneable {
     private Integer color; // use TRANSPARENT to remove coloring
     private Boolean localOnly;
 
+    /**
+     * Create a notification channel.
+     *
+     * @param id The id of the channel. Must be unique per package. The value may be truncated if it is too long.
+     * @param groupId The id of a channel group. You should create the group prior to creating this channel.
+     *
+     * @see android.app.NotificationChannel#NotificationChannel(java.lang.String, java.lang.CharSequence, int)
+     */
     public WonderPushChannelPreference(@NonNull String id, String groupId) {
         if (id == null) throw new NullPointerException("WonderPushChannelPreference id cannot be null");
         this.id = id;
@@ -160,27 +192,68 @@ public class WonderPushChannelPreference implements Cloneable {
         }
     }
 
+    /**
+     * Returns the id of this channel.
+     * @see android.app.NotificationChannel#getId()
+     */
     public String getId() {
         return id;
     }
 
+    /**
+     * Returns what group this channel belongs to.
+     *
+     * This is used only for visually grouping channels in the UI.
+     * Can be {@code null}.
+     *
+     * @return The id of the group this channel belongs to, if any.
+     * @see android.app.NotificationChannel#setGroup(String)
+     */
     public String getGroupId() {
         return groupId;
     }
 
+    /**
+     * Returns the user visible name of this channel.
+     * @see android.app.NotificationChannel#getName()
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the user visible name of this channel.
+     *
+     * The recommended maximum length is 40 characters; the value may be truncated if it is too long.
+     *
+     * @param name The user visible name of this channel.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setName(CharSequence)
+     */
     public WonderPushChannelPreference setName(String name) {
         this.name = name;
         return this;
     }
 
+    /**
+     * Returns the user visible description of this channel.
+     *
+     * @return The user visible description of this channel.
+     * @see android.app.NotificationChannel#getDescription()
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * Sets the user visible description of this channel.
+     *
+     * The recommended maximum length is 300 characters; the value may be truncated if it is too long.
+     *
+     * @param description The user visible description of this channel.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setDescription(String)
+     */
     public WonderPushChannelPreference setDescription(String description) {
         this.description = description;
         return this;
@@ -204,102 +277,295 @@ public class WonderPushChannelPreference implements Cloneable {
     //    return this;
     //}
 
+    /**
+     * Returns the user specified importance for notifications posted to this channel.
+     *
+     * Example: {@link android.app.NotificationManager#IMPORTANCE_DEFAULT}
+     *
+     * @return The user specified importance for notifications posted to this channel.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#getImportance()
+     */
     public Integer getImportance() {
         return importance;
     }
 
+    /**
+     * Sets the level of interruption of this notification channel.
+     *
+     * Example: {@link android.app.NotificationManager#IMPORTANCE_DEFAULT}
+     *
+     * @param importance The level of interruption of this notification channel.
+     *                   Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setImportance(int)
+     */
     public WonderPushChannelPreference setImportance(Integer importance) {
         this.importance = importance;
         return this;
     }
 
+    /**
+     * Returns whether notifications posted to this channel trigger notification lights.
+     * @return Whether notifications posted to this channel trigger notification lights.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#shouldShowLights()
+     */
     public Boolean getLights() {
         return lights;
     }
 
+    /**
+     * Sets whether notifications posted to this channel should display notification lights, on devices that support that feature.
+     * @param lights Whether notifications posted to this channel should display notification lights
+     *               Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#enableLights(boolean)
+     */
     public WonderPushChannelPreference setLights(Boolean lights) {
         this.lights = lights;
         return this;
     }
 
+    /**
+     * Returns whether notifications posted to this channel always vibrate.
+     * @return Whether notifications posted to this channel always vibrate.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#shouldVibrate()
+     */
     public Boolean getVibrate() {
         return vibrate;
     }
 
+    /**
+     * Sets whether notification posted to this channel should vibrate.
+     *
+     * The vibration pattern can be set with {@link #setVibrationPattern(long[])}.
+     *
+     * @param vibrate Whether notification posted to this channel should vibrate.
+     *                Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#enableVibration(boolean)
+     */
     public WonderPushChannelPreference setVibrate(Boolean vibrate) {
         this.vibrate = vibrate;
         return this;
     }
 
+    /**
+     * Returns the vibration pattern for notifications posted to this channel.
+     * @return The vibration pattern for notifications posted to this channel.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#getVibrationPattern()
+     */
     public long[] getVibrationPattern() {
         return vibrationPattern;
     }
 
+    /**
+     * Sets the vibration pattern for notifications posted to this channel.
+     * @param vibrationPattern The vibration pattern for notifications posted to this channel.
+     *                         Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setVibrationPattern(long[])
+     */
     public WonderPushChannelPreference setVibrationPattern(long[] vibrationPattern) {
         this.vibrationPattern = vibrationPattern;
         return this;
     }
 
+    /**
+     * Sets the notification light color for notifications posted to this channel,
+     * if lights are enabled on this channel and the device supports that feature.
+     *
+     * @return The notification light color for notifications posted to this channel
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#getLightColor()
+     */
     public Integer getLightColor() {
         return lightColor;
     }
 
+    /**
+     * Returns the notification light color for notifications posted to this channel.
+     * @param lightColor The notification light color for notifications posted to this channel.
+     *                   Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setLightColor(int)
+     */
     public WonderPushChannelPreference setLightColor(Integer lightColor) {
         this.lightColor = lightColor;
         return this;
     }
 
+    /**
+     * Returns whether or not notifications posted to this channel are shown on the lockscreen in full or redacted form.
+     * @return Whether or not notifications posted to this channel are shown on the lockscreen in full or redacted form.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#getLockscreenVisibility()
+     */
     public Integer getLockscreenVisibility() {
         return lockscreenVisibility;
     }
 
+    /**
+     * Sets whether notifications posted to this channel appear on the lockscreen or not, and if so, whether they appear in a redacted form.
+     *
+     * Example: {@link android.app.Notification#VISIBILITY_PUBLIC}.
+     *
+     * @param lockscreenVisibility Whether notifications posted to this channel appear on the lockscreen or not, and if so, whether they appear in a redacted form.
+     *                             Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setLockscreenVisibility(int)
+     */
     public WonderPushChannelPreference setLockscreenVisibility(Integer lockscreenVisibility) {
         this.lockscreenVisibility = lockscreenVisibility;
         return this;
     }
 
+    /**
+     * Returns whether a sound should be played for notifications posted to this channel.
+     * @return Whether a sound should be played for notifications posted to this channel.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#getSound()
+     */
     public Boolean getSound() {
         return sound;
     }
 
+    /**
+     * Sets whether a sound should be played for notifications posted to this channel.
+     * @param sound Whether a sound should be played for notifications posted to this channel.
+     *              Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setSound(android.net.Uri, android.media.AudioAttributes)
+     */
     public WonderPushChannelPreference setSound(Boolean sound) {
         this.sound = sound;
         return this;
     }
 
+    /**
+     * Returns the notification sound for this channel.
+     * @return The notification sound for this channel.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.NotificationChannel#getSound()
+     */
     public Uri getSoundUri() {
         return soundUri;
     }
 
+    /**
+     * Sets the sound that should be played for notifications posted to this channel and its audio attributes.
+     *
+     * Notification channels with an importance of at least {@link android.app.NotificationManager#IMPORTANCE_DEFAULT} should have a sound.
+     *
+     * @param soundUri The sound that should be played for notifications posted to this channel.
+     *                 You can use {@link android.provider.Settings.System#DEFAULT_NOTIFICATION_URI} to use the default notification sound.
+     *                 Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.NotificationChannel#setSound(android.net.Uri, android.media.AudioAttributes)
+     */
     public WonderPushChannelPreference setSoundUri(Uri soundUri) {
         this.soundUri = soundUri;
         return this;
     }
 
+    /**
+     * Returns whether notifications posted to this channel vibrate if the device is in silent mode.
+     *
+     * <p>This is a WonderPush addition.</p>
+     *
+     * <p>
+     *     The primary use of this flag is to permit notifications with sound and vibration in normal
+     *     mode but prevent it from vibrating in all cases in silent mode.
+     * </p>
+     *
+     * @return Whether notifications posted to this channel vibrate if the device is in silent mode.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     */
     public Boolean getVibrateInSilentMode() {
         return vibrateInSilentMode;
     }
 
+    /**
+     * Sets whether notifications posted to this channel vibrate if the device is in silent mode.
+     *
+     * <p>This is a WonderPush addition.</p>
+     *
+     * <p>
+     *     The primary use of this flag is to permit notifications with sound and vibration in normal
+     *     mode but prevent it from vibrating in all cases in silent mode.
+     * </p>
+     *
+     * <p>
+     *     Note: You can control this setting irrespective of the fact that a given notification
+     *     should vibrate a make a sound in normal mode.
+     * </p>
+     *
+     * @param vibrateInSilentMode Whether notifications posted to this channel vibrate if the device is in silent mode.
+     *                            Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     */
     public WonderPushChannelPreference setVibrateInSilentMode(Boolean vibrateInSilentMode) {
         this.vibrateInSilentMode = vibrateInSilentMode;
         return this;
     }
 
+    /**
+     * Returns the color to impose on all notifications posted to this channel.
+     *
+     * <p>This is independent of Android O notification channels and should continue to work under Android O.</p>
+     *
+     * @return The color to impose on all notifications posted to this channel.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.Notification.Builder#setColor(int)
+     */
     public Integer getColor() {
         return color;
     }
 
+    /**
+     * Sets the color to impose on all notifications posted to this channel.
+     *
+     * <p>This is independent of Android O notification channels and should continue to work under Android O.</p>
+     *
+     * @param color The color to impose on all notifications posted to this channel.
+     *              Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.Notification.Builder#setColor(int)
+     */
     public WonderPushChannelPreference setColor(Integer color) {
         this.color = color;
         return this;
     }
 
+    /**
+     * Returns whether notifications posted to this channel should be local to this device.
+     *
+     * <p>This is independent of Android O notification channels and should continue to work under Android O.</p>
+     *
+     * @return Whether notifications posted to this channel should be local to this device.
+     * Returns {@code null} if this setting does not override the received notifications setting.
+     * @see android.app.Notification.Builder#setLocalOnly(boolean)
+     */
     public Boolean getLocalOnly() {
         return localOnly;
     }
 
+    /**
+     * Sets whether notifications posted to this channel should be local to this device.
+     *
+     * <p>This is independent of Android O notification channels and should continue to work under Android O.</p>
+     *
+     * @param localOnly Whether notifications posted to this channel should be local to this device.
+     *                  Use {@code null} to not override the received notifications setting.
+     * @return The channel object for chaining setters.
+     * @see android.app.Notification.Builder#setLocalOnly(boolean)
+     */
     public WonderPushChannelPreference setLocalOnly(Boolean localOnly) {
         this.localOnly = localOnly;
         return this;
     }
+
 }
