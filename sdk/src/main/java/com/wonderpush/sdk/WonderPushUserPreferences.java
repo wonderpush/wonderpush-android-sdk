@@ -122,14 +122,21 @@ public class WonderPushUserPreferences {
 
     public static synchronized void setDefaultChannelId(String id) {
         try {
-            if (id == null || "".equals(id)) id = DEFAULT_CHANNEL_NAME; // FIXME "" too?
-            if (!id.equals(sDefaultChannelId)) {
-                sDefaultChannelId = id;
+            if (_setDefaultChannelId(id)) {
                 save();
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while setting default channel id to " + id, ex);
         }
+    }
+
+    private static synchronized boolean _setDefaultChannelId(String id) {
+        if (id == null || "".equals(id)) id = DEFAULT_CHANNEL_NAME; // FIXME "" too?
+        if (!id.equals(sDefaultChannelId)) {
+            sDefaultChannelId = id;
+            return true;
+        }
+        return false;
     }
 
     static synchronized void ensureDefaultAndroidNotificationChannelExists() {
