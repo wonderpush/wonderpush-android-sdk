@@ -5,10 +5,12 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class WonderPushUserPreferences {
 
@@ -23,8 +25,12 @@ public class WonderPushUserPreferences {
     private static Map<String, WonderPushChannelPreference> sChannelPreferences;
 
     static void initialize() {
-        load();
-        ensureDefaultChannelExists();
+        try {
+            load();
+            ensureDefaultChannelExists();
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while initializing WonderPushUserPreferences", ex);
+        }
     }
 
     private static synchronized void load() {
@@ -106,6 +112,8 @@ public class WonderPushUserPreferences {
             WonderPushConfiguration.setChannelPreferences(outChannelPreferences);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Unexpected error while serializing channel preferences", ex);
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while saving WonderPushUserPreferences", ex);
         }
     }
 
@@ -114,100 +122,184 @@ public class WonderPushUserPreferences {
     }
 
     public static synchronized void setDefaultChannelId(String id) {
-        if (id == null || "".equals(id)) id = DEFAULT_CHANNEL_NAME; // FIXME "" too?
-        if (!id.equals(sDefaultChannelId)) {
-            sDefaultChannelId = id;
-            save();
-            ensureDefaultChannelExists();
+        try {
+            if (id == null || "".equals(id)) id = DEFAULT_CHANNEL_NAME; // FIXME "" too?
+            if (!id.equals(sDefaultChannelId)) {
+                sDefaultChannelId = id;
+                save();
+                ensureDefaultChannelExists();
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while setting default channel id to " + id, ex);
         }
     }
 
     static synchronized void ensureDefaultChannelExists() {
-        if (getChannelPreference(sDefaultChannelId) == null) {
-            // Put an empty channel in WonderPush, that overrides nothing
-            putChannelPreference(
-                    new WonderPushChannelPreference(sDefaultChannelId, null)
-                            .setName("Default")
-            );
+        try {
+            if (getChannelPreference(sDefaultChannelId) == null) {
+                // Put an empty channel in WonderPush, that overrides nothing
+                putChannelPreference(
+                        new WonderPushChannelPreference(sDefaultChannelId, null)
+                                .setName("Default")
+                );
+            }
+            // TODO if (Android ≥ O) ensure notification channel existence
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while ensuring default channel exists", ex);
         }
-        // TODO if (Android ≥ O) ensure notification channel existence
     }
 
     public static synchronized WonderPushChannelGroup getChannelGroup(String groupId) {
-        WonderPushChannelGroup rtn = sChannelGroups.get(groupId);
-        if (rtn != null) {
-            try {
-                rtn = (WonderPushChannelGroup) rtn.clone();
-            } catch (CloneNotSupportedException e) {
-                return null;
+        try {
+            WonderPushChannelGroup rtn = sChannelGroups.get(groupId);
+            if (rtn != null) {
+                try {
+                    rtn = (WonderPushChannelGroup) rtn.clone();
+                } catch (CloneNotSupportedException ex) {
+                    Log.e(WonderPush.TAG, "Unexpected error while cloning gotten channel preference " + rtn, ex);
+                    return null;
+                }
             }
+            return rtn;
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while getting channel group " + groupId, ex);
+            return null;
         }
-        return rtn;
     }
 
     public static synchronized void removeChannelGroup(String groupId) {
-        WonderPushChannelGroup prev = sChannelGroups.remove(groupId);
-        if (prev != null) {
-            save();
+        try {
+            if (_removeChannelGroup(groupId)) {
+                save();
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while removing channel group " + groupId, ex);
         }
+    }
+
+    private static synchronized boolean _removeChannelGroup(String groupId) {
+        WonderPushChannelGroup prev = sChannelGroups.remove(groupId);
+        // TODO Android ≥ O remove channel group
+        return prev != null;
     }
 
     public static synchronized void putChannelGroup(WonderPushChannelGroup channelGroup) {
-        if (channelGroup == null) return;
-        WonderPushChannelGroup prev = sChannelGroups.put(channelGroup.getId(), channelGroup);
-        if (prev == null || !prev.equals(channelGroup)) {
-            save();
+        try {
+            if (_putChannelGroup(channelGroup)) {
+                save();
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while putting channel group " + channelGroup, ex);
         }
     }
 
-    public static synchronized void setChannelGroups(List<WonderPushChannelGroup> channelGroups) {
+    private static synchronized boolean _putChannelGroup(WonderPushChannelGroup channelGroup) {
+        if (channelGroup == null) return false;
+        WonderPushChannelGroup prev = sChannelGroups.put(channelGroup.getId(), channelGroup);
+        // TODO Android ≥ O create channel group
+        return prev == null || !prev.equals(channelGroup);
+    }
+
+    public static synchronized void setChannelGroups(Collection<WonderPushChannelGroup> channelGroups) {
         if (channelGroups == null) return;
-        Map<String, WonderPushChannelGroup> newChannelGroups = new HashMap<>();
-        for (WonderPushChannelGroup channelGroup : channelGroups) {
-            newChannelGroups.put(channelGroup.getId(), channelGroup);
-        }
-        if (!newChannelGroups.equals(sChannelGroups)) {
-            sChannelGroups = newChannelGroups;
-            save();
+        boolean save = false;
+        try {
+            Set<String> groupIdsToRemove = new HashSet<>(sChannelGroups.keySet());
+            for (WonderPushChannelGroup channelGroup : channelGroups) {
+                if (channelGroup == null) continue;
+                groupIdsToRemove.remove(channelGroup.getId());
+                save = save || _putChannelGroup(channelGroup);
+            }
+            for (String groupId : groupIdsToRemove) {
+                save = save || _removeChannelGroup(groupId);
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while setting channel groups " + channelGroups, ex);
+        } finally {
+            try {
+                if (save) {
+                    save();
+                }
+            } catch (Exception ex) {
+                Log.e(WonderPush.TAG, "Unexpected error while setting channel groups " + channelGroups, ex);
+            }
         }
     }
 
     public static synchronized WonderPushChannelPreference getChannelPreference(String channelId) {
-        WonderPushChannelPreference rtn = sChannelPreferences.get(channelId);
-        if (rtn != null) {
-            try {
-                rtn = (WonderPushChannelPreference) rtn.clone();
-            } catch (CloneNotSupportedException e) {
-                return null;
+        try {
+            WonderPushChannelPreference rtn = sChannelPreferences.get(channelId);
+            if (rtn != null) {
+                try {
+                    rtn = (WonderPushChannelPreference) rtn.clone();
+                } catch (CloneNotSupportedException ex) {
+                    Log.e(WonderPush.TAG, "Unexpected error while cloning gotten channel preference " + rtn, ex);
+                    return null;
+                }
             }
+            return rtn;
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while getting channel preference " + channelId, ex);
+            return null;
         }
-        return rtn;
     }
 
-    public static synchronized void removeChannelPreferences(String channelId) {
-        WonderPushChannelPreference prev = sChannelPreferences.remove(channelId);
-        if (prev != null) {
-            save();
+    public static synchronized void removeChannelPreference(String channelId) {
+        try {
+            if (_removeChannelPreference(channelId)) {
+                save();
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while removing channel preference " + channelId, ex);
         }
+    }
+
+    private static synchronized boolean _removeChannelPreference(String channelId) {
+        WonderPushChannelPreference prev = sChannelPreferences.remove(channelId);
+        // TODO Android ≥ O remove channel
+        return prev != null;
     }
 
     public static synchronized void putChannelPreference(WonderPushChannelPreference channelPreference) {
-        if (channelPreference == null) return;
-        WonderPushChannelPreference prev = sChannelPreferences.put(channelPreference.getId(), channelPreference);
-        if (prev == null || !prev.equals(channelPreference)) {
-            save();
+        try {
+            if (_putChannelPreference(channelPreference)) {
+                save();
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while putting channel preference " + channelPreference, ex);
         }
     }
 
-    public static synchronized void setChannelPreferences(List<WonderPushChannelPreference> channelPreferences) {
+    private static synchronized boolean _putChannelPreference(WonderPushChannelPreference channelPreference) {
+        if (channelPreference == null) return false;
+        WonderPushChannelPreference prev = sChannelPreferences.put(channelPreference.getId(), channelPreference);
+        // TODO Android ≥ O create channel
+        return prev == null || !prev.equals(channelPreference);
+    }
+
+    public static synchronized void setChannelPreferences(Collection<WonderPushChannelPreference> channelPreferences) {
         if (channelPreferences == null) return;
-        Map<String, WonderPushChannelPreference> newChannelPreferences = new HashMap<>();
-        for (WonderPushChannelPreference channelPreference : channelPreferences) {
-            newChannelPreferences.put(channelPreference.getId(), channelPreference);
-        }
-        if (!newChannelPreferences.equals(sChannelPreferences)) {
-            sChannelPreferences = newChannelPreferences;
-            save();
+        boolean save = false;
+        try {
+            Set<String> channelIdsToRemove = new HashSet<>(sChannelPreferences.keySet());
+            for (WonderPushChannelPreference channelPreference : channelPreferences) {
+                if (channelPreference == null) continue;
+                channelIdsToRemove.remove(channelPreference.getId());
+                save = save || _putChannelPreference(channelPreference);
+            }
+            for (String groupId : channelIdsToRemove) {
+                save = save || _removeChannelGroup(groupId);
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while setting channel preferences " + channelPreferences, ex);
+        } finally {
+            try {
+                if (save) {
+                    save();
+                }
+            } catch (Exception ex) {
+                Log.e(WonderPush.TAG, "Unexpected error while setting channel preferences " + channelPreferences, ex);
+            }
         }
     }
 
