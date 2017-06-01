@@ -27,7 +27,6 @@ public class WonderPushUserPreferences {
     static void initialize() {
         try {
             load();
-            ensureDefaultChannelExists();
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while initializing WonderPushUserPreferences", ex);
         }
@@ -127,22 +126,14 @@ public class WonderPushUserPreferences {
             if (!id.equals(sDefaultChannelId)) {
                 sDefaultChannelId = id;
                 save();
-                ensureDefaultChannelExists();
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while setting default channel id to " + id, ex);
         }
     }
 
-    static synchronized void ensureDefaultChannelExists() {
+    static synchronized void ensureDefaultAndroidNotificationChannelExists() {
         try {
-            if (getChannelPreference(sDefaultChannelId) == null) {
-                // Put an empty channel in WonderPush, that overrides nothing
-                putChannelPreference(
-                        new WonderPushChannelPreference(sDefaultChannelId, null)
-                                .setName("Default")
-                );
-            }
             // TODO if (Android ≥ O) ensure notification channel existence
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while ensuring default channel exists", ex);

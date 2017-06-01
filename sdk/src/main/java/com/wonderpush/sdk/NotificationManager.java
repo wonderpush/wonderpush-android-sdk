@@ -300,7 +300,7 @@ class NotificationManager {
             // If the desired channel does not exist, use an empty one to not override anything
             // The channel may be an existing Android O notification channel
             channelPreference = new WonderPushChannelPreference("", null);
-            // TODO if (Android ≥ O) { WonderPushUserPreferences.ensureDefaultChannelExists(); use default channel; }
+            // TODO if (Android ≥ O) { WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists(); use default channel; }
         }
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
         boolean lights = true;
