@@ -33,7 +33,7 @@ import java.util.Arrays;
  *
  * @see android.app.android.app.NotificationChannel
  */
-public class WonderPushChannelPreference implements Cloneable {
+public class WonderPushChannel implements Cloneable {
 
     private final String id;
     private final String groupId;
@@ -71,15 +71,15 @@ public class WonderPushChannelPreference implements Cloneable {
      *
      * @see android.app.NotificationChannel#NotificationChannel(java.lang.String, java.lang.CharSequence, int)
      */
-    public WonderPushChannelPreference(@NonNull String id, String groupId) {
-        if (id == null) throw new NullPointerException("WonderPushChannelPreference id cannot be null");
+    public WonderPushChannel(@NonNull String id, String groupId) {
+        if (id == null) throw new NullPointerException("WonderPushChannel id cannot be null");
         this.id = id;
         this.groupId = groupId;
     }
 
     @Override
     public Object clone() throws CloneNotSupportedException {
-        WonderPushChannelPreference rtn = (WonderPushChannelPreference) super.clone();
+        WonderPushChannel rtn = (WonderPushChannel) super.clone();
         rtn.vibrationPattern = vibrationPattern == null ? null : vibrationPattern.clone();
         return rtn;
     }
@@ -106,9 +106,9 @@ public class WonderPushChannelPreference implements Cloneable {
         return rtn;
     }
 
-    static WonderPushChannelPreference fromJSON(JSONObject input) throws JSONException {
+    static WonderPushChannel fromJSON(JSONObject input) throws JSONException {
         if (input == null) return null;
-        return new WonderPushChannelPreference(input.getString("id"), input.optString("groupId", null))
+        return new WonderPushChannel(input.getString("id"), input.optString("groupId", null))
                 .setName(input.optString("name", null))
                 .setDescription(input.optString("description", null))
                 //.setBypassDnd(JSONUtil.optBoolean(input, "bypassDnd"))
@@ -132,7 +132,7 @@ public class WonderPushChannelPreference implements Cloneable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        WonderPushChannelPreference that = (WonderPushChannelPreference) o;
+        WonderPushChannel that = (WonderPushChannel) o;
 
         if (!id.equals(that.id)) return false;
         if (groupId != null ? !groupId.equals(that.groupId) : that.groupId != null) return false;
@@ -230,7 +230,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setName(CharSequence)
      */
-    public WonderPushChannelPreference setName(String name) {
+    public WonderPushChannel setName(String name) {
         this.name = name;
         return this;
     }
@@ -254,7 +254,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setDescription(String)
      */
-    public WonderPushChannelPreference setDescription(String description) {
+    public WonderPushChannel setDescription(String description) {
         this.description = description;
         return this;
     }
@@ -263,7 +263,7 @@ public class WonderPushChannelPreference implements Cloneable {
     //    return bypassDnd;
     //}
 
-    //public WonderPushChannelPreference setBypassDnd(Boolean bypassDnd) {
+    //public WonderPushChannel setBypassDnd(Boolean bypassDnd) {
     //    this.bypassDnd = bypassDnd;
     //    return this;
     //}
@@ -272,7 +272,7 @@ public class WonderPushChannelPreference implements Cloneable {
     //    return badge;
     //}
 
-    //public WonderPushChannelPreference setBadge(Boolean badge) {
+    //public WonderPushChannel setBadge(Boolean badge) {
     //    this.badge = badge;
     //    return this;
     //}
@@ -300,7 +300,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setImportance(int)
      */
-    public WonderPushChannelPreference setImportance(Integer importance) {
+    public WonderPushChannel setImportance(Integer importance) {
         this.importance = importance;
         return this;
     }
@@ -322,7 +322,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#enableLights(boolean)
      */
-    public WonderPushChannelPreference setLights(Boolean lights) {
+    public WonderPushChannel setLights(Boolean lights) {
         this.lights = lights;
         return this;
     }
@@ -347,7 +347,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#enableVibration(boolean)
      */
-    public WonderPushChannelPreference setVibrate(Boolean vibrate) {
+    public WonderPushChannel setVibrate(Boolean vibrate) {
         this.vibrate = vibrate;
         return this;
     }
@@ -369,7 +369,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setVibrationPattern(long[])
      */
-    public WonderPushChannelPreference setVibrationPattern(long[] vibrationPattern) {
+    public WonderPushChannel setVibrationPattern(long[] vibrationPattern) {
         this.vibrationPattern = vibrationPattern;
         return this;
     }
@@ -393,7 +393,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setLightColor(int)
      */
-    public WonderPushChannelPreference setLightColor(Integer lightColor) {
+    public WonderPushChannel setLightColor(Integer lightColor) {
         this.lightColor = lightColor;
         return this;
     }
@@ -418,7 +418,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setLockscreenVisibility(int)
      */
-    public WonderPushChannelPreference setLockscreenVisibility(Integer lockscreenVisibility) {
+    public WonderPushChannel setLockscreenVisibility(Integer lockscreenVisibility) {
         this.lockscreenVisibility = lockscreenVisibility;
         return this;
     }
@@ -440,7 +440,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setSound(android.net.Uri, android.media.AudioAttributes)
      */
-    public WonderPushChannelPreference setSound(Boolean sound) {
+    public WonderPushChannel setSound(Boolean sound) {
         this.sound = sound;
         return this;
     }
@@ -466,7 +466,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.NotificationChannel#setSound(android.net.Uri, android.media.AudioAttributes)
      */
-    public WonderPushChannelPreference setSoundUri(Uri soundUri) {
+    public WonderPushChannel setSoundUri(Uri soundUri) {
         this.soundUri = soundUri;
         return this;
     }
@@ -507,7 +507,7 @@ public class WonderPushChannelPreference implements Cloneable {
      *                            Use {@code null} to not override the received notifications setting.
      * @return The channel object for chaining setters.
      */
-    public WonderPushChannelPreference setVibrateInSilentMode(Boolean vibrateInSilentMode) {
+    public WonderPushChannel setVibrateInSilentMode(Boolean vibrateInSilentMode) {
         this.vibrateInSilentMode = vibrateInSilentMode;
         return this;
     }
@@ -535,7 +535,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.Notification.Builder#setColor(int)
      */
-    public WonderPushChannelPreference setColor(Integer color) {
+    public WonderPushChannel setColor(Integer color) {
         this.color = color;
         return this;
     }
@@ -563,7 +563,7 @@ public class WonderPushChannelPreference implements Cloneable {
      * @return The channel object for chaining setters.
      * @see android.app.Notification.Builder#setLocalOnly(boolean)
      */
-    public WonderPushChannelPreference setLocalOnly(Boolean localOnly) {
+    public WonderPushChannel setLocalOnly(Boolean localOnly) {
         this.localOnly = localOnly;
         return this;
     }

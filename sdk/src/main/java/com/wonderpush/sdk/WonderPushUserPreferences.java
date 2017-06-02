@@ -44,11 +44,11 @@ public class WonderPushUserPreferences {
 
     private static final String SERIALIZATION_FIELD_DEFAULT_CHANNEL_ID = "defaultChannelId";
     private static final String SERIALIZATION_FIELD_CHANNEL_GROUPS = "channelGroups";
-    private static final String SERIALIZATION_FIELD_CHANNEL_PREFERENCES = "channelPreferences";
+    private static final String SERIALIZATION_FIELD_CHANNELS = "channels";
 
     private static String sDefaultChannelId;
     private static Map<String, WonderPushChannelGroup> sChannelGroups;
-    private static Map<String, WonderPushChannelPreference> sChannelPreferences;
+    private static Map<String, WonderPushChannel> sChannels;
 
     static void initialize() {
         try {
@@ -83,18 +83,18 @@ public class WonderPushUserPreferences {
         }
 
         {
-            JSONObject inChannels = inChannelPreferences.optJSONObject(SERIALIZATION_FIELD_CHANNEL_PREFERENCES);
-            sChannelPreferences = new HashMap<>();
+            JSONObject inChannels = inChannelPreferences.optJSONObject(SERIALIZATION_FIELD_CHANNELS);
+            sChannels = new HashMap<>();
             if (inChannels != null) {
                 Iterator<String> it = inChannels.keys();
                 while (it.hasNext()) {
                     String key = it.next();
                     JSONObject value = inChannels.optJSONObject(key);
                     try {
-                        WonderPushChannelPreference pref = WonderPushChannelPreference.fromJSON(inChannels.optJSONObject(key));
-                        sChannelPreferences.put(pref.getId(), pref);
+                        WonderPushChannel pref = WonderPushChannel.fromJSON(inChannels.optJSONObject(key));
+                        sChannels.put(pref.getId(), pref);
                     } catch (JSONException ex) {
-                        Log.e(WonderPush.TAG, "Failed to deserialize WonderPushChannelPreference from JSON: " + value, ex);
+                        Log.e(WonderPush.TAG, "Failed to deserialize WonderPushChannel from JSON: " + value, ex);
                     }
                 }
             }
@@ -105,8 +105,8 @@ public class WonderPushUserPreferences {
         for (WonderPushChannelGroup group : sChannelGroups.values()) {
             WonderPush.logDebug("- " + group.getId() + ": " + group);
         }
-        WonderPush.logDebug("UserPreferences: channel preferences:");
-        for (WonderPushChannelPreference channel : sChannelPreferences.values()) {
+        WonderPush.logDebug("UserPreferences: channels:");
+        for (WonderPushChannel channel : sChannels.values()) {
             WonderPush.logDebug("- " + channel.getId() + ": " + channel);
         }
     }
@@ -127,10 +127,10 @@ public class WonderPushUserPreferences {
 
             {
                 JSONObject outChannels = new JSONObject();
-                for (WonderPushChannelPreference channel : sChannelPreferences.values()) {
+                for (WonderPushChannel channel : sChannels.values()) {
                     outChannels.put(channel.getId(), channel.toJSON());
                 }
-                outChannelPreferences.put(SERIALIZATION_FIELD_CHANNEL_PREFERENCES, outChannels);
+                outChannelPreferences.put(SERIALIZATION_FIELD_CHANNELS, outChannels);
             }
 
             //WonderPush.logDebug("UserPreferences: saving preferences: " + outChannelPreferences);
@@ -151,7 +151,7 @@ public class WonderPushUserPreferences {
      * </p>
      *
      * <p>
-     *     The default channel is initially created to an empty {@link WonderPushChannelPreference},
+     *     The default channel is initially created to an empty {@link WonderPushChannel},
      *     meaning that the SDK won't apply any changes to the notifications (prior to Android O).
      * </p>
      *
@@ -214,7 +214,7 @@ public class WonderPushUserPreferences {
                 try {
                     rtn = (WonderPushChannelGroup) rtn.clone();
                 } catch (CloneNotSupportedException ex) {
-                    Log.e(WonderPush.TAG, "Unexpected error while cloning gotten channel preference " + rtn, ex);
+                    Log.e(WonderPush.TAG, "Unexpected error while cloning gotten channel group " + rtn, ex);
                     return null;
                 }
             }
@@ -309,75 +309,75 @@ public class WonderPushUserPreferences {
     }
 
     /**
-     * Get a channel preference.
+     * Get a channel.
      * @param channelId The identifier of the channel to get.
      * @return The channel, if it has previously been created using this class,
      *      {@code null} otherwise, in particular if an Android {@link android.app.android.app.NotificationChannel}
      *      exists but has not been registered with this class.
      */
-    public static synchronized WonderPushChannelPreference getChannelPreference(String channelId) {
+    public static synchronized WonderPushChannel getChannel(String channelId) {
         try {
-            WonderPushChannelPreference rtn = sChannelPreferences.get(channelId);
+            WonderPushChannel rtn = sChannels.get(channelId);
             if (rtn != null) {
                 try {
-                    rtn = (WonderPushChannelPreference) rtn.clone();
+                    rtn = (WonderPushChannel) rtn.clone();
                 } catch (CloneNotSupportedException ex) {
-                    Log.e(WonderPush.TAG, "Unexpected error while cloning gotten channel preference " + rtn, ex);
+                    Log.e(WonderPush.TAG, "Unexpected error while cloning gotten channel " + rtn, ex);
                     return null;
                 }
             }
             return rtn;
         } catch (Exception ex) {
-            Log.e(WonderPush.TAG, "Unexpected error while getting channel preference " + channelId, ex);
+            Log.e(WonderPush.TAG, "Unexpected error while getting channel " + channelId, ex);
             return null;
         }
     }
 
     /**
-     * Remove a channel preference.
+     * Remove a channel.
      *
      * <p>Remove a channel both from this class registry and from Android.</p>
      *
      * @param channelId The identifier of the channel to remove.
      */
-    public static synchronized void removeChannelPreference(String channelId) {
+    public static synchronized void removeChannel(String channelId) {
         try {
-            if (_removeChannelPreference(channelId)) {
+            if (_removeChannel(channelId)) {
                 save();
             }
         } catch (Exception ex) {
-            Log.e(WonderPush.TAG, "Unexpected error while removing channel preference " + channelId, ex);
+            Log.e(WonderPush.TAG, "Unexpected error while removing channel " + channelId, ex);
         }
     }
 
-    private static synchronized boolean _removeChannelPreference(String channelId) {
-        WonderPushChannelPreference prev = sChannelPreferences.remove(channelId);
+    private static synchronized boolean _removeChannel(String channelId) {
+        WonderPushChannel prev = sChannels.remove(channelId);
         // TODO Android ≥ O remove channel
         return prev != null;
     }
 
     /**
-     * Create or update a channel preference.
+     * Create or update a channel.
      *
      * <p>Creates or updates a channel both in this class registry and in Android.</p>
      *
-     * @param channelPreference The channel to create or update.
+     * @param channel The channel to create or update.
      */
-    public static synchronized void putChannelPreference(WonderPushChannelPreference channelPreference) {
+    public static synchronized void putChannel(WonderPushChannel channel) {
         try {
-            if (_putChannelPreference(channelPreference)) {
+            if (_putChannel(channel)) {
                 save();
             }
         } catch (Exception ex) {
-            Log.e(WonderPush.TAG, "Unexpected error while putting channel preference " + channelPreference, ex);
+            Log.e(WonderPush.TAG, "Unexpected error while putting channel " + channel, ex);
         }
     }
 
-    private static synchronized boolean _putChannelPreference(WonderPushChannelPreference channelPreference) {
-        if (channelPreference == null) return false;
-        WonderPushChannelPreference prev = sChannelPreferences.put(channelPreference.getId(), channelPreference);
+    private static synchronized boolean _putChannel(WonderPushChannel channel) {
+        if (channel == null) return false;
+        WonderPushChannel prev = sChannels.put(channel.getId(), channel);
         // TODO Android ≥ O create channel
-        return prev == null || !prev.equals(channelPreference);
+        return prev == null || !prev.equals(channel);
     }
 
     /**
@@ -387,31 +387,31 @@ public class WonderPushUserPreferences {
      *
      * <p>Any non listed, previously existing channel will be removed.</p>
      *
-     * @param channelPreferences The channels to create or update.
-     *                           Any non listed, previously existing channel will be removed.
+     * @param channels The channels to create or update.
+     *                 Any non listed, previously existing channel will be removed.
      */
-    public static synchronized void setChannelPreferences(Collection<WonderPushChannelPreference> channelPreferences) {
-        if (channelPreferences == null) return;
+    public static synchronized void setChannels(Collection<WonderPushChannel> channels) {
+        if (channels == null) return;
         boolean save = false;
         try {
-            Set<String> channelIdsToRemove = new HashSet<>(sChannelPreferences.keySet());
-            for (WonderPushChannelPreference channelPreference : channelPreferences) {
-                if (channelPreference == null) continue;
-                channelIdsToRemove.remove(channelPreference.getId());
-                save = save || _putChannelPreference(channelPreference);
+            Set<String> channelIdsToRemove = new HashSet<>(sChannels.keySet());
+            for (WonderPushChannel channel : channels) {
+                if (channel == null) continue;
+                channelIdsToRemove.remove(channel.getId());
+                save = save || _putChannel(channel);
             }
             for (String groupId : channelIdsToRemove) {
                 save = save || _removeChannelGroup(groupId);
             }
         } catch (Exception ex) {
-            Log.e(WonderPush.TAG, "Unexpected error while setting channel preferences " + channelPreferences, ex);
+            Log.e(WonderPush.TAG, "Unexpected error while setting channels " + channels, ex);
         } finally {
             try {
                 if (save) {
                     save();
                 }
             } catch (Exception ex) {
-                Log.e(WonderPush.TAG, "Unexpected error while setting channel preferences " + channelPreferences, ex);
+                Log.e(WonderPush.TAG, "Unexpected error while setting channels " + channels, ex);
             }
         }
     }

@@ -33,7 +33,7 @@ public class WonderPushChannelGroup implements Cloneable {
      * @see android.app.NotificationChannelGroup#NotificationChannelGroup(java.lang.String, java.lang.CharSequence)
      */
     public WonderPushChannelGroup(@NonNull String id) {
-        if (id == null) throw new NullPointerException("WonderPushChannelPreference id cannot be null");
+        if (id == null) throw new NullPointerException("WonderPushChannel id cannot be null");
         this.id = id;
     }
 
