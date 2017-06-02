@@ -290,10 +290,10 @@ public class WonderPushUserPreferences {
             for (WonderPushChannelGroup channelGroup : channelGroups) {
                 if (channelGroup == null) continue;
                 groupIdsToRemove.remove(channelGroup.getId());
-                save = save || _putChannelGroup(channelGroup);
+                if (_putChannelGroup(channelGroup)) save = true;
             }
             for (String groupId : groupIdsToRemove) {
-                save = save || _removeChannelGroup(groupId);
+                if (_removeChannelGroup(groupId)) save = true;
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while setting channel groups " + channelGroups, ex);
@@ -398,10 +398,10 @@ public class WonderPushUserPreferences {
             for (WonderPushChannel channel : channels) {
                 if (channel == null) continue;
                 channelIdsToRemove.remove(channel.getId());
-                save = save || _putChannel(channel);
+                if (_putChannel(channel)) save = true;
             }
-            for (String groupId : channelIdsToRemove) {
-                save = save || _removeChannelGroup(groupId);
+            for (String channelId : channelIdsToRemove) {
+                if (_removeChannel(channelId)) save = true;
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while setting channels " + channels, ex);
