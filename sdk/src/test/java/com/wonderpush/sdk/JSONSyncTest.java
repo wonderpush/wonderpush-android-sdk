@@ -551,7 +551,7 @@ public class JSONSyncTest {
 
         sync.put(new JSONObject("{\"AA\":null,\"AAA\":null,\"B\":2,\"BB\":2,\"BBB\":2}"));
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"B\":2,\"BB\":2,\"BBB\":2}"), sync.getSdkState());
-        // Pending diff is: {"AA":2, "AAA":null, "B":2, "BB":2, "BBB":2}
+        // Pending diff is: {"AA":null, "AAA":null, "B":2, "BB":2, "BBB":2}
 
         Assert.assertFalse(sync.hasInflightPatchCall());
         Assert.assertTrue(sync.hasScheduledPatchCall());
