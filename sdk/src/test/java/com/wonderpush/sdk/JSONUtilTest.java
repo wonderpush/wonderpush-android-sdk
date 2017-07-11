@@ -134,6 +134,21 @@ public class JSONUtilTest {
     }
 
     @Test
+    public void testNoDiff() throws JSONException {
+
+        assertEquals(new JSONObject("{}"),
+                JSONUtil.diff(new JSONObject("{}"), new JSONObject("{}")));
+
+        assertEquals(new JSONObject("{}"),
+                JSONUtil.diff(new JSONObject("{\"a\":1}"), new JSONObject("{\"a\":1}")));
+
+        assertEquals(new JSONObject("{}"),
+                JSONUtil.diff(new JSONObject("{\"a\":[1]}"), new JSONObject("{\"a\":[1]}")));
+
+        assertEquals(new JSONObject("{}"),
+                JSONUtil.diff(new JSONObject("{\"a\":{\"b\":1}}"), new JSONObject("{\"a\":{\"b\":1}}")));
+    }
+    @Test
     public void testArrayDiff() throws JSONException {
 
         assertEquals(new JSONObject("{\"a\": [4,5,6]}"),
