@@ -122,4 +122,50 @@ public class JSONUtilTest {
         assertEquals(new JSONObject("{\"parent\":{\"a\":1,\"c\":3}}"), obj);
     }
 
+    @Test
+    public void testSimpleDiff() throws JSONException {
+
+        assertEquals(new JSONObject("{\"a\": null, \"b\":2}"),
+                JSONUtil.diff(new JSONObject("{\"a\":1}"), new JSONObject("{\"b\":2}")));
+
+        assertEquals(new JSONObject("{\"a\": 2}"),
+                JSONUtil.diff(new JSONObject("{\"a\":1}"), new JSONObject("{\"a\":2}")));
+
+    }
+
+    @Test
+    public void testArrayDiff() throws JSONException {
+
+        assertEquals(new JSONObject("{\"a\": [4,5,6]}"),
+                JSONUtil.diff(new JSONObject("{\"a\":[1,2,3]}"), new JSONObject("{\"a\":[4,5,6]}")));
+
+    }
+
+    @Test
+    public void testObjectDiff() throws JSONException {
+
+        assertEquals(new JSONObject("{\"a\": {\"aa\":2}}"),
+                JSONUtil.diff(new JSONObject("{\"a\": {\"aa\":1}}"), new JSONObject("{\"a\": {\"aa\":2}}")));
+
+        assertEquals(new JSONObject("{\"a\": {\"aa\":null, \"bb\":2}}"),
+                JSONUtil.diff(new JSONObject("{\"a\": {\"aa\":1}}"), new JSONObject("{\"a\": {\"bb\":2}}")));
+    }
+    @Test
+    public void testMixedDiff() throws JSONException {
+
+        assertEquals(new JSONObject("{\"a\": \"foo\"}"),
+                JSONUtil.diff(new JSONObject("{\"a\": {\"aa\":1}}"), new JSONObject("{\"a\": \"foo\"}")));
+
+    }
+
+    @Test
+    public void testNullDiff() throws JSONException {
+
+        assertEquals(new JSONObject("{\"a\": null}"),
+                JSONUtil.diff(new JSONObject("{\"a\": {\"aa\":1}}"), new JSONObject("{\"a\": null}")));
+
+        assertEquals(new JSONObject("{\"a\": null}"),
+                JSONUtil.diff(new JSONObject("{\"a\": {\"aa\":1}}"), new JSONObject("{}")));
+    }
+
 }
