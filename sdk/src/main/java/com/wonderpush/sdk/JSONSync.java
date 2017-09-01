@@ -39,9 +39,9 @@ class JSONSync {
         this(callbacks, null, null, null, null, null, false, false);
     }
 
-    private static JSONObject _initDiffServerAndSdkState(JSONObject sdkState, JSONObject serverState) {
-        if (sdkState == null) sdkState = new JSONObject();
+    private static JSONObject _initDiffServerAndSdkState(JSONObject serverState, JSONObject sdkState) {
         if (serverState == null) serverState = new JSONObject();
+        if (sdkState == null) sdkState = new JSONObject();
         JSONObject diff;
         try {
             diff = JSONUtil.diff(serverState, sdkState);
