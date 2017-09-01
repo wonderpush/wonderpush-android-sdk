@@ -5,8 +5,8 @@ project.group = 'com.wonderpush'
 project.archivesBaseName = 'wonderpush-android-sdk'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.1"
 
     lintOptions {
         abortOnError false
@@ -17,8 +17,8 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 9
-        targetSdkVersion 24
+        minSdkVersion 14
+        targetSdkVersion 26
         consumerProguardFiles 'proguard-exported.pro'
         manifestPlaceholders = [
                 wonderpushGradleApplicationId: '${applicationId}',
@@ -36,7 +36,7 @@ android {
 
 dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
-    compile 'com.google.android.gms:play-services-gcm:9.4.0'
+    compile 'com.google.android.gms:play-services-gcm:11.0.4'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.json:json:20160810'
