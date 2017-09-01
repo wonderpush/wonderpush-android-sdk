@@ -16,11 +16,11 @@ import org.json.JSONObject;
  * </p>
  *
  * <p>
- *     This class mimicks the {@link android.app.android.app.NotificationChannelGroup} class to permit
+ *     This class mimicks the {@link android.app.NotificationChannelGroup} class to permit
  *     exposing its benefits to devices prior to Android O.
  * </p>
  *
- * @see android.app.android.app.NotificationChannelGroup
+ * @see android.app.NotificationChannelGroup
  */
 public class WonderPushChannelGroup implements Cloneable {
 

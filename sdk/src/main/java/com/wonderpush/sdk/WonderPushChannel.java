@@ -19,7 +19,7 @@ import java.util.Arrays;
  * </p>
  *
  * <p>
- *     This class mimicks the {@link android.app.android.app.NotificationChannel} class to permit
+ *     This class mimicks the {@link android.app.NotificationChannel} class to permit
  *     exposing its benefits to devices prior to Android O.
  *     Contrary to the latter, this class permits to override only a few aspects of the notification.
  * </p>
@@ -31,7 +31,7 @@ import java.util.Arrays;
  *     Some feature like the color should remain configurable using this class under Android O.
  * </p>
  *
- * @see android.app.android.app.NotificationChannel
+ * @see android.app.NotificationChannel
  */
 public class WonderPushChannel implements Cloneable {
 

@@ -204,7 +204,7 @@ public class WonderPushUserPreferences {
      * Get a channel group.
      * @param groupId The identifier of the channel group to get.
      * @return The channel group, if it has previously been created using this class,
-     *      {@code null} otherwise, in particular if an Android {@link android.app.android.app.NotificationChannelGroup}
+     *      {@code null} otherwise, in particular if an Android {@link android.app.NotificationChannelGroup}
      *      exists but has not been registered with this class.
      */
     public static synchronized WonderPushChannelGroup getChannelGroup(String groupId) {
@@ -312,7 +312,7 @@ public class WonderPushUserPreferences {
      * Get a channel.
      * @param channelId The identifier of the channel to get.
      * @return The channel, if it has previously been created using this class,
-     *      {@code null} otherwise, in particular if an Android {@link android.app.android.app.NotificationChannel}
+     *      {@code null} otherwise, in particular if an Android {@link android.app.NotificationChannel}
      *      exists but has not been registered with this class.
      */
     public static synchronized WonderPushChannel getChannel(String channelId) {
