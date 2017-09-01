@@ -666,7 +666,6 @@ public class WonderPush {
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
         try {
             InstallationManager.putInstallationCustomProperties(customProperties);
-            onSDKInteraction();
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while putting installation custom properties", e);
         }
@@ -720,7 +719,6 @@ public class WonderPush {
             throw new IllegalArgumentException("Bad event type");
         }
         sendEvent(type, eventData, customData);
-        onSDKInteraction();
     }
 
     protected static void trackInternalEvent(String type, JSONObject eventData) {
@@ -773,15 +771,6 @@ public class WonderPush {
         RequestParams parameters = new RequestParams();
         parameters.put("body", event.toString());
         postEventually(eventEndpoint, parameters);
-    }
-
-    protected static void onSDKInteraction() {
-        if (ActivityLifecycleMonitor.isSupported()) {
-            // Leave the activity lifecycle monitor do his job
-            // This prevents spurious @APP_OPENs, for instance when the Application class calls trackEvent() or putInstallationCustomProperties()
-            return;
-        }
-        onInteraction(false);
     }
 
     protected static void onInteraction(boolean leaving) {

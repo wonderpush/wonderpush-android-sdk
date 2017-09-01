@@ -126,7 +126,7 @@ class WonderPushView extends FrameLayout {
         FrameLayout.LayoutParams closeButtonLayoutParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | WonderPushCompatibilityHelper.getGravityEnd());
+                Gravity.TOP | Gravity.END);
         closeButtonLayoutParams.setMargins(0, closeButtonMargin, closeButtonMargin, 0);
         mCloseButton.setLayoutParams(closeButtonLayoutParams);
         mCloseButton.setImageDrawable(closeButtonDrawable);

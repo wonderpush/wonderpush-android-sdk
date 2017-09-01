@@ -32,22 +32,6 @@ class WonderPushCompatibilityHelper {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    @SuppressLint("RtlHardcoded")
-    public static int getGravityEnd() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            return Gravity.END;
-        }
-        return Gravity.RIGHT;
-    }
-
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    public static void ApplicationRegisterActivityLifecycleCallbacks(Application application, ActivityLifecycleCallbacks callbacks) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            application.registerActivityLifecycleCallbacks(callbacks);
-        }
-    }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @SuppressWarnings("deprecation")
     public static int getIntentFlagActivityNewDocument() {

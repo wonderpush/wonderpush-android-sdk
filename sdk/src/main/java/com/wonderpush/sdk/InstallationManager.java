@@ -286,12 +286,8 @@ class InstallationManager {
         return false;
     }
 
-    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     protected static boolean getNFCSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC);
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
@@ -318,12 +314,8 @@ class InstallationManager {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI);
     }
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     protected static boolean getWifiDirectSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT);
     }
 
     protected static boolean getGPSSupported(Context context) {
@@ -338,12 +330,8 @@ class InstallationManager {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
 
-    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     protected static boolean getFrontCameraSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
     }
 
     protected static boolean getMicrophoneSupported(Context context) {
@@ -354,24 +342,16 @@ class InstallationManager {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER);
     }
 
-    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     protected static boolean getSensorBarometerSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_BAROMETER);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_BAROMETER);
     }
 
     protected static boolean getSensorCompassSupported(Context context) {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_COMPASS);
     }
 
-    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     protected static boolean getSensorGyroscopeSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
     }
 
     protected static boolean getSensorLightSupported(Context context) {
@@ -398,20 +378,12 @@ class InstallationManager {
         return false;
     }
 
-    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     protected static boolean getSIPSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP);
     }
 
-    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     protected static boolean getSIPVOIPSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP_VOIP);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP_VOIP);
     }
 
     protected static boolean getTouchscreenSupported(Context context) {
@@ -426,28 +398,16 @@ class InstallationManager {
         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_DISTINCT);
     }
 
-    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     protected static boolean getTouchscreenFullHandSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_JAZZHAND);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_JAZZHAND);
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
     protected static boolean getUSBAccessorySupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_ACCESSORY);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_ACCESSORY);
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
     protected static boolean getUSBHostSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
-        }
-        return false;
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
     }
 
 }

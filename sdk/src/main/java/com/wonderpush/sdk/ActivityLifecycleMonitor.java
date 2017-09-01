@@ -16,29 +16,13 @@ import java.util.WeakHashMap;
  */
 class ActivityLifecycleMonitor {
 
-    private static final Monitor sSingleton;
+    private static final Monitor sSingleton = new Monitor();
     private static boolean sActivityLifecycleCallbacksRegistered;
     private static final WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<>();
 
-    static {
-        Monitor monitor = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            try {
-                monitor = new Monitor();
-            } catch (Throwable ex) { // java.lang.NoClassDefFoundError: com.wonderpush.sdk.ActivityLifecycleMonitor$Monitor
-                Log.d(WonderPush.TAG, "Cannot instantiate the ActivityLifecycleMonitor, pre Android 14 version?", ex);
-            }
-        }
-        sSingleton = monitor;
-    }
-
-    static boolean isSupported() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH;
-    }
-
     protected static void monitorActivitiesLifecycle() {
-        if (isSupported() && !sActivityLifecycleCallbacksRegistered && WonderPush.sApplication != null) {
-            WonderPushCompatibilityHelper.ApplicationRegisterActivityLifecycleCallbacks(WonderPush.sApplication, sSingleton);
+        if (!sActivityLifecycleCallbacksRegistered && WonderPush.sApplication != null) {
+            WonderPush.sApplication.registerActivityLifecycleCallbacks(sSingleton);
             sActivityLifecycleCallbacksRegistered = true;
         }
     }
@@ -50,7 +34,6 @@ class ActivityLifecycleMonitor {
     protected static Activity getCurrentActivity() {
         Activity candidate = null;
         if (sActivityLifecycleCallbacksRegistered
-                && sSingleton != null
                 && sSingleton.hasResumedActivities()) {
             candidate = sSingleton.getLastResumedActivity();
         }
@@ -67,14 +50,12 @@ class ActivityLifecycleMonitor {
 
     protected static Activity getLastStoppedActivity() {
         Activity candidate = null;
-        if (sActivityLifecycleCallbacksRegistered
-                && sSingleton != null) {
+        if (sActivityLifecycleCallbacksRegistered) {
             candidate = sSingleton.getLastStoppedActivity();
         }
         return candidate;
     }
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     static class Monitor implements Application.ActivityLifecycleCallbacks {
 
         private int createCount;
