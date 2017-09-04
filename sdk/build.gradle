@@ -36,6 +36,10 @@ android {
 dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
     compile 'com.google.android.gms:play-services-gcm:11.0.4'
+    // Use the full support-v4 instead of the module support-compat
+    // because com.google.android.gms:play-services-gcm (indirectly) depends on it
+    // and all modules must use the same version.
+    compile 'com.android.support:support-v4:26.0.2'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.json:json:20160810'

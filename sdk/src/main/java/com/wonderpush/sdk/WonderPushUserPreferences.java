@@ -1,6 +1,11 @@
 package com.wonderpush.sdk;
 
+import android.app.*;
+import android.app.NotificationManager;
 import android.content.Context;
+import android.media.AudioAttributes;
+import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -74,7 +79,7 @@ public class WonderPushUserPreferences {
                     JSONObject value = inGroups.optJSONObject(key);
                     try {
                         WonderPushChannelGroup grp = WonderPushChannelGroup.fromJSON(inGroups.optJSONObject(key));
-                        sChannelGroups.put(grp.getId(), grp);
+                        _putChannelGroup(grp);
                     } catch (JSONException ex) {
                         Log.e(WonderPush.TAG, "Failed to deserialize WonderPushChannelGroup from JSON: " + value, ex);
                     }
@@ -92,7 +97,7 @@ public class WonderPushUserPreferences {
                     JSONObject value = inChannels.optJSONObject(key);
                     try {
                         WonderPushChannel pref = WonderPushChannel.fromJSON(inChannels.optJSONObject(key));
-                        sChannels.put(pref.getId(), pref);
+                        _putChannel(pref);
                     } catch (JSONException ex) {
                         Log.e(WonderPush.TAG, "Failed to deserialize WonderPushChannel from JSON: " + value, ex);
                     }
@@ -194,7 +199,15 @@ public class WonderPushUserPreferences {
 
     static synchronized void ensureDefaultAndroidNotificationChannelExists() {
         try {
-            // TODO if (Android ≥ O) ensure notification channel existence
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                NotificationChannel existingChannel = notificationManager.getNotificationChannel(getDefaultChannelId());
+                if (existingChannel != null) return;
+                // Create an empty default channel
+                // Note that there is no need to getChannel(getDefaultChannelId()) as if it returns non-null, then the channel was also registered in the system
+                WonderPushChannel defaultChannel = new WonderPushChannel(getDefaultChannelId(), null);
+                putChannel(defaultChannel);
+            }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while ensuring default channel exists", ex);
         }
@@ -244,7 +257,10 @@ public class WonderPushUserPreferences {
 
     private static synchronized boolean _removeChannelGroup(String groupId) {
         WonderPushChannelGroup prev = sChannelGroups.remove(groupId);
-        // TODO Android ≥ O remove channel group
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.deleteNotificationChannelGroup(groupId);
+        }
         return prev != null;
     }
 
@@ -268,7 +284,10 @@ public class WonderPushUserPreferences {
     private static synchronized boolean _putChannelGroup(WonderPushChannelGroup channelGroup) {
         if (channelGroup == null) return false;
         WonderPushChannelGroup prev = sChannelGroups.put(channelGroup.getId(), channelGroup);
-        // TODO Android ≥ O create channel group
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannelGroup(new NotificationChannelGroup(channelGroup.getId(), channelGroup.getName()));
+        }
         return prev == null || !prev.equals(channelGroup);
     }
 
@@ -352,7 +371,10 @@ public class WonderPushUserPreferences {
 
     private static synchronized boolean _removeChannel(String channelId) {
         WonderPushChannel prev = sChannels.remove(channelId);
-        // TODO Android ≥ O remove channel
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.deleteNotificationChannel(channelId);
+        }
         return prev != null;
     }
 
@@ -376,7 +398,48 @@ public class WonderPushUserPreferences {
     private static synchronized boolean _putChannel(WonderPushChannel channel) {
         if (channel == null) return false;
         WonderPushChannel prev = sChannels.put(channel.getId(), channel);
-        // TODO Android ≥ O create channel
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationChannel oChannel = new NotificationChannel(channel.getId(), channel.getName(), NotificationManager.IMPORTANCE_DEFAULT);
+            oChannel.setGroup(channel.getGroupId());
+            oChannel.setDescription(channel.getDescription());
+            if (channel.getBypassDnd() != null) {
+                oChannel.setBypassDnd(channel.getBypassDnd());
+            }
+            if (channel.getShowBadge() != null) {
+                oChannel.setShowBadge(channel.getShowBadge());
+            }
+            if (channel.getImportance() != null) {
+                oChannel.setImportance(channel.getImportance());
+            }
+            if (channel.getLights() != null) {
+                oChannel.enableLights(channel.getLights());
+            }
+            if (channel.getLightColor() != null) {
+                oChannel.setLightColor(channel.getLightColor());
+            }
+            if (channel.getVibrate() != null) {
+                oChannel.enableVibration(channel.getVibrate());
+            }
+            if (channel.getVibrationPattern() != null) {
+                oChannel.setVibrationPattern(channel.getVibrationPattern());
+            }
+            if (channel.getSound() != null) {
+                AudioAttributes aa = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+                if (channel.getSoundUri() != null) {
+                    oChannel.setSound(channel.getSoundUri(), aa);
+                } else {
+                    oChannel.setSound(Settings.System.DEFAULT_NOTIFICATION_URI, aa);
+                }
+            }
+            if (channel.getLockscreenVisibility() != null) {
+                oChannel.setLockscreenVisibility(channel.getLockscreenVisibility());
+            }
+            notificationManager.createNotificationChannel(oChannel);
+        }
         return prev == null || !prev.equals(channel);
     }
 

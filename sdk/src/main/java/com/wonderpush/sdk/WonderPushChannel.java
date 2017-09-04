@@ -41,10 +41,9 @@ public class WonderPushChannel implements Cloneable {
     private String name;
     private String description;
 
-    // TODO Expose once implemented
     // Android O Channels only
-    //private Boolean bypassDnd;
-    //private Boolean badge;
+    private Boolean bypassDnd;
+    private Boolean showBadge;
 
     // One-time in Android O Channels
     private Integer importance;
@@ -90,8 +89,8 @@ public class WonderPushChannel implements Cloneable {
         rtn.put("groupId", JSONUtil.wrap(groupId));
         rtn.put("name", JSONUtil.wrap(name));
         rtn.put("description", JSONUtil.wrap(description));
-        //rtn.put("bypassDnd", JSONUtil.wrap(bypassDnd));
-        //rtn.put("badge", JSONUtil.wrap(badge));
+        rtn.put("bypassDnd", JSONUtil.wrap(bypassDnd));
+        rtn.put("showBadge", JSONUtil.wrap(showBadge));
         rtn.put("importance", JSONUtil.wrap(importance));
         rtn.put("lights", JSONUtil.wrap(lights));
         rtn.put("vibrate", JSONUtil.wrap(vibrate));
@@ -111,8 +110,8 @@ public class WonderPushChannel implements Cloneable {
         return new WonderPushChannel(input.getString("id"), input.optString("groupId", null))
                 .setName(input.optString("name", null))
                 .setDescription(input.optString("description", null))
-                //.setBypassDnd(JSONUtil.optBoolean(input, "bypassDnd"))
-                //.setBadge(JSONUtil.optBoolean(input, "badge"))
+                .setBypassDnd(JSONUtil.optBoolean(input, "bypassDnd"))
+                .setShowBadge(JSONUtil.optBoolean(input, "showBadge"))
                 .setImportance(JSONUtil.optInteger(input, "importance"))
                 .setLights(JSONUtil.optBoolean(input, "lights"))
                 .setVibrate(JSONUtil.optBoolean(input, "vibrate"))
@@ -139,9 +138,9 @@ public class WonderPushChannel implements Cloneable {
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (description != null ? !description.equals(that.description) : that.description != null)
             return false;
-        //if (bypassDnd != null ? !bypassDnd.equals(that.bypassDnd) : that.bypassDnd != null)
-        //    return false;
-        //if (badge != null ? !badge.equals(that.badge) : that.badge != null) return false;
+        if (bypassDnd != null ? !bypassDnd.equals(that.bypassDnd) : that.bypassDnd != null)
+            return false;
+        if (showBadge != null ? !showBadge.equals(that.showBadge) : that.showBadge != null) return false;
         if (importance != null ? !importance.equals(that.importance) : that.importance != null)
             return false;
         if (lights != null ? !lights.equals(that.lights) : that.lights != null) return false;
@@ -166,8 +165,8 @@ public class WonderPushChannel implements Cloneable {
         result = 31 * result + (groupId != null ? groupId.hashCode() : 0);
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (description != null ? description.hashCode() : 0);
-        //result = 31 * result + (bypassDnd != null ? bypassDnd.hashCode() : 0);
-        //result = 31 * result + (badge != null ? badge.hashCode() : 0);
+        result = 31 * result + (bypassDnd != null ? bypassDnd.hashCode() : 0);
+        result = 31 * result + (showBadge != null ? showBadge.hashCode() : 0);
         result = 31 * result + (importance != null ? importance.hashCode() : 0);
         result = 31 * result + (lights != null ? lights.hashCode() : 0);
         result = 31 * result + (vibrate != null ? vibrate.hashCode() : 0);
@@ -259,23 +258,44 @@ public class WonderPushChannel implements Cloneable {
         return this;
     }
 
-    //public Boolean getBypassDnd() {
-    //    return bypassDnd;
-    //}
+    /**
+     * Whether or not notifications posted to this channel can bypass the Do Not Disturb {@link android.app.NotificationManager#INTERRUPTION_FILTER_PRIORITY} mode.
+     * @return whether or not notifications posted to this channel can bypass the Do Not Disturb {@link android.app.NotificationManager#INTERRUPTION_FILTER_PRIORITY} mode.
+     */
+    public Boolean getBypassDnd() {
+        return bypassDnd;
+    }
 
-    //public WonderPushChannel setBypassDnd(Boolean bypassDnd) {
-    //    this.bypassDnd = bypassDnd;
-    //    return this;
-    //}
+    /**
+     * Sets whether or not notifications posted to this channel can interrupt the user in {@link android.app.NotificationManager#INTERRUPTION_FILTER_PRIORITY} mode.
+     *
+     * Only modifiable by the system and notification ranker.
+     *
+     * @param bypassDnd whether or not notifications posted to this channel can interrupt the user in {@link android.app.NotificationManager#INTERRUPTION_FILTER_PRIORITY} mode.
+     * @return The channel object for chaining setters.
+     */
+    public WonderPushChannel setBypassDnd(Boolean bypassDnd) {
+        this.bypassDnd = bypassDnd;
+        return this;
+    }
 
-    //public Boolean getBadge() {
-    //    return badge;
-    //}
+    /**
+     * Returns whether notifications posted to this channel can appear as badges in a Launcher application. Note that badging may be disabled for other reasons.
+     * @return whether notifications posted to this channel can appear as badges in a Launcher application. Note that badging may be disabled for other reasons.
+     */
+    public Boolean getShowBadge() {
+        return showBadge;
+    }
 
-    //public WonderPushChannel setBadge(Boolean badge) {
-    //    this.badge = badge;
-    //    return this;
-    //}
+    /**
+     * Sets whether notifications posted to this channel can appear as application icon badges in a Launcher.
+     * @param showBadge true if badges should be allowed to be shown.
+     * @return The channel object for chaining setters.
+     */
+    public WonderPushChannel setShowBadge(Boolean showBadge) {
+        this.showBadge = showBadge;
+        return this;
+    }
 
     /**
      * Returns the user specified importance for notifications posted to this channel.

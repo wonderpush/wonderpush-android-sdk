@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -299,8 +300,9 @@ class NotificationManager {
         if (channel == null) {
             // If the desired channel does not exist, use an empty one to not override anything
             // The channel may be an existing Android O notification channel
-            channel = new WonderPushChannel("", null);
-            // TODO if (Android ≥ O) { WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists(); use default channel; }
+            channel = new WonderPushChannel(alertChannel, null);
+            // It's time to ensure the default channel really exists
+            WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists();
         }
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
         boolean lights = true;
@@ -315,8 +317,7 @@ class NotificationManager {
             vibrates = false;
         }
 
-        // TODO Set Android O notification channel
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, alertChannel)
                 .setContentIntent(pendingIntentBuilder.buildForDefault())
                 .setAutoCancel(true)
                 .setContentTitle(alert.getTitle())
