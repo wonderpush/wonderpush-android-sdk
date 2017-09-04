@@ -107,9 +107,9 @@ public class WonderPushChannel implements Cloneable {
 
     static WonderPushChannel fromJSON(JSONObject input) throws JSONException {
         if (input == null) return null;
-        return new WonderPushChannel(input.getString("id"), input.optString("groupId", null))
-                .setName(input.optString("name", null))
-                .setDescription(input.optString("description", null))
+        return new WonderPushChannel(input.getString("id"), JSONUtil.optString(input, "groupId"))
+                .setName(JSONUtil.optString(input, "name"))
+                .setDescription(JSONUtil.optString(input, "description"))
                 .setBypassDnd(JSONUtil.optBoolean(input, "bypassDnd"))
                 .setShowBadge(JSONUtil.optBoolean(input, "showBadge"))
                 .setImportance(JSONUtil.optInteger(input, "importance"))

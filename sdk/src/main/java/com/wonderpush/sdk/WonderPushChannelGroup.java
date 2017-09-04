@@ -52,7 +52,7 @@ public class WonderPushChannelGroup implements Cloneable {
     static WonderPushChannelGroup fromJSON(JSONObject input) throws JSONException {
         if (input == null) return null;
         return new WonderPushChannelGroup(input.getString("id"))
-                .setName(input.optString("name", null));
+                .setName(JSONUtil.optString(input, "name"));
     }
 
     @Override

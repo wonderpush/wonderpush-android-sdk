@@ -118,15 +118,15 @@ class WonderPushConfiguration {
         if (usersArchive == null) usersArchive = new JSONObject();
         JSONObject newUserArchive = usersArchive.optJSONObject(newUserId == null ? "" : newUserId);
         if (newUserArchive == null) newUserArchive = new JSONObject();
-        setAccessToken(newUserArchive.optString(ACCESS_TOKEN_PREF_NAME, null));
-        setSID(newUserArchive.optString(SID_PREF_NAME, null));
-        setInstallationId(newUserArchive.optString(INSTALLATION_ID_PREF_NAME, null));
+        setAccessToken(JSONUtil.optString(newUserArchive, ACCESS_TOKEN_PREF_NAME));
+        setSID(JSONUtil.optString(newUserArchive, SID_PREF_NAME));
+        setInstallationId(JSONUtil.optString(newUserArchive, INSTALLATION_ID_PREF_NAME));
         setUserId(newUserId);
         setNotificationEnabled(newUserArchive.optBoolean(NOTIFICATION_ENABLED_PREF_NAME, true));
         setChannelPreferences(newUserArchive.optJSONObject(CHANNEL_PREFERENCES_PREF_NAME));
-        setCachedInstallationCoreProperties(newUserArchive.optString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, null));
+        setCachedInstallationCoreProperties(JSONUtil.optString(newUserArchive, CACHED_INSTALLATION_CORE_PROPERTIES_NAME));
         setCachedInstallationCorePropertiesDate(newUserArchive.optLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME));
-        setCachedInstallationCorePropertiesAccessToken(newUserArchive.optString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, null));
+        setCachedInstallationCorePropertiesAccessToken(JSONUtil.optString(newUserArchive, CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME));
         setCachedInstallationCustomPropertiesWritten(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME));
         setCachedInstallationCustomPropertiesWrittenDate(newUserArchive.optLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME));
         setCachedInstallationCustomPropertiesUpdated(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME));
@@ -316,7 +316,7 @@ class WonderPushConfiguration {
             if (usersArchive == null) usersArchive = new JSONObject();
             JSONObject userArchive = usersArchive.optJSONObject(userId == null ? "" : userId);
             if (userArchive == null) userArchive = new JSONObject();
-            return userArchive.optString(ACCESS_TOKEN_PREF_NAME, null);
+            return JSONUtil.optString(userArchive, ACCESS_TOKEN_PREF_NAME);
         }
     }
 

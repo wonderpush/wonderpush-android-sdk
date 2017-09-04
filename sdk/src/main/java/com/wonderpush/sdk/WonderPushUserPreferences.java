@@ -67,12 +67,13 @@ public class WonderPushUserPreferences {
         JSONObject inChannelPreferences = WonderPushConfiguration.getChannelPreferences();
         if (inChannelPreferences == null) inChannelPreferences = new JSONObject();
 
-        sDefaultChannelId = inChannelPreferences.optString(SERIALIZATION_FIELD_DEFAULT_CHANNEL_ID, DEFAULT_CHANNEL_NAME);
+        sDefaultChannelId = JSONUtil.optString(inChannelPreferences, SERIALIZATION_FIELD_DEFAULT_CHANNEL_ID);
+        if (sDefaultChannelId == null) sDefaultChannelId = DEFAULT_CHANNEL_NAME;
 
         {
             JSONObject inGroups = inChannelPreferences.optJSONObject(SERIALIZATION_FIELD_CHANNEL_GROUPS);
             sChannelGroups = new HashMap<>();
-            if (inGroups != null) {
+            if (inGroups != null && inGroups != JSONObject.NULL) {
                 Iterator<String> it = inGroups.keys();
                 while (it.hasNext()) {
                     String key = it.next();
@@ -90,7 +91,7 @@ public class WonderPushUserPreferences {
         {
             JSONObject inChannels = inChannelPreferences.optJSONObject(SERIALIZATION_FIELD_CHANNELS);
             sChannels = new HashMap<>();
-            if (inChannels != null) {
+            if (inChannels != null && inChannels != JSONObject.NULL) {
                 Iterator<String> it = inChannels.keys();
                 while (it.hasNext()) {
                     String key = it.next();
@@ -285,8 +286,14 @@ public class WonderPushUserPreferences {
         if (channelGroup == null) return false;
         WonderPushChannelGroup prev = sChannelGroups.put(channelGroup.getId(), channelGroup);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.createNotificationChannelGroup(new NotificationChannelGroup(channelGroup.getId(), channelGroup.getName()));
+            NotificationChannelGroup oChannelGroup = null;
+            try {
+                android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                oChannelGroup = new NotificationChannelGroup(channelGroup.getId(), channelGroup.getName());
+                notificationManager.createNotificationChannelGroup(oChannelGroup);
+            } catch (Exception ex) {
+                WonderPush.logError("Failed to create notification channel group " + oChannelGroup, ex);
+            }
         }
         return prev == null || !prev.equals(channelGroup);
     }
@@ -399,46 +406,51 @@ public class WonderPushUserPreferences {
         if (channel == null) return false;
         WonderPushChannel prev = sChannels.put(channel.getId(), channel);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationChannel oChannel = new NotificationChannel(channel.getId(), channel.getName(), NotificationManager.IMPORTANCE_DEFAULT);
-            oChannel.setGroup(channel.getGroupId());
-            oChannel.setDescription(channel.getDescription());
-            if (channel.getBypassDnd() != null) {
-                oChannel.setBypassDnd(channel.getBypassDnd());
-            }
-            if (channel.getShowBadge() != null) {
-                oChannel.setShowBadge(channel.getShowBadge());
-            }
-            if (channel.getImportance() != null) {
-                oChannel.setImportance(channel.getImportance());
-            }
-            if (channel.getLights() != null) {
-                oChannel.enableLights(channel.getLights());
-            }
-            if (channel.getLightColor() != null) {
-                oChannel.setLightColor(channel.getLightColor());
-            }
-            if (channel.getVibrate() != null) {
-                oChannel.enableVibration(channel.getVibrate());
-            }
-            if (channel.getVibrationPattern() != null) {
-                oChannel.setVibrationPattern(channel.getVibrationPattern());
-            }
-            if (channel.getSound() != null) {
-                AudioAttributes aa = new AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build();
-                if (channel.getSoundUri() != null) {
-                    oChannel.setSound(channel.getSoundUri(), aa);
-                } else {
-                    oChannel.setSound(Settings.System.DEFAULT_NOTIFICATION_URI, aa);
+            NotificationChannel oChannel = null;
+            try {
+                android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                oChannel = new NotificationChannel(channel.getId(), channel.getName(), NotificationManager.IMPORTANCE_DEFAULT);
+                oChannel.setGroup(channel.getGroupId());
+                oChannel.setDescription(channel.getDescription());
+                if (channel.getBypassDnd() != null) {
+                    oChannel.setBypassDnd(channel.getBypassDnd());
                 }
+                if (channel.getShowBadge() != null) {
+                    oChannel.setShowBadge(channel.getShowBadge());
+                }
+                if (channel.getImportance() != null) {
+                    oChannel.setImportance(channel.getImportance());
+                }
+                if (channel.getLights() != null) {
+                    oChannel.enableLights(channel.getLights());
+                }
+                if (channel.getLightColor() != null) {
+                    oChannel.setLightColor(channel.getLightColor());
+                }
+                if (channel.getVibrate() != null) {
+                    oChannel.enableVibration(channel.getVibrate());
+                }
+                if (channel.getVibrationPattern() != null) {
+                    oChannel.setVibrationPattern(channel.getVibrationPattern());
+                }
+                if (channel.getSound() != null) {
+                    AudioAttributes aa = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build();
+                    if (channel.getSoundUri() != null) {
+                        oChannel.setSound(channel.getSoundUri(), aa);
+                    } else {
+                        oChannel.setSound(Settings.System.DEFAULT_NOTIFICATION_URI, aa);
+                    }
+                }
+                if (channel.getLockscreenVisibility() != null) {
+                    oChannel.setLockscreenVisibility(channel.getLockscreenVisibility());
+                }
+                notificationManager.createNotificationChannel(oChannel);
+            } catch (Exception ex) {
+                WonderPush.logError("Failed to create notification channel " + oChannel, ex);
             }
-            if (channel.getLockscreenVisibility() != null) {
-                oChannel.setLockscreenVisibility(channel.getLockscreenVisibility());
-            }
-            notificationManager.createNotificationChannel(oChannel);
         }
         return prev == null || !prev.equals(channel);
     }

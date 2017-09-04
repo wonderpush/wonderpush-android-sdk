@@ -226,6 +226,16 @@ class JSONUtil {
         return base;
     }
 
+    static String optString(JSONObject object, String field) {
+        if (object == null) return null;
+        if (!object.has(field) || object.isNull(field)) return null;
+        Object value = object.opt(field);
+        if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
+    }
+
     static Boolean optBoolean(JSONObject object, String field) {
         if (object == null) return null;
         if (!object.has(field) || object.isNull(field)) return null;
