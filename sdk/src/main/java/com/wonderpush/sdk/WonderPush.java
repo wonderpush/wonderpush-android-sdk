@@ -1016,6 +1016,7 @@ public class WonderPush {
     }
 
     protected static void initializeForApplication(Context context) {
+        context = context.getApplicationContext();
         if (sApplication != null || !(context instanceof Application)) {
             return;
         }
