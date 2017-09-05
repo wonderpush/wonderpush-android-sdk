@@ -54,8 +54,7 @@ class WonderPushGcmClient {
     protected static void registerForPushNotification(Context context) {
         if (checkPlayService(context)) {
             // Get off the main UI thread for using GCM
-            Intent intent = new Intent(context, WonderPushRegistrationIntentService.class);
-            context.startService(intent);
+            WonderPushRegistrationJobIntentService.enqueueWork(context, new Intent());
         } else {
             Log.w(TAG, "Google Play Services not present. Check your setup. If on an emulator, use a Google APIs system image.");
         }

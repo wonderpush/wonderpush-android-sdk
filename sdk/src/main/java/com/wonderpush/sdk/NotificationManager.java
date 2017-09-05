@@ -10,7 +10,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -977,7 +976,7 @@ class NotificationManager {
         // Refresh push token
         String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
         WonderPushConfiguration.setGCMRegistrationId(null);
-        WonderPushRegistrationIntentService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
+        WonderPushRegistrationJobIntentService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
 
         // Refresh preferences
         boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();

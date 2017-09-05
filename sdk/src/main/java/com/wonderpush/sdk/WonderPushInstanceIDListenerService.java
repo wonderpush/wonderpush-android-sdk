@@ -18,8 +18,7 @@ public class WonderPushInstanceIDListenerService extends InstanceIDListenerServi
     public void onTokenRefresh() {
         try {
             // Fetch updated Instance ID token and notify our app's server of any changes.
-            Intent intent = new Intent(this, WonderPushRegistrationIntentService.class);
-            startService(intent);
+            WonderPushRegistrationJobIntentService.enqueueWork(this, new Intent());
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while handling InstanceID token refresh", e);
         }
