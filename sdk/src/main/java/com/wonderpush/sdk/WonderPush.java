@@ -566,8 +566,8 @@ public class WonderPush {
                     continue;
                 }
 
-                // Skip locations older than 5 minutes
-                if (location.getTime() < System.currentTimeMillis() - 5 * 60 * 1000) {
+                // Skip locations old enough to belong to an older session
+                if (location.getTime() < System.currentTimeMillis() - WonderPush.DIFFERENT_SESSION_REGULAR_MIN_TIME_GAP) {
                     continue;
                 }
 
