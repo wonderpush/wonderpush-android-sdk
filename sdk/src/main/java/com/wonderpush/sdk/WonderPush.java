@@ -110,6 +110,12 @@ public class WonderPush {
     private static final long DIFFERENT_SESSION_NOTIFICATION_MIN_TIME_GAP = 15 * 60 * 1000;
 
     /**
+     * How long to hold a wakelock at maximum when receiving a push notifications.
+     * This wake lock is only used to fetch necessary resources before displaying the notification.
+     */
+    static final long NOTIFICATION_RECEIVED_WAKELOCK_TIMEOUT = 30 * 1000;
+
+    /**
      * The metadata key name corresponding to the name of the WonderPushInitializer implementation.
      */
     private static final String METADATA_INITIALIZER_CLASS = "wonderpushInitializerClass";

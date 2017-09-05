@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.os.PowerManager;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -23,24 +24,44 @@ class WonderPushGcmClient {
     protected static boolean onBroadcastReceived(Context context, Intent intent, int iconResource, Class<? extends Activity> activity) {
         WonderPush.ensureInitialized(context);
 
-        NotificationModel notif;
+        String wakeLockTag = "WonderPushGcmClient";
+        PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, wakeLockTag);
         try {
-            notif = NotificationModel.fromGCMBroadcastIntent(intent);
-        } catch (NotTargetedForThisInstallationException ex) {
-            WonderPush.logDebug(ex.getMessage());
-            return true;
-        }
-        if (notif == null) {
-            return false;
-        }
+            try {
+                wakeLock.acquire(WonderPush.NOTIFICATION_RECEIVED_WAKELOCK_TIMEOUT);
+            } catch (Exception ex) {
+                Log.e(TAG, "Unexpected exception while trying to acquire wakelock " + wakeLockTag + " " + wakeLock + ". Continuing anyway");
+            }
 
-        try {
-            NotificationManager.onReceivedNotification(context, intent, iconResource, activity, notif);
-            return true;
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while receiving a notification with intent " + intent, e);
+            NotificationModel notif;
+            try {
+                notif = NotificationModel.fromGCMBroadcastIntent(intent);
+            } catch (NotTargetedForThisInstallationException ex) {
+                WonderPush.logDebug(ex.getMessage());
+                return true;
+            }
+            if (notif == null) {
+                return false;
+            }
+
+            try {
+                NotificationManager.onReceivedNotification(context, intent, iconResource, activity, notif);
+                return true;
+            } catch (Exception e) {
+                Log.e(TAG, "Unexpected error while receiving a notification with intent " + intent, e);
+            }
+            return false;
+
+        } finally {
+            try {
+                if (wakeLock.isHeld()) {
+                    wakeLock.release();
+                }
+            } catch (Exception ex) {
+                Log.e(TAG, "Unexpected exception while releasing wakelock " + wakeLockTag + " " + wakeLock);
+            }
         }
-        return false;
     }
 
     /**
