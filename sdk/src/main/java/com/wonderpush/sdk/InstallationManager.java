@@ -242,11 +242,14 @@ class InstallationManager {
      */
     protected static String getDeviceName() {
         try {
-            BluetoothAdapter btDevice = BluetoothAdapter.getDefaultAdapter();
-            return btDevice.getName();
+            if (WonderPush.getApplicationContext().getPackageManager().checkPermission(android.Manifest.permission.BLUETOOTH, WonderPush.getApplicationContext().getPackageName()) == PackageManager.PERMISSION_GRANTED) {
+                BluetoothAdapter btDevice = BluetoothAdapter.getDefaultAdapter();
+                return btDevice.getName();
+            }
         } catch (Exception ex) {
-            return null;
+            // Ignore
         }
+        return null;
     }
 
     protected static int getScreenDensity(Context context) {
