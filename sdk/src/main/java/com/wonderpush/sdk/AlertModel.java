@@ -168,7 +168,7 @@ class AlertModel implements Cloneable {
     private CharSequence ticker;
     private String tag;
     private boolean tagPresent;
-    private int priority;
+    private Integer priority;
     private Boolean autoOpen;
     private Boolean autoDrop;
     private List<String> persons;
@@ -240,14 +240,6 @@ class AlertModel implements Cloneable {
         setHtml(wpAlert.optBoolean("html", false)); // must be done before fromJSONCommon()
         fromJSONCommon(wpAlert);
 
-        if (wpAlert.isNull("priority")) {
-            setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        } else if (wpAlert.opt("priority") instanceof String) {
-            setPriority(wpAlert.optString("priority"));
-        } else {
-            setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_DEFAULT));
-        }
-
         JSONObject wpAlertForeground = wpAlert.optJSONObject("foreground");
         if (wpAlertForeground == null) {
             wpAlertForeground = new JSONObject();
@@ -260,12 +252,8 @@ class AlertModel implements Cloneable {
     protected void fromJSONForeground(JSONObject wpAlert) {
         fromJSONCommon(wpAlert);
 
-        if (wpAlert.isNull("priority")) {
+        if (!wpAlert.has("priority")) {
             setPriority(NotificationCompat.PRIORITY_HIGH);
-        } else if (wpAlert.opt("priority") instanceof String) {
-            setPriority(wpAlert.optString("priority"));
-        } else {
-            setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_HIGH));
         }
 
         setForeground(null);
@@ -291,6 +279,11 @@ class AlertModel implements Cloneable {
         }
         setPersons(wpAlert.optJSONArray("persons"));
         setCategory(JSONUtil.getString(wpAlert, "category"));
+        if (wpAlert.opt("priority") instanceof String) {
+            setPriority(wpAlert.optString("priority"));
+        } else if (wpAlert.opt("priority") instanceof Number) {
+            setPriority(wpAlert.optInt("priority", NotificationCompat.PRIORITY_DEFAULT));
+        }
         setColor(JSONUtil.getString(wpAlert, "color"));
         setGroup(JSONUtil.getString(wpAlert, "group"));
         //if (!wpAlert.isNull("groupSummary")) {
@@ -451,7 +444,9 @@ class AlertModel implements Cloneable {
         if (from.getTicker() != null) {
             setTicker(from.getTicker());
         }
-        setPriority(from.getPriority());
+        if (from.hasPriority()) {
+            setPriority(from.getPriority());
+        }
         if (from.hasAutoOpen()) {
             setAutoOpen(from.getAutoOpen());
         }
@@ -782,8 +777,12 @@ class AlertModel implements Cloneable {
         this.tag = tag;
     }
 
+    public boolean hasPriority() {
+        return this.priority != null;
+    }
+
     public int getPriority() {
-        return priority;
+        return priority == null ? NotificationCompat.PRIORITY_DEFAULT : priority;
     }
 
     public void setPriority(int priority) {
@@ -792,12 +791,13 @@ class AlertModel implements Cloneable {
 
     public void setPriority(String priority) {
         if (priority == null) {
-            setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            this.priority = null;
         } else {
             // Use the value of the field with matching name
             try {
                 setPriority(Notification.class.getField("PRIORITY_" + priority.toUpperCase(Locale.ROOT)).getInt(null));
             } catch (Exception ignored) {
+                this.priority = null;
             }
         }
     }

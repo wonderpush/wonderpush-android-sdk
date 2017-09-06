@@ -324,8 +324,6 @@ class NotificationManager {
                 .setSubText(alert.getSubText())
                 .setContentInfo(alert.getInfo())
                 .setTicker(alert.getTicker())
-                .setPriority(alert.getPriority())
-                .setColor(alert.getColor())
                 .setSmallIcon(alert.hasSmallIcon() && alert.getSmallIcon() != 0 ? alert.getSmallIcon() : defaultIconResource)
                 .setLargeIcon(alert.getLargeIcon())
                 .setCategory(alert.getCategory())
@@ -334,6 +332,12 @@ class NotificationManager {
                 .setSortKey(alert.getSortKey())
                 .setOngoing(alert.getOngoing())
                 ;
+        if (alert.hasPriority()) {
+            builder.setPriority(alert.getPriority());
+        }
+        if (alert.hasColor()) {
+            builder.setColor(alert.getColor());
+        }
         if (alert.hasLocalOnly()) {
             builder.setLocalOnly(alert.getLocalOnly());
         }
