@@ -899,10 +899,14 @@ class AlertModel implements Cloneable {
     }
 
     public void setColor(String color) {
-        try {
-            setColor(Color.parseColor(color));
-        } catch (Exception ignored) { // IllegalArgumentException | NullPointerException
-            setColor(NotificationCompat.COLOR_DEFAULT);
+        if (color == null) {
+            this.color = null;
+        } else {
+            try {
+                setColor(Color.parseColor(color));
+            } catch (Exception ignored) { // IllegalArgumentException
+                this.color = null; // don't set any color (instead of forcing the default color for instance), especially for parsing AlertModel.foreground
+            }
         }
     }
 
