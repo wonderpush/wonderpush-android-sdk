@@ -72,7 +72,16 @@ class WonderPushConfiguration {
     }
 
     protected static Context getApplicationContext() {
-        return sContext;
+        if (sContext != null) {
+            return sContext;
+        } else {
+            if (WonderPush.getApplicationContext() == null) {
+                Log.e(WonderPush.TAG, "WonderPushConfiguration is not initialized, nor is WonderPush, returning null context", new NullPointerException("Stack"));
+            } else {
+                Log.w(WonderPush.TAG, "WonderPushConfiguration is not initialized, but WonderPush is, returning its context", new NullPointerException("Stack"));
+            }
+            return WonderPush.getApplicationContext();
+        }
     }
 
     static void changeUserId(String newUserId) {
@@ -158,7 +167,11 @@ class WonderPushConfiguration {
     static SharedPreferences getSharedPreferences() {
         if (null == getApplicationContext())
             return null;
-        return getApplicationContext().getSharedPreferences(PREF_FILE, 0);
+        SharedPreferences rtn = getApplicationContext().getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE);
+        if (null == rtn) {
+            Log.e(WonderPush.TAG, "Could not get shared preferences", new NullPointerException("Stack"));
+        }
+        return rtn;
     }
 
     private static boolean has(String key) {
