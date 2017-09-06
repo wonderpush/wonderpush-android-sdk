@@ -29,6 +29,7 @@ public class WonderPushRegistrationJobIntentService extends JobIntentService {
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
         try {
+            WonderPush.ensureInitialized(this);
             String pushSenderId = null;
             try {
                 ApplicationInfo ai = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);

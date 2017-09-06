@@ -17,6 +17,7 @@ public class WonderPushInstanceIDListenerService extends InstanceIDListenerServi
     @Override
     public void onTokenRefresh() {
         try {
+            WonderPush.ensureInitialized(this);
             // Fetch updated Instance ID token and notify our app's server of any changes.
             WonderPushRegistrationJobIntentService.enqueueWork(this, new Intent());
         } catch (Exception e) {

@@ -16,6 +16,7 @@ public class WonderPushBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
+            WonderPush.ensureInitialized(context);
             Bundle bundle = intent.getExtras();
             String from = bundle.getString("from");
             WonderPushGcmListenerService.onMessageReceived(context, from, bundle);

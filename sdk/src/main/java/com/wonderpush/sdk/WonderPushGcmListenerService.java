@@ -67,6 +67,7 @@ public class WonderPushGcmListenerService extends GcmListenerService {
      */
     public static boolean onMessageReceived(Context context, String from, Bundle data, int iconResource, Class<? extends Activity> activity) {
         try {
+            WonderPush.ensureInitialized(context);
             WonderPush.logDebug("Received a push notification!");
             // Reconstruct the original intent
             Intent pushIntent = new Intent("com.google.android.c2dm.intent.RECEIVE")
