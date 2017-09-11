@@ -2,6 +2,8 @@ package com.wonderpush.sdk;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -12,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-abstract class NotificationModel {
+abstract class NotificationModel implements Parcelable {
 
     private static final String TAG = WonderPush.TAG;
 
@@ -94,6 +96,37 @@ abstract class NotificationModel {
             }
             throw new IllegalArgumentException("Constant \"" + type + "\" is not a known notification type");
         }
+    }
+
+    public static final Creator<NotificationModel> CREATOR = new Creator<NotificationModel>() {
+        @Override
+        public NotificationModel createFromParcel(Parcel in) {
+            String json = in.readString();
+            try {
+                JSONObject parsed = new JSONObject(json);
+                return NotificationModel.fromGCMNotificationJSONObject(parsed, null);
+            } catch (NotTargetedForThisInstallationException e) {
+                Log.e(WonderPush.TAG, "Unexpected error: Cannot unparcel notification, not targeted at this installation", e);
+            } catch (JSONException e) {
+                Log.e(WonderPush.TAG, "Unexpected error: Cannot parse notification " + json, e);
+            }
+            return null;
+        }
+
+        @Override
+        public NotificationModel[] newArray(int size) {
+            return new NotificationModel[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(inputJSONString);
     }
 
     private final String inputJSONString;

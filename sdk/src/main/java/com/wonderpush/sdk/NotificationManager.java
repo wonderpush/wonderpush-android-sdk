@@ -10,7 +10,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -21,11 +23,17 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 class NotificationManager {
 
@@ -81,26 +89,85 @@ class NotificationManager {
             }
         }
         if (!automaticallyHandled) {
-            // We should use a notification to warn the user, and wait for him to click it
-            // before showing the notification (i.e.: the pending intent being sent)
-            WonderPush.logDebug("Building notification");
-            Notification notification = buildNotification(notif, context, iconResource, pendingIntentBuilder);
-
-            if (notification == null) {
-                WonderPush.logDebug("No notification is to be displayed");
-                // Fire an Intent to notify the application anyway (especially for `data` notifications)
-                try {
-                    if (notif.getType() == NotificationModel.Type.DATA) {
-                        pendingIntentBuilder.buildForDataNotificationWillOpenBroadcast().send();
-                    } else {
-                        pendingIntentBuilder.buildForWillOpenBroadcast().send();
-                    }
-                } catch (PendingIntent.CanceledException e) {
-                    Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
-                }
+            WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work work =
+                    new WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work(
+                            notif, iconResource, tag, localNotificationId, intent, activity);
+            if (shouldWorkInBackground(notif)) {
+                WonderPush.logDebug("Fetching resources and displaying notification asynchronously");
+                WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.enqueueWork(context, work);
             } else {
-                notify(context, tag, localNotificationId, notification);
+                WonderPush.logDebug("Fetching resources and displaying notification");
+                fetchResourcesAndDisplay(context, work, WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.TIMEOUT_MS);
             }
+        }
+    }
+
+    private static boolean shouldWorkInBackground(NotificationModel notif) {
+        return notif.getAlert() != null && !notif.getAlert().getResourcesToFetch().isEmpty();
+    }
+
+    protected static void fetchResourcesAndDisplay(Context context, WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work work, long timeoutMs) {
+        NotificationModel notif = work.getNotif();
+        if (notif == null) return;
+
+        if (notif.getAlert() != null && !notif.getAlert().getResourcesToFetch().isEmpty()) {
+            WonderPush.logDebug("Start fetching resources");
+            long start = SystemClock.elapsedRealtime();
+            Collection<AsyncTask<CacheUtil.FetchWork, Void, File[]>> tasks = new ArrayList<>(notif.getAlert().getResourcesToFetch().size());
+            int i = 0;
+            for (CacheUtil.FetchWork fetchWork : notif.getAlert().getResourcesToFetch()) {
+                ++i;
+                tasks.add(new CacheUtil.FetchWork.AsyncTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, fetchWork));
+            }
+            i = 0;
+            for (AsyncTask<CacheUtil.FetchWork, Void, File[]> task : tasks) {
+                ++i;
+                try {
+                    task.get(Math.max(0, start + timeoutMs - SystemClock.elapsedRealtime()), TimeUnit.MILLISECONDS);
+                } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                    WonderPush.logDebug("Failed to fetch resource " + i, e);
+                }
+            }
+            // Now we must reparse the notification to have it pick up the fetched resources
+            WonderPush.logDebug("Inserting resources inside the notification");
+            try {
+                JSONObject json = new JSONObject(notif.getInputJSONString());
+                notif = NotificationModel.fromGCMNotificationJSONObject(json, null);
+                if (notif == null) return;
+            } catch (NotificationModel.NotTargetedForThisInstallationException | JSONException ex) {
+                Log.e(TAG, "Unexpected error while reparsing notification", ex);
+            }
+        }
+
+        if (notif.getAlert() != null) {
+            AlertModel alternative = notif.getAlert().getAlternativeIfNeeded();
+            if (alternative != null) {
+                WonderPush.logDebug("Using an alternative alert");
+                notif.setAlert(alternative);
+                // Do not try to fetch resources for the new alternative,
+                // we are likely to choose it because one resource fetch was interrupted,
+                // so ignore potential resources that can stay on the alternative
+                // as it might block for a very long time.
+            }
+        }
+
+        WonderPush.logDebug("Building notification");
+        Notification notification = buildNotification(notif, context, work.getIconResource(), work.getPendingIntentBuilder(context));
+
+        if (notification == null) {
+            WonderPush.logDebug("No notification is to be displayed");
+            // Fire an Intent to notify the application anyway (especially for `data` notifications)
+            try {
+                if (notif.getType() == NotificationModel.Type.DATA) {
+                    work.getPendingIntentBuilder(context).buildForDataNotificationWillOpenBroadcast().send();
+                } else {
+                    work.getPendingIntentBuilder(context).buildForWillOpenBroadcast().send();
+                }
+            } catch (PendingIntent.CanceledException e) {
+                Log.e(WonderPush.TAG, "Could not broadcast the notification will open intent", e);
+            }
+        } else {
+            notify(context, work.getTag(), work.getLocalNotificationId(), notification);
         }
     }
 

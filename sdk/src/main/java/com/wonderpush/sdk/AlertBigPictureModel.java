@@ -1,7 +1,9 @@
 package com.wonderpush.sdk;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 class AlertBigPictureModel extends AlertModel {
@@ -12,9 +14,6 @@ class AlertBigPictureModel extends AlertModel {
     private CharSequence bigTitle;
     private CharSequence summaryText;
     // Modify forCurrentSettings() and clone() when adding a field above
-
-    public AlertBigPictureModel() {
-    }
 
     public AlertBigPictureModel(JSONObject inputJSON) {
         super(inputJSON);
@@ -47,6 +46,26 @@ class AlertBigPictureModel extends AlertModel {
                 setSubText(from.getSummaryText());
             }
         }
+    }
+
+    @Override
+    public AlertModel getAlternativeIfNeeded() {
+        // Fallback to BIG_TEXT if we could not fetch the big picture, to avoid a large blank space and a 1-lined text.
+        if (getBigPicture() != null) {
+            return null;
+        }
+        Log.d(WonderPush.TAG, "No big picture for a bigPicture notification, falling back to bigText");
+        JSONObject inputJson;
+        try {
+            inputJson = new JSONObject(getInputJson().toString());
+            getInputJson().put("type", AlertModel.Type.BIG_TEXT.toString());
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Failed to override notification alert type from bigPicture to bigText", ex);
+            return null;
+        }
+        AlertModel rtn = AlertModel.Type.BIG_TEXT.getBuilder().build(inputJson);
+        rtn.setType(AlertModel.Type.BIG_TEXT);
+        return rtn;
     }
 
     public Bitmap getBigLargeIcon() {

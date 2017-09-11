@@ -62,6 +62,11 @@
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false">
         </service>
+        <service
+            android:name="com.wonderpush.sdk.WonderPushNotificationResourceFetcherAndDisplayerJobIntentService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false">
+        </service>
 
         <!-- Required to properly handle deep links and notifications in foreground -->
         <service

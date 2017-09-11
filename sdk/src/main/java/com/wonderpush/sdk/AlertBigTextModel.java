@@ -10,9 +10,6 @@ class AlertBigTextModel extends AlertModel {
     private CharSequence summaryText;
     // Modify forCurrentSettings() and clone() when adding a field above
 
-    public AlertBigTextModel() {
-    }
-
     public AlertBigTextModel(JSONObject inputJSON) {
         super(inputJSON);
     }

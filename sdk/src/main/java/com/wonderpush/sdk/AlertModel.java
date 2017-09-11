@@ -24,10 +24,15 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 class AlertModel implements Cloneable {
 
@@ -61,20 +66,7 @@ class AlertModel implements Cloneable {
         BIG_PICTURE("bigPicture", new Builder() {
             @Override
             public AlertModel build(JSONObject inputJSON) {
-                AlertBigPictureModel rtn = new AlertBigPictureModel(inputJSON);
-                // Fallback to BIG_TEXT if we could not fetch the big picture, to avoid a large blank space and a 1-lined text.
-                if (rtn.getBigPicture() != null) {
-                    return rtn;
-                }
-                Log.d(WonderPush.TAG, "No big picture for a bigPicture notification, falling back to bigText");
-                try {
-                    inputJSON.put("type", BIG_TEXT.toString());
-                } catch (JSONException ex) {
-                    WonderPush.logError("Failed to override notification alert type from bigPicture to bigText", ex);
-                }
-                AlertModel rtn2 = BIG_TEXT.builder.build(inputJSON);
-                rtn2.setType(BIG_TEXT);
-                return rtn2;
+                return new AlertBigPictureModel(inputJSON);
             }
         }),
         INBOX("inbox", new Builder() {
@@ -157,6 +149,8 @@ class AlertModel implements Cloneable {
         defaultNotificationLedOff = _defaultNotificationLedOff;
     }
 
+    private final JSONObject inputJson;
+
     private String channel;
     private Type type; // cannot be changed if foreground for easier coding
     private boolean html;
@@ -199,6 +193,8 @@ class AlertModel implements Cloneable {
     private List<NotificationButtonModel> buttons;
     // Modify forCurrentSettings() and clone() when adding a field above
     private AlertModel foreground;
+
+    private Collection<CacheUtil.FetchWork> resourcesToFetch = new ArrayList<>();
 
     public static AlertModel fromOldFormatStringExtra(String alert) {
         if (alert == null) return null;
@@ -244,7 +240,7 @@ class AlertModel implements Cloneable {
         if (wpAlertForeground == null) {
             wpAlertForeground = new JSONObject();
         }
-        AlertModel foreground = new AlertModel();
+        AlertModel foreground = new AlertModel(wpAlertForeground, false);
         foreground.fromJSONForeground(wpAlertForeground);
         setForeground(foreground);
     }
@@ -404,11 +400,15 @@ class AlertModel implements Cloneable {
         setButtons(wpAlert.optJSONArray("buttons"));
     }
 
-    public AlertModel() {
+    protected AlertModel(JSONObject inputJSON) {
+        this(inputJSON, true);
     }
 
-    protected AlertModel(JSONObject inputJSON) {
-        fromJSONToplevel(inputJSON);
+    protected AlertModel(JSONObject inputJSON, boolean initTopLevel) {
+        this.inputJson = inputJSON;
+        if (initTopLevel) {
+            fromJSONToplevel(inputJSON);
+        }
     }
 
     public AlertModel forCurrentSettings(boolean applicationIsForeground) {
@@ -535,6 +535,14 @@ class AlertModel implements Cloneable {
         // DO NOT vary buttons
     }
 
+    /**
+     * Return another AlertModel to replace the current one, if need be.
+     * @return null if no alternative is needed
+     */
+    public AlertModel getAlternativeIfNeeded() {
+        return null;
+    }
+
     @Override
     protected Object clone() throws CloneNotSupportedException {
         AlertModel rtn = (AlertModel) super.clone();
@@ -636,14 +644,23 @@ class AlertModel implements Cloneable {
         if (value == null) {
             return null;
         }
-        return resolveBitmapFromString(value, CacheUtil.fetchLargeIcon(Uri.parse(value), logPrefix), logPrefix);
+        return resolveBitmapFromStringWithFetchResult(value, CacheUtil.fetchLargeIcon(Uri.parse(value), logPrefix), logPrefix);
     }
 
     protected Bitmap resolveBigPictureFromString(String value, String logPrefix) {
         if (value == null) {
             return null;
         }
-        return resolveBitmapFromString(value, CacheUtil.fetchBigPicture(Uri.parse(value), logPrefix), logPrefix);
+        return resolveBitmapFromStringWithFetchResult(value, CacheUtil.fetchBigPicture(Uri.parse(value), logPrefix), logPrefix);
+    }
+
+    private Bitmap resolveBitmapFromStringWithFetchResult(String value, CacheUtil.FetchResult fetchResult, String logPrefix) {
+        if (!fetchResult.needsWork()) {
+            return resolveBitmapFromString(value, fetchResult.getResult(), logPrefix);
+        } else {
+            resourcesToFetch.add(fetchResult.getWork());
+            return null;
+        }
     }
 
     private Bitmap resolveBitmapFromString(String value, File httpResolvedFile, String logPrefix) {
@@ -683,6 +700,14 @@ class AlertModel implements Cloneable {
         } else {
             return input;
         }
+    }
+
+    public Collection<CacheUtil.FetchWork> getResourcesToFetch() {
+        return Collections.unmodifiableCollection(resourcesToFetch);
+    }
+
+    public JSONObject getInputJson() {
+        return inputJson;
     }
 
     public boolean hasChannel() {
@@ -1132,7 +1157,11 @@ class AlertModel implements Cloneable {
             if ("http".equals(scheme) || "https".equals(scheme)) {
                 // Fetch external file (as the system RingtoneManager has no INTERNET permission, unlike us)
                 // and convert it to a URI
-                File soundCached = CacheUtil.fetchSound(soundUri, "Sound");
+                CacheUtil.FetchResult fetchResult = CacheUtil.fetchSound(soundUri, "Sound");
+                if (fetchResult.needsWork()) {
+                    resourcesToFetch.add(fetchResult.getWork());
+                } // let the following code set the default sound meanwhile
+                File soundCached = fetchResult.getResult();
                 if (soundCached != null) {
                     soundUri = FileProvider.getUriForFile(
                             WonderPush.getApplicationContext(),

@@ -14,9 +14,6 @@ class AlertInboxModel extends AlertModel {
     private CharSequence summaryText;
     // Modify forCurrentSettings() and clone() when adding a field above
 
-    public AlertInboxModel() {
-    }
-
     public AlertInboxModel(JSONObject inputJSON) {
         super(inputJSON);
     }
