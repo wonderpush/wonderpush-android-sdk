@@ -6,6 +6,7 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.os.Build;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -198,6 +199,37 @@ public class WonderPushUserPreferences {
         return false;
     }
 
+    static synchronized WonderPushChannel channelToUseForNotification(String desiredChannelId) {
+        if (desiredChannelId == null) {
+            // If no channel is set, use the default one
+            desiredChannelId = WonderPushUserPreferences.getDefaultChannelId();
+        }
+        WonderPushChannel channel = WonderPushUserPreferences.getChannel(desiredChannelId);
+
+        // Ensure channel existence in Android O
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationChannel androidNotificationChannel = notificationManager.getNotificationChannel(desiredChannelId);
+            if (androidNotificationChannel == null) {
+                Log.w(WonderPush.TAG, "Asked to use non-existent channel " + desiredChannelId + " falling back to the default channel " + WonderPushUserPreferences.getDefaultChannelId() + " for Android O");
+                // Fallback to the default channel
+                channel = null;
+                desiredChannelId = WonderPushUserPreferences.getDefaultChannelId();
+                WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists();
+            } // else: Channel exists in Android O but not in the SDK, that's fine
+        }
+
+        // Ensure we return a usable channel
+        if (channel == null) {
+            Log.w(WonderPush.TAG, "Using an empty channel configuration instead of the unknown channel " + desiredChannelId);
+            // Use an empty channel configuration to not override anything SDK-side
+            // That channel *is* (now) registered in Android O, or we are pre Android O
+            channel = new WonderPushChannel(desiredChannelId, null);
+        }
+
+        return channel;
+    }
+
     static synchronized void ensureDefaultAndroidNotificationChannelExists() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -207,6 +239,7 @@ public class WonderPushUserPreferences {
                 // Create an empty default channel
                 // Note that there is no need to getChannel(getDefaultChannelId()) as if it returns non-null, then the channel was also registered in the system
                 WonderPushChannel defaultChannel = new WonderPushChannel(getDefaultChannelId(), null);
+                defaultChannel.setName("Notifications");
                 putChannel(defaultChannel);
             }
         } catch (Exception ex) {
@@ -410,6 +443,14 @@ public class WonderPushUserPreferences {
             try {
                 android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
                 oChannel = new NotificationChannel(channel.getId(), channel.getName(), NotificationManager.IMPORTANCE_DEFAULT);
+                if (TextUtils.isEmpty(oChannel.getName())) {
+                    // An empty name is not accepted by Android O when calling NotificationManager.createNotificationChannel()
+                    // https://android.googlesource.com/platform/frameworks/base/+/5e3fb57af80f91dc882eab910e865e3c22ae02be/services/core/java/com/android/server/notification/RankingHelper.java#543
+                    oChannel.setName(channel.getId());
+                    if (TextUtils.isEmpty(oChannel.getName())) {
+                        oChannel.setName("Notifications");
+                    }
+                }
                 oChannel.setGroup(channel.getGroupId());
                 oChannel.setDescription(channel.getDescription());
                 if (channel.getBypassDnd() != null) {

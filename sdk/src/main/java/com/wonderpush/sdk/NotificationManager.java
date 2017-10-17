@@ -357,19 +357,7 @@ class NotificationManager {
             defaultIconResource = R.drawable.ic_notifications_white_24dp;
         }
 
-        String alertChannel = alert.getChannel();
-        if (alertChannel == null) {
-            // If no channel is set, use the default one
-            alertChannel = WonderPushUserPreferences.getDefaultChannelId();
-        }
-        WonderPushChannel channel = WonderPushUserPreferences.getChannel(alertChannel);
-        if (channel == null) {
-            // If the desired channel does not exist, use an empty one to not override anything
-            // The channel may be an existing Android O notification channel
-            channel = new WonderPushChannel(alertChannel, null);
-            // It's time to ensure the default channel really exists
-            WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists();
-        }
+        WonderPushChannel channel = WonderPushUserPreferences.channelToUseForNotification(alert.getChannel());
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
         boolean lights = true;
         boolean lightsCustomized = false;
@@ -383,7 +371,7 @@ class NotificationManager {
             vibrates = false;
         }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, alertChannel)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channel.getId())
                 .setContentIntent(pendingIntentBuilder.buildForDefault())
                 .setAutoCancel(true)
                 .setContentTitle(alert.getTitle())
