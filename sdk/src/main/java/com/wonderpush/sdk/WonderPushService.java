@@ -104,7 +104,18 @@ public class WonderPushService extends Service {
             targetUrl = intent.getStringExtra("overrideTargetUrl");
         }
 
-        if (targetUrl != null && (
+        if (targetUrl == null) {
+            targetUrl = WonderPush.INTENT_NOTIFICATION_WILL_OPEN_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT;
+        }
+
+        if (!launchSuccessful) {
+            targetUrl = WonderPush.delegateUrlForDeepLink(new DeepLinkEvent(this, targetUrl));
+            if (targetUrl == null) {
+                launchSuccessful = true;
+            }
+        }
+
+        if (!launchSuccessful && (
                 fromUserInteraction || NotificationModel.Type.DATA.equals(notif.getType())
         )) {
             WonderPush.logDebug("Handing targetUrl of opened notification: " + targetUrl);

@@ -89,6 +89,8 @@ public class WonderPush {
     private static boolean sBeforeInitializationUserIdSet = false;
     private static String sBeforeInitializationUserId;
 
+    private static WonderPushDelegate sDelegate;
+
     protected static final int API_INT = 1; // reset SDK_VERSION when bumping this
     protected static final String API_VERSION = "v" + API_INT;
     protected static final String SDK_SHORT_VERSION = "2.5.2-SNAPSHOT"; // reset to .1.0.0 when bumping API_INT
@@ -1358,4 +1360,54 @@ public class WonderPush {
         }, defer);
     }
 
+    /**
+     * Returns the configured delegate, or {@code null} if none was set.
+     * @see WonderPush#setDelegate(WonderPushDelegate)
+     */
+    public static WonderPushDelegate getDelegate() {
+        return sDelegate;
+    }
+
+    /**
+     * Configures a delegate for tighter integration with the SDK.
+     *
+     * <p>Call this method as early as possible, like just before calling {@link #initialize(Context)}.</p>
+     *
+     * @param delegate The new delegate to use.
+     * @see WonderPushDelegate
+     * @see WonderPushAbstractDelegate
+     */
+    public static void setDelegate(WonderPushDelegate delegate) {
+        sDelegate = delegate;
+    }
+
+    static String delegateUrlForDeepLink(DeepLinkEvent event) {
+        String url = event.getUrl();
+        WonderPushDelegate delegate = WonderPush.getDelegate();
+
+        if (delegate != null) {
+
+            String newUrl = url;
+            try {
+                WonderPush.logDebug("Asking delegate to handle a deep-link: " + event);
+                newUrl = delegate.urlForDeepLink(event);
+                WonderPush.logDebug("Delegate returned: " + newUrl);
+            } catch (Exception ex) {
+                Log.e(WonderPush.TAG, "Delegate failed to handle a deep-link: " + event, ex);
+            }
+
+            if (newUrl == null) {
+                WonderPush.logDebug("Delegate handled the deep-link, aborting normal processing");
+            } else if (newUrl.equals(url)) {
+                WonderPush.logDebug("Delegate did not handle the deep-link, continuing normal processing");
+            } else {
+                WonderPush.logDebug("Delegate handled the deep-link and gave a new url, continuing with it: " + newUrl);
+            }
+
+            url = newUrl;
+
+        }
+
+        return url;
+    }
 }

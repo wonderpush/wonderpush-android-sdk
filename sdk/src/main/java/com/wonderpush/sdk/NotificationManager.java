@@ -894,6 +894,10 @@ class NotificationManager {
                 Log.e(TAG, "No url in a " + ActionModel.Type.LINK + " action!");
                 return;
             }
+
+            url = WonderPush.delegateUrlForDeepLink(new DeepLinkEvent(context, url));
+            if (url == null) return;
+
             Uri uri = Uri.parse(url);
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             if (intent.resolveActivity(context.getPackageManager()) != null) {
@@ -908,7 +912,12 @@ class NotificationManager {
 
     protected static void handleRatingAction(Context context, ActionModel action) {
         try {
-            Uri uri = Uri.parse("market://details?id=" + context.getPackageName());
+            String url = "market://details?id=" + context.getPackageName();
+
+            url = WonderPush.delegateUrlForDeepLink(new DeepLinkEvent(context, url));
+            if (url == null) return;
+
+            Uri uri = Uri.parse(url);
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             if (intent.resolveActivity(context.getPackageManager()) != null) {
                 context.startActivity(intent);
@@ -1090,8 +1099,13 @@ class NotificationManager {
                 geo.authority("0,0");
                 geo.appendQueryParameter("q", place.getQuery());
             }
+
+            String url = geo.build().toString();
+            url = WonderPush.delegateUrlForDeepLink(new DeepLinkEvent(context, url));
+            if (url == null) return;
+
             Intent open = new Intent(Intent.ACTION_VIEW);
-            open.setData(geo.build());
+            open.setData(Uri.parse(url));
             if (open.resolveActivity(context.getPackageManager()) != null) {
                 WonderPush.logDebug("Will open location " + open.getDataString());
                 context.startActivity(open);
@@ -1099,7 +1113,7 @@ class NotificationManager {
                 WonderPush.logDebug("No activity can open location " + open.getDataString());
                 WonderPush.logDebug("Falling back to regular URL");
                 geo = new Uri.Builder();
-                geo.scheme("http");
+                geo.scheme("https");
                 geo.authority("maps.google.com");
                 geo.path("maps");
                 if (point != null) {

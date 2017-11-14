@@ -314,23 +314,27 @@ class WonderPushView extends FrameLayout {
         @Override
         @SuppressWarnings("deprecation")
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            return _shouldOverrideUrlLoading(Uri.parse(url));
+            return _shouldOverrideUrlLoading(view.getContext(), Uri.parse(url));
         }
 
         @Override
         @TargetApi(Build.VERSION_CODES.N)
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            return _shouldOverrideUrlLoading(request.getUrl());
+            return _shouldOverrideUrlLoading(view.getContext(), request.getUrl());
         }
 
-        private boolean _shouldOverrideUrlLoading(Uri uri) {
+        private boolean _shouldOverrideUrlLoading(Context context, Uri uri) {
             // Handle market URLs
             // https://play.google.com/store/apps/details?id=com.example.foobar
             if ("market".equals(uri.getScheme())
                     || "play.google.com".equals(uri.getHost())) {
 
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri.toString().replace(
-                        "https://play.google.com/store/apps", "market:/")));
+                String url = uri.toString();
+                url = WonderPush.delegateUrlForDeepLink(new DeepLinkEvent(context, url));
+                if (url == null) return true;
+
+                url = url.replace("https://play.google.com/store/apps", "market:/");
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 WonderPush.getApplicationContext().startActivity(intent);
                 return true;
