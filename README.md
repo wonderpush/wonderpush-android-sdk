@@ -1,19 +1,10 @@
-WonderPush Android SDK
-======================
+# WonderPush Android SDK
 
-Find the full WonderPush services documentation at:
-http://www.wonderpush.com/docs/.
+[WonderPush](https://www.wonderpush.com) is an advanced push notification service for iOS and Android applications and Websites. High volume and fast delivery. [Start for free](https://dashboard.wonderpush.com/account/signup).
 
+This an Android SDK.
 
-SDK documentation
------------------
-
-The SDK documentation in a JavaDoc format available in the `gh-pages` branch, and is served at:
-http://wonderpush.github.io/wonderpush-android-sdk/.
-
-
-API Reference
--------------
-
-All references for the WonderPush API are available on the WonderPush documentation pages:
-http://www.wonderpush.com/docs/reference/api/v1.
+Quick links:
+* [**Getting started guide**](https://www.wonderpush.com/docs/android/getting-started)
+* [**Latest SDK documentation**](https://wonderpush.github.io/wonderpush-android-sdk/)
+* [**Latest API reference**](https://wonderpush.github.io/wonderpush-android-sdk/api.html)
