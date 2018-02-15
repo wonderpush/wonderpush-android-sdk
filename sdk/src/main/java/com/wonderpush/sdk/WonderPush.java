@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -17,12 +18,12 @@ import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import org.OpenUDID.OpenUDID_manager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -422,23 +423,6 @@ public class WonderPush {
      */
     protected static String getClientSecret() {
         return sClientSecret;
-    }
-
-    protected static boolean isUDIDReady() {
-        return OpenUDID_manager.isInitialized();
-    }
-
-    /**
-     * Returns the UDID determined by OpenUDID.
-     *
-     * @return The UDID determined by OpenUDID or null if OpenUDID is not initialized.
-     */
-    protected static String getUDID() {
-        if (!isUDIDReady()) {
-            Log.w(TAG, "Reading UDID before it is ready!");
-            return null;
-        }
-        return OpenUDID_manager.getOpenUDID();
     }
 
     protected static void setNetworkAvailable(boolean state) {
@@ -957,9 +941,6 @@ public class WonderPush {
                         ? sBeforeInitializationUserId
                         : WonderPushConfiguration.getUserId());
 
-                // Initialize OpenUDID
-                OpenUDID_manager.sync(getApplicationContext());
-
                 sIsInitialized = true;
 
                 // Permission checks
@@ -989,11 +970,11 @@ public class WonderPush {
         WonderPush.logDebug("initForNewUser(" + userId + ")");
         sIsReady = false;
         WonderPushConfiguration.changeUserId(userId);
-        // Wait for UDID to be ready and fetch anonymous token if needed.
+        // Wait for SDK to be initialized and fetch anonymous token if needed.
         WonderPush.safeDefer(new Runnable() {
             @Override
             public void run() {
-                if (isUDIDReady()) {
+                if (isInitialized()) {
                     final Runnable init = new Runnable() {
                         @Override
                         public void run() {
@@ -1163,19 +1144,10 @@ public class WonderPush {
     }
 
     /**
-     * Gets the device id, used to identify a single device across applications,
+     * Gets the device id, used to identify a single device,
      * and to correctly identify multiple users on a single device.
      *
      * <p>You should not call this method before initializing the SDK.</p>
-     *
-     * <p>
-     *   Because of the way our device id is build, it is populated asynchronously,
-     *   so you may get a {@code null} response even a few moments after calling
-     *   {@link #initialize(Context)}.
-     *   You can either wait a bit (1 second should be enough on modern devices), or
-     *   wait for {@link #isReady()} to return {@code true}, which may take some more
-     *   time on the first launch, especially is the network connection is bad.
-     * </p>
      *
      * @return The device id, or {@code null} if the SDK is not initialized.
      * @see #isReady()
@@ -1185,9 +1157,20 @@ public class WonderPush {
     public static String getDeviceId() {
         String deviceId = null;
         try {
-            deviceId = getUDID();
+            deviceId = WonderPushConfiguration.getDeviceId();
+            if (deviceId == null) {
+                // Read from OpenUDID storage to keep a smooth transition off using OpenUDID
+                SharedPreferences sharedPrefs =  sApplicationContext.getSharedPreferences("openudid_prefs", Context.MODE_PRIVATE);
+                deviceId = sharedPrefs.getString("openudid", null);
+                if (deviceId == null) {
+                    // Generate an UUIDv4
+                    deviceId = UUID.randomUUID().toString();
+                }
+                // and store it for us
+                WonderPushConfiguration.setDeviceId(deviceId);
+            }
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while getting userId", e);
+            Log.e(TAG, "Unexpected error while getting deviceId", e);
         }
         return deviceId;
     }

@@ -20,6 +20,7 @@ class WonderPushConfiguration {
 
     private static final String ACCESS_TOKEN_PREF_NAME = "__wonderpush_access_token";
     private static final String SID_PREF_NAME = "__wonderpush_sid";
+    private static final String DEVICE_ID_PREF_NAME = "__device_id";
     private static final String INSTALLATION_ID_PREF_NAME = "__installation_id";
     private static final String USER_ID_PREF_NAME = "__user_id";
 
@@ -349,6 +350,24 @@ class WonderPushConfiguration {
     static void setAccessToken(String accessToken) {
         WonderPush.logDebug("Setting accessToken = " + accessToken);
         putString(ACCESS_TOKEN_PREF_NAME, accessToken);
+    }
+
+    /**
+     * Get the device id stored in the user's shared preferences.
+     */
+    static String getDeviceId() {
+        return getString(DEVICE_ID_PREF_NAME);
+    }
+
+    /**
+     * Set the device id stored in the user's shared preferences.
+     *
+     * @param deviceId
+     *            The device id to be stored
+     */
+    static void setDeviceId(String deviceId) {
+        WonderPush.logDebug("Setting deviceId = " + deviceId);
+        putString(DEVICE_ID_PREF_NAME, deviceId);
     }
 
     /**

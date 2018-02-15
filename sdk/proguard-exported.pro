@@ -15,8 +15,5 @@
 #-keepnames interface com.wonderpush.sdk.** {
 #    *;
 #}
-#-keepnames class org.OpenUDID.** {
-#    *;
-#}
 
 # [END] of WonderPush SDK proguard rules

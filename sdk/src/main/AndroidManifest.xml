@@ -96,15 +96,6 @@
 
         </service>
 
-        <!-- Required to properly generate a unique device identifier -->
-        <service
-            android:name="org.OpenUDID.OpenUDID_service"
-            android:exported="true" >
-            <intent-filter>
-                <action android:name="org.OpenUDID.GETUDID" />
-            </intent-filter>
-        </service>
-
         <provider
             android:authorities="${wonderpushGradleApplicationId}.wonderpush.fileprovider"
             android:name="android.support.v4.content.FileProvider"

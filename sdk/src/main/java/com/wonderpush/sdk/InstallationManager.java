@@ -73,7 +73,7 @@ class InstallationManager {
             properties.put("application", application);
 
             JSONObject device = new JSONObject();
-            device.put("id", WonderPush.getUDID());
+            device.put("id", WonderPush.getDeviceId());
             device.put("platform", "Android");
             device.put("osVersion", getOsVersion());
             device.put("brand", getDeviceBrand());

@@ -153,7 +153,7 @@ class WonderPushRestClient {
      *         access token (true fetching, false retrieved from local cache)
      */
     protected static boolean fetchAnonymousAccessTokenIfNeeded(final String userId, final ResponseHandler onFetchedHandler) {
-        if (!WonderPush.isUDIDReady()) {
+        if (!WonderPush.isInitialized()) {
             WonderPush.safeDefer(new Runnable() {
                 @Override
                 public void run() {
@@ -190,7 +190,7 @@ class WonderPushRestClient {
             return;
         }
 
-        if (!WonderPush.isUDIDReady()) {
+        if (!WonderPush.isInitialized()) {
             WonderPush.safeDefer(new Runnable() {
                 @Override
                 public void run() {
@@ -405,7 +405,7 @@ class WonderPushRestClient {
         WonderPush.safeDefer(new Runnable() {
             @Override
             public void run() {
-                if (WonderPush.isUDIDReady()) {
+                if (WonderPush.isInitialized()) {
                     fetchAnonymousAccessToken_inner(userId, handler, nbRetries);
                 } else {
                     WonderPush.safeDefer(this, 100);
@@ -419,9 +419,9 @@ class WonderPushRestClient {
         authParams.put("clientId", WonderPush.getClientId());
         authParams.put("devicePlatform", "Android");
         authParams.put("deviceModel", InstallationManager.getDeviceModel());
-        String udid = WonderPush.getUDID();
-        if (null != udid) {
-            authParams.put("deviceId", udid);
+        String deviceId = WonderPush.getDeviceId();
+        if (null != deviceId) {
+            authParams.put("deviceId", deviceId);
         }
         if (null != userId) {
             authParams.put("userId", userId);
