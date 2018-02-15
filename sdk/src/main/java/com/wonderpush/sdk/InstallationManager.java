@@ -22,6 +22,7 @@ import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 class InstallationManager {
 
@@ -64,93 +65,112 @@ class InstallationManager {
         WonderPush.postEventually(propertyEndpoint, parameters);
     }
 
-    protected static void updateInstallationCoreProperties(Context context) {
-        JSONObject properties = new JSONObject();
-        try {
-            JSONObject application = new JSONObject();
-            application.put("version", getApplicationVersion());
-            application.put("sdkVersion", getSDKVersion());
-            properties.put("application", application);
-
-            JSONObject device = new JSONObject();
-            device.put("id", WonderPush.getDeviceId());
-            device.put("platform", "Android");
-            device.put("osVersion", getOsVersion());
-            device.put("brand", getDeviceBrand());
-            device.put("model", getDeviceModel());
-            device.put("name", getDeviceName());
-            device.put("screenWidth", getScreenWidth(context));
-            device.put("screenHeight", getScreenHeight(context));
-            device.put("screenDensity", getScreenDensity(context));
-
-            JSONObject configuration = new JSONObject();
-            configuration.put("timeZone", getUserTimezone());
-            configuration.put("carrier", getCarrierName());
-            configuration.put("locale", getLocaleString());
-            configuration.put("country", getLocaleCountry());
-            configuration.put("currency", getLocaleCurrency());
-            device.put("configuration", configuration);
-
-            JSONObject capabilities = new JSONObject();
-            capabilities.put("bluetooth", getBluetoothSupported(context));
-            capabilities.put("bluetoothLe", getBluetoothLESupported(context));
-            capabilities.put("nfc", getNFCSupported(context));
-            capabilities.put("ir", getIRSupported(context));
-            capabilities.put("telephony", getTelephonySupported(context));
-            capabilities.put("telephonyGsm", getTelephonyGSMSupported(context));
-            capabilities.put("telephonyCdma", getTelephonyCDMASupported(context));
-            capabilities.put("wifi", getWifiSupported(context));
-            capabilities.put("wifiDirect", getWifiDirectSupported(context));
-            capabilities.put("gps", getGPSSupported(context));
-            capabilities.put("networkLocation", getNetworkLocationSupported(context));
-            capabilities.put("camera", getCameraSupported(context));
-            capabilities.put("frontCamera", getFrontCameraSupported(context));
-            capabilities.put("microphone", getMicrophoneSupported(context));
-            capabilities.put("sensorAccelerometer", getSensorAccelerometerSupported(context));
-            capabilities.put("sensorBarometer", getSensorBarometerSupported(context));
-            capabilities.put("sensorCompass", getSensorCompassSupported(context));
-            capabilities.put("sensorGyroscope", getSensorGyroscopeSupported(context));
-            capabilities.put("sensorLight", getSensorLightSupported(context));
-            capabilities.put("sensorProximity", getSensorProximitySupported(context));
-            capabilities.put("sensorStepCounter", getSensorStepCounterSupported(context));
-            capabilities.put("sensorStepDetector", getSensorStepDetectorSupported(context));
-            capabilities.put("sip", getSIPSupported(context));
-            capabilities.put("sipVoip", getSIPVOIPSupported(context));
-            capabilities.put("touchscreen", getTouchscreenSupported(context));
-            capabilities.put("touchscreenTwoFingers", getTouchscreenTwoFingersSupported(context));
-            capabilities.put("touchscreenDistinct", getTouchscreenDistinctSupported(context));
-            capabilities.put("touchscreenFullHand", getTouchscreenFullHandSupported(context));
-            capabilities.put("usbAccessory", getUSBAccessorySupported(context));
-            capabilities.put("usbHost", getUSBHostSupported(context));
-            device.put("capabilities", capabilities);
-
-            properties.put("device", device);
-
-            String cachedPropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
-            JSONObject cachedProperties = null;
-            if (cachedPropertiesString != null) {
+    protected static void updateInstallationCoreProperties(final Context context) {
+        WonderPush.safeDefer(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject properties = new JSONObject();
+                AtomicReference<String> federatedId = null;
                 try {
-                    cachedProperties = new JSONObject(cachedPropertiesString);
+                    federatedId = WonderPush.getFederatedIdAlreadyInBackground();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while reading federatedId", ex);
+                }
+                try {
+                    JSONObject application = new JSONObject();
+                    application.put("version", getApplicationVersion());
+                    application.put("sdkVersion", getSDKVersion());
+                    properties.put("application", application);
+
+                    JSONObject device = new JSONObject();
+                    device.put("id", WonderPush.getDeviceId());
+                    if (federatedId != null) {
+                        String federatedIdStr = federatedId.get();
+                        if (federatedIdStr == null) {
+                            device.put("federatedId", JSONObject.NULL);
+                        } else {
+                            device.put("federatedId", "0:" + federatedIdStr);
+                        }
+                    }
+                    device.put("platform", "Android");
+                    device.put("osVersion", getOsVersion());
+                    device.put("brand", getDeviceBrand());
+                    device.put("model", getDeviceModel());
+                    device.put("name", getDeviceName());
+                    device.put("screenWidth", getScreenWidth(context));
+                    device.put("screenHeight", getScreenHeight(context));
+                    device.put("screenDensity", getScreenDensity(context));
+
+                    JSONObject configuration = new JSONObject();
+                    configuration.put("timeZone", getUserTimezone());
+                    configuration.put("carrier", getCarrierName());
+                    configuration.put("locale", getLocaleString());
+                    configuration.put("country", getLocaleCountry());
+                    configuration.put("currency", getLocaleCurrency());
+                    device.put("configuration", configuration);
+
+                    JSONObject capabilities = new JSONObject();
+                    capabilities.put("bluetooth", getBluetoothSupported(context));
+                    capabilities.put("bluetoothLe", getBluetoothLESupported(context));
+                    capabilities.put("nfc", getNFCSupported(context));
+                    capabilities.put("ir", getIRSupported(context));
+                    capabilities.put("telephony", getTelephonySupported(context));
+                    capabilities.put("telephonyGsm", getTelephonyGSMSupported(context));
+                    capabilities.put("telephonyCdma", getTelephonyCDMASupported(context));
+                    capabilities.put("wifi", getWifiSupported(context));
+                    capabilities.put("wifiDirect", getWifiDirectSupported(context));
+                    capabilities.put("gps", getGPSSupported(context));
+                    capabilities.put("networkLocation", getNetworkLocationSupported(context));
+                    capabilities.put("camera", getCameraSupported(context));
+                    capabilities.put("frontCamera", getFrontCameraSupported(context));
+                    capabilities.put("microphone", getMicrophoneSupported(context));
+                    capabilities.put("sensorAccelerometer", getSensorAccelerometerSupported(context));
+                    capabilities.put("sensorBarometer", getSensorBarometerSupported(context));
+                    capabilities.put("sensorCompass", getSensorCompassSupported(context));
+                    capabilities.put("sensorGyroscope", getSensorGyroscopeSupported(context));
+                    capabilities.put("sensorLight", getSensorLightSupported(context));
+                    capabilities.put("sensorProximity", getSensorProximitySupported(context));
+                    capabilities.put("sensorStepCounter", getSensorStepCounterSupported(context));
+                    capabilities.put("sensorStepDetector", getSensorStepDetectorSupported(context));
+                    capabilities.put("sip", getSIPSupported(context));
+                    capabilities.put("sipVoip", getSIPVOIPSupported(context));
+                    capabilities.put("touchscreen", getTouchscreenSupported(context));
+                    capabilities.put("touchscreenTwoFingers", getTouchscreenTwoFingersSupported(context));
+                    capabilities.put("touchscreenDistinct", getTouchscreenDistinctSupported(context));
+                    capabilities.put("touchscreenFullHand", getTouchscreenFullHandSupported(context));
+                    capabilities.put("usbAccessory", getUSBAccessorySupported(context));
+                    capabilities.put("usbHost", getUSBHostSupported(context));
+                    device.put("capabilities", capabilities);
+
+                    properties.put("device", device);
+
+                    String cachedPropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
+                    JSONObject cachedProperties = null;
+                    if (cachedPropertiesString != null) {
+                        try {
+                            cachedProperties = new JSONObject(cachedPropertiesString);
+                        } catch (JSONException ex) {
+                            Log.e(TAG, "Unexpected error while parsing cached core properties", ex);
+                            Log.e(TAG, "Input was: " + cachedPropertiesString);
+                        }
+                    }
+                    String cachedPropertiesAccessToken = WonderPushConfiguration.getCachedInstallationCorePropertiesAccessToken();
+                    if (!JSONUtil.equals(properties, cachedProperties)
+                            || cachedPropertiesAccessToken == null && WonderPushConfiguration.getAccessToken() != null
+                            || cachedPropertiesAccessToken != null && !cachedPropertiesAccessToken.equals(WonderPushConfiguration.getAccessToken())
+                            ) {
+                        WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
+                        WonderPushConfiguration.setCachedInstallationCoreProperties(properties.toString());
+                        WonderPushConfiguration.setCachedInstallationCorePropertiesAccessToken(WonderPushConfiguration.getAccessToken());
+                        updateInstallation(properties, false);
+                    }
                 } catch (JSONException ex) {
-                    Log.e(TAG, "Unexpected error while parsing cached core properties", ex);
-                    Log.e(TAG, "Input was: " + cachedPropertiesString);
+                    Log.e(TAG, "Unexpected error while updating installation core properties", ex);
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while updating installation core properties", ex);
                 }
             }
-            String cachedPropertiesAccessToken = WonderPushConfiguration.getCachedInstallationCorePropertiesAccessToken();
-            if (!JSONUtil.equals(properties, cachedProperties)
-                    || cachedPropertiesAccessToken == null && WonderPushConfiguration.getAccessToken() != null
-                    || cachedPropertiesAccessToken != null && !cachedPropertiesAccessToken.equals(WonderPushConfiguration.getAccessToken())
-            ) {
-                WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
-                WonderPushConfiguration.setCachedInstallationCoreProperties(properties.toString());
-                WonderPushConfiguration.setCachedInstallationCorePropertiesAccessToken(WonderPushConfiguration.getAccessToken());
-                updateInstallation(properties, false);
-            }
-        } catch (JSONException ex) {
-            Log.e(TAG, "Unexpected error while updating installation core properties", ex);
-        } catch (Exception ex) {
-            Log.e(TAG, "Unexpected error while updating installation core properties", ex);
-        }
+        }, 0);
     }
 
     protected static String getApplicationVersion() {

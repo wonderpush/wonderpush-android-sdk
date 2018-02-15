@@ -18,14 +18,20 @@ import android.os.Looper;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Main class of the WonderPush SDK.
@@ -1238,6 +1244,36 @@ public class WonderPush {
             Log.e(TAG, "Unexpected error while getting accessToken", e);
         }
         return accessToken;
+    }
+
+    /**
+     * @return null When failing to read the information, a reference to a null value if the user opted out of ad tracking
+     * @throws IllegalStateException when called from the UI thread
+     */
+    protected static AtomicReference<String> getFederatedIdAlreadyInBackground() throws IllegalStateException {
+        // Note: We use an AtomicReference instead of an Optional<String> to preserve SDK pre-24 compatibility
+        AdvertisingIdClient.Info adInfo = null;
+        try {
+            adInfo = AdvertisingIdClient.getAdvertisingIdInfo(sApplicationContext);
+        } catch (IOException e) {
+            // Unrecoverable error connecting to Google Play services (e.g.,
+            // the old version of the service doesn't support getting AdvertisingId).
+            Log.e(TAG, "Unexpected error while getting AdvertisingIdInfo", e);
+        } catch (GooglePlayServicesRepairableException e) {
+            // Encountered a recoverable error connecting to Google Play services.
+            Log.e(TAG, "Unexpected error while getting AdvertisingIdInfo", e);
+        } catch (GooglePlayServicesNotAvailableException e) {
+            // Google Play services is not available entirely.
+            Log.e(TAG, "Unexpected error while getting AdvertisingIdInfo", e);
+        }
+        if (adInfo == null) {
+            return null;
+        }
+        WonderPush.logDebug("AdvertisingId: id=" + adInfo.getId() + " limitedAdTracking=" + adInfo.isLimitAdTrackingEnabled());
+        if (adInfo.isLimitAdTrackingEnabled()) {
+            return new AtomicReference<>(null);
+        }
+        return new AtomicReference<>(adInfo.getId());
     }
 
     /**
