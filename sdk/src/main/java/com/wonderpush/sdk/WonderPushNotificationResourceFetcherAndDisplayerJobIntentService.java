@@ -7,9 +7,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.JobIntentService;
+import android.support.v4.app.WonderPushJobIntentService;
 import android.util.Log;
 
-public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService extends JobIntentService {
+public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService extends WonderPushJobIntentService {
 
     private static final String TAG = WonderPush.TAG;
 
@@ -21,6 +22,7 @@ public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService e
         intent.putExtra("work", work);
         enqueueWork(context, WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.class, JOB_ID, intent);
     }
+
 
     @Override
     protected void onHandleWork(@NonNull Intent intent) {

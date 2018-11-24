@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.JobIntentService;
+import android.support.v4.app.WonderPushJobIntentService;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -16,7 +17,7 @@ import com.google.android.gms.iid.InstanceID;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class WonderPushRegistrationJobIntentService extends JobIntentService {
+public class WonderPushRegistrationJobIntentService extends WonderPushJobIntentService {
 
     private static final String TAG = WonderPush.TAG;
 
