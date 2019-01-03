@@ -1,12 +1,10 @@
 package com.wonderpush.sdk;
 
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -19,9 +17,6 @@ import org.json.JSONObject;
 import java.util.Currency;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 class InstallationManager {
@@ -108,39 +103,6 @@ class InstallationManager {
                     configuration.put("country", getLocaleCountry());
                     configuration.put("currency", getLocaleCurrency());
                     device.put("configuration", configuration);
-
-                    JSONObject capabilities = new JSONObject();
-                    capabilities.put("bluetooth", getBluetoothSupported(context));
-                    capabilities.put("bluetoothLe", getBluetoothLESupported(context));
-                    capabilities.put("nfc", getNFCSupported(context));
-                    capabilities.put("ir", getIRSupported(context));
-                    capabilities.put("telephony", getTelephonySupported(context));
-                    capabilities.put("telephonyGsm", getTelephonyGSMSupported(context));
-                    capabilities.put("telephonyCdma", getTelephonyCDMASupported(context));
-                    capabilities.put("wifi", getWifiSupported(context));
-                    capabilities.put("wifiDirect", getWifiDirectSupported(context));
-                    capabilities.put("gps", getGPSSupported(context));
-                    capabilities.put("networkLocation", getNetworkLocationSupported(context));
-                    capabilities.put("camera", getCameraSupported(context));
-                    capabilities.put("frontCamera", getFrontCameraSupported(context));
-                    capabilities.put("microphone", getMicrophoneSupported(context));
-                    capabilities.put("sensorAccelerometer", getSensorAccelerometerSupported(context));
-                    capabilities.put("sensorBarometer", getSensorBarometerSupported(context));
-                    capabilities.put("sensorCompass", getSensorCompassSupported(context));
-                    capabilities.put("sensorGyroscope", getSensorGyroscopeSupported(context));
-                    capabilities.put("sensorLight", getSensorLightSupported(context));
-                    capabilities.put("sensorProximity", getSensorProximitySupported(context));
-                    capabilities.put("sensorStepCounter", getSensorStepCounterSupported(context));
-                    capabilities.put("sensorStepDetector", getSensorStepDetectorSupported(context));
-                    capabilities.put("sip", getSIPSupported(context));
-                    capabilities.put("sipVoip", getSIPVOIPSupported(context));
-                    capabilities.put("touchscreen", getTouchscreenSupported(context));
-                    capabilities.put("touchscreenTwoFingers", getTouchscreenTwoFingersSupported(context));
-                    capabilities.put("touchscreenDistinct", getTouchscreenDistinctSupported(context));
-                    capabilities.put("touchscreenFullHand", getTouchscreenFullHandSupported(context));
-                    capabilities.put("usbAccessory", getUSBAccessorySupported(context));
-                    capabilities.put("usbHost", getUSBHostSupported(context));
-                    device.put("capabilities", capabilities);
 
                     properties.put("device", device);
 
@@ -279,10 +241,6 @@ class InstallationManager {
         return metrics.densityDpi;
     }
 
-    protected static String getScreenSize(Context context) {
-        return getScreenWidth(context) + "x" + getScreenHeight(context);
-    }
-
     protected static int getScreenWidth(Context context) {
         Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         DisplayMetrics metrics = new DisplayMetrics();
@@ -295,142 +253,6 @@ class InstallationManager {
         DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
         return metrics.heightPixels;
-    }
-
-    protected static boolean getBluetoothSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
-    }
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    protected static boolean getBluetoothLESupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-        }
-        return false;
-    }
-
-    protected static boolean getNFCSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_NFC);
-    }
-
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    protected static boolean getIRSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CONSUMER_IR);
-        }
-        return false;
-    }
-
-    protected static boolean getTelephonySupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY);
-    }
-
-    protected static boolean getTelephonyGSMSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_GSM);
-    }
-
-    protected static boolean getTelephonyCDMASupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY_CDMA);
-    }
-
-    protected static boolean getWifiSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI);
-    }
-
-    protected static boolean getWifiDirectSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_DIRECT);
-    }
-
-    protected static boolean getGPSSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
-    }
-
-    protected static boolean getNetworkLocationSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_NETWORK);
-    }
-
-    protected static boolean getCameraSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
-    }
-
-    protected static boolean getFrontCameraSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
-    }
-
-    protected static boolean getMicrophoneSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
-    }
-
-    protected static boolean getSensorAccelerometerSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_ACCELEROMETER);
-    }
-
-    protected static boolean getSensorBarometerSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_BAROMETER);
-    }
-
-    protected static boolean getSensorCompassSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_COMPASS);
-    }
-
-    protected static boolean getSensorGyroscopeSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
-    }
-
-    protected static boolean getSensorLightSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_LIGHT);
-    }
-
-    protected static boolean getSensorProximitySupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_PROXIMITY);
-    }
-
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    protected static boolean getSensorStepCounterSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_COUNTER);
-        }
-        return false;
-    }
-
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    protected static boolean getSensorStepDetectorSupported(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_DETECTOR);
-        }
-        return false;
-    }
-
-    protected static boolean getSIPSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP);
-    }
-
-    protected static boolean getSIPVOIPSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SIP_VOIP);
-    }
-
-    protected static boolean getTouchscreenSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN);
-    }
-
-    protected static boolean getTouchscreenTwoFingersSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH);
-    }
-
-    protected static boolean getTouchscreenDistinctSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_DISTINCT);
-    }
-
-    protected static boolean getTouchscreenFullHandSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_JAZZHAND);
-    }
-
-    protected static boolean getUSBAccessorySupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_ACCESSORY);
-    }
-
-    protected static boolean getUSBHostSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
     }
 
 }
