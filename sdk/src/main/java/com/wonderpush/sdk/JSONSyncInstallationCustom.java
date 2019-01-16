@@ -74,7 +74,17 @@ class JSONSyncInstallationCustom {
             } finally {
                 WonderPushConfiguration.changeUserId(oldUserId);
             }
-            flushAll();
+
+            // Adding the listener here will catch the an initial call triggered after this function is called, all during SDK initialization.
+            // It also flushes any scheduled call that was dropped when the user withdrew consent.
+            WonderPush.addUserConsentListener(new WonderPush.UserConsentListener() {
+                @Override
+                public void onUserConsentChanged(boolean hasUserConsent) {
+                    if (hasUserConsent) {
+                        flushAll();
+                    }
+                }
+            });
         }
     }
 
