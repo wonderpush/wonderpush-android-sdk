@@ -23,6 +23,7 @@ class WonderPushConfiguration {
     private static final String DEVICE_ID_PREF_NAME = "__device_id";
     private static final String INSTALLATION_ID_PREF_NAME = "__installation_id";
     private static final String USER_ID_PREF_NAME = "__user_id";
+    private static final String USER_CONSENT_PREF_NAME = "__user_consent";
 
     private static final String NOTIFICATION_ENABLED_PREF_NAME = "__wonderpush_notification_enabled";
     private static final String CHANNEL_PREFERENCES_PREF_NAME = "__wonderpush_channel_preferences";
@@ -272,6 +273,23 @@ class WonderPushConfiguration {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         editor.putBoolean(key, value);
         editor.apply();
+    }
+
+    /**
+     * Get the user consent stored in the user's shared preferences.
+     */
+    static Boolean getUserConsent() {
+        return getBoolean(USER_CONSENT_PREF_NAME, false);
+    }
+
+    /**
+     * Set the user consent stored in the user's shared preferences.
+     *
+     * @param userConsent
+     *            The user consent to be stored
+     */
+    static void setUserConsent(boolean userConsent) {
+        putBoolean(USER_CONSENT_PREF_NAME, userConsent);
     }
 
     /**

@@ -42,6 +42,15 @@ class WonderPushRequestVault {
         mJobQueue = jobQueue;
         mThread = new Thread(getRunnable());
         mThread.start();
+        WonderPush.addUserConsentListener(new WonderPush.UserConsentListener() {
+            @Override
+            public void onUserConsentChanged(boolean hasUserConsent) {
+                if (hasUserConsent) {
+                    WonderPush.logDebug("RequestVault: Consent given, interrupting sleep");
+                    mThread.interrupt();
+                }
+            }
+        });
     }
 
     /**
@@ -65,10 +74,18 @@ class WonderPushRequestVault {
                 while (true) {
                     try {
                         long nextJobNotBeforeRealtimeElapsed = mJobQueue.peekNextJobNotBeforeRealtimeElapsed();
+                        if (!WonderPush.hasUserConsent()) {
+                            // Wait indefinitely if we must wait for consent
+                            nextJobNotBeforeRealtimeElapsed = Long.MAX_VALUE;
+                        }
                         long sleep = nextJobNotBeforeRealtimeElapsed - SystemClock.elapsedRealtime();
                         if (sleep > 0) {
                             if (nextJobNotBeforeRealtimeElapsed == Long.MAX_VALUE) {
-                                WonderPush.logDebug("RequestVault: waiting for next job");
+                                if (!WonderPush.hasUserConsent()) {
+                                    WonderPush.logDebug("RequestVault: waiting for user consent");
+                                } else {
+                                    WonderPush.logDebug("RequestVault: waiting for next job");
+                                }
                             } else {
                                 WonderPush.logDebug("RequestVault: sleeping " + sleep + " ms");
                             }
@@ -76,7 +93,9 @@ class WonderPushRequestVault {
                             continue;
                         }
 
-                        // Blocks
+                        // This blocking call won't block because we check for a job's presence first
+                        // using mJobQueue.peekNextJobNotBeforeRealtimeElapsed()
+                        // and we're it's sole consumer (although not enforced by the current code design)
                         final WonderPushJobQueue.Job job = mJobQueue.nextJob();
 
                         final WonderPushRestClient.Request request;
@@ -106,7 +125,12 @@ class WonderPushRequestVault {
                                 resetBackoff();
                             }
                         });
-                        WonderPushRestClient.requestAuthenticated(request);
+                        if (!WonderPush.hasUserConsent()) {
+                            // This last resort check is not expected to catch any case but is here for strictness
+                            request.getHandler().onFailure(new RuntimeException("Missing user consent"), new Response("Missing user consent"));
+                        } else {
+                            WonderPushRestClient.requestAuthenticated(request);
+                        }
                     } catch (InterruptedException ignored) {}
                 }
             }

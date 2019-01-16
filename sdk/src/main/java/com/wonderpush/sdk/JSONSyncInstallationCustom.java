@@ -153,6 +153,20 @@ class JSONSyncInstallationCustom {
         }
         long nowRT = SystemClock.elapsedRealtime();
         if (firstDelayedWriteDate == 0) firstDelayedWriteDate = nowRT;
+        if (!WonderPush.hasUserConsent()) {
+            WonderPush.logDebug("Delaying scheduled patch call until user consent is provided for installation custom state for userId " + userId);
+            WonderPush.addUserConsentListener(new WonderPush.UserConsentListener() {
+                @Override
+                public void onUserConsentChanged(boolean hasUserConsent) {
+                    if (hasUserConsent) {
+                        WonderPush.removeUserConsentListener(this);
+                        WonderPush.logDebug("Now scheduling user consent delayed patch call for installation custom state for userId " + userId);
+                        _schedulePatchCall(); // NOTE: imposes this function to be somewhat reentrant
+                    }
+                }
+            });
+            return;
+        }
         scheduledPatchCallDelayedTask = WonderPush.sScheduledExecutor.schedule(
                 new Callable<Void>() {
                     @Override
@@ -171,12 +185,21 @@ class JSONSyncInstallationCustom {
     }
 
     private synchronized void _performScheduledPatchCall() {
+        if (!WonderPush.hasUserConsent()) {
+            WonderPush.logDebug("Need consent, not performing scheduled patch call for user " + userId);
+            return;
+        }
         firstDelayedWriteDate = 0;
         sync.performScheduledPatchCall();
     }
 
     private synchronized void _serverPatchInstallation(final JSONObject diff, final JSONSync.ResponseHandler handler) {
         try {
+            if (!WonderPush.hasUserConsent()) {
+                WonderPush.logDebug("Need consent, not sending installation custom diff " + diff + " for user " + userId);
+                handler.onFailure();
+                return;
+            }
             WonderPush.logDebug("Sending installation custom diff " + diff + " for user " + userId);
             JSONObject body = new JSONObject();
             body.put("custom", diff);

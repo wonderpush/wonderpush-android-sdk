@@ -154,7 +154,9 @@ class WonderPushRestClient {
      */
     protected static boolean fetchAnonymousAccessTokenIfNeeded(final String userId, final ResponseHandler onFetchedHandler) {
         if (!WonderPush.isInitialized()) {
-            WonderPush.safeDefer(new Runnable() {
+            // Note: Could use WonderPush.safeDefer() here but as we require consent to proceed,
+            // let's use WonderPush.safeDeferWithConsent() to additionally passively wait for SDK initialization.
+            WonderPush.safeDeferWithConsent(new Runnable() {
                 @Override
                 public void run() {
                     if (!fetchAnonymousAccessTokenIfNeeded(userId, onFetchedHandler)) {
@@ -162,7 +164,7 @@ class WonderPushRestClient {
                         onFetchedHandler.onSuccess(null);
                     }
                 }
-            }, 100);
+            }, null);
             return true; // true: the handler will be called
         }
 
@@ -402,16 +404,12 @@ class WonderPushRestClient {
             return;
         }
         sIsFetchingAnonymousAccessToken = true;
-        WonderPush.safeDefer(new Runnable() {
+        WonderPush.safeDeferWithConsent(new Runnable() {
             @Override
             public void run() {
-                if (WonderPush.isInitialized()) {
-                    fetchAnonymousAccessToken_inner(userId, handler, nbRetries);
-                } else {
-                    WonderPush.safeDefer(this, 100);
-                }
+                fetchAnonymousAccessToken_inner(userId, handler, nbRetries);
             }
-        }, 0);
+        }, "fetchAnonymousAccessToken");
     }
 
     private static void fetchAnonymousAccessToken_inner(final String userId, final ResponseHandler handler, final int nbRetries) {

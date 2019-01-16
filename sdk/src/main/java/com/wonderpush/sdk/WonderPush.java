@@ -5,7 +5,6 @@ import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -15,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -27,7 +27,11 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -93,6 +97,32 @@ public class WonderPush {
     private static boolean sIsReady = false;
     private static boolean sIsReachable = false;
 
+    private static boolean sRequiresUserConsent = false;
+    private static final WonderPushNotInitializedImpl sNotInitializedImpl = new WonderPushNotInitializedImpl();
+    private static IWonderPush sApiImpl = sNotInitializedImpl;
+
+    private static final Map<String, Runnable> sUserConsentDeferred = new TreeMap<>();
+    private static final Set<UserConsentListener> sUserConsentListeners = new LinkedHashSet<>();
+    interface UserConsentListener {
+        void onUserConsentChanged(boolean hasUserConsent);
+    }
+    static {
+        // Add the necessary user consent listener to dequeue sUserConsentDeferred
+        addUserConsentListener(new UserConsentListener() {
+            @Override
+            public void onUserConsentChanged(boolean hasUserConsent) {
+                if (hasUserConsent) {
+                    synchronized (sUserConsentDeferred) {
+                        for (Runnable runnable : sUserConsentDeferred.values()) {
+                            WonderPush.safeDefer(runnable, 0);
+                        }
+                        sUserConsentDeferred.clear();
+                    }
+                }
+            }
+        });
+    }
+
     private static boolean sBeforeInitializationUserIdSet = false;
     private static String sBeforeInitializationUserId;
 
@@ -132,12 +162,12 @@ public class WonderPush {
     /**
      * The preference.subscriptionStatus value when notifications are enabled.
      */
-    private static final String INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN = "optIn";
+    static final String INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN = "optIn";
 
     /**
      * The preference.subscriptionStatus value when notifications are disabled.
      */
-    private static final String INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT = "optOut";
+    static final String INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT = "optOut";
 
     /**
      * Local intent broadcasted when the WonderPush SDK has been initialized and network is reachable.
@@ -319,6 +349,18 @@ public class WonderPush {
             "ta", "th", "tl", "tr", "uk", "vi", "zh", "zh_CN", "zh_TW", "zh_HK",
     };
 
+    static {
+        // Ensure we get an @APP_OPEN with deferred initialization
+        addUserConsentListener(new UserConsentListener() {
+            @Override
+            public void onUserConsentChanged(boolean hasUserConsent) {
+                if (hasUserConsent) {
+                    onInteraction(false);
+                }
+            }
+        });
+    }
+
     protected WonderPush() {
         throw new IllegalAccessError("You should not instantiate this class!");
     }
@@ -399,6 +441,8 @@ public class WonderPush {
      * </code>
      * </pre>
      *
+     * <p>Returns {@code false} and does nothing if called without required user consent.</p>
+     *
      * @param activity
      *            The current {@link Activity}.
      *            Just give {@code this}.
@@ -412,7 +456,7 @@ public class WonderPush {
         try {
             return NotificationManager.showPotentialNotification(activity, intent);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while showing potential notification", e);
+            Log.e(WonderPush.TAG, "Unexpected error while showing potential notification", e);
         }
         return false;
     }
@@ -640,12 +684,12 @@ public class WonderPush {
 
     /**
      * Returns the latest known custom properties attached to the current installation object stored by WonderPush.
+     *
+     * <p>Returns an empty {@code JSONObject} if called without required user consent.</p>
      */
     @SuppressWarnings("unused")
     public static synchronized JSONObject getInstallationCustomProperties() {
-        JSONObject rtn = InstallationManager.getInstallationCustomProperties();
-        WonderPush.logDebug("getInstallationCustomProperties() -> " + rtn);
-        return rtn;
+        return sApiImpl.getInstallationCustomProperties();
     }
 
     /**
@@ -657,16 +701,14 @@ public class WonderPush {
      *   object as value.
      * </p>
      *
+     * <p>Does nothing if called without required user consent.</p>
+     *
      * @param customProperties
      *            The partial object containing only the properties to update.
      */
     @SuppressWarnings("unused")
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
-        try {
-            InstallationManager.putInstallationCustomProperties(customProperties);
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while putting installation custom properties", e);
-        }
+        sApiImpl.putInstallationCustomProperties(customProperties);
     }
 
     static synchronized void receivedFullInstallationCustomPropertiesFromServer(JSONObject custom) {
@@ -681,21 +723,23 @@ public class WonderPush {
 
     /**
      * Send an event to be tracked to WonderPush.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
      * @param type
      *            The event type, or name.
      *            Event types starting with an {@code @} character are reserved.
      */
     @SuppressWarnings("unused")
     public static void trackEvent(String type) {
-        try {
-            trackEvent(type, null);
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while tracking user event of type \"" + type + "\"", e);
-        }
+        sApiImpl.trackEvent(type);
     }
 
     /**
      * Send an event to be tracked to WonderPush.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
      * @param type
      *            The event type, or name.
      *            Event types starting with an {@code @} character are reserved.
@@ -704,26 +748,21 @@ public class WonderPush {
      *            Prefer using a few custom properties over a plethora of event type variants.
      */
     public static void trackEvent(String type, JSONObject customData) {
-        try {
-            WonderPush.logDebug("trackEvent(" + type + ", " + customData + ")");
-            trackEvent(type, null, customData);
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while tracking user event of type \"" + type + "\"", e);
-        }
+        sApiImpl.trackEvent(type, customData);
     }
 
-    protected static void trackEvent(String type, JSONObject eventData, JSONObject customData) {
+    static void trackEvent(String type, JSONObject eventData, JSONObject customData) {
         if (type == null || type.length() == 0 || type.charAt(0) == '@') {
             throw new IllegalArgumentException("Bad event type");
         }
         sendEvent(type, eventData, customData);
     }
 
-    protected static void trackInternalEvent(String type, JSONObject eventData) {
+    static void trackInternalEvent(String type, JSONObject eventData) {
         trackInternalEvent(type, eventData, null);
     }
 
-    protected static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
+    static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
         if (type.charAt(0) != '@') {
             throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
         }
@@ -731,6 +770,11 @@ public class WonderPush {
     }
 
     private static void sendEvent(String type, JSONObject eventData, JSONObject customData) {
+        if (!hasUserConsent()) {
+            logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
+            return;
+        }
+
         String eventEndpoint = "/events/";
 
         JSONObject event = new JSONObject();
@@ -772,6 +816,10 @@ public class WonderPush {
     }
 
     protected static void onInteraction(boolean leaving) {
+        if (!hasUserConsent()) {
+            logDebug("onInteraction ignored without user consent");
+            return;
+        }
         long lastInteractionDate = WonderPushConfiguration.getLastInteractionDate();
         long lastAppOpenDate = WonderPushConfiguration.getLastAppOpenDate();
         long lastAppCloseDate = WonderPushConfiguration.getLastAppCloseDate();
@@ -948,6 +996,7 @@ public class WonderPush {
                         : WonderPushConfiguration.getUserId());
 
                 sIsInitialized = true;
+                hasUserConsentChanged(hasUserConsent()); // make sure to set sIsInitialized=true before
 
                 // Permission checks
                 if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
@@ -977,7 +1026,7 @@ public class WonderPush {
         sIsReady = false;
         WonderPushConfiguration.changeUserId(userId);
         // Wait for SDK to be initialized and fetch anonymous token if needed.
-        WonderPush.safeDefer(new Runnable() {
+        WonderPush.safeDeferWithConsent(new Runnable() {
             @Override
             public void run() {
                 if (isInitialized()) {
@@ -1007,7 +1056,7 @@ public class WonderPush {
                     WonderPush.safeDefer(this, 100);
                 }
             }
-        }, 0);
+        }, "initForNewUser"); // using this constant id we ensure we only initialize for the last used userId
     }
 
     protected static void initializeForApplication(Context context) {
@@ -1027,8 +1076,10 @@ public class WonderPush {
 
         ActivityLifecycleMonitor.addTrackedActivity(activity);
 
-        showPotentialNotification(activity, activity.getIntent());
-        onInteraction(false); // keep after onCreateMainActivity() as a possible received notification's information is needed
+        if (hasUserConsent()) {
+            showPotentialNotification(activity, activity.getIntent());
+            onInteraction(false); // keep after onCreateMainActivity() as a possible received notification's information is needed
+        }
     }
 
     /**
@@ -1079,6 +1130,101 @@ public class WonderPush {
         }
 
         return isInitialized();
+    }
+
+    /**
+     * Sets whether user consent is required before the SDK is allowed to work.
+     *
+     * <p>Call this method before {@link #initialize(Context)}.</p>
+     *
+     * @param value Whether user consent is required before the SDK is allowed to work.
+     * @see #setUserConsent(boolean)
+     */
+    public static void setRequiresUserConsent(boolean value) {
+        if (sIsInitialized) {
+            // TODO Can we handle this properly? Should we not change sRequiresUserConsent?
+            Log.w(TAG, "WonderPush.setRequiresUserConsent(" + value + ") called after WonderPush.initialize()");
+        }
+        sRequiresUserConsent = value;
+    }
+
+    /**
+     * Returns whether user consent has already provided consent.
+     *
+     * <p>Call this method after {@link #initialize(Context)}.</p>
+     */
+    public static boolean getUserConsent() {
+        return WonderPushConfiguration.getUserConsent();
+    }
+
+    /**
+     * Returns false if user consent is required and was not provided,
+     * true if user consent is not required or if it was provided.
+     */
+    static boolean hasUserConsent() {
+        return !sRequiresUserConsent || Boolean.TRUE.equals(WonderPushConfiguration.getUserConsent());
+    }
+
+    /**
+     * Provides or withdraws user consent.
+     *
+     * <p>Call this method after {@link #initialize(Context)}.</p>
+     *
+     * @param value Whether the user provided or withdrew consent.
+     * @see #setRequiresUserConsent(boolean)
+     */
+    public static void setUserConsent(boolean value) {
+        boolean hadUserConsent = hasUserConsent();
+        WonderPushConfiguration.setUserConsent(value);
+        boolean nowHasUserConsent = hasUserConsent();
+        if (sIsInitialized && hadUserConsent != nowHasUserConsent) {
+            hasUserConsentChanged(nowHasUserConsent);
+        }
+    }
+
+    private static void hasUserConsentChanged(boolean hasUserConsent) {
+        synchronized (sUserConsentListeners) {
+            if (!sIsInitialized) logError("hasUserConsentChanged called before SDK is initialized");
+            sApiImpl._deactivate();
+            if (hasUserConsent) {
+                sApiImpl = new WonderPushImpl();
+            } else {
+                sApiImpl = new WonderPushNoConsentImpl();
+            }
+            sApiImpl._activate();
+            for (UserConsentListener listener : sUserConsentListeners) {
+                try {
+                    listener.onUserConsentChanged(hasUserConsent);
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while processing user consent changed listeners", ex);
+                }
+            }
+        }
+    }
+
+    static void addUserConsentListener(UserConsentListener listener) {
+        synchronized (sUserConsentListeners) {
+            sUserConsentListeners.add(listener);
+        }
+    }
+
+    static void removeUserConsentListener(UserConsentListener listener) {
+        synchronized (sUserConsentListeners) {
+            sUserConsentListeners.remove(listener);
+        }
+    }
+
+    /**
+     * Defers code to execute once consent is provided *and* SDK is initialized, using {@link #safeDefer(Runnable, long)}.
+     * @param runnable The code to execute
+     * @param id - Permits to replace an old runnable still waiting with the same id.
+     *           If {@code null}, a UUID is generated.
+     */
+    static void safeDeferWithConsent(Runnable runnable, @Nullable String id) {
+        if (id == null) id = UUID.randomUUID().toString();
+        synchronized (sUserConsentDeferred) {
+            sUserConsentDeferred.put(id, runnable);
+        }
     }
 
     /**
@@ -1155,30 +1301,15 @@ public class WonderPush {
      *
      * <p>You should not call this method before initializing the SDK.</p>
      *
+     * <p>Returns {@code null} if called without required user consent.</p>
+     *
      * @return The device id, or {@code null} if the SDK is not initialized.
      * @see #isReady()
      * @see #initialize(Context)
      */
     @SuppressWarnings("unused")
     public static String getDeviceId() {
-        String deviceId = null;
-        try {
-            deviceId = WonderPushConfiguration.getDeviceId();
-            if (deviceId == null) {
-                // Read from OpenUDID storage to keep a smooth transition off using OpenUDID
-                SharedPreferences sharedPrefs =  sApplicationContext.getSharedPreferences("openudid_prefs", Context.MODE_PRIVATE);
-                deviceId = sharedPrefs.getString("openudid", null);
-                if (deviceId == null) {
-                    // Generate an UUIDv4
-                    deviceId = UUID.randomUUID().toString();
-                }
-                // and store it for us
-                WonderPushConfiguration.setDeviceId(deviceId);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while getting deviceId", e);
-        }
-        return deviceId;
+        return sApiImpl.getDeviceId();
     }
 
     /**
@@ -1187,18 +1318,14 @@ public class WonderPush {
      *
      * <p>You should not call this method before the SDK is ready.</p>
      *
+     * <p>Returns {@code null} if called without required user consent.</p>
+     *
      * @return The device id, or {@code null} if the SDK is not initialized.
      * @see #isReady()
      */
     @SuppressWarnings("unused")
     public static String getInstallationId() {
-        String installationId = null;
-        try {
-            installationId = WonderPushConfiguration.getInstallationId();
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while getting installationId", e);
-        }
-        return installationId;
+        return sApiImpl.getInstallationId();
     }
 
     /**
@@ -1206,19 +1333,15 @@ public class WonderPush {
      *
      * <p>You should not call this method before initializing the SDK.</p>
      *
+     * <p>Returns {@code null} if called without required user consent.</p>
+     *
      * @return The push token, or {@code null} if the installation is not yet
      *     registered to push notifications, or has not finished refreshing
      *     the push token after a forced update.
      */
     @SuppressWarnings("unused")
     public static String getPushToken() {
-        String pushToken = null;
-        try {
-            pushToken = WonderPushConfiguration.getGCMRegistrationId();
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while getting pushToken", e);
-        }
-        return pushToken;
+        return sApiImpl.getPushToken();
     }
 
     /**
@@ -1232,18 +1355,14 @@ public class WonderPush {
      *     and the associated user, you should not disclose it unnecessarily.
      * </p>
      *
+     * <p>Returns {@code null} if called without required user consent.</p>
+     *
      * @return The access token, or {@code null} if the SDK is not initialized.
      * @see #isReady()
      */
     @SuppressWarnings("unused")
     public static String getAccessToken() {
-        String accessToken = null;
-        try {
-            accessToken = WonderPushConfiguration.getAccessToken();
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while getting accessToken", e);
-        }
-        return accessToken;
+        return sApiImpl.getAccessToken();
     }
 
     /**
@@ -1302,6 +1421,8 @@ public class WonderPush {
      *   <a href="https://developers.google.com/cloud-messaging/android/client">https://developers.google.com/cloud-messaging/android/client</a>.
      * </p>
      *
+     * <p>Returns {@code false} and does nothing if called without required user consent.</p>
+     *
      * @param context
      *            The current context.
      * @param intent
@@ -1316,44 +1437,34 @@ public class WonderPush {
         try {
             return WonderPushGcmClient.onBroadcastReceived(context, intent, iconResource, activityClass);
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while giving broadcast to the receiver", e);
+            Log.e(WonderPush.TAG, "Unexpected error while giving broadcast to the receiver", e);
         }
         return false;
     }
 
     /**
      * Returns whether push notification are enabled.
-     * @return {@code true} by default as no explicit user permission is required.
+     *
+     * <p>Returns {@code false} if called without required user consent.</p>
+     *
+     * @return {@code true} by default as no explicit user permission is required,
+     * unless required user consent is lacking.
      */
     @SuppressWarnings("unused")
     public static boolean getNotificationEnabled() {
-        return WonderPushConfiguration.getNotificationEnabled();
+        return sApiImpl.getNotificationEnabled();
     }
 
     /**
      * Sets whether to enable push notifications for the current device.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
      * @param status {@code false} to opt out of push notifications.
      */
     @SuppressWarnings("unused")
     public static void setNotificationEnabled(boolean status) {
-        try {
-            logDebug("Set notification enabled: " + status);
-            if (status == WonderPushConfiguration.getNotificationEnabled()) {
-                logDebug("Set notification enabled: no change to apply");
-                return;
-            }
-            String value = status
-                    ? INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
-                    : INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
-            JSONObject properties = new JSONObject();
-            JSONObject preferences = new JSONObject();
-            properties.put("preferences", preferences);
-            preferences.put("subscriptionStatus", value);
-            InstallationManager.updateInstallation(properties, false);
-            WonderPushConfiguration.setNotificationEnabled(status);
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while setting notification enabled to " + status, e);
-        }
+        sApiImpl.setNotificationEnabled(status);
     }
 
     /**

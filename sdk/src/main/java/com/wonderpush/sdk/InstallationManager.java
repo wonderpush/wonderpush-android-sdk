@@ -53,6 +53,11 @@ class InstallationManager {
     }
 
     static void updateInstallation(JSONObject properties, boolean overwrite) {
+        if (!WonderPush.hasUserConsent()) {
+            WonderPush.logError("Not tracking updating installation without user consent. properties=" + properties + ", overwrite=" + overwrite);
+            return;
+        }
+
         String propertyEndpoint = "/installation";
         RequestParams parameters = new RequestParams();
         parameters.put("body", properties.toString());
