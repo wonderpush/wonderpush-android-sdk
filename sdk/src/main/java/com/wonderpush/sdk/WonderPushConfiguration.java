@@ -278,7 +278,7 @@ class WonderPushConfiguration {
     /**
      * Get the user consent stored in the user's shared preferences.
      */
-    static Boolean getUserConsent() {
+    static boolean getUserConsent() {
         return getBoolean(USER_CONSENT_PREF_NAME, false);
     }
 

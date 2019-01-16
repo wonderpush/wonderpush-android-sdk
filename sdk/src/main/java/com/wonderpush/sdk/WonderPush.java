@@ -1141,11 +1141,16 @@ public class WonderPush {
      * @see #setUserConsent(boolean)
      */
     public static void setRequiresUserConsent(boolean value) {
-        if (sIsInitialized) {
-            // TODO Can we handle this properly? Should we not change sRequiresUserConsent?
-            Log.w(TAG, "WonderPush.setRequiresUserConsent(" + value + ") called after WonderPush.initialize()");
-        }
+        boolean hadUserConsent = hasUserConsent();
         sRequiresUserConsent = value;
+        if (sIsInitialized) {
+            Log.w(TAG, "WonderPush.setRequiresUserConsent(" + value + ") called after WonderPush.initialize(). Although supported, a proper implementation typically only calls it before.");
+            // Refresh user consent
+            boolean nowHasUserConsent = hasUserConsent();
+            if (hadUserConsent != nowHasUserConsent) {
+                hasUserConsentChanged(nowHasUserConsent);
+            }
+        }
     }
 
     /**
@@ -1162,7 +1167,7 @@ public class WonderPush {
      * true if user consent is not required or if it was provided.
      */
     static boolean hasUserConsent() {
-        return !sRequiresUserConsent || Boolean.TRUE.equals(WonderPushConfiguration.getUserConsent());
+        return !sRequiresUserConsent || WonderPushConfiguration.getUserConsent();
     }
 
     /**
@@ -1185,6 +1190,7 @@ public class WonderPush {
     private static void hasUserConsentChanged(boolean hasUserConsent) {
         synchronized (sUserConsentListeners) {
             if (!sIsInitialized) logError("hasUserConsentChanged called before SDK is initialized");
+            logDebug("User consent changed to " + hasUserConsent);
             sApiImpl._deactivate();
             if (hasUserConsent) {
                 sApiImpl = new WonderPushImpl();
