@@ -385,7 +385,7 @@ class WonderPushRestClient {
                         sClient.patch(null, url, headers, entity, contentType, jsonHandler);
                         break;
                     case DELETE:
-                        sClient.delete(null, url, headers, jsonHandler);
+                        sClient.delete(null, url, headers, request.getParams(), jsonHandler);
                         break;
                     default:
                         jsonHandler.sendFailureMessage(0, null, null, new UnsupportedOperationException("Unhandled method " + request.getMethod()));
