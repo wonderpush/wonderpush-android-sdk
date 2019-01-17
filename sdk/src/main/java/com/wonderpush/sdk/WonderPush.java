@@ -1222,15 +1222,24 @@ public class WonderPush {
 
     /**
      * Defers code to execute once consent is provided *and* SDK is initialized, using {@link #safeDefer(Runnable, long)}.
+     * If consent is available, the code is still executed using {@link #safeDefer(Runnable, long)}.
      * @param runnable The code to execute
      * @param id - Permits to replace an old runnable still waiting with the same id.
      *           If {@code null}, a UUID is generated.
      */
-    static void safeDeferWithConsent(Runnable runnable, @Nullable String id) {
-        if (id == null) id = UUID.randomUUID().toString();
-        synchronized (sUserConsentDeferred) {
-            sUserConsentDeferred.put(id, runnable);
-        }
+    static void safeDeferWithConsent(final Runnable runnable, @Nullable final String id) {
+        safeDefer(new Runnable() {
+            @Override
+            public void run() {
+                if (hasUserConsent()) {
+                    runnable.run();
+                } else {
+                    synchronized (sUserConsentDeferred) {
+                        sUserConsentDeferred.put(id != null ? id : UUID.randomUUID().toString(), runnable);
+                    }
+                }
+            }
+        }, 0);
     }
 
     /**
