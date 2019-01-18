@@ -1243,6 +1243,35 @@ public class WonderPush {
     }
 
     /**
+     * Exports all data stored locally and on WonderPush servers and then starts a sharing activity
+     * for the user to save it.
+     */
+    public static void shareExport() {
+        DataManager.shareExport();
+    }
+
+    /**
+     * Ask the WonderPush servers to delete any event associated with the all local installations.
+     */
+    public static void clearInstallationEvents() {
+        DataManager.clearInstallationEvents();
+    }
+
+    /**
+     * Ask the WonderPush servers to delete any custom data associated with the all local installations and related users.
+     */
+    public static void clearInstallationData() {
+        DataManager.clearInstallationData();
+    }
+
+    /**
+     * Remove any local storage and ask the WonderPush servers to delete any data associated with the all local installations and related users.
+     */
+    public static void clearAll() {
+        DataManager.clearAll();
+    }
+
+    /**
      * Sets the user id, used to identify a single identity across multiple devices,
      * and to correctly identify multiple users on a single device.
      *

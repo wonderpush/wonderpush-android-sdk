@@ -149,9 +149,59 @@ class WonderPushConfiguration {
         setLastAppCloseDate(newUserArchive.optLong(LAST_APPCLOSE_DATE_PREF_NAME));
     }
 
+    static void clearForUserId(String userId) {
+        if (userId == null) userId = "";
+        // Clean user archive
+        JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
+        if (usersArchive != null) {
+            usersArchive.remove(userId);
+            putJSONObject(PER_USER_ARCHIVE_PREF_NAME, usersArchive);
+        }
+        // Note: We do not touch INSTALLATION_CUSTOM_SYNC_STATE_PER_USER_ID_PREF_NAME ourself
+        // If we're working on the current user, clear the properties
+        if (userId.equals(getUserId()) || getUserId() == null && userId.equals("")) {
+            SharedPreferences prefs = getSharedPreferences();
+            if (prefs != null) {
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.remove(ACCESS_TOKEN_PREF_NAME);
+                editor.remove(SID_PREF_NAME);
+                editor.remove(INSTALLATION_ID_PREF_NAME);
+                editor.remove(USER_ID_PREF_NAME);
+                editor.remove(NOTIFICATION_ENABLED_PREF_NAME);
+                editor.remove(CHANNEL_PREFERENCES_PREF_NAME);
+                editor.remove(CACHED_INSTALLATION_CORE_PROPERTIES_NAME);
+                editor.remove(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME);
+                editor.remove(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME);
+                editor.remove(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME);
+                editor.remove(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME);
+                editor.remove(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME);
+                editor.remove(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME);
+                editor.remove(CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME);
+                editor.remove(LAST_INTERACTION_DATE_PREF_NAME);
+                editor.remove(LAST_APPOPEN_DATE_PREF_NAME);
+                editor.remove(LAST_APPOPEN_INFO_PREF_NAME);
+                editor.remove(LAST_APPCLOSE_DATE_PREF_NAME);
+                editor.apply();
+            }
+        }
+    }
+
+    static void clearStorage(boolean keepUserConsent, boolean keepDeviceId) {
+        SharedPreferences prefs = getSharedPreferences();
+        if (prefs == null) return;
+        SharedPreferences.Editor editor = prefs.edit();
+        for (String key : prefs.getAll().keySet()) {
+            if (keepUserConsent && USER_CONSENT_PREF_NAME.equals(key)) continue;
+            if (keepDeviceId && DEVICE_ID_PREF_NAME.equals(key)) continue;
+            editor.remove(key);
+        }
+        editor.apply();
+    }
+
     static JSONObject dumpState() {
         JSONObject rtn = new JSONObject();
         SharedPreferences prefs = getSharedPreferences();
+        if (prefs == null) return rtn;
         for (Map.Entry<String, ?> entry : prefs.getAll().entrySet()) {
             Object value = JSONUtil.parseAllJSONStrings(entry.getValue());
             try {

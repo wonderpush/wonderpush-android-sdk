@@ -9,5 +9,6 @@
     <string name="wonderpush_view">View</string>
     <string name="wonderpush_network_error">Could not load this page, please check your Internet connectivity.</string>
     <string name="wonderpush_could_not_open_location">Could not open location. Do you have Google Maps installed?</string>
+    <string name="wonderpush_export_data_chooser">Export data to</string>
 
 </resources>
