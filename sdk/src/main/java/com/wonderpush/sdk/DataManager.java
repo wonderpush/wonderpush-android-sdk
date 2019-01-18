@@ -125,7 +125,7 @@ class DataManager {
                     }
                 });
                 // Step 4 - Events. Loops back to processNextUser
-                final AtomicReference<RequestParams> step4RequestParams = new AtomicReference<>(new RequestParams("limit", "1"));
+                final AtomicReference<RequestParams> step4RequestParams = new AtomicReference<>(new RequestParams("limit", "1000"));
                 step4EventPage.set(new Runnable() {
                     @Override
                     public void run() {
@@ -181,8 +181,7 @@ class DataManager {
     static boolean shareExport() {
         String data;
         try {
-            Future<String> f = export();
-            data = f.get();
+            data = export().get();
         } catch (InterruptedException ex) {
             return false;
         } catch (ExecutionException ex) {
