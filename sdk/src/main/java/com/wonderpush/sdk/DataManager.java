@@ -2,17 +2,27 @@ package com.wonderpush.sdk;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 class DataManager {
 
@@ -183,16 +193,44 @@ class DataManager {
         try {
             data = export().get();
         } catch (InterruptedException ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while exporting data", ex);
             return false;
         } catch (ExecutionException ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while exporting data", ex);
             return false;
         }
-        Intent sendIntent = new Intent();
-        sendIntent.setAction(Intent.ACTION_SEND);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, data);
-        sendIntent.setType("text/plain");
-        WonderPush.getApplicationContext().startActivity(Intent.createChooser(sendIntent, WonderPush.getApplicationContext().getResources().getText(R.string.wonderpush_export_data_chooser)));
-        return true;
+
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            File folder = new File(WonderPush.getApplicationContext().getFilesDir(), "exports");
+            folder.mkdirs();
+            String fn = "wonderpush-android-dataexport-" + sdf.format(new Date()) + ".json";
+            File f = new File(folder, fn);
+            OutputStream os = new FileOutputStream(f);
+            os.write(data.getBytes());
+            os.close();
+
+            File fz = new File(folder, fn + ".zip");
+            ZipOutputStream osz = new ZipOutputStream(new FileOutputStream(fz));
+            osz.putNextEntry(new ZipEntry(fn));
+            osz.write(data.getBytes());
+            osz.closeEntry();
+            osz.finish();
+            osz.close();
+
+            Uri uri = FileProvider.getUriForFile(WonderPush.getApplicationContext(), WonderPush.getApplicationContext().getPackageName() + ".wonderpush.fileprovider", fz);
+            Intent sendIntent = new Intent();
+            sendIntent.setAction(Intent.ACTION_SEND);
+            sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            sendIntent.setType("application/zip");
+            sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            WonderPush.getApplicationContext().startActivity(Intent.createChooser(sendIntent, WonderPush.getApplicationContext().getResources().getText(R.string.wonderpush_export_data_chooser)));
+            return true;
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while exporting data", ex);
+            return false;
+        }
     }
 
     static void clearInstallationEvents() {
@@ -222,7 +260,7 @@ class DataManager {
             custom.put(diff);
             custom.flush();
         } catch (JSONException ex) {
-            Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId);
+            Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId, ex);
         }
 
         if (userId != null) {
@@ -236,7 +274,7 @@ class DataManager {
         try {
             JSONSyncInstallationCustom.forUser(userId).receiveState(null, true);
         } catch (JSONException ex) {
-            Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId);
+            Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId, ex);
         }
     }
 
