@@ -1,9 +1,5 @@
 package com.wonderpush.sdk;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-
 import org.json.JSONObject;
 
 /**
@@ -16,18 +12,39 @@ interface IWonderPush {
     // Called when switching away from this implementation
     void _deactivate();
 
+    //
+    // Identifiers
+    //
+
     String getAccessToken();
     String getDeviceId();
     String getInstallationId();
     String getPushToken();
 
+    //
+    // Subscribing users
+    //
+
+    void subscribeToNotifications();
+    void unsubscribeFromNotifications();
+    boolean isSubscribedToNotifications();
+    @Deprecated
     boolean getNotificationEnabled();
+    @Deprecated
     void setNotificationEnabled(boolean status);
 
-    JSONObject getInstallationCustomProperties();
-    void putInstallationCustomProperties(JSONObject customProperties);
+    //
+    // Segmentation
+    //
 
     void trackEvent(String type);
     void trackEvent(String type, JSONObject customData);
+
+    JSONObject getProperties();
+    void putProperties(JSONObject properties);
+    @Deprecated
+    JSONObject getInstallationCustomProperties();
+    @Deprecated
+    void putInstallationCustomProperties(JSONObject customProperties);
 
 }

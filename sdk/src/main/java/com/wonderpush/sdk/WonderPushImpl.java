@@ -81,11 +81,28 @@ class WonderPushImpl implements IWonderPush {
     }
 
     @Override
+    public void subscribeToNotifications() {
+        setNotificationEnabled(true);
+    }
+
+    @Override
+    public void unsubscribeFromNotifications() {
+        setNotificationEnabled(false);
+    }
+
+    @Override
+    public boolean isSubscribedToNotifications() {
+        return getNotificationEnabled();
+    }
+
+    @Override
+    @Deprecated
     public boolean getNotificationEnabled() {
         return WonderPushConfiguration.getNotificationEnabled();
     }
 
     @Override
+    @Deprecated
     public void setNotificationEnabled(boolean status) {
         try {
             WonderPush.logDebug("Set notification enabled: " + status);
@@ -108,6 +125,17 @@ class WonderPushImpl implements IWonderPush {
     }
 
     @Override
+    public JSONObject getProperties() {
+        return getInstallationCustomProperties();
+    }
+
+    @Override
+    public void putProperties(JSONObject properties) {
+        putInstallationCustomProperties(properties);
+    }
+
+    @Override
+    @Deprecated
     public JSONObject getInstallationCustomProperties() {
         JSONObject rtn = InstallationManager.getInstallationCustomProperties();
         WonderPush.logDebug("getInstallationCustomProperties() -> " + rtn);
@@ -115,6 +143,7 @@ class WonderPushImpl implements IWonderPush {
     }
 
     @Override
+    @Deprecated
     public void putInstallationCustomProperties(JSONObject customProperties) {
         try {
             InstallationManager.putInstallationCustomProperties(customProperties);

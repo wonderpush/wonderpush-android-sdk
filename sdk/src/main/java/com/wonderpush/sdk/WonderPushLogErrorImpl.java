@@ -50,23 +50,54 @@ abstract class WonderPushLogErrorImpl implements IWonderPush {
     }
 
     @Override
+    public void subscribeToNotifications() {
+        this.log("subscribeToNotifications");
+    }
+
+    @Override
+    public void unsubscribeFromNotifications() {
+        this.log("unsubscribeFromNotifications");
+    }
+
+    @Override
+    public boolean isSubscribedToNotifications() {
+        this.log("isSubscribedToNotifications");
+        return false;
+    }
+
+    @Override
+    @Deprecated
     public boolean getNotificationEnabled() {
         this.log("getNotificationEnabled");
         return false;
     }
 
     @Override
+    @Deprecated
     public void setNotificationEnabled(boolean status) {
         this.log("setNotificationEnabled");
     }
 
     @Override
+    public JSONObject getProperties() {
+        this.log("getProperties");
+        return new JSONObject();
+    }
+
+    @Override
+    public void putProperties(JSONObject properties) {
+        this.log("putProperties");
+    }
+
+    @Override
+    @Deprecated
     public JSONObject getInstallationCustomProperties() {
         this.log("getInstallationCustomProperties");
         return new JSONObject();
     }
 
     @Override
+    @Deprecated
     public void putInstallationCustomProperties(JSONObject customProperties) {
         this.log("putInstallationCustomProperties");
     }

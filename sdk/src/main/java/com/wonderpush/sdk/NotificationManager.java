@@ -1049,7 +1049,11 @@ class NotificationManager {
         // Refresh preferences
         boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();
         WonderPushConfiguration.setNotificationEnabled(!notificationEnabled);
-        WonderPush.setNotificationEnabled(notificationEnabled);
+        if (notificationEnabled) {
+            WonderPush.subscribeToNotifications();
+        } else {
+            WonderPush.unsubscribeFromNotifications();
+        }
     }
 
     protected static void handleMethodAction(ActionModel action) {

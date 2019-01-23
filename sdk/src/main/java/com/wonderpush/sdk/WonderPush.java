@@ -683,11 +683,39 @@ public class WonderPush {
     }
 
     /**
+     * Returns the latest known properties attached to the current installation object stored by WonderPush.
+     *
+     * <p>Returns an empty {@code JSONObject} if called without required user consent.</p>
+     */
+    public static JSONObject getProperties() {
+        return sApiImpl.getProperties();
+    }
+
+    /**
+     * Update the properties attached to the current installation object stored by WonderPush.
+     *
+     * <p>
+     *   In order to remove a value, don't forget to use the
+     *   {@link <a href="http://d.android.com/reference/org/json/JSONObject.html#NULL">JSONObject.NULL</a>}
+     *   object as value.
+     * </p>
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
+     * @param properties
+     *            The partial object containing only the properties to update.
+     */
+    public static void putProperties(JSONObject properties) {
+        sApiImpl.putProperties(properties);
+    }
+
+    /**
      * Returns the latest known custom properties attached to the current installation object stored by WonderPush.
      *
      * <p>Returns an empty {@code JSONObject} if called without required user consent.</p>
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static synchronized JSONObject getInstallationCustomProperties() {
         return sApiImpl.getInstallationCustomProperties();
     }
@@ -707,6 +735,7 @@ public class WonderPush {
      *            The partial object containing only the properties to update.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
         sApiImpl.putInstallationCustomProperties(customProperties);
     }
@@ -1487,6 +1516,36 @@ public class WonderPush {
     }
 
     /**
+     * Enables push notifications for the current device.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     */
+    public static void subscribeToNotifications() {
+        sApiImpl.subscribeToNotifications();
+    }
+
+    /**
+     * Disables push notifications for the current device.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     */
+    public static void unsubscribeFromNotifications() {
+        sApiImpl.unsubscribeFromNotifications();
+    }
+
+    /**
+     * Returns whether push notification are enabled.
+     *
+     * <p>Returns {@code false} if called without required user consent.</p>
+     *
+     * @return {@code true} by default as no explicit user permission is required,
+     * unless required user consent is lacking.
+     */
+    public static boolean isSubscribedToNotifications() {
+        return sApiImpl.isSubscribedToNotifications();
+    }
+
+    /**
      * Returns whether push notification are enabled.
      *
      * <p>Returns {@code false} if called without required user consent.</p>
@@ -1495,6 +1554,7 @@ public class WonderPush {
      * unless required user consent is lacking.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static boolean getNotificationEnabled() {
         return sApiImpl.getNotificationEnabled();
     }
@@ -1507,6 +1567,7 @@ public class WonderPush {
      * @param status {@code false} to opt out of push notifications.
      */
     @SuppressWarnings("unused")
+    @Deprecated
     public static void setNotificationEnabled(boolean status) {
         sApiImpl.setNotificationEnabled(status);
     }
