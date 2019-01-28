@@ -151,17 +151,6 @@ class InstallationManager {
         return versionName;
     }
 
-    protected static int getApplicationVersionCode() {
-        int versionCode = -1;
-        try {
-            PackageInfo packageInfo = WonderPush.getApplicationContext().getPackageManager().getPackageInfo(WonderPush.getApplicationContext().getPackageName(), 0);
-            versionCode = packageInfo.versionCode;
-        } catch (PackageManager.NameNotFoundException e) {
-            WonderPush.logDebug("Could not retreive version code");
-        }
-        return versionCode;
-    }
-
     protected static String getOsVersion() {
         return "" + android.os.Build.VERSION.SDK_INT;
     }

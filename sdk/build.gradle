@@ -5,8 +5,8 @@ project.group = 'com.wonderpush'
 project.archivesBaseName = 'wonderpush-android-sdk'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
 
     lintOptions {
         abortOnError false
@@ -34,15 +34,16 @@ android {
 }
 
 dependencies {
-    compile 'com.loopj.android:android-async-http:1.4.9'
-    compile 'com.google.android.gms:play-services-gcm:11.0.4'
+    implementation 'com.loopj.android:android-async-http:1.4.9'
+    api "com.google.firebase:firebase-messaging:17.3.4"
+    api "com.google.android.gms:play-services-analytics:16.0.6" // for AdvertisingId
     // Use the full support-v4 instead of the module support-compat
     // because com.google.android.gms:play-services-gcm (indirectly) depends on it
     // and all modules must use the same version.
-    compile 'com.android.support:support-v4:26.0.2'
+    api 'com.android.support:support-v4:28.0.0'
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'org.json:json:20160810'
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.json:json:20160810'
 }
 
 if (file('local.gradle').exists()) {
@@ -168,8 +169,13 @@ signing {
 task androidJavadocs(type: Javadoc) {
     title = 'WonderPush Android SDK Reference'
     source = 'src/main/java/com/wonderpush/sdk' //android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.sourceSets.main.java.srcDirs.join(File.pathSeparator))
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    doFirst {
+        classpath = project.files(
+                project.android.libraryVariants.toList().first().javaCompileProvider.get().classpath.files,
+                project.android.getBootClasspath(),
+                android.sourceSets.main.java.srcDirs
+        )
+    }
     options.overview = project.rootDir.path + '/overview.html'
     options.showFromPublic()
     // JDK 1.8 is more strict then 1.7. Have JDK 1.8 behave like 1.7 for javadoc generation
@@ -191,22 +197,4 @@ task androidSourcesJar(type: Jar) {
 artifacts {
     archives androidSourcesJar
     archives androidJavadocsJar
-}
-
-def replaceInManifest(output, fromString, toString) {
-    def manifestOutFile = output.processManifest.aaptFriendlyManifestOutputFile
-    def updatedContent = manifestOutFile.getText('UTF-8').replaceAll(fromString, toString)
-    manifestOutFile.write(updatedContent, 'UTF-8')
-}
-
-afterEvaluate {
-    androidJavadocs.classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
-
-    android.libraryVariants.all { variant ->
-        variant.outputs.each { output ->
-            output.processManifest.doLast {
-                replaceInManifest(output, 'dollar_openBracket_wonderpushNotificationIcon_closeBracket', '@drawable/ic_notifications_white_24dp')
-            }
-        }
-    }
 }

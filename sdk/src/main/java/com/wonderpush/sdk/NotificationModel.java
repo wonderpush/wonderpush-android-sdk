@@ -6,6 +6,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.google.firebase.messaging.RemoteMessage;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -146,6 +148,12 @@ abstract class NotificationModel implements Parcelable {
     private final List<ButtonModel> buttons = new ArrayList<>(3);
     private String title;
 
+    public static NotificationModel fromRemoteMessage(RemoteMessage remoteMessage)
+            throws NotTargetedForThisInstallationException
+    {
+        return fromGCMBroadcastIntent(remoteMessage.toIntent());
+    }
+
     public static NotificationModel fromGCMBroadcastIntent(Intent intent)
             throws NotTargetedForThisInstallationException
     {
@@ -155,7 +163,7 @@ abstract class NotificationModel implements Parcelable {
                 WonderPush.logDebug("Received broadcasted intent has no extra");
                 return null;
             }
-            String wpDataJson = extras.getString(WonderPushGcmClient.WONDERPUSH_NOTIFICATION_EXTRA_KEY);
+            String wpDataJson = extras.getString(WonderPushFcmMessagingService.WONDERPUSH_NOTIFICATION_EXTRA_KEY);
             if (wpDataJson == null) {
                 WonderPush.logDebug("Received broadcasted intent has no data for WonderPush");
                 return null;

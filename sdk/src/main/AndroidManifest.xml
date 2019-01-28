@@ -1,18 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.wonderpush.sdk">
 
-    <!-- Required permissions for push notifications -->
-    <!-- android.permission.INTERNET and com.google.android.c2dm.permission.RECEIVE
-         are already merged by com.google.android.gms:play-services-gcm -->
-    <permission
-        android:name="${wonderpushGradleApplicationId}.permission.C2D_MESSAGE"
-        android:protectionLevel="signature" />
-    <uses-permission
-        android:name="${wonderpushGradleApplicationId}.permission.C2D_MESSAGE" />
-
-    <!-- Prevents background notification reception from being interrupted -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-
     <!-- Using these permissions ultimately is the choice of the developer, do not include them here
          or they'll get automatically merged into the final application. -->
     <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
@@ -25,42 +13,11 @@
             android:name="wonderpushInitializerClass"
             android:value="${wonderpushGradleApplicationId}.WonderPushInitializerImpl" />
 
-        <!-- Required for configuring Google Play Services for push notifications -->
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
-        <meta-data
-            android:name="GCMSenderId"
-            android:value="@string/push_sender_ids" />
-
-        <receiver
-            android:name="com.google.android.gms.gcm.GcmReceiver"
-            android:exported="true"
-            android:permission="com.google.android.c2dm.permission.SEND" >
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <action android:name="com.google.android.c2dm.intent.REGISTRATION" />
-                <category android:name="${wonderpushGradleApplicationId}" />
-            </intent-filter>
-        </receiver>
         <service
-            android:name="com.wonderpush.sdk.WonderPushGcmListenerService"
-            android:exported="false" >
+            android:name="com.wonderpush.sdk.WonderPushFcmMessagingService">
             <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
-        </service>
-        <service
-            android:name="com.wonderpush.sdk.WonderPushInstanceIDListenerService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.android.gms.iid.InstanceID" />
-            </intent-filter>
-        </service>
-        <service
-            android:name="com.wonderpush.sdk.WonderPushRegistrationJobIntentService"
-            android:permission="android.permission.BIND_JOB_SERVICE"
-            android:exported="false">
         </service>
         <service
             android:name="com.wonderpush.sdk.WonderPushNotificationResourceFetcherAndDisplayerJobIntentService"
@@ -74,26 +31,10 @@
             android:enabled="true"
             android:exported="false"
             android:label="Push Notification service">
-
-            <!-- Put here the icon to be displayed in the notification -->
-            <meta-data
-                android:name="notificationIcon"
-                android:resource="${wonderpushNotificationIcon}" />
-
-            <!-- Put here the activity to start when the user clicks the notification -->
-            <meta-data
-                android:name="activityName"
-                android:value="${wonderpushDefaultActivity}" />
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <data android:scheme="wonderpush" />
             </intent-filter>
-
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-            </intent-filter>
-
         </service>
 
         <provider

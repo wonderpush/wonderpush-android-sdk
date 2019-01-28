@@ -21,6 +21,8 @@ import android.util.Log;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -62,6 +64,8 @@ public class WonderPush {
     protected static boolean SHOW_DEBUG = false;
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
+    static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
+    private static FirebaseApp sFirebaseApp;
     private static Context sApplicationContext;
     protected static Application sApplication;
 
@@ -1014,6 +1018,23 @@ public class WonderPush {
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
 
+                WonderPush.logDebug("Initializing FirebaseApp…");
+                try {
+                    sFirebaseApp = FirebaseApp.initializeApp(
+                            sApplicationContext,
+                            new FirebaseOptions.Builder()
+                                    .setApplicationId("NONE")
+                                    .setApiKey("NONE")
+                                    .setGcmSenderId(WonderPushFcmMessagingService.getSenderId())
+                                    .build(),
+                            FIREBASE_APP_NAME
+                    );
+                    WonderPush.logDebug("Initialized FirebaseApp");
+                } catch (IllegalStateException alreadyInitialized) {
+                    WonderPush.logError("FirebaseApp already initialized", alreadyInitialized);
+                    sFirebaseApp = FirebaseApp.getInstance(FIREBASE_APP_NAME);
+                }
+
                 WonderPushConfiguration.initialize(getApplicationContext());
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
@@ -1063,7 +1084,7 @@ public class WonderPush {
                         @Override
                         public void run() {
                             InstallationManager.updateInstallationCoreProperties(getApplicationContext());
-                            WonderPushGcmClient.registerForPushNotification(getApplicationContext());
+                            WonderPushFcmMessagingService.registerForPushNotification(getApplicationContext());
                             sIsReady = true;
                             Intent broadcast = new Intent(INTENT_INTIALIZED);
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
@@ -1469,53 +1490,6 @@ public class WonderPush {
     }
 
     /**
-     * Method to be called in your own Google Cloud Messaging
-     * <a href="http://developer.android.com/reference/android/content/BroadcastReceiver.html"><tt>BroadcastReceiver</tt></a>
-     * to handle WonderPush push notifications.
-     *
-     * <p>
-     *   <b>Note:</b> This is only needed if you use your own {@link BroadcastReceiver}, as previously
-     *   advertised in <a href="../../../packages.html#installing-sdk--configuring-sdk">the guide</a>.
-     * </p>
-     *
-     * <p>
-     *   Implement your <a href="http://developer.android.com/reference/android/content/BroadcastReceiver.html#onReceive(android.content.Context, android.content.Intent)"><tt>BroadcastReceiver.onReceive(Context, Intent)</tt></a>
-     *   method as follows:
-     * </p>
-     * <pre><code>public void onReceive(Context context, Intent intent) {
-     *    if (WonderPush.onBroadcastReceived(context, intent, R.drawable.icon, YourMainActivity.class)) {
-     *        return;
-     *    }
-     *    // Do your own handling here
-     *}</code></pre>
-     *
-     * <p>
-     *   For more information about Google Cloud Messaging visit:
-     *   <a href="https://developers.google.com/cloud-messaging/android/client">https://developers.google.com/cloud-messaging/android/client</a>.
-     * </p>
-     *
-     * <p>Returns {@code false} and does nothing if called without required user consent.</p>
-     *
-     * @param context
-     *            The current context.
-     * @param intent
-     *            The received intent.
-     * @param iconResource
-     *            The icon you want to show in the notification.
-     * @param activityClass
-     *            The activity class you want to start when the user touches the notification
-     * @return {@code true} if handled, {@code false} otherwise.
-     */
-    public static boolean onBroadcastReceived(Context context, Intent intent, int iconResource, Class<? extends Activity> activityClass) {
-        try {
-            return WonderPushGcmClient.onBroadcastReceived(context, intent, iconResource, activityClass);
-        } catch (Exception e) {
-            Log.e(WonderPush.TAG, "Unexpected error while giving broadcast to the receiver", e);
-        }
-        return false;
-    }
-
-    /**
      * Enables push notifications for the current device.
      *
      * <p>Does nothing if called without required user consent.</p>
@@ -1580,6 +1554,12 @@ public class WonderPush {
         if (null == sApplicationContext)
             Log.e(TAG, "Application context is null, did you call WonderPush.initialize()?");
         return sApplicationContext;
+    }
+
+    static FirebaseApp getFirebaseApp() {
+        if (sFirebaseApp == null)
+            Log.e(TAG, "FirebaseApp is null, did you call WonderPush.initialize()?");
+        return sFirebaseApp;
     }
 
     protected static boolean safeDefer(final Runnable runnable, long defer) {

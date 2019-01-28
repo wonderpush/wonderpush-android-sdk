@@ -496,7 +496,7 @@ class WonderPushRestClient {
                                 sIsFetchingAnonymousAccessToken = false;
 
                                 InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
-                                WonderPushGcmClient.registerForPushNotification(WonderPush.getApplicationContext());
+                                WonderPushFcmMessagingService.registerForPushNotification(WonderPush.getApplicationContext());
 
                                 // call handlers
                                 if (null != handler) {

@@ -42,11 +42,9 @@ public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService e
     static class Work implements Parcelable {
 
         private final NotificationModel notif;
-        private final int iconResource;
         private final String tag;
         private final int localNotificationId;
         private final Intent pushIntent;
-        private final Class<? extends Activity> activity;
 
         public static final Creator<Work> CREATOR = new Creator<Work>() {
             @Override
@@ -60,30 +58,18 @@ public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService e
             }
         };
 
-        Work(NotificationModel notif, int iconResource, String tag, int localNotificationId, Intent pushIntent, Class<? extends Activity> activity) {
+        Work(NotificationModel notif, String tag, int localNotificationId, Intent pushIntent) {
             this.notif = notif;
-            this.iconResource = iconResource;
             this.tag = tag;
             this.localNotificationId = localNotificationId;
             this.pushIntent = pushIntent;
-            this.activity = activity;
         }
 
         protected Work(Parcel in) {
             notif = in.readParcelable(getClass().getClassLoader());
-            iconResource = in.readInt();
             tag = in.readString();
             localNotificationId = in.readInt();
             pushIntent = in.readParcelable(getClass().getClassLoader());
-
-            String activityClassName = in.readString();
-            Class<? extends Activity> activity = null;
-            try {
-                activity = getClass().getClassLoader().loadClass(activityClassName).asSubclass(Activity.class);
-            } catch (ClassNotFoundException e) {
-                Log.e(TAG, "Could not unparcel activity class from " + activityClassName, e);
-            }
-            this.activity = activity;
         }
 
         @Override
@@ -94,19 +80,13 @@ public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService e
         @Override
         public void writeToParcel(Parcel parcel, int i) {
             parcel.writeParcelable(notif, 0);
-            parcel.writeInt(iconResource);
             parcel.writeString(tag);
             parcel.writeInt(localNotificationId);
             parcel.writeParcelable(pushIntent, 0);
-            parcel.writeString(activity.getCanonicalName());
         }
 
         public NotificationModel getNotif() {
             return notif;
-        }
-
-        public int getIconResource() {
-            return iconResource;
         }
 
         public String getTag() {
@@ -121,12 +101,8 @@ public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService e
             return pushIntent;
         }
 
-        public Class<? extends Activity> getActivity() {
-            return activity;
-        }
-
         public NotificationManager.PendingIntentBuilder getPendingIntentBuilder(Context context) {
-            return new NotificationManager.PendingIntentBuilder(notif, localNotificationId, pushIntent, context, activity);
+            return new NotificationManager.PendingIntentBuilder(notif, localNotificationId, pushIntent, context);
         }
 
     }

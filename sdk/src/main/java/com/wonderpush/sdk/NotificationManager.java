@@ -41,7 +41,7 @@ class NotificationManager {
 
     private static WeakReference<Intent> sLastHandledIntentRef;
 
-    protected static void onReceivedNotification(Context context, Intent intent, int iconResource, Class<? extends Activity> activity, NotificationModel notif) {
+    protected static void onReceivedNotification(Context context, Intent intent, NotificationModel notif) {
         String loggedInstallationId = WonderPushConfiguration.getInstallationId();
         if (notif.getTargetedInstallation() != null && !notif.getTargetedInstallation().equals(loggedInstallationId)) {
             WonderPush.logDebug("Received notification is not targeted at the current installation (" + notif.getTargetedInstallation() + " does not match current installation " + loggedInstallationId + ")");
@@ -73,7 +73,7 @@ class NotificationManager {
         boolean appInForeground = currentActivity != null && !currentActivity.isFinishing();
         String tag = generateLocalNotificationTag(notif);
         int localNotificationId = generateLocalNotificationId(tag);
-        PendingIntentBuilder pendingIntentBuilder = new PendingIntentBuilder(notif, localNotificationId, intent, context, activity);
+        PendingIntentBuilder pendingIntentBuilder = new PendingIntentBuilder(notif, localNotificationId, intent, context);
         AlertModel alert = notif.getAlert() == null ? null : notif.getAlert().forCurrentSettings(appInForeground);
         if (alert != null && alert.getAutoDrop()) {
             WonderPush.logDebug("Automatically dropping");
@@ -91,7 +91,7 @@ class NotificationManager {
         if (!automaticallyHandled) {
             WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work work =
                     new WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work(
-                            notif, iconResource, tag, localNotificationId, intent, activity);
+                            notif, tag, localNotificationId, intent);
             if (shouldWorkInBackground(notif)) {
                 WonderPush.logDebug("Fetching resources and displaying notification asynchronously");
                 WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.enqueueWork(context, work);
@@ -152,7 +152,7 @@ class NotificationManager {
         }
 
         WonderPush.logDebug("Building notification");
-        Notification notification = buildNotification(notif, context, work.getIconResource(), work.getPendingIntentBuilder(context));
+        Notification notification = buildNotification(notif, context, work.getPendingIntentBuilder(context));
 
         if (notification == null) {
             WonderPush.logDebug("No notification is to be displayed");
@@ -209,14 +209,12 @@ class NotificationManager {
         private final int localNotificationId;
         private final Intent pushIntent;
         private final Context context;
-        private final Class<? extends Activity> activity;
 
-        public PendingIntentBuilder(NotificationModel notif, int localNotificationId, Intent pushIntent, Context context, Class<? extends Activity> activity) {
+        public PendingIntentBuilder(NotificationModel notif, int localNotificationId, Intent pushIntent, Context context) {
             this.notif = notif;
             this.localNotificationId = localNotificationId;
             this.pushIntent = pushIntent;
             this.context = context;
-            this.activity = activity;
         }
 
         public PendingIntent buildForAutoOpen() {
@@ -277,16 +275,7 @@ class NotificationManager {
 
         private PendingIntent buildPendingIntent(boolean fromUserInteraction, Bundle extrasOverride, Map<String, String> extraQueryParams) {
             Intent resultIntent = new Intent();
-            if (WonderPushService.isProperlySetup()) {
-                resultIntent.setClass(context, WonderPushService.class);
-            } else if (activity != null) {
-                // Fallback to blindly launching the configured activity
-                resultIntent.setClass(context, activity);
-                resultIntent = new Intent(context, activity);
-            } // else We have nothing to propose!
-            if (activity != null) {
-                resultIntent.putExtra("activity", activity.getCanonicalName());
-            }
+            resultIntent.setClass(context, WonderPushService.class);
             resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
             resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
             if (extrasOverride != null) {
@@ -327,7 +316,7 @@ class NotificationManager {
 
     }
 
-    protected static Notification buildNotification(NotificationModel notif, Context context, int defaultIconResource,
+    protected static Notification buildNotification(NotificationModel notif, Context context,
                                                     PendingIntentBuilder pendingIntentBuilder) {
         if (NotificationModel.Type.DATA.equals(notif.getType())) {
             return null;
@@ -353,9 +342,8 @@ class NotificationManager {
             }
             alert.setTitle(ai != null ? pm.getApplicationLabel(ai) : null);
         }
-        if (defaultIconResource == 0) {
-            defaultIconResource = R.drawable.ic_notifications_white_24dp;
-        }
+        int defaultIconResource = WonderPushFcmMessagingService.getNotificationIcon(context);
+        int defaultColor = WonderPushFcmMessagingService.getNotificationColor(context);
 
         WonderPushChannel channel = WonderPushUserPreferences.channelToUseForNotification(alert.getChannel());
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
@@ -392,6 +380,8 @@ class NotificationManager {
         }
         if (alert.hasColor()) {
             builder.setColor(alert.getColor());
+        } else if (defaultColor != 0) {
+            builder.setColor(defaultColor);
         }
         if (alert.hasLocalOnly()) {
             builder.setLocalOnly(alert.getLocalOnly());
@@ -1044,7 +1034,7 @@ class NotificationManager {
         // Refresh push token
         String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
         WonderPushConfiguration.setGCMRegistrationId(null);
-        WonderPushRegistrationJobIntentService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
+        WonderPushFcmMessagingService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
 
         // Refresh preferences
         boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();
