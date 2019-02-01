@@ -36,7 +36,7 @@ android {
 dependencies {
     implementation 'com.loopj.android:android-async-http:1.4.9'
     api "com.google.firebase:firebase-messaging:17.3.4"
-    api "com.google.android.gms:play-services-analytics:16.0.6" // for AdvertisingId
+    compileOnly "com.google.android.gms:play-services-ads-identifier:16.0.0" // for AdvertisingId
     // Use the full support-v4 instead of the module support-compat
     // because com.google.firebase:firebase-messaging (indirectly) depends on it
     // and all modules must use the same version.

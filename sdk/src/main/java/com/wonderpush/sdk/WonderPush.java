@@ -1478,6 +1478,9 @@ public class WonderPush {
         } catch (GooglePlayServicesNotAvailableException e) {
             // Google Play services is not available entirely.
             Log.e(TAG, "Unexpected error while getting AdvertisingIdInfo", e);
+        } catch (NoClassDefFoundError e) {
+            Log.i(TAG, "AdvertisingIdClient is not available, cannot read AdvertisingId");
+            return null;
         }
         if (adInfo == null) {
             return null;
