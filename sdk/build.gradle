@@ -5,7 +5,7 @@ project.group = 'com.wonderpush'
 project.archivesBaseName = 'wonderpush-android-sdk'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 26
     buildToolsVersion "28.0.3"
 
     lintOptions {
@@ -19,11 +19,6 @@ android {
     defaultConfig {
         minSdkVersion 14
         consumerProguardFiles 'proguard-exported.pro'
-        manifestPlaceholders = [
-                wonderpushGradleApplicationId: '${applicationId}',
-                wonderpushNotificationIcon   : '${wonderpushNotificationIcon}',
-                wonderpushDefaultActivity    : '${wonderpushDefaultActivity}',
-        ]
     }
     buildTypes {
         release {
@@ -35,12 +30,12 @@ android {
 
 dependencies {
     implementation 'com.loopj.android:android-async-http:1.4.9'
-    api "com.google.firebase:firebase-messaging:17.3.4"
+    implementation "com.google.firebase:firebase-messaging:17.3.4"
     compileOnly "com.google.android.gms:play-services-ads-identifier:16.0.0" // for AdvertisingId
     // Use the full support-v4 instead of the module support-compat
     // because com.google.firebase:firebase-messaging (indirectly) depends on it
     // and all modules must use the same version.
-    api 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:support-v4:26.1.0'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.json:json:20160810'

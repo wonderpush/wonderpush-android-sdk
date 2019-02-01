@@ -11,7 +11,7 @@
         <!-- Permits the SDK to initialize itself whenever needed, without need for your application to launch -->
         <meta-data
             android:name="wonderpushInitializerClass"
-            android:value="${wonderpushGradleApplicationId}.WonderPushInitializerImpl" />
+            android:value="${applicationId}.WonderPushInitializerImpl" />
 
         <service
             android:name="com.wonderpush.sdk.WonderPushFcmMessagingService">
@@ -38,7 +38,7 @@
         </service>
 
         <provider
-            android:authorities="${wonderpushGradleApplicationId}.wonderpush.fileprovider"
+            android:authorities="${applicationId}.wonderpush.fileprovider"
             android:name="android.support.v4.content.FileProvider"
             android:grantUriPermissions="true"
             android:exported="false">
