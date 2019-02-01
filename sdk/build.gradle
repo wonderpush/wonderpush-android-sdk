@@ -63,23 +63,11 @@ task setVersion {
     // The version will be derived from source
     project.version = null
     def sdkVersionFile = file('src/main/java/com/wonderpush/sdk/WonderPush.java')
-    def apiVersion = null;
-    def sdkVersion = null;
     sdkVersionFile.eachLine {
-        def apiMatcher = (it =~ /(?:.*API_INT = )([0-9]*)(?:[^0-9].*)/)
-        if (apiMatcher.matches()) {
-            apiVersion = apiMatcher[0][1]
-        }
         def versionMatcher = (it =~ /(?:.*SDK_SHORT_VERSION = ")(.*)(?:".*)/)
         if (versionMatcher.matches()) {
-            sdkVersion = versionMatcher[0][1]
+            project.version = versionMatcher[0][1]
         }
-        if (apiVersion && sdkVersion) {
-            return
-        }
-    }
-    if (apiVersion && sdkVersion) {
-        project.version = apiVersion + '.' + sdkVersion;
     }
     if (project.version.is('unspecified')) {
         throw new GradleScriptException('Version could not be found.', null)
