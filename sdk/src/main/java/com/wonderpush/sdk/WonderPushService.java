@@ -180,17 +180,23 @@ public class WonderPushService extends Service {
                             stackBuilder.addNextIntentWithParentStack(activityIntent);
                             if (stackBuilder.getIntentCount() == 1) {
                                 // The target activity has no parent
-                                String defaultActivityCanonicalName = intent.getExtras().getString("activity");
-                                Class<? extends Activity> defaultActivityClass = Class.forName(defaultActivityCanonicalName).asSubclass(Activity.class);
-                                if (!resolvedActivity.getClassName().equals(defaultActivityCanonicalName)) {
-                                    WonderPush.logDebug("Injecting the default activity as parent to the orphan target activity to avoid closing app on the user pressing back");
-                                    // Add the default activity as parent of the target activity
-                                    // it has otherwise no parent and pressing back would close the application
-                                    Intent defaultActivityIntent = new Intent(this, defaultActivityClass);
-                                    stackBuilder = TaskStackBuilder.create(this);
-                                    stackBuilder.addNextIntentWithParentStack(defaultActivityIntent);
-                                    stackBuilder.addNextIntent(activityIntent);
-                                } // the target activity is already the default activity, don't add anything to the parent stack
+                                Intent launchIntent = new Intent();
+                                launchIntent.setPackage(getApplicationContext().getPackageName());
+                                launchIntent.setAction(Intent.ACTION_MAIN);
+                                launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                                ComponentName defaultActivity = launchIntent.resolveActivity(getApplicationContext().getPackageManager());
+                                if (defaultActivity != null) {
+                                    Class<? extends Activity> defaultActivityClass = Class.forName(defaultActivity.getClassName()).asSubclass(Activity.class);
+                                    if (!resolvedActivity.getClassName().equals(defaultActivity.getClassName())) {
+                                        WonderPush.logDebug("Injecting the default activity as parent to the orphan target activity to avoid closing app on the user pressing back");
+                                        // Add the default activity as parent of the target activity
+                                        // it has otherwise no parent and pressing back would close the application
+                                        Intent defaultActivityIntent = new Intent(this, defaultActivityClass);
+                                        stackBuilder = TaskStackBuilder.create(this);
+                                        stackBuilder.addNextIntentWithParentStack(defaultActivityIntent);
+                                        stackBuilder.addNextIntent(activityIntent);
+                                    } // the target activity is already the default activity, don't add anything to the parent stack
+                                }
                             }
                             WonderPush.logDebug("Delivered opened notification using a new task");
                             stackBuilder.startActivities();
@@ -321,12 +327,8 @@ public class WonderPushService extends Service {
 
         } else {
 
-            String desiredActivity = intent.getExtras().getString("activity");
             Intent activityIntent = new Intent();
             activityIntent.setPackage(getApplicationContext().getPackageName());
-            if (desiredActivity != null) {
-                activityIntent.setClassName(getApplicationContext(), desiredActivity);
-            }
             activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
                     intent.getParcelableExtra("receivedPushNotificationIntent"));
             activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
@@ -335,9 +337,6 @@ public class WonderPushService extends Service {
                     intent.getBooleanExtra("fromUserInteraction", true));
             activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
                     true);
-            // The following line should not be done: it exposes protected constants and URI.
-            // Implementors should rely on the previous extras instead
-            activityIntent.setDataAndType(intent.getData(), intent.getType()); // TODO: Remove in v1.3.x.x
             activityIntent.setAction(Intent.ACTION_MAIN);
             activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
