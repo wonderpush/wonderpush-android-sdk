@@ -34,6 +34,10 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
 
     static String getSenderId() {
         Context context = WonderPush.getApplicationContext();
+        int wonderpushSenderIdRes = context.getResources().getIdentifier("gcm_wonderpushSenderId", "string", context.getPackageName());
+        if (wonderpushSenderIdRes != 0) {
+            return context.getResources().getString(wonderpushSenderIdRes);
+        }
         int firebaseSenderIdRes = context.getResources().getIdentifier("gcm_defaultSenderId", "string", context.getPackageName());
         if (firebaseSenderIdRes == 0) {
             return WONDERPUSH_DEFAULT_SENDER_ID;
