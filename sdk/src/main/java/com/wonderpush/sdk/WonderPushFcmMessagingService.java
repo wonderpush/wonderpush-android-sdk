@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -140,17 +141,14 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
     }
 
     static int getNotificationIcon(Context context) {
-        int iconId = -1;
-        ComponentName service = new ComponentName(context, WonderPushService.class);
+        int iconId = 0;
         try {
-            Bundle metaData = context.getPackageManager().getServiceInfo(service, PackageManager.GET_META_DATA).metaData;
-            iconId = metaData.getInt("com.google.firebase.messaging.default_notification_icon", -1);
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Could not get the service meta-data", e);
+            Bundle metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            iconId = metaData.getInt("com.google.firebase.messaging.default_notification_icon");
         } catch (Exception e) {
             WonderPush.logError("Unexpected error while getting notification icon", e);
         }
-        if (iconId == -1 || iconId == 0) {
+        if (iconId == 0) {
             // Default to an embedded icon
             iconId = R.drawable.ic_notifications_white_24dp;
         }
@@ -158,19 +156,13 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
     }
 
     static int getNotificationColor(Context context) {
-        int color = -1;
-        ComponentName service = new ComponentName(context, WonderPushService.class);
+        int color = 0;
         try {
-            Bundle metaData = context.getPackageManager().getServiceInfo(service, PackageManager.GET_META_DATA).metaData;
-            color = metaData.getInt("com.google.firebase.messaging.default_notification_color", -1);
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Could not get the service meta-data", e);
+            Bundle metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            int resId = metaData.getInt("com.google.firebase.messaging.default_notification_color");
+            color = ContextCompat.getColor(context, resId);
         } catch (Exception e) {
-            WonderPush.logError("Unexpected error while getting notification icon", e);
-        }
-        if (color == -1 || color == 0) {
-            // Default to an embedded icon
-            color = 0;
+            WonderPush.logError("Unexpected error while getting notification color", e);
         }
         return color;
     }
