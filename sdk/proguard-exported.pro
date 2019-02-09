@@ -12,6 +12,9 @@
     ** WONDERPUSH_*;
 }
 
+# AdvertisingIdClient and the like are optional, don't warn
+-dontwarn com.google.android.gms.ads.identifier.**
+
 ## For easier debugging, we strongly recommend keeping WonderPush class names unobfuscated
 #-keepattributes SourceFile,LineNumberTable
 #-keepnames class com.wonderpush.sdk.** {
