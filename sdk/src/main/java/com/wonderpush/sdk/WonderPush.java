@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Resources;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -16,6 +17,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
@@ -28,6 +30,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -60,7 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class WonderPush {
 
-    static final String TAG = WonderPush.class.getSimpleName();
+    static final String TAG = "WonderPush";
     protected static boolean SHOW_DEBUG = false;
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
@@ -1139,26 +1142,152 @@ public class WonderPush {
      *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
      * @return {@code true} if no error happened, {@code false} otherwise
      */
-    protected static boolean ensureInitialized(Context context) {
-        if (!isInitialized()) {
+    static boolean ensureInitialized(Context context) {
+        if (isInitialized()) {
+            // No need to get clientId/clientSecret once again
+            // we only need to re-run the Activity-related initialization
+            initialize(context, null, null);
+        }
 
+        Bundle metaData = null;
+        try {
+            metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+        } catch (NameNotFoundException e) {
+            Log.e(TAG, "Failed to read application meta-data", e);
+        }
+
+        // Collect all configuration here
+        String clientId = null;
+        String clientSecret = null;
+        Boolean logging = null;
+        Boolean requiresUserConsent = null;
+
+        if (!isInitialized()) {
+            // Try loading configuration using the BuildConfig values for good security (using code-stored constants)
+            // BuildConfig is first because it's hard to view them (needs a decompiler)
+            String className = context.getPackageName() + ".BuildConfig";
+            try {
+                Class<?> classClass = context.getClassLoader().loadClass(className);
+                for (Field f : classClass.getFields()) {
+                    if (!f.getName().startsWith("WONDERPUSH_")) continue;
+                    try {
+                        Object rtn = f.get(null);
+                        if (rtn instanceof String) {
+                            String strValue = (String) rtn;
+                            if (strValue.length() == 0) continue;
+                            switch (f.getName()) {
+                                case "WONDERPUSH_CLIENT_ID":
+                                    clientId = strValue;
+                                    break;
+                                case "WONDERPUSH_CLIENT_SECRET":
+                                    clientSecret = strValue;
+                                    break;
+                                default:
+                                    Log.w(TAG, "Unknown BuildConfig String field " + f.getName());
+                                    break;
+                            }
+                        } else if (rtn instanceof Boolean) {
+                            Boolean boolValue = (Boolean) rtn;
+                            switch (f.getName()) {
+                                case "WONDERPUSH_LOGGING":
+                                    logging = boolValue;
+                                    break;
+                                case "WONDERPUSH_REQUIRES_USER_CONSENT":
+                                    requiresUserConsent = boolValue;
+                                    break;
+                                default:
+                                    Log.w(TAG, "Unknown BuildConfig Boolean field " + f.getName());
+                                    break;
+                            }
+                        } else {
+                            Log.w(TAG, "Unknown BuildConfig " + (rtn == null ? "null" : rtn.getClass().getCanonicalName()) + " field " + f.getName());
+                        }
+                    } catch (Exception e) { // IllegalAccessException on non public field
+                        Log.e(TAG, "Could not get BuildConfig field " + f.getName(), e);
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                logDebug("No " + className + " class found. ProGuard removed it after finding no WONDERPUSH_* constants.");
+            }
+
+            // Try loading configuration using resources
+            // Resources are second because they are not easily viewable with tools like Dexplorer
+            try {
+                Resources resources = context.getResources();
+                int res;
+                String resString;
+                res = resources.getIdentifier("wonderpush_clientId", "string", context.getPackageName());
+                resString = res == 0 ? null : resources.getString(res);
+                if (!TextUtils.isEmpty(resString)) {
+                    clientId = resString;
+                }
+                res = resources.getIdentifier("wonderpush_clientSecret", "string", context.getPackageName());
+                resString = res == 0 ? null : resources.getString(res);
+                if (!TextUtils.isEmpty(resString)) {
+                    clientSecret = resString;
+                }
+                res = resources.getIdentifier("wonderpush_logging", "bool", context.getPackageName());
+                if (res != 0) {
+                    logging = resources.getBoolean(res);
+                }
+                res = resources.getIdentifier("wonderpush_requiresUserConsent", "bool", context.getPackageName());
+                if (res != 0) {
+                    requiresUserConsent = resources.getBoolean(res);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Could not get a WonderPush configuration resource", e);
+            }
+
+            // Try loading configuration using the manifest <application><meta-data>
+            // Metadata are last because they are easily viewable with tools like Dexplorer, hence it feels more natural that they override previous sources
+            Object resValue;
+            resValue = metaData.get("com.wonderpush.sdk.clientId");
+            if (resValue instanceof String && ((String)resValue).length() > 0) {
+                clientId = (String) resValue;
+            }
+            resValue = metaData.get("com.wonderpush.sdk.clientSecret");
+            if (resValue instanceof String && ((String)resValue).length() > 0) {
+                clientSecret = (String) resValue;
+            }
+            resValue = metaData.get("com.wonderpush.sdk.logging");
+            if (resValue instanceof Boolean) {
+                logging = (Boolean) resValue;
+            } else if ("true".equals(resValue) || "false".equals(resValue)) {
+                logging = "true".equals(resValue);
+            }
+            resValue = metaData.get("com.wonderpush.sdk.requiresUserConsent");
+            if (resValue instanceof Boolean) {
+                requiresUserConsent = (Boolean) resValue;
+            } else if ("true".equals(resValue) || "false".equals(resValue)) {
+                requiresUserConsent = "true".equals(resValue);
+            }
+        }
+
+        // Apply any found configuration prior to initializing the SDK
+        if (logging != null) {
+            if (!logging) logDebug("Applying configuration: logging: " + logging);
+            WonderPush.setLogging(logging);
+            if (logging) logDebug("Applying configuration: logging: " + logging);
+        }
+        if (requiresUserConsent != null) {
+            logDebug("Applying configuration: requiresUserConsent: " + requiresUserConsent);
+            WonderPush.setRequiresUserConsent(requiresUserConsent);
+        }
+
+        // Try using the initializer class first for maximum control (using custom code)
+        if (!isInitialized()) {
             String initializerClassName = null;
             try {
-
-                ApplicationInfo ai = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-                Bundle bundle = ai.metaData;
-                initializerClassName = bundle.getString(METADATA_INITIALIZER_CLASS);
-                if (initializerClassName == null) {
-                    Log.e(TAG, "Failed to load initializer class. Did you add: <meta-data android:name=\"" + METADATA_INITIALIZER_CLASS + "\" android:value=\"com.package.YourWonderPushInitializerImpl\"/> under <application> in your AndroidManifest.xml");
+                initializerClassName = metaData.getString(METADATA_INITIALIZER_CLASS);
+                if (initializerClassName != null) {
+                    if (initializerClassName.startsWith(".")) {
+                        initializerClassName = context.getPackageName() + initializerClassName;
+                    }
+                    logDebug("Initializing WonderPush using initializer class " + initializerClassName);
+                    Class<? extends WonderPushInitializer> initializerClass = Class.forName(initializerClassName).asSubclass(WonderPushInitializer.class);
+                    WonderPushInitializer initializer = initializerClass.newInstance();
+                    initializer.initialize(context);
                 }
-
-                Class<? extends WonderPushInitializer> initializerClass = Class.forName(initializerClassName).asSubclass(WonderPushInitializer.class);
-                WonderPushInitializer initializer = initializerClass.newInstance();
-
-                initializer.initialize(context);
-
-            } catch (NameNotFoundException e) {
-                Log.e(TAG, "Failed to load initializer class", e);
             } catch (NullPointerException e) {
                 Log.e(TAG, "Failed to load initializer class", e);
             } catch (ClassNotFoundException e) {
@@ -1170,13 +1299,19 @@ public class WonderPush {
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected error while ensuring SDK initialization", e);
             }
+        }
 
-        } else {
+        // Try to initializing WonderPush using collected credentials
+        if (!isInitialized()) {
+            if (!TextUtils.isEmpty(clientId) && !TextUtils.isEmpty(clientSecret)) {
+                logDebug("Initializing WonderPush using collected credentials");
+                WonderPush.initialize(context, clientId, clientSecret);
+            }
+        }
 
-            // No need to get clientId/clientSecret once again
-            // we only need to re-run the Activity-related initialization
-            initialize(context, null, null);
-
+        // Warn the user once if not initialization means has been found
+        if (!isInitialized()) {
+            Log.e(TAG, "Could not initialize WonderPush using the initializer class, BuildConfig options or manifest <meta-data> options!");
         }
 
         return isInitialized();

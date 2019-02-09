@@ -7,6 +7,11 @@
     public void initialize(android.content.Context);
 }
 
+# Keep configuration from BuildConfig
+-keep class **.BuildConfig {
+    ** WONDERPUSH_*;
+}
+
 ## For easier debugging, we strongly recommend keeping WonderPush class names unobfuscated
 #-keepattributes SourceFile,LineNumberTable
 #-keepnames class com.wonderpush.sdk.** {

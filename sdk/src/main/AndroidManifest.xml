@@ -8,11 +8,6 @@
 
     <application>
 
-        <!-- Permits the SDK to initialize itself whenever needed, without need for your application to launch -->
-        <meta-data
-            android:name="wonderpushInitializerClass"
-            android:value="${applicationId}.WonderPushInitializerImpl" />
-
         <service
             android:name="com.wonderpush.sdk.WonderPushFcmMessagingService">
             <intent-filter>
