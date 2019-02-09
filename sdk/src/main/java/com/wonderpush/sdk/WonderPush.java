@@ -421,45 +421,14 @@ public class WonderPush {
     }
 
     /**
-     * Method to call on your {@code onNewIntent()} and {@code onCreate()} methods to handle the WonderPush notification.
-     *
-     * <p>Starting from API 14, there is no need to call this method, but it won't hurt if you do.</p>
-     *
-     * <p>
-     *   This method is automatically called from within {@link WonderPush#initialize(Context)},
-     *   so calling this method after calling {@link WonderPush#initialize(Context)} is useless.
-     * </p>
-     *
-     * <p>Example:</p>
-     * <pre>
-     * <code>
-     * &#64;Override
-     * protected void onCreate(Bundle savedInstance) {
-     *     // In case you call WonderPush.initialize() from your custom Application class,
-     *     // and you target API < 14, you can either call WonderPush.initialize() once again here
-     *     // or call this method instead.
-     *     WonderPush.showPotentialNotification(this, getIntent());
-     * }
-     *
-     * &#64;Override
-     * protected void onNewIntent(Intent intent) {
-     *     WonderPush.showPotentialNotification(this, intent);
-     * }
-     * </code>
-     * </pre>
-     *
-     * <p>Returns {@code false} and does nothing if called without required user consent.</p>
-     *
      * @param activity
      *            The current {@link Activity}.
-     *            Just give {@code this}.
      * @param intent
      *            The intent the activity received.
-     *            Just give the {@code intent} you received in parameter, or give {@code getIntent()}.
      *
      * @return <code>true</code> if handled, <code>false</code> otherwise.
      */
-    public static boolean showPotentialNotification(final Activity activity, Intent intent) {
+    static boolean showPotentialNotification(final Activity activity, Intent intent) {
         try {
             return NotificationManager.showPotentialNotification(activity, intent);
         } catch (Exception e) {
