@@ -66,6 +66,7 @@ public class WonderPush {
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
     static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
+    private static String sSenderId;
     private static FirebaseApp sFirebaseApp;
     private static Context sApplicationContext;
     protected static Application sApplication;
@@ -987,6 +988,14 @@ public class WonderPush {
                 sClientId = clientId;
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
+                if (sSenderId == null) {
+                    sSenderId = WonderPushFcmMessagingService.getDefaultSenderId();
+                    if (WonderPushFcmMessagingService.WONDERPUSH_DEFAULT_SENDER_ID.equals(sSenderId)) {
+                        Log.w(TAG, "Using WonderPush own Firebase FCM Sender ID " + sSenderId + ". Your push tokens will not be portable. Please refer to the documentation.");
+                    } else {
+                        logDebug("Using senderId from Firebase: " + sSenderId);
+                    }
+                }
 
                 WonderPush.logDebug("Initializing FirebaseApp…");
                 try {
@@ -995,7 +1004,7 @@ public class WonderPush {
                             new FirebaseOptions.Builder()
                                     .setApplicationId("NONE")
                                     .setApiKey("NONE")
-                                    .setGcmSenderId(WonderPushFcmMessagingService.getSenderId())
+                                    .setGcmSenderId(sSenderId)
                                     .build(),
                             FIREBASE_APP_NAME
                     );
@@ -1139,6 +1148,7 @@ public class WonderPush {
         String clientSecret = null;
         Boolean logging = null;
         Boolean requiresUserConsent = null;
+        String senderId = null;
 
         if (!isInitialized()) {
             // Try loading configuration using the BuildConfig values for good security (using code-stored constants)
@@ -1159,6 +1169,9 @@ public class WonderPush {
                                     break;
                                 case "WONDERPUSH_CLIENT_SECRET":
                                     clientSecret = strValue;
+                                    break;
+                                case "WONDERPUSH_SENDER_ID":
+                                    senderId = strValue;
                                     break;
                                 default:
                                     Log.w(TAG, "Unknown BuildConfig String field " + f.getName());
@@ -1207,6 +1220,11 @@ public class WonderPush {
                 if (!TextUtils.isEmpty(resString)) {
                     clientSecret = resString;
                 }
+                res = resources.getIdentifier("wonderpush_senderId", "string", context.getPackageName());
+                resString = res == 0 ? null : resources.getString(res);
+                if (!TextUtils.isEmpty(resString)) {
+                    senderId = resString;
+                }
                 res = resources.getIdentifier("wonderpush_autoInit", "bool", context.getPackageName());
                 if (res != 0) {
                     initProviderAllowed = resources.getBoolean(res);
@@ -1233,6 +1251,10 @@ public class WonderPush {
             resValue = metaData.get("com.wonderpush.sdk.clientSecret");
             if (resValue instanceof String && ((String)resValue).length() > 0) {
                 clientSecret = (String) resValue;
+            }
+            resValue = metaData.get("com.wonderpush.sdk.senderId");
+            if (resValue instanceof String && ((String)resValue).length() > 0) {
+                senderId = (String) resValue;
             }
             resValue = metaData.get("com.wonderpush.sdk.autoInit");
             if (resValue instanceof Boolean) {
@@ -1263,6 +1285,10 @@ public class WonderPush {
         if (requiresUserConsent != null) {
             logDebug("Applying configuration: requiresUserConsent: " + requiresUserConsent);
             WonderPush.setRequiresUserConsent(requiresUserConsent);
+        }
+        if (senderId != null) {
+            logDebug("Applying configuration: senderId: " + senderId);
+            sSenderId = senderId;
         }
 
         // Store the ApplicationContext at the very least, this will benefit many codepath that may
@@ -1700,6 +1726,10 @@ public class WonderPush {
         if (null == sApplicationContext)
             Log.e(TAG, "Application context is null, did you call WonderPush.initialize()?");
         return sApplicationContext;
+    }
+
+    static String getSenderId() {
+        return sSenderId;
     }
 
     static FirebaseApp getFirebaseApp() {

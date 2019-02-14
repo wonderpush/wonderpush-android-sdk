@@ -29,16 +29,12 @@ import org.json.JSONObject;
 public class WonderPushFcmMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = WonderPush.TAG;
-    private static final String WONDERPUSH_DEFAULT_SENDER_ID = "1023997258979";
+    static final String WONDERPUSH_DEFAULT_SENDER_ID = "1023997258979";
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     static final String WONDERPUSH_NOTIFICATION_EXTRA_KEY = "_wp";
 
-    static String getSenderId() {
+    static String getDefaultSenderId() {
         Context context = WonderPush.getApplicationContext();
-        int wonderpushSenderIdRes = context.getResources().getIdentifier("gcm_wonderpushSenderId", "string", context.getPackageName());
-        if (wonderpushSenderIdRes != 0) {
-            return context.getResources().getString(wonderpushSenderIdRes);
-        }
         int firebaseSenderIdRes = context.getResources().getIdentifier("gcm_defaultSenderId", "string", context.getPackageName());
         if (firebaseSenderIdRes == 0) {
             return WONDERPUSH_DEFAULT_SENDER_ID;
@@ -54,7 +50,7 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
     @Override
     public void onNewToken(String token) {
         WonderPush.logDebug("WonderPushFcmMessagingService.onNewToken(" + token + ")");
-        WonderPush.logDebug("Known Firebase SenderId: " + getSenderId());
+        WonderPush.logDebug("Known Firebase SenderId: " + WonderPush.getSenderId());
         if (token == null) {
             Log.w(WonderPush.TAG, "WonderPushFcmMessagingService.onNewToken() called with a null token, ignoring");
             return;
@@ -67,7 +63,7 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
                 return;
             }
             // Check there is only one sender id used, so we know whether can trust this token to be for us
-            String ourSenderId = getSenderId();
+            String ourSenderId = WonderPush.getSenderId();
             for (FirebaseApp apps : FirebaseApp.getApps(WonderPush.getApplicationContext())) {
                 String someSenderId = apps.getOptions().getGcmSenderId();
                 if (someSenderId != null && someSenderId.length() > 0 && !someSenderId.equals(ourSenderId)) {
@@ -79,7 +75,7 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
             }
             if (token != null) {
                 WonderPush.logDebug("Storing new token");
-                storeRegistrationId(this, getSenderId(), token);
+                storeRegistrationId(this, WonderPush.getSenderId(), token);
             } else {
                 // We cannot trust this token to be for our sender id, refresh ours
                 // Note: we have taken measures to ensure we won't loop if this call triggers new calls to onNewToken()
@@ -225,7 +221,7 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
                             return;
                         }
                         WonderPush.logDebug("FirebaseInstanceId.getInstanceId() = " + result.getToken());
-                        storeRegistrationId(WonderPush.getApplicationContext(), getSenderId(), result.getToken());
+                        storeRegistrationId(WonderPush.getApplicationContext(), WonderPush.getSenderId(), result.getToken());
                     }
                 });
     }
