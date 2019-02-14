@@ -8,6 +8,12 @@
 
     <application>
 
+        <provider
+            android:name="com.wonderpush.sdk.InitProvider"
+            android:authorities="${applicationId}.wonderpush.initprovider"
+            android:exported="false"
+            android:initOrder="90" />
+
         <service
             android:name="com.wonderpush.sdk.WonderPushFcmMessagingService">
             <intent-filter>

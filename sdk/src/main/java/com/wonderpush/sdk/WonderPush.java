@@ -1103,13 +1103,23 @@ public class WonderPush {
     }
 
     /**
-     * Instantiate the {@link WonderPushInitializer} interface configured in the {@code AndroidManifest.xml},
-     * and calls it if the SDK is not initialized yet.
+     * @see #ensureInitialized(Context, boolean)
      * @param context
      *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
      * @return {@code true} if no error happened, {@code false} otherwise
      */
     static boolean ensureInitialized(Context context) {
+        return ensureInitialized(context, false);
+    }
+
+    /**
+     * @param context
+     *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
+     * @param fromInitProvider
+     *            Whether we are executed in the context of the {@link InitProvider} or any place else from the SDK.
+     * @return {@code true} if no error happened, {@code false} otherwise
+     */
+    static boolean ensureInitialized(Context context, boolean fromInitProvider) {
         if (isInitialized()) {
             // No need to get clientId/clientSecret once again
             // we only need to re-run the Activity-related initialization
@@ -1124,6 +1134,7 @@ public class WonderPush {
         }
 
         // Collect all configuration here
+        boolean initProviderAllowed = true;
         String clientId = null;
         String clientSecret = null;
         Boolean logging = null;
@@ -1156,6 +1167,9 @@ public class WonderPush {
                         } else if (rtn instanceof Boolean) {
                             Boolean boolValue = (Boolean) rtn;
                             switch (f.getName()) {
+                                case "WONDERPUSH_AUTO_INIT":
+                                    initProviderAllowed = boolValue;
+                                    break;
                                 case "WONDERPUSH_LOGGING":
                                     logging = boolValue;
                                     break;
@@ -1193,6 +1207,10 @@ public class WonderPush {
                 if (!TextUtils.isEmpty(resString)) {
                     clientSecret = resString;
                 }
+                res = resources.getIdentifier("wonderpush_autoInit", "bool", context.getPackageName());
+                if (res != 0) {
+                    initProviderAllowed = resources.getBoolean(res);
+                }
                 res = resources.getIdentifier("wonderpush_logging", "bool", context.getPackageName());
                 if (res != 0) {
                     logging = resources.getBoolean(res);
@@ -1215,6 +1233,12 @@ public class WonderPush {
             resValue = metaData.get("com.wonderpush.sdk.clientSecret");
             if (resValue instanceof String && ((String)resValue).length() > 0) {
                 clientSecret = (String) resValue;
+            }
+            resValue = metaData.get("com.wonderpush.sdk.autoInit");
+            if (resValue instanceof Boolean) {
+                initProviderAllowed = (Boolean) resValue;
+            } else if ("true".equals(resValue) || "false".equals(resValue)) {
+                initProviderAllowed = "true".equals(resValue);
             }
             resValue = metaData.get("com.wonderpush.sdk.logging");
             if (resValue instanceof Boolean) {
@@ -1239,6 +1263,20 @@ public class WonderPush {
         if (requiresUserConsent != null) {
             logDebug("Applying configuration: requiresUserConsent: " + requiresUserConsent);
             WonderPush.setRequiresUserConsent(requiresUserConsent);
+        }
+
+        // Store the ApplicationContext at the very least, this will benefit many codepath that may
+        // accepts that initialization is not possible but expect WonderPushConfiguration to work
+        if (sApplicationContext == null) {
+            sApplicationContext = context.getApplicationContext();
+            // WonderPushConfiguration will warn if used before SDK is initialized,
+            // but thanks to this static variable it will work
+        }
+
+        // Stop the automatic InitProvider here if necessary
+        if (fromInitProvider && !initProviderAllowed) {
+            logDebug("Skipping automatic initialization");
+            return false;
         }
 
         // Try using the initializer class first for maximum control (using custom code)
