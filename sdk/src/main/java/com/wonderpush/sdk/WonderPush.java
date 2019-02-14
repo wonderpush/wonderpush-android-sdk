@@ -1331,9 +1331,12 @@ public class WonderPush {
      * @see #setUserConsent(boolean)
      */
     public static void setRequiresUserConsent(boolean value) {
-        boolean hadUserConsent = hasUserConsent();
-        sRequiresUserConsent = value;
-        if (sIsInitialized) {
+        if (!sIsInitialized) {
+            // We can't read hasUserConsent() before we're initialized
+            sRequiresUserConsent = value;
+        } else {
+            boolean hadUserConsent = hasUserConsent();
+            sRequiresUserConsent = value;
             Log.w(TAG, "WonderPush.setRequiresUserConsent(" + value + ") called after WonderPush.initialize(). Although supported, a proper implementation typically only calls it before.");
             // Refresh user consent
             boolean nowHasUserConsent = hasUserConsent();
