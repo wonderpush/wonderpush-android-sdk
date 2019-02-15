@@ -747,19 +747,19 @@ public class WonderPush {
      * @param type
      *            The event type, or name.
      *            Event types starting with an {@code @} character are reserved.
-     * @param customData
-     *            A JSON object containing custom properties to be attached to the event.
-     *            Prefer using a few custom properties over a plethora of event type variants.
+     * @param attributes
+     *            A JSON object containing attributes to be attached to the event.
+     *            Prefer using a few attributes over a plethora of event type variants.
      */
-    public static void trackEvent(String type, JSONObject customData) {
-        sApiImpl.trackEvent(type, customData);
+    public static void trackEvent(String type, JSONObject attributes) {
+        sApiImpl.trackEvent(type, attributes);
     }
 
-    static void trackEvent(String type, JSONObject eventData, JSONObject customData) {
+    static void trackEvent(String type, JSONObject eventData, JSONObject attributes) {
         if (type == null || type.length() == 0 || type.charAt(0) == '@') {
             throw new IllegalArgumentException("Bad event type");
         }
-        sendEvent(type, eventData, customData);
+        sendEvent(type, eventData, attributes);
     }
 
     static void trackInternalEvent(String type, JSONObject eventData) {
