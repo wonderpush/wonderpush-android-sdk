@@ -293,22 +293,22 @@ public class WonderPush {
     protected static final String INTENT_RESOURCE_PRELOADED_EXTRA_PATH = "wonderpushResourcePreloadedPath";
 
     /**
-     * Intent scheme for GCM notification data when the user clicks the notification.
+     * Intent scheme for FCM notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_SCHEME = "wonderpush";
 
     /**
-     * Intent authority for GCM notification data when the user clicks the notification.
+     * Intent authority for FCM notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_AUTHORITY = "notification";
 
     /**
-     * Intent data type for GCM notification data when the user clicks the notification.
+     * Intent data type for FCM notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_TYPE = "application/vnd.wonderpush.notification";
 
     /**
-     * Intent query parameter key for GCM notification data when the user clicks the notification.
+     * Intent query parameter key for FCM notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER = "body";
 

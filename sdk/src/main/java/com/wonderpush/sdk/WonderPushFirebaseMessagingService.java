@@ -151,7 +151,7 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
             NotificationManager.onReceivedNotification(context, message.toIntent(), notif);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while handling GCM message from:" + message.getFrom() + " bundle:" + message.getData(), e);
+            Log.e(TAG, "Unexpected error while handling FCM message from:" + message.getFrom() + " bundle:" + message.getData(), e);
         }
         return false;
     }
