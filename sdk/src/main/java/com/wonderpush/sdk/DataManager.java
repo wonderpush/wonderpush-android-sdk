@@ -188,7 +188,7 @@ class DataManager {
      * Blocks until interrupted or completed.
      * @return {@code true} if successfully called startActivity() with a sharing intent.
      */
-    static boolean shareExport() {
+    static boolean downloadAllData() {
         String data;
         try {
             data = export().get();
@@ -233,23 +233,23 @@ class DataManager {
         }
     }
 
-    static void clearInstallationEvents() {
+    static void clearEventsHistory() {
         for (String userId : WonderPushConfiguration.listKnownUserIds()) {
-            clearInstallationEvents(userId);
+            clearEventsHistory(userId);
         }
     }
 
-    private static void clearInstallationEvents(String userId) {
+    private static void clearEventsHistory(String userId) {
         WonderPushRestClient.requestForUser(userId, WonderPushRestClient.HttpMethod.DELETE, "/events", null, null);
     }
 
-    static void clearInstallationData() {
+    static void clearPreferences() {
         for (String userId : WonderPushConfiguration.listKnownUserIds()) {
-            clearInstallationData(userId);
+            clearPreferences(userId);
         }
     }
 
-    private static void clearInstallationData(String userId) {
+    private static void clearPreferences(String userId) {
         try {
             JSONSyncInstallationCustom custom = JSONSyncInstallationCustom.forUser(userId);
             JSONObject diff = new JSONObject();

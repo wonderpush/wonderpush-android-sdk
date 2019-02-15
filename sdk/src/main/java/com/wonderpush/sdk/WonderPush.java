@@ -1465,22 +1465,22 @@ public class WonderPush {
      * Exports all data stored locally and on WonderPush servers and then starts a sharing activity
      * for the user to save it.
      */
-    public static void shareExport() {
-        DataManager.shareExport();
+    public static void downloadAllData() {
+        DataManager.downloadAllData();
     }
 
     /**
      * Ask the WonderPush servers to delete any event associated with the all local installations.
      */
-    public static void clearInstallationEvents() {
-        DataManager.clearInstallationEvents();
+    public static void clearEventsHistory() {
+        DataManager.clearEventsHistory();
     }
 
     /**
      * Ask the WonderPush servers to delete any custom data associated with the all local installations and related users.
      */
-    public static void clearInstallationData() {
-        DataManager.clearInstallationData();
+    public static void clearPreferences() {
+        DataManager.clearPreferences();
     }
 
     /**
