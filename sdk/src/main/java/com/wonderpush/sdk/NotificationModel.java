@@ -163,7 +163,7 @@ abstract class NotificationModel implements Parcelable {
                 WonderPush.logDebug("Received broadcasted intent has no extra");
                 return null;
             }
-            String wpDataJson = extras.getString(WonderPushFcmMessagingService.WONDERPUSH_NOTIFICATION_EXTRA_KEY);
+            String wpDataJson = extras.getString(WonderPushFirebaseMessagingService.WONDERPUSH_NOTIFICATION_EXTRA_KEY);
             if (wpDataJson == null) {
                 WonderPush.logDebug("Received broadcasted intent has no data for WonderPush");
                 return null;

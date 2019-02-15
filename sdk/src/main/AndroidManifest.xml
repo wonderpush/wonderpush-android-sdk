@@ -15,7 +15,7 @@
             android:initOrder="90" />
 
         <service
-            android:name="com.wonderpush.sdk.WonderPushFcmMessagingService">
+            android:name="com.wonderpush.sdk.WonderPushFirebaseMessagingService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>

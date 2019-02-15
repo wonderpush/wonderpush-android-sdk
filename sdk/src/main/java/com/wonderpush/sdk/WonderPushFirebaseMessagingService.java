@@ -2,7 +2,6 @@ package com.wonderpush.sdk;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -26,7 +25,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class WonderPushFcmMessagingService extends FirebaseMessagingService {
+public class WonderPushFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = WonderPush.TAG;
     static final String WONDERPUSH_DEFAULT_SENDER_ID = "1023997258979";
@@ -57,10 +56,10 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
      * This is invoked after app install when a token is first generated, and again if the token changes.
      */
     public static void onNewToken(Context context, String token) {
-        WonderPush.logDebug("WonderPushFcmMessagingService.onNewToken(" + token + ")");
+        WonderPush.logDebug("WonderPushFirebaseMessagingService.onNewToken(" + token + ")");
         WonderPush.logDebug("Known Firebase SenderId: " + WonderPush.getSenderId());
         if (token == null) {
-            Log.w(WonderPush.TAG, "WonderPushFcmMessagingService.onNewToken() called with a null token, ignoring");
+            Log.w(WonderPush.TAG, "WonderPushFirebaseMessagingService.onNewToken() called with a null token, ignoring");
             return;
         }
         try {
@@ -181,7 +180,7 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
      */
     protected static void registerForPushNotification(Context context) {
         if (checkPlayService(context)) {
-            WonderPushFcmMessagingService.fetchInstanceId();
+            WonderPushFirebaseMessagingService.fetchInstanceId();
         } else {
             Log.w(TAG, "Google Play Services not present. Check your setup. If on an emulator, use a Google APIs system image.");
         }

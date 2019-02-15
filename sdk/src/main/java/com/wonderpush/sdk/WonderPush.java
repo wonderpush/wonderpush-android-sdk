@@ -989,8 +989,8 @@ public class WonderPush {
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
                 if (sSenderId == null) {
-                    sSenderId = WonderPushFcmMessagingService.getDefaultSenderId();
-                    if (WonderPushFcmMessagingService.WONDERPUSH_DEFAULT_SENDER_ID.equals(sSenderId)) {
+                    sSenderId = WonderPushFirebaseMessagingService.getDefaultSenderId();
+                    if (WonderPushFirebaseMessagingService.WONDERPUSH_DEFAULT_SENDER_ID.equals(sSenderId)) {
                         Log.w(TAG, "Using WonderPush own Firebase FCM Sender ID " + sSenderId + ". Your push tokens will not be portable. Please refer to the documentation.");
                     } else {
                         logDebug("Using senderId from Firebase: " + sSenderId);
@@ -1063,7 +1063,7 @@ public class WonderPush {
                         @Override
                         public void run() {
                             InstallationManager.updateInstallationCoreProperties(getApplicationContext());
-                            WonderPushFcmMessagingService.registerForPushNotification(getApplicationContext());
+                            WonderPushFirebaseMessagingService.registerForPushNotification(getApplicationContext());
                             sIsReady = true;
                             Intent broadcast = new Intent(INTENT_INTIALIZED);
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
