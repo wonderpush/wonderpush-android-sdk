@@ -52,8 +52,21 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
     }
 
     /**
-     * Called when a new token for the default Firebase project is generated.
-     * This is invoked after app install when a token is first generated, and again if the token changes.
+     * Method to be called in your own {@link FirebaseMessagingService} to handle
+     * WonderPush push notifications.
+     *
+     * <b>Note:</b> This is only required if you use your own {@link FirebaseMessagingService}.
+     *
+     * Implement your {@link FirebaseMessagingService#onNewToken(String)} method as follows:
+     *
+     * <pre><code>@Override
+     * public void onNewToken(String token) {
+     *     WonderPushFirebaseMessagingService.onNewToken(this, token);
+     *     // Do your own handling here
+     * }</code></pre>
+     *
+     * @param context The current context
+     * @param token The received token
      */
     public static void onNewToken(Context context, String token) {
         WonderPush.logDebug("WonderPushFirebaseMessagingService.onNewToken(" + token + ")");
@@ -108,8 +121,8 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
      * Implement your {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)} method as follows:
      *
      * <pre><code>@Override
-     * public void onMessageReceived(String from, Bundle data) {
-     *     if (WonderPushGcmListenerService.onMessageReceived(getApplicationContext(), from, data)) {
+     * public void onMessageReceived(RemoteMessage message) {
+     *     if (WonderPushFirebaseMessagingService.onMessageReceived(this, message)) {
      *         return;
      *     }
      *     // Do your own handling here
