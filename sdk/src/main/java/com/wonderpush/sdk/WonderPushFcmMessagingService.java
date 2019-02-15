@@ -49,6 +49,14 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
      */
     @Override
     public void onNewToken(String token) {
+        onNewToken(getApplicationContext(), token);
+    }
+
+    /**
+     * Called when a new token for the default Firebase project is generated.
+     * This is invoked after app install when a token is first generated, and again if the token changes.
+     */
+    public static void onNewToken(Context context, String token) {
         WonderPush.logDebug("WonderPushFcmMessagingService.onNewToken(" + token + ")");
         WonderPush.logDebug("Known Firebase SenderId: " + WonderPush.getSenderId());
         if (token == null) {
@@ -56,7 +64,7 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
             return;
         }
         try {
-            WonderPush.ensureInitialized(this);
+            WonderPush.ensureInitialized(context);
             // To prevent loops, check if we don't already know this token
             if (token.equals(WonderPushConfiguration.getGCMRegistrationId())) {
                 WonderPush.logDebug("onNewToken() called with an already known token, ignoring");
@@ -75,7 +83,7 @@ public class WonderPushFcmMessagingService extends FirebaseMessagingService {
             }
             if (token != null) {
                 WonderPush.logDebug("Storing new token");
-                storeRegistrationId(this, WonderPush.getSenderId(), token);
+                storeRegistrationId(context, WonderPush.getSenderId(), token);
             } else {
                 // We cannot trust this token to be for our sender id, refresh ours
                 // Note: we have taken measures to ensure we won't loop if this call triggers new calls to onNewToken()
