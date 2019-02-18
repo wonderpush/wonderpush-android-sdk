@@ -42,8 +42,9 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
         }
     }
 
-    /**
+    /*
      * Called when a new token for the default Firebase project is generated.
+     *
      * This is invoked after app install when a token is first generated, and again if the token changes.
      */
     @Override
@@ -107,6 +108,12 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
         }
     }
 
+    /*
+     * Called when a message is received.
+     *
+     * This is also called when a notification message is received while the app is in the foreground.
+     * @param message Remote message that has been received.
+     */
     @Override
     public void onMessageReceived(RemoteMessage message) {
         onMessageReceived(getApplicationContext(), message);

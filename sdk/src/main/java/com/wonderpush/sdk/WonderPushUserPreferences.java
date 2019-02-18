@@ -31,7 +31,7 @@ import java.util.Set;
  *     <a href="https://developer.android.com/preview/features/notification-channels.html">Read more about Android O Notification Channels</a>.
  * </p>
  *
- * <p>You must call {@link WonderPush#initialize(Context)} before using this class.</p>
+ * <p>If not using automatic initialization, make sure to call {@link WonderPush#initialize(Context)} before using this class.</p>
  *
  * <p>
  *     Prior to Android O, the SDK can handle every aspect of the notification.

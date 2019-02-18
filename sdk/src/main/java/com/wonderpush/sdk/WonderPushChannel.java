@@ -13,12 +13,6 @@ import java.util.Arrays;
  * A representation of settings that apply to a collection of similarly themed notifications.
  *
  * <p>
- *     <b>BETA</b> -
- *     <i>This API is marked beta and may change without prior notice to reflect any changes
- *     made to the Android O APIs.</i>
- * </p>
- *
- * <p>
  *     This class mimicks the {@link android.app.NotificationChannel} class to permit
  *     exposing its benefits to devices prior to Android O.
  *     Contrary to the latter, this class permits to override only a few aspects of the notification.

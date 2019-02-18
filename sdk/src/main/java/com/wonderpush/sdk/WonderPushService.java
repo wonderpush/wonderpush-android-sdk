@@ -17,6 +17,10 @@ import android.util.Log;
 // https://github.com/loopj/android-async-http/pull/492 and
 // https://github.com/loopj/android-async-http/pull/496
 // We could also update android-async-http >= 1.4.5.
+
+/**
+ * WonderPush service for handling notification clicks.
+ */
 public class WonderPushService extends Service {
 
     private static final String TAG = WonderPush.TAG;

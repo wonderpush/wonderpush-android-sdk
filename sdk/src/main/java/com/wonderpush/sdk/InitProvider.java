@@ -9,6 +9,15 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+/**
+ * WonderPush SDK automatic initialization provider.
+ *
+ * <p>
+ *     Note that this feature does not work for multi-process applications.
+ *     You must implement your own {@link android.app.Application} class and call
+ *     {@link WonderPush#initialize(Context)} there in such apps.
+ * </p>
+ */
 public class InitProvider extends ContentProvider {
 
     @Override

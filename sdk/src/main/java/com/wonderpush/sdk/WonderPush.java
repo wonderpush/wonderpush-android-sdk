@@ -687,7 +687,10 @@ public class WonderPush {
     /**
      * Returns the latest known custom properties attached to the current installation object stored by WonderPush.
      *
+     * <p>Use {@link #getProperties()} instead.</p>
+     *
      * <p>Returns an empty {@code JSONObject} if called without required user consent.</p>
+     * @see #getProperties()
      */
     @SuppressWarnings("unused")
     @Deprecated
@@ -697,6 +700,8 @@ public class WonderPush {
 
     /**
      * Update the custom properties attached to the current installation object stored by WonderPush.
+     *
+     * <p>Use {@link #putProperties(JSONObject)} instead.</p>
      *
      * <p>
      *   In order to remove a value, don't forget to use the
@@ -708,6 +713,7 @@ public class WonderPush {
      *
      * @param customProperties
      *            The partial object containing only the properties to update.
+     * @see #putProperties(JSONObject)
      */
     @SuppressWarnings("unused")
     @Deprecated
@@ -926,28 +932,16 @@ public class WonderPush {
     }
 
     /**
-     * Initialize WonderPush.<br />
-     * <b>Call this method before using WonderPush.</b>
+     * Initialize WonderPush.
      *
      * <p>
-     *   A good place to initialize WonderPush is in your main activity's
-     *   <a href="http://developer.android.com/reference/android/app/Activity.html#onCreate(android.os.Bundle)">
-     *   {@code onCreate(Bundle)}</a> method as follows:
-     * </p>
-     * <pre><code>protected void onCreate(Bundle savedInstance) {
-     *    WonderPush.initialize(this);
-     *}</code></pre>
-     *
-     * <p>
-     *   This function will instantiate the {@link WonderPushInitializer} implementation you provided in your
-     *   {@code AndroidManifest.xml}.<br />
-     *   <i>Please look at that interface documentation for detailed instruction.</i>
+     *     Using automatic initialization, you do not need to take care of this yourself.
+     *     You must otherwise call this method before using the SDK.
+     *     A good place for that is in the {@link Application#onCreate()} of your {@link Application} class.
      * </p>
      *
      * @param context
-     *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
-     *            It must be the same activity that you declared in the {@code <meta-data>} tag
-     *            under the WonderPush {@code <receiver>} tag in your {@code AndroidManifest.xml}.
+     *            And {@link Activity} or {@link Application} context.
      */
     @SuppressWarnings("unused")
     public static void initialize(final Context context) {
@@ -960,6 +954,10 @@ public class WonderPush {
 
     /**
      * Initialize WonderPush from your {@link WonderPushInitializer} implementation.
+     *
+     * <p>
+     *     Using automatic initialization, you do not need to take care of this yourself.
+     * </p>
      *
      * <p>
      *   Prefer calling the simpler {@link WonderPush#initialize(Context)} function directly, as it will
@@ -1464,6 +1462,11 @@ public class WonderPush {
     /**
      * Exports all data stored locally and on WonderPush servers and then starts a sharing activity
      * for the user to save it.
+     *
+     * <p>
+     *     Call this within an {@link com.wonderpush.sdk.CacheUtil.FetchWork.AsyncTask}
+     *     as this method is blocking.
+     * </p>
      */
     public static void downloadAllData() {
         DataManager.downloadAllData();
@@ -1694,10 +1697,13 @@ public class WonderPush {
     /**
      * Returns whether push notification are enabled.
      *
+     * <p>Use {@link #isSubscribedToNotifications()} instead.</p>
+     *
      * <p>Returns {@code false} if called without required user consent.</p>
      *
      * @return {@code true} by default as no explicit user permission is required,
      * unless required user consent is lacking.
+     * @see #isSubscribedToNotifications()
      */
     @SuppressWarnings("unused")
     @Deprecated
@@ -1708,9 +1714,13 @@ public class WonderPush {
     /**
      * Sets whether to enable push notifications for the current device.
      *
+     * <p>Use {@link #subscribeToNotifications()} or {@link #unsubscribeFromNotifications()} instead.</p>
+     *
      * <p>Does nothing if called without required user consent.</p>
      *
      * @param status {@code false} to opt out of push notifications.
+     * @see #subscribeToNotifications()
+     * @see #unsubscribeFromNotifications()
      */
     @SuppressWarnings("unused")
     @Deprecated

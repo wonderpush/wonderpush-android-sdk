@@ -10,12 +10,6 @@ import org.json.JSONObject;
  * A grouping of related notification channels. e.g., channels that all belong to a single account.
  *
  * <p>
- *     <b>BETA</b> -
- *     <i>This API is marked beta and may change without prior notice to reflect any changes
- *     made to the Android O APIs.</i>
- * </p>
- *
- * <p>
  *     This class mimicks the {@link android.app.NotificationChannelGroup} class to permit
  *     exposing its benefits to devices prior to Android O.
  * </p>
