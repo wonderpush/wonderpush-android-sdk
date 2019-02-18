@@ -89,15 +89,15 @@ class NotificationManager {
             }
         }
         if (!automaticallyHandled) {
-            WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work work =
-                    new WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work(
+            WonderPushResourcesService.Work work =
+                    new WonderPushResourcesService.Work(
                             notif, tag, localNotificationId, intent);
             if (shouldWorkInBackground(notif)) {
                 WonderPush.logDebug("Fetching resources and displaying notification asynchronously");
-                WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.enqueueWork(context, work);
+                WonderPushResourcesService.enqueueWork(context, work);
             } else {
                 WonderPush.logDebug("Fetching resources and displaying notification");
-                fetchResourcesAndDisplay(context, work, WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.TIMEOUT_MS);
+                fetchResourcesAndDisplay(context, work, WonderPushResourcesService.TIMEOUT_MS);
             }
         }
     }
@@ -106,7 +106,7 @@ class NotificationManager {
         return notif.getAlert() != null && !notif.getAlert().getResourcesToFetch().isEmpty();
     }
 
-    protected static void fetchResourcesAndDisplay(Context context, WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.Work work, long timeoutMs) {
+    protected static void fetchResourcesAndDisplay(Context context, WonderPushResourcesService.Work work, long timeoutMs) {
         NotificationModel notif = work.getNotif();
         if (notif == null) return;
 

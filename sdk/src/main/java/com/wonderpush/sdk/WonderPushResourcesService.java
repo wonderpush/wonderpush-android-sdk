@@ -11,7 +11,7 @@ import android.util.Log;
 /**
  * Utility class to fetch images and update notifications accordingly.
  */
-public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService extends WonderPushJobIntentService {
+public class WonderPushResourcesService extends WonderPushJobIntentService {
 
     private static final String TAG = WonderPush.TAG;
 
@@ -21,7 +21,7 @@ public class WonderPushNotificationResourceFetcherAndDisplayerJobIntentService e
     public static void enqueueWork(Context context, Work work) {
         Intent intent = new Intent();
         intent.putExtra("work", work);
-        enqueueWork(context, WonderPushNotificationResourceFetcherAndDisplayerJobIntentService.class, JOB_ID, intent);
+        enqueueWork(context, WonderPushResourcesService.class, JOB_ID, intent);
     }
 
 
