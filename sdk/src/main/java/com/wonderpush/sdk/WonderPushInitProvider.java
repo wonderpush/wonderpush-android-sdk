@@ -18,16 +18,16 @@ import android.support.annotation.Nullable;
  *     {@link WonderPush#initialize(Context)} there in such apps.
  * </p>
  */
-public class InitProvider extends ContentProvider {
+public class WonderPushInitProvider extends ContentProvider {
 
     @Override
     public void attachInfo(Context context, ProviderInfo info) {
         if (info == null) {
-            throw new NullPointerException("WonderPush.InitProvider ProviderInfo is null");
+            throw new NullPointerException("WonderPushInitProvider ProviderInfo is null");
         }
 
         if ("com.wonderpush.sdk.wonderpush.initprovider".equals(info.authority)) {
-            throw new IllegalStateException("WonderPush.InitProvider authority is invalid. Check that you have an `android { defaultConfig { applicationId \"…\" } }` entry in your app/build.gradle");
+            throw new IllegalStateException("WonderPushInitProvider authority is invalid. Check that you have an `android { defaultConfig { applicationId \"…\" } }` entry in your app/build.gradle");
         } else {
             super.attachInfo(context, info);
         }
@@ -36,9 +36,9 @@ public class InitProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         if (WonderPush.ensureInitialized(getContext(), true)) {
-            WonderPush.logDebug("InitProvider successful");
+            WonderPush.logDebug("WonderPushInitProvider successful");
         } else {
-            WonderPush.logDebug("InitProvider not successful");
+            WonderPush.logDebug("WonderPushInitProvider not successful");
         }
         return false;
     }

@@ -1123,7 +1123,7 @@ public class WonderPush {
      * @param context
      *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
      * @param fromInitProvider
-     *            Whether we are executed in the context of the {@link InitProvider} or any place else from the SDK.
+     *            Whether we are executed in the context of the {@link WonderPushInitProvider} or any place else from the SDK.
      * @return {@code true} if no error happened, {@code false} otherwise
      */
     static boolean ensureInitialized(Context context, boolean fromInitProvider) {
@@ -1297,7 +1297,7 @@ public class WonderPush {
             // but thanks to this static variable it will work
         }
 
-        // Stop the automatic InitProvider here if necessary
+        // Stop the automatic WonderPushInitProvider here if necessary
         if (fromInitProvider && !initProviderAllowed) {
             logDebug("Skipping automatic initialization");
             return false;
