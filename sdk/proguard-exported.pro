@@ -9,7 +9,7 @@
 
 # Keep configuration from BuildConfig
 -keep class **.BuildConfig {
-    ** WONDERPUSH_*;
+    *** WONDERPUSH_*;
 }
 
 # AdvertisingIdClient and the like are optional, don't warn
