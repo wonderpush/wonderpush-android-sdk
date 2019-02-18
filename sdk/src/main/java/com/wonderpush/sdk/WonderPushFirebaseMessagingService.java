@@ -183,7 +183,9 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
         try {
             Bundle metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
             int resId = metaData.getInt("com.google.firebase.messaging.default_notification_color");
-            color = ContextCompat.getColor(context, resId);
+            if (resId != 0) {
+                color = ContextCompat.getColor(context, resId);
+            }
         } catch (Exception e) {
             WonderPush.logError("Unexpected error while getting notification color", e);
         }
