@@ -11,12 +11,16 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.Currency;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 class InstallationManager {
@@ -50,6 +54,76 @@ class InstallationManager {
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to put installation custom properties " + customProperties, ex);
         }
+    }
+
+    public static void addTag(String... tag) {
+        Set<String> tags = new TreeSet<>(getTags()); // use a sorted implementation to avoid useless diffs
+        for (String aTag : tag) {
+            if (aTag != null && !aTag.isEmpty()) {
+                tags.add(aTag);
+            } else {
+                Log.w(TAG, "Dropping invalid tag " + aTag);
+            }
+        }
+        try {
+            JSONObject diff = new JSONObject();
+            diff.putOpt("tags", new JSONArray(tags));
+            putInstallationCustomProperties(diff);
+        } catch (JSONException ex) {
+            Log.e(TAG, "Failed to addTag", ex);
+        }
+    }
+
+    public static void removeTag(String... tag) {
+        Set<String> tags = new TreeSet<>(getTags()); // use a sorted implementation to avoid useless diffs
+        tags.removeAll(Arrays.asList(tag));
+        try {
+            JSONObject diff = new JSONObject();
+            diff.putOpt("tags", new JSONArray(tags));
+            putInstallationCustomProperties(diff);
+        } catch (JSONException ex) {
+            Log.e(TAG, "Failed to addTag", ex);
+        }
+    }
+
+    public static void removeAllTags() {
+        try {
+            JSONObject diff = new JSONObject();
+            diff.putOpt("tags", JSONObject.NULL);
+            putInstallationCustomProperties(diff);
+        } catch (JSONException ex) {
+            Log.e(TAG, "Failed to removeAllTags", ex);
+        }
+    }
+
+    public static Set<String> getTags() {
+        JSONObject custom = getInstallationCustomProperties();
+        JSONArray tags = custom.optJSONArray("tags");
+        if (tags == null) {
+            tags = new JSONArray();
+            // Recover from a potential scalar string value
+            String val = JSONUtil.optString(custom, "tags");
+            if (val != null) {
+                tags.put(val);
+            }
+        }
+        TreeSet<String> rtn = new TreeSet<>(); // use a sorted implementation to avoid useless diffs later on
+        for (int i = 0, l = tags.length(); i < l; ++i) {
+            try {
+                Object val = tags.get(i);
+                if (val instanceof String && !((String) val).isEmpty()) {
+                    rtn.add((String) val);
+                }
+            } catch (JSONException ex) {
+                Log.e(TAG, "Failed to get tags at position " + i + " from " + tags, ex);
+            }
+        }
+        return rtn;
+    }
+
+    public static boolean hasTag(String tag) {
+        if (tag == null) return false;
+        return getTags().contains(tag);
     }
 
     static void updateInstallation(JSONObject properties, boolean overwrite) {

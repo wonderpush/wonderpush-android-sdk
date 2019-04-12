@@ -8,6 +8,9 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 /**
@@ -168,6 +171,53 @@ class WonderPushImpl implements IWonderPush {
             WonderPush.trackEvent(type, null, customData);
         } catch (Exception e) {
             Log.e(WonderPush.TAG, "Unexpected error while tracking user event of type \"" + type + "\"", e);
+        }
+    }
+
+    @Override
+    public void addTag(String... tag) {
+        try {
+            InstallationManager.addTag(tag);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while adding tags " + Arrays.toString(tag), e);
+        }
+    }
+
+    @Override
+    public void removeTag(String... tag) {
+        try {
+            InstallationManager.removeTag(tag);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while removing tags " + Arrays.toString(tag), e);
+        }
+    }
+
+    @Override
+    public void removeAllTags() {
+        try {
+            InstallationManager.removeAllTags();
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while removing all tags", e);
+        }
+    }
+
+    @Override
+    public Set<String> getTags() {
+        try {
+            return InstallationManager.getTags();
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while getting tags", e);
+            return new TreeSet<>();
+        }
+    }
+
+    @Override
+    public boolean hasTag(String tag) {
+        try {
+            return InstallationManager.hasTag(tag);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while testing tag " + tag, e);
+            return false;
         }
     }
 

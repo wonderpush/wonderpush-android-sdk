@@ -2,6 +2,8 @@ package com.wonderpush.sdk;
 
 import org.json.JSONObject;
 
+import java.util.Set;
+
 /**
  * The interface of all methods that can require user consent.
  */
@@ -46,5 +48,11 @@ interface IWonderPush {
     JSONObject getInstallationCustomProperties();
     @Deprecated
     void putInstallationCustomProperties(JSONObject customProperties);
+
+    void addTag(String... tag);
+    void removeTag(String... tag);
+    void removeAllTags();
+    Set<String> getTags();
+    boolean hasTag(String tag);
 
 }

@@ -825,6 +825,61 @@ public class WonderPush {
         postEventually(eventEndpoint, parameters);
     }
 
+    /**
+     * Add one or more tags to the current installation object stored by WonderPush.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
+     * @param tag
+     *      The tags to add to the installation.
+     */
+    public static void addTag(String... tag) {
+        sApiImpl.addTag(tag);
+    }
+
+    /**
+     * Remove one or more tags from the current installation object stored by WonderPush.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
+     * @param tag
+     *      The tags to remove from the installation.
+     */
+    public static void removeTag(String... tag) {
+        sApiImpl.removeTag(tag);
+    }
+
+    /**
+     * Remove all tags from the current installation object stored by WonderPush.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     */
+    public static void removeAllTags() {
+        sApiImpl.removeAllTags();
+    }
+
+    /**
+     * Remove all tags from the current installation object stored by WonderPush.
+     *
+     * @return
+     *      A copy of the set of tags attached to the installation.
+     *      Never returns {@code null}.
+     */
+    public static Set<String> getTags() {
+        return sApiImpl.getTags();
+    }
+
+    /**
+     * Test whether the current installation has the given tag attached to it.
+     * @param tag
+     *      The tag to test.
+     * @return
+     *      {@code true} if the given tag is attached to the installation, {@code false} otherwise.
+     */
+    public static boolean hasTag(String tag) {
+        return sApiImpl.hasTag(tag);
+    }
+
     protected static void onInteraction(boolean leaving) {
         if (!hasUserConsent()) {
             logDebug("onInteraction ignored without user consent");

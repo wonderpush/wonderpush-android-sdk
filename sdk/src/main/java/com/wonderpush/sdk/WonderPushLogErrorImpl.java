@@ -6,6 +6,9 @@ import android.content.Intent;
 
 import org.json.JSONObject;
 
+import java.util.Set;
+import java.util.TreeSet;
+
 /**
  * Implementation of {@link IWonderPush} that does nothing but log an error and return a default value.
  *
@@ -110,6 +113,33 @@ abstract class WonderPushLogErrorImpl implements IWonderPush {
     @Override
     public void trackEvent(String type, JSONObject customData) {
         this.log("trackEvent");
+    }
+
+    @Override
+    public void addTag(String... tag) {
+        this.log("addTag");
+    }
+
+    @Override
+    public void removeTag(String... tag) {
+        this.log("removeTag");
+    }
+
+    @Override
+    public void removeAllTags() {
+        this.log("removeAllTags");
+    }
+
+    @Override
+    public Set<String> getTags() {
+        this.log("getTags");
+        return new TreeSet<>();
+    }
+
+    @Override
+    public boolean hasTag(String tag) {
+        this.log("hasTag");
+        return false;
     }
 
 }
