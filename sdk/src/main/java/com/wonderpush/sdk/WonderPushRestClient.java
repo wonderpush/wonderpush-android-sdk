@@ -54,7 +54,7 @@ class WonderPushRestClient {
     private static boolean sIsFetchingAnonymousAccessToken = false;
     private static final List<ResponseHandler> sPendingHandlers = new ArrayList<>();
 
-    private static final AsyncHttpClient sClient = new AsyncHttpClient();
+    private static final AsyncHttpClient sClient = new AsyncHttpClient(); // to allow any HTTPS certificate use: new AsyncHttpClient(true, 80, 443);
 
     /**
      * A request
