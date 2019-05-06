@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -11,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 class WonderPushConfiguration {
 
@@ -26,6 +29,10 @@ class WonderPushConfiguration {
     private static final String USER_CONSENT_PREF_NAME = "__user_consent";
 
     private static final String NOTIFICATION_ENABLED_PREF_NAME = "__wonderpush_notification_enabled";
+    private static final String CACHED_OS_ARENOTIFICATIONSENABLED_NAME = "__cached_os_areNotificationsEnabled";
+    private static final String CACHED_OS_ARENOTIFICATIONSENABLED_DATE_NAME = "__cached_os_areNotificationsEnabled_date";
+    private static final String CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME = "__cached_disabled_notification_channel_ids";
+    private static final String CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME = "__cached_disabled_notification_channel_ids_date";
     private static final String CHANNEL_PREFERENCES_PREF_NAME = "__wonderpush_channel_preferences";
 
     private static final String CACHED_INSTALLATION_CORE_PROPERTIES_NAME = "__cached_installation_core_properties";
@@ -99,6 +106,10 @@ class WonderPushConfiguration {
             currentUserArchive.putOpt(INSTALLATION_ID_PREF_NAME, getInstallationId());
             currentUserArchive.putOpt(USER_ID_PREF_NAME, getUserId());
             currentUserArchive.putOpt(NOTIFICATION_ENABLED_PREF_NAME, getNotificationEnabled());
+            currentUserArchive.putOpt(CACHED_OS_ARENOTIFICATIONSENABLED_NAME, getCachedOsAreNotificationsEnabled());
+            currentUserArchive.putOpt(CACHED_OS_ARENOTIFICATIONSENABLED_DATE_NAME, getCachedOsAreNotificationsEnabledDate());
+            currentUserArchive.putOpt(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME, new JSONArray(getCachedDisabledNotificationChannelIds()));
+            currentUserArchive.putOpt(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME, getCachedDisabledNotificationChannelIdsDate());
             currentUserArchive.putOpt(CHANNEL_PREFERENCES_PREF_NAME, getChannelPreferences());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, getCachedInstallationCoreProperties());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, getCachedInstallationCorePropertiesDate());
@@ -132,6 +143,10 @@ class WonderPushConfiguration {
         setInstallationId(JSONUtil.optString(newUserArchive, INSTALLATION_ID_PREF_NAME));
         setUserId(newUserId);
         setNotificationEnabled(newUserArchive.optBoolean(NOTIFICATION_ENABLED_PREF_NAME, true));
+        setCachedOsAreNotificationsEnabled(newUserArchive.optBoolean(CACHED_OS_ARENOTIFICATIONSENABLED_NAME, true));
+        setCachedOsAreNotificationsEnabledDate(newUserArchive.optLong(CACHED_OS_ARENOTIFICATIONSENABLED_DATE_NAME));
+        setCachedDisabledNotificationChannelIds(JSONArrayToSetString(newUserArchive.optJSONArray(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME)));
+        setCachedDisabledNotificationChannelIdsDate(newUserArchive.optLong(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME));
         setChannelPreferences(newUserArchive.optJSONObject(CHANNEL_PREFERENCES_PREF_NAME));
         setCachedInstallationCoreProperties(JSONUtil.optString(newUserArchive, CACHED_INSTALLATION_CORE_PROPERTIES_NAME));
         setCachedInstallationCorePropertiesDate(newUserArchive.optLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME));
@@ -166,6 +181,10 @@ class WonderPushConfiguration {
                 editor.remove(INSTALLATION_ID_PREF_NAME);
                 editor.remove(USER_ID_PREF_NAME);
                 editor.remove(NOTIFICATION_ENABLED_PREF_NAME);
+                editor.remove(CACHED_OS_ARENOTIFICATIONSENABLED_NAME);
+                editor.remove(CACHED_OS_ARENOTIFICATIONSENABLED_DATE_NAME);
+                editor.remove(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME);
+                editor.remove(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME);
                 editor.remove(CHANNEL_PREFERENCES_PREF_NAME);
                 editor.remove(CACHED_INSTALLATION_CORE_PROPERTIES_NAME);
                 editor.remove(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME);
@@ -276,6 +295,22 @@ class WonderPushConfiguration {
         putString(key, value == null ? null : value.toString());
     }
 
+    private static JSONArray getJSONArray(String key) {
+        String json = getString(key);
+        if (json != null) {
+            try {
+                return new JSONArray(json);
+            } catch (JSONException e) {
+                Log.w(WonderPush.TAG, "Failed to decode json from preferences", e);
+            }
+        }
+        return null;
+    }
+
+    private static void putJSONArray(String key, JSONArray value) {
+        putString(key, value == null ? null : value.toString());
+    }
+
     @SuppressWarnings("unused")
     private static int getInt(String key) {
         return getInt(key, 0);
@@ -321,6 +356,23 @@ class WonderPushConfiguration {
         SharedPreferences.Editor editor = getSharedPreferences().edit();
         editor.putBoolean(key, value);
         editor.apply();
+    }
+
+    private static Set<String> JSONArrayToSetString(JSONArray values) {
+        TreeSet<String> rtn = new TreeSet<>();
+        if (values != null) {
+            for (int i = 0, e = values.length(); i < e; ++i) {
+                try {
+                    Object value = values.get(i);
+                    if (value instanceof String) {
+                        rtn.add((String) value);
+                    }
+                } catch (JSONException ex) {
+                    Log.e(WonderPush.TAG, "Unexpected error while reading cached disabled notification channels", ex);
+                }
+            }
+        }
+        return rtn;
     }
 
     /**
@@ -487,6 +539,72 @@ class WonderPushConfiguration {
      */
     static void setNotificationEnabled(boolean status) {
         putBoolean(NOTIFICATION_ENABLED_PREF_NAME, status);
+    }
+
+    /**
+     * Get the cached state of NotificationManager.areNotificationsEnabled().
+     */
+    static boolean getCachedOsAreNotificationsEnabled() {
+        return getBoolean(CACHED_OS_ARENOTIFICATIONSENABLED_NAME, true);
+    }
+
+    /**
+     * Set the cached state of NotificationManager.areNotificationsEnabled().
+     *
+     * @param status
+     *            The cached state of NotificationManager.areNotificationsEnabled() to be stored.
+     */
+    static void setCachedOsAreNotificationsEnabled(boolean status) {
+        putBoolean(CACHED_OS_ARENOTIFICATIONSENABLED_NAME, status);
+    }
+
+    /**
+     * Get the date of the last update to {@link #getCachedOsAreNotificationsEnabled()}.
+     */
+    static long getCachedOsAreNotificationsEnabledDate() {
+        return getLong(CACHED_OS_ARENOTIFICATIONSENABLED_DATE_NAME, 0);
+    }
+
+    /**
+     * Set the date of the last update to {@link #getCachedOsAreNotificationsEnabled()}.
+     * @param cachedOsAreNotificationsEnabledDate
+     *            The date of the last update to {@link #getCachedOsAreNotificationsEnabled()}.
+     */
+    static void setCachedOsAreNotificationsEnabledDate(long cachedOsAreNotificationsEnabledDate) {
+        putLong(CACHED_OS_ARENOTIFICATIONSENABLED_DATE_NAME, cachedOsAreNotificationsEnabledDate);
+    }
+
+    /**
+     * Get the cached list of disabled notification channels.
+     */
+    static Set<String> getCachedDisabledNotificationChannelIds() {
+        return JSONArrayToSetString(getJSONArray(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME));
+    }
+
+    /**
+     * Set the cached list of disabled notification channels.
+     *
+     * @param disabledNotificationsChannels
+     *            The cached list of disabled notification channels to be stored.
+     */
+    static void setCachedDisabledNotificationChannelIds(Set<String> disabledNotificationsChannels) {
+        putJSONArray(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME, new JSONArray(disabledNotificationsChannels));
+    }
+
+    /**
+     * Get the date of the last update to {@link #getCachedDisabledNotificationChannelIds()}.
+     */
+    static long getCachedDisabledNotificationChannelIdsDate() {
+        return getLong(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME, 0);
+    }
+
+    /**
+     * Set the date of the last update to {@link #getCachedDisabledNotificationChannelIds()}.
+     * @param cachedDisabledNotificationsChannelsDate
+     *            The date of the last update to {@link #getCachedDisabledNotificationChannelIds()}.
+     */
+    static void setCachedDisabledNotificationChannelIdsDate(long cachedDisabledNotificationsChannelsDate) {
+        putLong(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME, cachedDisabledNotificationsChannelsDate);
     }
 
     /**

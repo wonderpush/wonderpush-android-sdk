@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Manage Android notification channel and user preferences.
@@ -530,6 +531,41 @@ public class WonderPushUserPreferences {
                 Log.e(WonderPush.TAG, "Unexpected error while setting channels " + channels, ex);
             }
         }
+    }
+
+    /**
+     * List every disabled notification channel.
+     *
+     * @return A set of notification channel ids that are disabled in the OS.
+     */
+    static synchronized Set<String> getDisabledChannelIds() {
+        TreeSet<String> rtn = new TreeSet<>();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            Map<String, NotificationChannelGroup> groups = new HashMap<>();
+            for (NotificationChannelGroup group : notificationManager.getNotificationChannelGroups()) {
+                groups.put(group.getId(), group);
+            }
+            for (NotificationChannel channel : notificationManager.getNotificationChannels()) {
+                NotificationChannelGroup group = groups.get(channel.getGroup());
+                if (channel.getImportance() == NotificationManager.IMPORTANCE_NONE || WonderPushCompatibilityHelper.isNotificationChannelGroupBlocked(group)) {
+                    rtn.add(channel.getId());
+                }
+            }
+
+        } else {
+
+            for (WonderPushChannel channel : sChannels.values()) {
+                if (channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                    rtn.add(channel.getId());
+                }
+            }
+
+        }
+
+        return rtn;
     }
 
 }

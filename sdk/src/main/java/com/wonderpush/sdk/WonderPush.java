@@ -1166,6 +1166,7 @@ public class WonderPush {
     }
 
     protected static void refreshPreferencesAndConfiguration() {
+        setNotificationEnabled(getNotificationEnabled());
         InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
     }
 

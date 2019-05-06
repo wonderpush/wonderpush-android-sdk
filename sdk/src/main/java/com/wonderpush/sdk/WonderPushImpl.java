@@ -1,11 +1,11 @@
 package com.wonderpush.sdk;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
@@ -109,19 +109,41 @@ class WonderPushImpl implements IWonderPush {
     public void setNotificationEnabled(boolean status) {
         try {
             WonderPush.logDebug("Set notification enabled: " + status);
-            if (status == WonderPushConfiguration.getNotificationEnabled()) {
+
+            boolean previousStatus = WonderPushConfiguration.getNotificationEnabled();
+            boolean osAreNotificationsEnabled = NotificationManagerCompat.from(WonderPush.getApplicationContext()).areNotificationsEnabled();
+            boolean cachedOsAreNotificationsEnabled = WonderPushConfiguration.getCachedOsAreNotificationsEnabled();
+            Set<String> cachedDisabledChannels = WonderPushConfiguration.getCachedDisabledNotificationChannelIds();
+            Set<String> disabledChannels = WonderPushUserPreferences.getDisabledChannelIds();
+            String previousValue = previousStatus && cachedOsAreNotificationsEnabled
+                    ? WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
+                    : WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
+            String value = status && osAreNotificationsEnabled
+                    ? WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
+                    : WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
+
+            if (previousStatus == status
+                    && value.equals(previousValue)
+                    && osAreNotificationsEnabled == cachedOsAreNotificationsEnabled
+                    && disabledChannels.equals(cachedDisabledChannels)
+            ) {
                 WonderPush.logDebug("Set notification enabled: no change to apply");
                 return;
             }
-            String value = status
-                    ? WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
-                    : WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
+
             JSONObject properties = new JSONObject();
             JSONObject preferences = new JSONObject();
             properties.put("preferences", preferences);
             preferences.put("subscriptionStatus", value);
+            preferences.put("subscribedToNotifications", status);
+            preferences.put("osNotificationVisible", osAreNotificationsEnabled);
+            preferences.put("disabledAndroidChannels", new JSONArray(disabledChannels));
             InstallationManager.updateInstallation(properties, false);
             WonderPushConfiguration.setNotificationEnabled(status);
+            WonderPushConfiguration.setCachedOsAreNotificationsEnabled(osAreNotificationsEnabled);
+            WonderPushConfiguration.setCachedOsAreNotificationsEnabledDate(TimeSync.getTime());
+            WonderPushConfiguration.setCachedDisabledNotificationChannelIds(disabledChannels);
+            WonderPushConfiguration.setCachedDisabledNotificationChannelIdsDate(TimeSync.getTime());
         } catch (Exception e) {
             Log.e(WonderPush.TAG, "Unexpected error while setting notification enabled to " + status, e);
         }

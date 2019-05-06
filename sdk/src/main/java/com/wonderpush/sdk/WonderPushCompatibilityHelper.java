@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
+import android.app.NotificationChannelGroup;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -60,6 +61,14 @@ class WonderPushCompatibilityHelper {
         } else {
             return Html.fromHtml(source);
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.P)
+    public static boolean isNotificationChannelGroupBlocked(NotificationChannelGroup group) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return group != null && group.isBlocked();
+        }
+        return false;
     }
 
 }
