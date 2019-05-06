@@ -50,6 +50,16 @@
                 android:resource="@xml/wp_file_provider_paths" />
         </provider>
 
+        <receiver android:name="com.wonderpush.sdk.ConfigurationChangedReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

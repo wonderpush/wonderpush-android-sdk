@@ -1098,6 +1098,7 @@ public class WonderPush {
 
             initializeForApplication(context);
             initializeForActivity(context);
+            refreshPreferencesAndConfiguration();
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while initializing the SDK", e);
         }
@@ -1162,6 +1163,10 @@ public class WonderPush {
             showPotentialNotification(activity, activity.getIntent());
             onInteraction(false); // keep after onCreateMainActivity() as a possible received notification's information is needed
         }
+    }
+
+    protected static void refreshPreferencesAndConfiguration() {
+        InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
     }
 
     /**
