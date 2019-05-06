@@ -495,8 +495,7 @@ class WonderPushRestClient {
                                 }
                                 sIsFetchingAnonymousAccessToken = false;
 
-                                InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
-                                WonderPushFirebaseMessagingService.registerForPushNotification(WonderPush.getApplicationContext());
+                                WonderPush.refreshPreferencesAndConfiguration(false);
 
                                 // call handlers
                                 if (null != handler) {

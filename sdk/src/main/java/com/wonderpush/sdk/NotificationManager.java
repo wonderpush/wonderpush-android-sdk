@@ -1027,23 +1027,7 @@ class NotificationManager {
             Log.e(WonderPush.TAG, "Failed to resync installation", ex);
         }
 
-        // Refresh core properties
-        WonderPushConfiguration.setCachedInstallationCoreProperties(null);
-        InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
-
-        // Refresh push token
-        String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
-        WonderPushConfiguration.setGCMRegistrationId(null);
-        WonderPushFirebaseMessagingService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
-
-        // Refresh preferences
-        boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();
-        WonderPushConfiguration.setNotificationEnabled(!notificationEnabled);
-        if (notificationEnabled) {
-            WonderPush.subscribeToNotifications();
-        } else {
-            WonderPush.unsubscribeFromNotifications();
-        }
+        WonderPush.refreshPreferencesAndConfiguration(true);
     }
 
     protected static void handleMethodAction(ActionModel action) {

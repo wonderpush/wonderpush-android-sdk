@@ -1098,7 +1098,7 @@ public class WonderPush {
 
             initializeForApplication(context);
             initializeForActivity(context);
-            refreshPreferencesAndConfiguration();
+            refreshPreferencesAndConfiguration(false);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while initializing the SDK", e);
         }
@@ -1116,8 +1116,7 @@ public class WonderPush {
                     final Runnable init = new Runnable() {
                         @Override
                         public void run() {
-                            InstallationManager.updateInstallationCoreProperties(getApplicationContext());
-                            WonderPushFirebaseMessagingService.registerForPushNotification(getApplicationContext());
+                            refreshPreferencesAndConfiguration(false);
                             sIsReady = true;
                             Intent broadcast = new Intent(INTENT_INTIALIZED);
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
@@ -1165,9 +1164,33 @@ public class WonderPush {
         }
     }
 
-    protected static void refreshPreferencesAndConfiguration() {
-        setNotificationEnabled(getNotificationEnabled());
+    protected static void refreshPreferencesAndConfiguration(boolean force) {
+        // Refresh core properties
+        if (force) {
+            WonderPushConfiguration.setCachedInstallationCoreProperties(null);
+        }
         InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
+
+        // Refresh push token
+        String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
+        if (force) {
+            // Avoid depending on the success of getting a new registration id when forcing the refresh
+            WonderPushConfiguration.setGCMRegistrationId(null);
+            WonderPushFirebaseMessagingService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
+        } else {
+            WonderPushFirebaseMessagingService.registerForPushNotification(WonderPush.getApplicationContext());
+        }
+
+        // Refresh preferences
+        boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();
+        if (force) {
+            WonderPushConfiguration.setNotificationEnabled(!notificationEnabled);
+        }
+        if (notificationEnabled) {
+            WonderPush.subscribeToNotifications();
+        } else {
+            WonderPush.unsubscribeFromNotifications();
+        }
     }
 
     /**
