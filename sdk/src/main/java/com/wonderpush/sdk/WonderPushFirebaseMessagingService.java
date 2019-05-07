@@ -277,9 +277,8 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
                 JSONObject properties = new JSONObject();
                 JSONObject pushToken = new JSONObject();
                 pushToken.put("data", registrationId);
-                properties.put("pushToken", pushToken);
                 if (senderIds == null || senderIds.length() == 0) {
-                    properties.put("senderIds", JSONObject.NULL);
+                    pushToken.put("senderIds", JSONObject.NULL);
                 } else {
                     JSONArray senderIdsArray = new JSONArray();
                     for (String senderId : senderIds.split(",")) {
@@ -288,8 +287,9 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
                             senderIdsArray.put(senderId.trim());
                         }
                     }
-                    properties.put("senderIds", senderIdsArray);
+                    pushToken.put("senderIds", senderIdsArray);
                 }
+                properties.put("pushToken", pushToken);
 
                 WonderPush.ensureInitialized(context);
                 InstallationManager.updateInstallation(properties, false);
