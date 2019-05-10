@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
@@ -330,7 +331,7 @@ class NotificationManager {
             return null;
         }
         // Apply defaults
-        if (alert.getTitle() == null) {
+        if (alert.getTitle() == null && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             final PackageManager pm = context.getApplicationContext().getPackageManager();
             ApplicationInfo ai;
             try {
