@@ -136,7 +136,7 @@ class WonderPushImpl implements IWonderPush {
             properties.put("preferences", preferences);
             preferences.put("subscriptionStatus", value);
             preferences.put("subscribedToNotifications", status);
-            preferences.put("osNotificationVisible", osAreNotificationsEnabled);
+            preferences.put("osNotificationsVisible", osAreNotificationsEnabled);
             preferences.put("disabledAndroidChannels", new JSONArray(disabledChannels));
             InstallationManager.updateInstallation(properties, false);
             WonderPushConfiguration.setNotificationEnabled(status);
