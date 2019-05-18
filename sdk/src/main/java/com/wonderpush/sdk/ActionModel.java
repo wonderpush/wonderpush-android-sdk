@@ -2,6 +2,7 @@ package com.wonderpush.sdk;
 
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -14,6 +15,9 @@ class ActionModel implements Cloneable {
         TRACK_EVENT("trackEvent"),
         UPDATE_INSTALLATION("updateInstallation"),
         RESYNC_INSTALLATION("resyncInstallation"),
+        ADD_TAG("addTag"),
+        REMOVE_TAG("removeTag"),
+        REMOVE_ALL_TAGS("removeAllTags"),
         METHOD("method"),
         LINK("link"),
         RATING("rating"),
@@ -52,6 +56,7 @@ class ActionModel implements Cloneable {
     private JSONObject event; // has "type" and optionally "custom" keys
     private JSONObject installation; // contains a "custom" key
     private JSONObject custom;
+    private JSONArray tags;
     private Boolean appliedServerSide;
     private Boolean reset;
     private Boolean force;
@@ -76,6 +81,7 @@ class ActionModel implements Cloneable {
         event = data.optJSONObject("event");
         installation = data.optJSONObject("installation");
         custom = data.optJSONObject("custom");
+        tags = data.optJSONArray("tags");
         appliedServerSide = optBool(data, "appliedServerSide", null);
         reset = optBool(data, "reset", null);
         force = optBool(data, "force", null);
@@ -105,6 +111,11 @@ class ActionModel implements Cloneable {
         if (custom != null) {
             try {
                 rtn.custom = new JSONObject(custom.toString());
+            } catch (JSONException ignored) {}
+        }
+        if (tags != null) {
+            try {
+                rtn.tags = new JSONArray(tags.toString());
             } catch (JSONException ignored) {}
         }
         return rtn;
@@ -148,6 +159,14 @@ class ActionModel implements Cloneable {
 
     public void setCustom(JSONObject custom) {
         this.custom = custom;
+    }
+
+    public JSONArray getTags() {
+        return tags;
+    }
+
+    public void setTags(JSONArray tags) {
+        this.tags = tags;
     }
 
     public Boolean getAppliedServerSide() {

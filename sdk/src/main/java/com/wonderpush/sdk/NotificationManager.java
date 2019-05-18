@@ -21,6 +21,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -856,6 +857,14 @@ class NotificationManager {
                     break;
                 case RESYNC_INSTALLATION:
                     handleResyncInstallationAction(action);
+                case ADD_TAG:
+                    handleAddTagAction(action);
+                    break;
+                case REMOVE_TAG:
+                    handleRemoveTagAction(action);
+                    break;
+                case REMOVE_ALL_TAGS:
+                    handleRemoveAllTagsAction(action);
                     break;
                 case METHOD:
                     handleMethodAction(action);
@@ -1029,6 +1038,44 @@ class NotificationManager {
         }
 
         WonderPush.refreshPreferencesAndConfiguration(true);
+    }
+
+    private static void handleAddTagAction(ActionModel action) {
+        JSONArray actionTags = action.getTags();
+        if (actionTags == null) return;
+        ArrayList<String> tags = new ArrayList<>(actionTags.length());
+        for (int i = 0, e = actionTags.length(); i < e; ++i) {
+            try {
+                Object item = actionTags.get(i);
+                if (item instanceof String) {
+                    tags.add((String) item);
+                }
+            } catch (JSONException ex) {
+                Log.e(WonderPush.TAG, "Unexpected error while getting an item of the tags array for the addTag action", ex);
+            }
+        }
+        WonderPush.addTag(tags.toArray(new String[0]));
+    }
+
+    private static void handleRemoveTagAction(ActionModel action) {
+        JSONArray actionTags = action.getTags();
+        if (actionTags == null) return;
+        ArrayList<String> tags = new ArrayList<>(actionTags.length());
+        for (int i = 0, e = actionTags.length(); i < e; ++i) {
+            try {
+                Object item = actionTags.get(i);
+                if (item instanceof String) {
+                    tags.add((String) item);
+                }
+            } catch (JSONException ex) {
+                Log.e(WonderPush.TAG, "Unexpected error while getting an item of the tags array for the addTag action", ex);
+            }
+        }
+        WonderPush.removeTag(tags.toArray(new String[0]));
+    }
+
+    private static void handleRemoveAllTagsAction(ActionModel action) {
+        WonderPush.removeAllTags();
     }
 
     protected static void handleMethodAction(ActionModel action) {
