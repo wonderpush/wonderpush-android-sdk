@@ -14,6 +14,8 @@ class ActionModel implements Cloneable {
         CLOSE("close"),
         TRACK_EVENT("trackEvent"),
         UPDATE_INSTALLATION("updateInstallation"),
+        ADD_PROPERTY("addProperty"),
+        REMOVE_PROPERTY("removeProperty"),
         RESYNC_INSTALLATION("resyncInstallation"),
         ADD_TAG("addTag"),
         REMOVE_TAG("removeTag"),

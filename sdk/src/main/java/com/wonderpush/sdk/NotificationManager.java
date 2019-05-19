@@ -855,6 +855,12 @@ class NotificationManager {
                 case UPDATE_INSTALLATION:
                     handleUpdateInstallationAction(action);
                     break;
+                case ADD_PROPERTY:
+                    handleAddPropertyAction(action);
+                    break;
+                case REMOVE_PROPERTY:
+                    handleRemovePropertyAction(action);
+                    break;
                 case RESYNC_INSTALLATION:
                     handleResyncInstallationAction(action);
                 case ADD_TAG:
@@ -970,6 +976,52 @@ class NotificationManager {
             }
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to handle action " + ActionModel.Type.UPDATE_INSTALLATION, ex);
+        }
+    }
+
+    protected static void handleAddPropertyAction(ActionModel action) {
+        JSONObject installation = action.getInstallation();
+        JSONObject custom = installation != null ? installation.optJSONObject("custom") : action.getCustom();
+        if (custom == null) {
+            Log.e(TAG, "Got no installation custom properties to update for a " + ActionModel.Type.ADD_PROPERTY + " action");
+            return;
+        }
+        if (custom.length() == 0) {
+            WonderPush.logDebug("Empty installation custom properties for an update, for a " + ActionModel.Type.ADD_PROPERTY + " action");
+            return;
+        }
+        try {
+            Iterator<String> it = custom.keys();
+            while (it.hasNext()) {
+                String field = it.next();
+                Object value = custom.get(field);
+                WonderPush.addProperty(field, value);
+            }
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Failed to handle action " + ActionModel.Type.ADD_PROPERTY, ex);
+        }
+    }
+
+    protected static void handleRemovePropertyAction(ActionModel action) {
+        JSONObject installation = action.getInstallation();
+        JSONObject custom = installation != null ? installation.optJSONObject("custom") : action.getCustom();
+        if (custom == null) {
+            Log.e(TAG, "Got no installation custom properties to update for a " + ActionModel.Type.REMOVE_PROPERTY + " action");
+            return;
+        }
+        if (custom.length() == 0) {
+            WonderPush.logDebug("Empty installation custom properties for an update, for a " + ActionModel.Type.REMOVE_PROPERTY + " action");
+            return;
+        }
+        try {
+            Iterator<String> it = custom.keys();
+            while (it.hasNext()) {
+                String field = it.next();
+                Object value = custom.get(field);
+                WonderPush.removeProperty(field, value);
+            }
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Failed to handle action " + ActionModel.Type.REMOVE_PROPERTY, ex);
         }
     }
 
