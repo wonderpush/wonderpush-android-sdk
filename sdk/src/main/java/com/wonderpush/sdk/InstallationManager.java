@@ -15,8 +15,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Currency;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
@@ -53,6 +57,92 @@ class InstallationManager {
             JSONSyncInstallationCustom.forCurrentUser().put(customProperties);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to put installation custom properties " + customProperties, ex);
+        }
+    }
+
+    public static void setProperty(String field, Object value) {
+        if (field == null) return;
+        value = JSONUtil.wrap(value);
+        try {
+            JSONObject diff = new JSONObject();
+            diff.put(field, value);
+            putInstallationCustomProperties(diff);
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Failed to setProperty(" + field + ", " + value + ")", ex);
+        }
+    }
+
+    public static void unsetProperty(String field) {
+        if (field == null) return;
+        try {
+            JSONObject diff = new JSONObject();
+            diff.put(field, JSONObject.NULL);
+            putInstallationCustomProperties(diff);
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Failed to unsetProperty(" + field + ")", ex);
+        }
+    }
+
+    public static void addProperty(String field, Object value) {
+        value = JSONUtil.wrap(value);
+        if (field == null || value == null || value == JSONObject.NULL) return;
+        // The contract is to actually append new values only, not shuffle or deduplicate everything,
+        // hence the array and the set.
+        List<Object> values = new ArrayList<>(getPropertyValues(field));
+        Set<Object> set = new HashSet<>(values);
+        JSONArray inputs = value instanceof JSONArray ? (JSONArray) value : new JSONArray().put(value);
+        for (int i = 0, e = inputs.length(); i < e; ++i) {
+            try {
+                Object input = inputs.get(i);
+                if (input == null || input == JSONObject.NULL) continue;
+                if (set.contains(input)) continue;
+                values.add(input);
+                set.add(input);
+            } catch (JSONException ex) {
+                Log.e(WonderPush.TAG, "Unexpected exception in addProperty", ex);
+            }
+        }
+        setProperty(field, values);
+    }
+
+    public static void removeProperty(String field, Object value) {
+        value = JSONUtil.wrap(value);
+        if (field == null || value == null) return; // Note: We accept removing JSONObject.NULL
+        // The contract is to actually remove every listed values (all duplicated appearances), not shuffle or deduplicate everything else
+        List<Object> values = getPropertyValues(field);
+        JSONArray inputs = value instanceof JSONArray ? (JSONArray) value : new JSONArray().put(value);
+        Set<Object> set = new HashSet<>(JSONUtil.JSONArrayToList(inputs, Object.class));
+        if (set.isEmpty()) return;
+        JSONArray newValues = new JSONArray();
+        for (Object item : values) {
+            if (item == null) continue;
+            if (set.contains(item)) continue;
+            newValues.put(item);
+        }
+        setProperty(field, newValues);
+    }
+
+    public static Object getPropertyValue(String field) {
+        if (field == null) return JSONObject.NULL;
+        JSONObject properties = getInstallationCustomProperties();
+        Object value = properties.opt(field);
+        while (value instanceof JSONArray) { // Note, the documentation says *never* a JSONArray, so we use a while instead of an if to sure of that
+            value = ((JSONArray) value).length() > 0 ? ((JSONArray) value).opt(0) : null;
+        }
+        if (value == null) value = JSONObject.NULL;
+        return value;
+    }
+
+    public static List<Object> getPropertyValues(String field) {
+        if (field == null) return Collections.emptyList();
+        JSONObject properties = getInstallationCustomProperties();
+        Object value = properties.opt(field);
+        if (value == null || value == JSONObject.NULL) {
+            return Collections.emptyList();
+        } else if (value instanceof JSONArray) {
+            return JSONUtil.JSONArrayToList((JSONArray) value, Object.class);
+        } else {
+            return Collections.singletonList(value);
         }
     }
 

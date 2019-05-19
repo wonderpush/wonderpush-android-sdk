@@ -1,14 +1,17 @@
 package com.wonderpush.sdk;
 
 import android.net.Uri;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 class JSONUtil {
@@ -340,4 +343,25 @@ class JSONUtil {
         }
         return rtn;
     }
+
+    static <T> List<T> JSONArrayToList(JSONArray array, Class<T> typecheck) {
+        final int length = array == null ? 0 : array.length();
+        ArrayList<T> rtn = new ArrayList<>(length);
+        if (array != null) {
+            for (int i = 0; i < length; ++i) {
+                try {
+                    Object item = array.get(i);
+                    if (typecheck.isInstance(item)) {
+                        rtn.add(typecheck.cast(item));
+                    }
+                } catch (JSONException ex) {
+                    Log.e(WonderPush.TAG, "Unexpected exception in JSONArrayToList", ex);
+                } catch (ClassCastException ex) {
+                    Log.e(WonderPush.TAG, "Unexpected exception in JSONArrayToList", ex);
+                }
+            }
+        }
+        return rtn;
+    }
+
 }

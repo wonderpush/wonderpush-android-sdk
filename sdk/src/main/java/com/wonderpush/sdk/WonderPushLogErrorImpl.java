@@ -4,8 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -103,6 +106,38 @@ abstract class WonderPushLogErrorImpl implements IWonderPush {
     @Deprecated
     public void putInstallationCustomProperties(JSONObject customProperties) {
         this.log("putInstallationCustomProperties");
+    }
+
+    @Override
+    public void setProperty(String field, Object value) {
+        this.log("setProperty");
+    }
+
+    @Override
+    public void unsetProperty(String field) {
+        this.log("unsetProperty");
+    }
+
+    @Override
+    public void addProperty(String field, Object value) {
+        this.log("addProperty");
+    }
+
+    @Override
+    public void removeProperty(String field, Object value) {
+        this.log("removeProperty");
+    }
+
+    @Override
+    public Object getPropertyValue(String field) {
+        this.log("getPropertyValue");
+        return JSONObject.NULL;
+    }
+
+    @Override
+    public List<Object> getPropertyValues(String field) {
+        this.log("getPropertyValues");
+        return Collections.emptyList();
     }
 
     @Override

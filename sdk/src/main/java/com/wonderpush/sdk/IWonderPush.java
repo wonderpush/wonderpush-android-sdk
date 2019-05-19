@@ -1,7 +1,9 @@
 package com.wonderpush.sdk;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -48,6 +50,13 @@ interface IWonderPush {
     JSONObject getInstallationCustomProperties();
     @Deprecated
     void putInstallationCustomProperties(JSONObject customProperties);
+
+    void setProperty(String field, Object value);
+    void unsetProperty(String field);
+    void addProperty(String field, Object value);
+    void removeProperty(String field, Object value);
+    Object getPropertyValue(String field);
+    List<Object> getPropertyValues(String field);
 
     void addTag(String... tag);
     void removeTag(String... tag);

@@ -24,6 +24,7 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -682,6 +684,89 @@ public class WonderPush {
      */
     public static void putProperties(JSONObject properties) {
         sApiImpl.putProperties(properties);
+    }
+
+    /**
+     * Sets the value to a given property attached to the current installation object stored by WonderPush.
+     * The previous value is replaced entirely.
+     * The value can be a String, Boolean, Number (coerced to Long or Double), JSONObject, JSONArray, or JSONObject.NULL (which has the same effect as {@link #unsetProperty(String)}).
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
+     * @param field The name of the property to set
+     * @param value The value to be set, can be an NSArray
+     */
+    public static void setProperty(String field, Object value) {
+        sApiImpl.setProperty(field, value);
+    }
+
+    /**
+     * Removes the value of a given property attached to the current installation object stored by WonderPush.
+     * The previous value is replaced with {@link JSONObject#NULL}.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
+     * @param field The name of the property to set
+     */
+    public static void unsetProperty(String field) {
+        sApiImpl.unsetProperty(field);
+    }
+
+    /**
+     * Adds the value to a given property attached to the current installation object stored by WonderPush.
+     * The stored value is made an array if not already one.
+     * If the given value is an array, all its values are added.
+     * If a value is already present in the stored value, it won't be added.
+     *
+     * <p>Does nothing if called without required user consent.</p>
+     *
+     * @param field The name of the property to add values to
+     * @param value The value(s) to be added, can be an array
+     */
+    public static void addProperty(String field, Object value) {
+        sApiImpl.addProperty(field, value);
+    }
+
+    /**
+     * Removes the value from a given property attached to the current installation object stored by WonderPush.
+     * The stored value is made an array if not already one.
+     * If the given value is an array, all its values are removed.
+     * If a value is present multiple times in the stored value, they will all be removed.
+     *
+     * @param field The name of the property to remove values from
+     * @param value The value(s) to be removed, can be an array
+     */
+    public static void removeProperty(String field, Object value) {
+        sApiImpl.removeProperty(field, value);
+    }
+
+    /**
+     * Returns the value of a given property attached to the current installation object stored by WonderPush.
+     * If the property stores an array, only the first value is returned.
+     * This way you don't have to deal with potential arrays if that property is not supposed to hold one.
+     * Returns {@link JSONObject#NULL} instead of {@code null} if the property is absent or has an empty array value.
+     *
+     * @param field The name of the property to remove values from
+     * @return {@link JSONObject#NULL} or a single value stored in the property, never a {@link JSONArray} or {@code null}
+     */
+    public static Object getPropertyValue(String field) {
+        return sApiImpl.getPropertyValue(field);
+    }
+
+    /**
+     * Returns an immutable list of the values of a given property attached to the current installation object stored by WonderPush.
+     * If the property does not store an array, a list is returned nevertheless.
+     * This way you don't have to deal with potential scalar values if that property is supposed to hold an array.
+     * Returns an empty list instead of {@link JSONObject#NULL} or {@code null} if the property is absent.
+     * Returns a list wrapping any scalar value held by the property.
+     *
+     * <p>Note, the returned value is an <em>immutable</em> list.</p>
+     *
+     * @param field The name of the property to remove values from
+     * @return A possibly empty {@link org.json.JSONArray} of the values stored in the property, but never {@link JSONObject#NULL} nor {@code null}
+     */
+    public static List<Object> getPropertyValues(String field) {
+        return sApiImpl.getPropertyValues(field);
     }
 
     /**

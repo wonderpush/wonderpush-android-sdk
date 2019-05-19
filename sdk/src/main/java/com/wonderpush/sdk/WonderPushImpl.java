@@ -9,6 +9,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -174,6 +176,62 @@ class WonderPushImpl implements IWonderPush {
             InstallationManager.putInstallationCustomProperties(customProperties);
         } catch (Exception e) {
             Log.e(WonderPush.TAG, "Unexpected error while putting installation custom properties", e);
+        }
+    }
+
+    @Override
+    public void setProperty(String field, Object value) {
+        try {
+            InstallationManager.setProperty(field, value);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while calling setProperty", e);
+        }
+    }
+
+    @Override
+    public void unsetProperty(String field) {
+        try {
+            InstallationManager.unsetProperty(field);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while calling unsetProperty", e);
+        }
+    }
+
+    @Override
+    public void addProperty(String field, Object value) {
+        try {
+            InstallationManager.addProperty(field, value);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while calling addProperty", e);
+        }
+    }
+
+    @Override
+    public void removeProperty(String field, Object value) {
+        try {
+            InstallationManager.removeProperty(field, value);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while calling removeProperty", e);
+        }
+    }
+
+    @Override
+    public Object getPropertyValue(String field) {
+        try {
+            return InstallationManager.getPropertyValue(field);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while calling getPropertyValue", e);
+            return JSONObject.NULL;
+        }
+    }
+
+    @Override
+    public List<Object> getPropertyValues(String field) {
+        try {
+            return InstallationManager.getPropertyValues(field);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while calling getPropertyValues", e);
+            return Collections.emptyList();
         }
     }
 
