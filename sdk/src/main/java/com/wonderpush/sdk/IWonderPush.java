@@ -1,6 +1,5 @@
 package com.wonderpush.sdk;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.List;

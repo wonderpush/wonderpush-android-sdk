@@ -14,7 +14,6 @@ import android.util.Base64InputStream;
 import android.util.Log;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
@@ -31,8 +30,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 class AlertModel implements Cloneable {
 

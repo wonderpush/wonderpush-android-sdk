@@ -1,6 +1,7 @@
 package com.wonderpush.sdk;
 
-import android.app.*;
+import android.app.NotificationChannel;
+import android.app.NotificationChannelGroup;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.media.AudioAttributes;

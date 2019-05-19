@@ -1,11 +1,8 @@
 package com.wonderpush.sdk;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;

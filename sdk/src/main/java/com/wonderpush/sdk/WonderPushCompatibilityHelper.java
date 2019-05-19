@@ -2,15 +2,12 @@ package com.wonderpush.sdk;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Application;
-import android.app.Application.ActivityLifecycleCallbacks;
 import android.app.NotificationChannelGroup;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Html;
-import android.view.Gravity;
 import android.view.View;
 import android.webkit.WebView;
 

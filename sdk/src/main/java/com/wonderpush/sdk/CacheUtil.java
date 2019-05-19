@@ -1,7 +1,6 @@
 package com.wonderpush.sdk;
 
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -15,9 +14,6 @@ import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Locale;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 class CacheUtil {
 

@@ -3,8 +3,6 @@ package com.wonderpush.sdk;
 import android.os.SystemClock;
 import android.util.Log;
 
-import org.json.JSONException;
-
 import java.io.IOException;
 
 /**
