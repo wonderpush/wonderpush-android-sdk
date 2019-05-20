@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -45,7 +46,15 @@ class InstallationManager {
 
     public static JSONObject getInstallationCustomProperties() {
         try {
-            return JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+            JSONObject custom = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+            Iterator<String> it = custom.keys();
+            while (it.hasNext()) {
+                String key = it.next();
+                if (key.indexOf('_') < 0) {
+                    it.remove();
+                }
+            }
+            return custom;
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to read installation custom properties", ex);
             return new JSONObject();
@@ -54,6 +63,15 @@ class InstallationManager {
 
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
         try {
+            customProperties = JSONUtil.deepCopy(customProperties);
+            Iterator<String> it = customProperties.keys();
+            while (it.hasNext()) {
+                String key = it.next();
+                if (key.indexOf('_') < 0) {
+                    Log.w(WonderPush.TAG, "Dropping installation property with no prefix: " + key);
+                    it.remove();
+                }
+            }
             JSONSyncInstallationCustom.forCurrentUser().put(customProperties);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to put installation custom properties " + customProperties, ex);
@@ -158,7 +176,7 @@ class InstallationManager {
         try {
             JSONObject diff = new JSONObject();
             diff.putOpt("tags", new JSONArray(tags));
-            putInstallationCustomProperties(diff);
+            JSONSyncInstallationCustom.forCurrentUser().put(diff);
         } catch (JSONException ex) {
             Log.e(TAG, "Failed to addTag", ex);
         }
@@ -170,7 +188,7 @@ class InstallationManager {
         try {
             JSONObject diff = new JSONObject();
             diff.putOpt("tags", new JSONArray(tags));
-            putInstallationCustomProperties(diff);
+            JSONSyncInstallationCustom.forCurrentUser().put(diff);
         } catch (JSONException ex) {
             Log.e(TAG, "Failed to addTag", ex);
         }
@@ -180,14 +198,20 @@ class InstallationManager {
         try {
             JSONObject diff = new JSONObject();
             diff.putOpt("tags", JSONObject.NULL);
-            putInstallationCustomProperties(diff);
+            JSONSyncInstallationCustom.forCurrentUser().put(diff);
         } catch (JSONException ex) {
             Log.e(TAG, "Failed to removeAllTags", ex);
         }
     }
 
     public static Set<String> getTags() {
-        JSONObject custom = getInstallationCustomProperties();
+        JSONObject custom;
+        try {
+            custom = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Failed to read installation custom properties", ex);
+            custom = new JSONObject();
+        }
         JSONArray tags = custom.optJSONArray("tags");
         if (tags == null) {
             tags = new JSONArray();
