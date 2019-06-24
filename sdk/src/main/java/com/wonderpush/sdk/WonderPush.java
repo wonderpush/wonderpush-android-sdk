@@ -695,7 +695,7 @@ public class WonderPush {
      * <p>Does nothing if called without required user consent.</p>
      *
      * @param field The name of the property to set
-     * @param value The value to be set, can be an NSArray
+     * @param value The value to be set, can be an array or Collection
      */
     public static void setProperty(String field, Object value) {
         sApiImpl.setProperty(field, value);
@@ -747,7 +747,7 @@ public class WonderPush {
      * This way you don't have to deal with potential arrays if that property is not supposed to hold one.
      * Returns {@link JSONObject#NULL} instead of {@code null} if the property is absent or has an empty array value.
      *
-     * @param field The name of the property to remove values from
+     * @param field The name of the property to read values from
      * @return {@link JSONObject#NULL} or a single value stored in the property, never a {@link JSONArray} or {@code null}
      */
     public static Object getPropertyValue(String field) {
@@ -763,7 +763,7 @@ public class WonderPush {
      *
      * <p>Note, the returned value is an <em>immutable</em> list.</p>
      *
-     * @param field The name of the property to remove values from
+     * @param field The name of the property to read values from
      * @return A possibly empty {@link org.json.JSONArray} of the values stored in the property, but never {@link JSONObject#NULL} nor {@code null}
      */
     public static List<Object> getPropertyValues(String field) {
@@ -945,7 +945,7 @@ public class WonderPush {
     }
 
     /**
-     * Remove all tags from the current installation object stored by WonderPush.
+     * Returns all the tags of the current installation object stored by WonderPush.
      *
      * @return
      *      A copy of the set of tags attached to the installation.
