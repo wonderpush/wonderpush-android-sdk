@@ -30,6 +30,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1309,6 +1310,8 @@ public class WonderPush {
             Log.e(TAG, "Failed to read application meta-data", e);
         }
 
+        boolean foundBuildConfig = false;
+
         // Collect all configuration here
         boolean initProviderAllowed = true;
         String clientId = null;
@@ -1318,57 +1321,100 @@ public class WonderPush {
         String senderId = null;
 
         if (!isInitialized()) {
+            // Try to locate the BuildConfig class.
+            // The difficulty being that it's in the Java package configured as `defaultConfig.applicationId` in gradle,
+            // but does is not affected by `applicationIdSuffix` or flavors' `applicationId`, whereas Context.getPackageName() is.
+            // - In the easiest case where applicationId is only given in `defaultConfig` in the app's build.gradle
+            //   and there is no `applicationIdSuffix`, and we can use context.getPackageName();
+            // - Otherwise, the application class is probably from the Java package, although that's not mandatory;
+            // - Finally, we allow the developer to give us the value using a manifest metadata or a string resource.
+            String buildConfigPackageGiven = null;
+            {
+                // Try using resources
+                try {
+                    Resources resources = context.getResources();
+                    int res;
+                    String resString;
+                    res = resources.getIdentifier("wonderpush_buildConfigPackage", "string", context.getPackageName());
+                    resString = res == 0 ? null : resources.getString(res);
+                    if (!TextUtils.isEmpty(resString)) {
+                        buildConfigPackageGiven = resString;
+                        logDebug("wonderpush_buildConfigPackage resource: " + buildConfigPackageGiven);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Could not get a WonderPush configuration resource", e);
+                }
+                // Try using the manifest <application><meta-data>
+                Object resValue = metaData.get("com.wonderpush.sdk.buildConfigPackage");
+                if (resValue instanceof String && ((String) resValue).length() > 0) {
+                    buildConfigPackageGiven = (String) resValue;
+                    logDebug("com.wonderpush.sdk.buildConfigPackage metadata: " + buildConfigPackageGiven);
+                }
+            }
+            List<String> buildConfigPackagesToTry = new ArrayList<>();
+            if (buildConfigPackageGiven != null) {
+                buildConfigPackagesToTry.add(buildConfigPackageGiven);
+            } else {
+                buildConfigPackagesToTry.add(context.getPackageName());
+                buildConfigPackagesToTry.add(context.getApplicationContext().getClass().getPackage().getName());
+            }
+
             // Try loading configuration using the BuildConfig values for good security (using code-stored constants)
             // BuildConfig is first because it's hard to view them (needs a decompiler)
-            String className = context.getPackageName() + ".BuildConfig";
-            try {
-                Class<?> classClass = context.getClassLoader().loadClass(className);
-                for (Field f : classClass.getFields()) {
-                    if (!f.getName().startsWith("WONDERPUSH_")) continue;
-                    try {
-                        Object rtn = f.get(null);
-                        if (rtn instanceof String) {
-                            String strValue = (String) rtn;
-                            if (strValue.length() == 0) continue;
-                            switch (f.getName()) {
-                                case "WONDERPUSH_CLIENT_ID":
-                                    clientId = strValue;
-                                    break;
-                                case "WONDERPUSH_CLIENT_SECRET":
-                                    clientSecret = strValue;
-                                    break;
-                                case "WONDERPUSH_SENDER_ID":
-                                    senderId = strValue;
-                                    break;
-                                default:
-                                    Log.w(TAG, "Unknown BuildConfig String field " + f.getName());
-                                    break;
+            for (String buildConfigPackage : buildConfigPackagesToTry) {
+                String className = buildConfigPackage + ".BuildConfig";
+                try {
+                    Class<?> classClass = context.getClassLoader().loadClass(className);
+                    logDebug("Reading configuration from " + className);
+                    for (Field f : classClass.getFields()) {
+                        if (!f.getName().startsWith("WONDERPUSH_")) continue;
+                        try {
+                            Object rtn = f.get(null);
+                            if (rtn instanceof String) {
+                                String strValue = (String) rtn;
+                                if (strValue.length() == 0) continue;
+                                switch (f.getName()) {
+                                    case "WONDERPUSH_CLIENT_ID":
+                                        clientId = strValue;
+                                        break;
+                                    case "WONDERPUSH_CLIENT_SECRET":
+                                        clientSecret = strValue;
+                                        break;
+                                    case "WONDERPUSH_SENDER_ID":
+                                        senderId = strValue;
+                                        break;
+                                    default:
+                                        Log.w(TAG, "Unknown BuildConfig String field " + f.getName());
+                                        break;
+                                }
+                            } else if (rtn instanceof Boolean) {
+                                Boolean boolValue = (Boolean) rtn;
+                                switch (f.getName()) {
+                                    case "WONDERPUSH_AUTO_INIT":
+                                        initProviderAllowed = boolValue;
+                                        break;
+                                    case "WONDERPUSH_LOGGING":
+                                        logging = boolValue;
+                                        break;
+                                    case "WONDERPUSH_REQUIRES_USER_CONSENT":
+                                        requiresUserConsent = boolValue;
+                                        break;
+                                    default:
+                                        Log.w(TAG, "Unknown BuildConfig Boolean field " + f.getName());
+                                        break;
+                                }
+                            } else {
+                                Log.w(TAG, "Unknown BuildConfig " + (rtn == null ? "null" : rtn.getClass().getCanonicalName()) + " field " + f.getName());
                             }
-                        } else if (rtn instanceof Boolean) {
-                            Boolean boolValue = (Boolean) rtn;
-                            switch (f.getName()) {
-                                case "WONDERPUSH_AUTO_INIT":
-                                    initProviderAllowed = boolValue;
-                                    break;
-                                case "WONDERPUSH_LOGGING":
-                                    logging = boolValue;
-                                    break;
-                                case "WONDERPUSH_REQUIRES_USER_CONSENT":
-                                    requiresUserConsent = boolValue;
-                                    break;
-                                default:
-                                    Log.w(TAG, "Unknown BuildConfig Boolean field " + f.getName());
-                                    break;
-                            }
-                        } else {
-                            Log.w(TAG, "Unknown BuildConfig " + (rtn == null ? "null" : rtn.getClass().getCanonicalName()) + " field " + f.getName());
+                        } catch (Exception e) { // IllegalAccessException on non public field
+                            Log.e(TAG, "Could not get BuildConfig field " + f.getName(), e);
                         }
-                    } catch (Exception e) { // IllegalAccessException on non public field
-                        Log.e(TAG, "Could not get BuildConfig field " + f.getName(), e);
                     }
+                    foundBuildConfig = true;
+                    break;
+                } catch (ClassNotFoundException e) {
+                    logDebug("No " + className + " class found. ProGuard may have removed it after finding no WONDERPUSH_* constants.");
                 }
-            } catch (ClassNotFoundException e) {
-                logDebug("No " + className + " class found. ProGuard removed it after finding no WONDERPUSH_* constants.");
             }
 
             // Try loading configuration using resources
@@ -1510,6 +1556,9 @@ public class WonderPush {
         // Warn the user once if not initialization means has been found
         if (!isInitialized()) {
             Log.e(TAG, "Could not initialize WonderPush using the initializer class, BuildConfig options or manifest <meta-data> options!");
+            if (!foundBuildConfig) {
+                Log.w(TAG, "No BuildConfig class found. You probably need to give the value of your gradle defaultConfig.applicationId as the a \"wonderpush_buildConfigPackage\" string resource or a \"com.wonderpush.sdk.buildConfigPackage\" manifest <meta-data>.");
+            }
         }
 
         return isInitialized();
