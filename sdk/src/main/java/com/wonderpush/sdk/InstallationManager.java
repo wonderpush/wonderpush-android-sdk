@@ -268,6 +268,7 @@ class InstallationManager {
                     JSONObject application = new JSONObject();
                     application.put("version", getApplicationVersion());
                     application.put("sdkVersion", getSDKVersion());
+                    application.put("integrator", WonderPush.getIntegrator() == null ? JSONObject.NULL : WonderPush.getIntegrator());
                     properties.put("application", application);
 
                     JSONObject device = new JSONObject();

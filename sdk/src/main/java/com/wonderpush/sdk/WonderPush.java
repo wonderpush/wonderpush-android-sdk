@@ -135,6 +135,8 @@ public class WonderPush {
     private static boolean sBeforeInitializationUserIdSet = false;
     private static String sBeforeInitializationUserId;
 
+    private static String sIntegrator = null;
+
     private static WonderPushDelegate sDelegate;
 
     static final int API_INT = 1;
@@ -1319,6 +1321,7 @@ public class WonderPush {
         Boolean logging = null;
         Boolean requiresUserConsent = null;
         String senderId = null;
+        String integrator = null;
 
         if (!isInitialized()) {
             // Try to locate the BuildConfig class.
@@ -1383,6 +1386,9 @@ public class WonderPush {
                                     case "WONDERPUSH_SENDER_ID":
                                         senderId = strValue;
                                         break;
+                                    case "WONDERPUSH_INTEGRATOR":
+                                        integrator = strValue;
+                                        break;
                                     default:
                                         Log.w(TAG, "Unknown BuildConfig String field " + f.getName());
                                         break;
@@ -1438,6 +1444,11 @@ public class WonderPush {
                 if (!TextUtils.isEmpty(resString)) {
                     senderId = resString;
                 }
+                res = resources.getIdentifier("wonderpush_integrator", "string", context.getPackageName());
+                resString = res == 0 ? null : resources.getString(res);
+                if (!TextUtils.isEmpty(resString)) {
+                    integrator = resString;
+                }
                 res = resources.getIdentifier("wonderpush_autoInit", "bool", context.getPackageName());
                 if (res != 0) {
                     initProviderAllowed = resources.getBoolean(res);
@@ -1468,6 +1479,10 @@ public class WonderPush {
             resValue = metaData.get("com.wonderpush.sdk.senderId");
             if (resValue instanceof String && ((String)resValue).length() > 0) {
                 senderId = (String) resValue;
+            }
+            resValue = metaData.get("com.wonderpush.sdk.integrator");
+            if (resValue instanceof String && ((String)resValue).length() > 0) {
+                integrator = (String) resValue;
             }
             resValue = metaData.get("com.wonderpush.sdk.autoInit");
             if (resValue instanceof Boolean) {
@@ -1502,6 +1517,10 @@ public class WonderPush {
         if (senderId != null) {
             logDebug("Applying configuration: senderId: " + senderId);
             sSenderId = senderId;
+        }
+        if (integrator != null) {
+            logDebug("Applying configuration: integrator: " + integrator);
+            setIntegrator(integrator);
         }
 
         // Store the ApplicationContext at the very least, this will benefit many codepath that may
@@ -1964,6 +1983,29 @@ public class WonderPush {
         if (sFirebaseApp == null)
             Log.e(TAG, "FirebaseApp is null, did you call WonderPush.initialize()?");
         return sFirebaseApp;
+    }
+
+    /**
+     * Gets the framework, library or wrapper used for integration.
+     *
+     * This method should not be used by the developer directly,
+     * only by components that facilitates the native SDK integration.
+     *
+     */
+    static String getIntegrator() {
+        return sIntegrator;
+    }
+
+    /**
+     * Sets the framework, library or wrapper used for integration.
+     *
+     * This method should not be used by the developer directly,
+     * only by components that facilitates the native SDK integration.
+     *
+     * @param integrator Expected format is "some-component-1.2.3"
+     */
+    public static void setIntegrator(String integrator) {
+        sIntegrator = integrator;
     }
 
     protected static boolean safeDefer(final Runnable runnable, long defer) {
