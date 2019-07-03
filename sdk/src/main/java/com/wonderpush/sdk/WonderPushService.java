@@ -184,11 +184,8 @@ public class WonderPushService extends Service {
                             stackBuilder.addNextIntentWithParentStack(activityIntent);
                             if (stackBuilder.getIntentCount() == 1) {
                                 // The target activity has no parent
-                                Intent launchIntent = new Intent();
-                                launchIntent.setPackage(getApplicationContext().getPackageName());
-                                launchIntent.setAction(Intent.ACTION_MAIN);
-                                launchIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-                                ComponentName defaultActivity = launchIntent.resolveActivity(getApplicationContext().getPackageManager());
+                                Intent launchIntent = getApplicationContext().getPackageManager().getLaunchIntentForPackage(getApplicationContext().getPackageName());
+                                ComponentName defaultActivity = launchIntent == null ? null : launchIntent.resolveActivity(getApplicationContext().getPackageManager());
                                 if (defaultActivity != null) {
                                     Class<? extends Activity> defaultActivityClass = Class.forName(defaultActivity.getClassName()).asSubclass(Activity.class);
                                     if (!resolvedActivity.getClassName().equals(defaultActivity.getClassName())) {
@@ -331,22 +328,23 @@ public class WonderPushService extends Service {
 
         } else {
 
-            Intent activityIntent = new Intent();
-            activityIntent.setPackage(getApplicationContext().getPackageName());
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
-                    intent.getParcelableExtra("receivedPushNotificationIntent"));
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
-                    notif.getType().toString());
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
-                    intent.getBooleanExtra("fromUserInteraction", true));
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
-                    true);
-            activityIntent.setAction(Intent.ACTION_MAIN);
-            activityIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-            stackBuilder.addNextIntentWithParentStack(activityIntent);
-            WonderPush.logDebug("Starting new task");
-            stackBuilder.startActivities();
+            Intent activityIntent = getApplicationContext().getPackageManager().getLaunchIntentForPackage(getApplicationContext().getPackageName());
+            if (activityIntent == null) {
+                Log.e(WonderPush.TAG, "Cannot launch application: no default launch intent. Make sure to have an activity with action MAIN and category LAUNCHER in your manifest.");
+            } else {
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                        intent.getParcelableExtra("receivedPushNotificationIntent"));
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
+                        notif.getType().toString());
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                        intent.getBooleanExtra("fromUserInteraction", true));
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+                        true);
+                TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                stackBuilder.addNextIntentWithParentStack(activityIntent);
+                WonderPush.logDebug("Starting new task");
+                stackBuilder.startActivities();
+            }
 
         }
         return true;
