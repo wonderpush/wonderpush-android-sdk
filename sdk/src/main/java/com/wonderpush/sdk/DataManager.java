@@ -225,7 +225,9 @@ class DataManager {
             sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
             sendIntent.setType("application/zip");
             sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            WonderPush.getApplicationContext().startActivity(Intent.createChooser(sendIntent, WonderPush.getApplicationContext().getResources().getText(R.string.wonderpush_export_data_chooser)));
+            Intent chooserIntent = Intent.createChooser(sendIntent, WonderPush.getApplicationContext().getResources().getText(R.string.wonderpush_export_data_chooser));
+            chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            WonderPush.getApplicationContext().startActivity(chooserIntent);
             return true;
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while exporting data", ex);
