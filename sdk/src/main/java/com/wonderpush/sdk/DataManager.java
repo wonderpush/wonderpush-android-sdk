@@ -282,7 +282,7 @@ class DataManager {
         WonderPushConfiguration.clearStorage(true, false);
     }
 
-    static void clearAll() {
+    static void clearAllData() {
         for (String userId : WonderPushConfiguration.listKnownUserIds()) {
             clearInstallation(userId);
         }

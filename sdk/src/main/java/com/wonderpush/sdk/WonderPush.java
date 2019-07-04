@@ -1726,8 +1726,17 @@ public class WonderPush {
     /**
      * Remove any local storage and ask the WonderPush servers to delete any data associated with the all local installations and related users.
      */
+    public static void clearAllData() {
+        DataManager.clearAllData();
+    }
+
+    /**
+     * Remove any local storage and ask the WonderPush servers to delete any data associated with the all local installations and related users.
+     * @deprecated
+     * @see WonderPush#clearAllData()
+     */
     public static void clearAll() {
-        DataManager.clearAll();
+        clearAllData();
     }
 
     /**
