@@ -233,8 +233,8 @@ public class WonderPushService extends Service {
                         if (activity != null && !activity.isFinishing()) {
                             WonderPush.logDebug("Delivered opened notification to an activity outside the app on top of last/current activity: " + activity.getClass().getCanonicalName());
                             // We have a current activity stack, keep it
-                            activityIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP); // avoid duplicating the top activity
-                            getApplicationContext().startActivity(activityIntent);
+                            activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            activity.startActivity(activityIntent);
                             // Show the potential in-app when the user comes back on the application
                             WonderPush.showPotentialNotification(activity, intent);
                         } else {
