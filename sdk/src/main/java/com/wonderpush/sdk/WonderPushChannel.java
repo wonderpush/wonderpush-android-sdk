@@ -92,7 +92,7 @@ public class WonderPushChannel implements Cloneable {
         rtn.put("lightColor", JSONUtil.wrap(lightColor));
         rtn.put("lockscreenVisibility", JSONUtil.wrap(lockscreenVisibility));
         rtn.put("sound", JSONUtil.wrap(sound));
-        rtn.put("soundUri", JSONUtil.wrap(soundUri));
+        rtn.put("soundUri", JSONUtil.wrap(soundUri == null ? null : soundUri.toString()));
         rtn.put("vibrateInSilentMode", JSONUtil.wrap(vibrateInSilentMode));
         rtn.put("color", JSONUtil.wrap(color));
         rtn.put("localOnly", JSONUtil.wrap(localOnly));
