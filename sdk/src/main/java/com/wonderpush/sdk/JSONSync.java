@@ -152,8 +152,8 @@ class JSONSync {
         if (resetSdkState) {
             putAccumulator = new JSONObject();
         } else {
-            JSONUtil.merge(sdkState, putAccumulator);
             JSONUtil.merge(sdkState, inflightDiff);
+            JSONUtil.merge(sdkState, putAccumulator);
         }
         schedulePatchCallAndSave();
     }
