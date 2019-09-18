@@ -55,6 +55,17 @@ public class JSONSyncTest {
         protected void _serverPatchInstallation_handler(JSONSync.ResponseHandler handler) {}
     }
 
+    private class ServerManualCall extends MockServer {
+        private JSONSync.ResponseHandler handler;
+        @Override
+        protected void _serverPatchInstallation_handler(JSONSync.ResponseHandler handler) {
+            this.handler = handler;
+        }
+        public void callHandler() {
+            this.handler.onSuccess();
+        }
+    }
+
     private class ServerAssertNotCalled extends MockServer {
 
         @Override
@@ -224,6 +235,20 @@ public class JSONSyncTest {
 
         assertSyncedPotentialNoopScheduledPatchCall();
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1,\"AAA\":2,\"B\":2,\"BB\":2}"), sync.getSdkState());
+    }
+
+    @Test
+    public void receiveStateKeepsDiffs() throws JSONException {
+        ServerManualCall server = new ServerManualCall();
+        callbacks.setServer(server);
+        sync.put(new JSONObject("{\"A\":1}"));
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":1}"), sync.getSdkState());
+        sync.performScheduledPatchCall();
+        Assert.assertTrue(sync.hasInflightPatchCall());
+        sync.put(new JSONObject("{\"A\":2}"));
+        sync.receiveState(new JSONObject("{}"), false);
+        server.callHandler();
+        JSONUtilTest.assertEquals(new JSONObject("{\"A\":2}"), sync.getSdkState());
     }
 
     @Test
