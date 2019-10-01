@@ -4,6 +4,8 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class will make sure important {@link WonderPushRestClient.Request} objects are run eventually, even if the user
@@ -19,6 +21,8 @@ class WonderPushRequestVault {
     private static final float BACKOFF_EXPONENT = 1.5f;
     private static final int MAXIMUM_WAIT = 5 * 60 * 1000;
     private static int sWait = NORMAL_WAIT;
+    private static final int MAX_PARALLEL_CALLS = 1;
+    private static Semaphore sParallelCalls = new Semaphore(MAX_PARALLEL_CALLS);
 
     protected static WonderPushRequestVault getDefaultVault() {
         return sDefaultVault;
@@ -70,7 +74,10 @@ class WonderPushRequestVault {
             @Override
             public void run() {
                 while (true) {
+                    boolean acquired = false;
                     try {
+                        sParallelCalls.acquire();
+                        acquired = true;
                         long nextJobNotBeforeRealtimeElapsed = mJobQueue.peekNextJobNotBeforeRealtimeElapsed();
                         if (!WonderPush.hasUserConsent()) {
                             // Wait indefinitely if we must wait for consent
@@ -115,12 +122,14 @@ class WonderPushRequestVault {
                                 } else {
                                     WonderPush.logDebug("RequestVault: discarding job", e);
                                 }
+                                sParallelCalls.release();
                             }
 
                             @Override
                             public void onSuccess(Response response) {
                                 WonderPush.logDebug("RequestVault: job done");
                                 resetBackoff();
+                                sParallelCalls.release();
                             }
                         });
                         if (!WonderPush.hasUserConsent()) {
@@ -129,7 +138,11 @@ class WonderPushRequestVault {
                         } else {
                             WonderPushRestClient.requestAuthenticated(request);
                         }
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                        if (acquired) {
+                            sParallelCalls.release();
+                        }
+                    }
                 }
             }
         };
