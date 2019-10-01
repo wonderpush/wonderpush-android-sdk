@@ -535,6 +535,7 @@ class WonderPushRestClient {
 
             @Override
             public void onFailure(Throwable e, Response errorResponse) {
+                request.getHandler().onFailure(e, errorResponse);
             }
         });
     }
