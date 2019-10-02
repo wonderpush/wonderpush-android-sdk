@@ -78,7 +78,7 @@ class InstallationManager {
         }
     }
 
-    public static void setProperty(String field, Object value) {
+    public static synchronized void setProperty(String field, Object value) {
         if (field == null) return;
         value = JSONUtil.wrap(value);
         try {
@@ -90,7 +90,7 @@ class InstallationManager {
         }
     }
 
-    public static void unsetProperty(String field) {
+    public static synchronized void unsetProperty(String field) {
         if (field == null) return;
         try {
             JSONObject diff = new JSONObject();
@@ -101,7 +101,7 @@ class InstallationManager {
         }
     }
 
-    public static void addProperty(String field, Object value) {
+    public static synchronized void addProperty(String field, Object value) {
         value = JSONUtil.wrap(value);
         if (field == null || value == null || value == JSONObject.NULL) return;
         // The contract is to actually append new values only, not shuffle or deduplicate everything,
@@ -123,7 +123,7 @@ class InstallationManager {
         setProperty(field, values);
     }
 
-    public static void removeProperty(String field, Object value) {
+    public static synchronized void removeProperty(String field, Object value) {
         value = JSONUtil.wrap(value);
         if (field == null || value == null) return; // Note: We accept removing JSONObject.NULL
         // The contract is to actually remove every listed values (all duplicated appearances), not shuffle or deduplicate everything else
@@ -140,7 +140,7 @@ class InstallationManager {
         setProperty(field, newValues);
     }
 
-    public static Object getPropertyValue(String field) {
+    public static synchronized Object getPropertyValue(String field) {
         if (field == null) return JSONObject.NULL;
         JSONObject properties = getInstallationCustomProperties();
         Object value = properties.opt(field);
@@ -151,7 +151,7 @@ class InstallationManager {
         return value;
     }
 
-    public static List<Object> getPropertyValues(String field) {
+    public static synchronized List<Object> getPropertyValues(String field) {
         if (field == null) return Collections.emptyList();
         JSONObject properties = getInstallationCustomProperties();
         Object value = properties.opt(field);
@@ -164,7 +164,7 @@ class InstallationManager {
         }
     }
 
-    public static void addTag(String... tag) {
+    public static synchronized void addTag(String... tag) {
         Set<String> tags = new TreeSet<>(getTags()); // use a sorted implementation to avoid useless diffs
         for (String aTag : tag) {
             if (aTag != null && !aTag.isEmpty()) {
@@ -182,7 +182,7 @@ class InstallationManager {
         }
     }
 
-    public static void removeTag(String... tag) {
+    public static synchronized void removeTag(String... tag) {
         Set<String> tags = new TreeSet<>(getTags()); // use a sorted implementation to avoid useless diffs
         tags.removeAll(Arrays.asList(tag));
         try {
@@ -194,7 +194,7 @@ class InstallationManager {
         }
     }
 
-    public static void removeAllTags() {
+    public static synchronized void removeAllTags() {
         try {
             JSONObject diff = new JSONObject();
             diff.putOpt("tags", JSONObject.NULL);
@@ -204,7 +204,7 @@ class InstallationManager {
         }
     }
 
-    public static Set<String> getTags() {
+    public static synchronized Set<String> getTags() {
         JSONObject custom;
         try {
             custom = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
@@ -235,7 +235,7 @@ class InstallationManager {
         return rtn;
     }
 
-    public static boolean hasTag(String tag) {
+    public static synchronized boolean hasTag(String tag) {
         if (tag == null) return false;
         return getTags().contains(tag);
     }
