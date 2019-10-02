@@ -136,6 +136,7 @@ public class WonderPush {
     private static String sBeforeInitializationUserId;
 
     private static String sIntegrator = null;
+    private static AtomicReference<Location> sLocationOverride = null;
 
     private static WonderPushDelegate sDelegate;
 
@@ -559,6 +560,35 @@ public class WonderPush {
     }
 
     /**
+     * Disables the collection of the user's geolocation.
+     */
+    public static void disableLocation() {
+        setLocation(null);
+    }
+
+    /**
+     * Enables the collection of the user's geolocation.
+     *
+     * You still need the appropriate geolocation permissions in your AndroidManifest.xml to be able to read the user's location.
+     */
+    public static void enableLocation() {
+        sLocationOverride = null;
+    }
+
+    /**
+     * Overrides the user's geolocation.
+     *
+     * Using this method you can have the user's location be set to wherever you want.
+     * This may be useful to use a pre-recorded location.
+     *
+     * @param location The location to use as the user's current geolocation.
+     *                 Using {@code null} has the same effect as calling {@link #disableLocation()}.
+     */
+    public static void setLocation(Location location) {
+        sLocationOverride = new AtomicReference<>(location == null ? null : new Location(location));
+    }
+
+    /**
      * Returns the last known location of the {@link LocationManager}
      * or null if permission was not given.
      */
@@ -567,6 +597,12 @@ public class WonderPush {
 
         if (applicationContext == null)
             return null;
+
+        AtomicReference<Location> locationOverrideRef = sLocationOverride;
+        if (locationOverrideRef != null) {
+            Location override = locationOverrideRef.get();
+            return override;
+        }
 
         LocationManager locationManager = (LocationManager) applicationContext.getSystemService(Context.LOCATION_SERVICE);
         try {
@@ -1322,6 +1358,7 @@ public class WonderPush {
         Boolean requiresUserConsent = null;
         String senderId = null;
         String integrator = null;
+        Boolean location = null;
 
         if (!isInitialized()) {
             // Try to locate the BuildConfig class.
@@ -1405,6 +1442,9 @@ public class WonderPush {
                                     case "WONDERPUSH_REQUIRES_USER_CONSENT":
                                         requiresUserConsent = boolValue;
                                         break;
+                                    case "WONDERPUSH_LOCATION":
+                                        location = boolValue;
+                                        break;
                                     default:
                                         Log.w(TAG, "Unknown BuildConfig Boolean field " + f.getName());
                                         break;
@@ -1461,6 +1501,10 @@ public class WonderPush {
                 if (res != 0) {
                     requiresUserConsent = resources.getBoolean(res);
                 }
+                res = resources.getIdentifier("wonderpush_location", "bool", context.getPackageName());
+                if (res != 0) {
+                    location = resources.getBoolean(res);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Could not get a WonderPush configuration resource", e);
             }
@@ -1502,6 +1546,12 @@ public class WonderPush {
             } else if ("true".equals(resValue) || "false".equals(resValue)) {
                 requiresUserConsent = "true".equals(resValue);
             }
+            resValue = metaData.get("com.wonderpush.sdk.location");
+            if (resValue instanceof Boolean) {
+                location = (Boolean) resValue;
+            } else if ("true".equals(resValue) || "false".equals(resValue)) {
+                location = "true".equals(resValue);
+            }
         }
 
         // Apply any found configuration prior to initializing the SDK
@@ -1509,6 +1559,14 @@ public class WonderPush {
             if (!logging) logDebug("Applying configuration: logging: " + logging);
             WonderPush.setLogging(logging);
             if (logging) logDebug("Applying configuration: logging: " + logging);
+        }
+        if (location != null) {
+            logDebug("Applying configuration: location: " + location);
+            if (location) {
+                WonderPush.enableLocation();
+            } else {
+                WonderPush.disableLocation();
+            }
         }
         if (requiresUserConsent != null) {
             logDebug("Applying configuration: requiresUserConsent: " + requiresUserConsent);
