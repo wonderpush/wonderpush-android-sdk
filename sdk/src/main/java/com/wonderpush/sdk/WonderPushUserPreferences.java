@@ -559,7 +559,7 @@ public class WonderPushUserPreferences {
         } else {
 
             for (WonderPushChannel channel : sChannels.values()) {
-                if (channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                if (channel.getImportance() != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
                     rtn.add(channel.getId());
                 }
             }
