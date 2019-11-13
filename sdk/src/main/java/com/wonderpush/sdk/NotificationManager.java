@@ -14,6 +14,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -925,6 +926,9 @@ class NotificationManager {
                 case METHOD:
                     handleMethodAction(action);
                     break;
+                case CLOSE_NOTIFICATIONS:
+                    handleCloseNotifications(context, action);
+                    break;
                 case _DUMP_STATE:
                     handleDumpStateAction(action);
                     break;
@@ -1268,6 +1272,55 @@ class NotificationManager {
         } catch (Exception e) {
             Log.e(NotificationManager.TAG, "Unexpected error while opening map", e);
             Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    protected static void handleCloseNotifications(Context context, ActionModel action) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            android.app.NotificationManager notificationManager = (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            for (StatusBarNotification sbn : notificationManager.getActiveNotifications()) {
+                Notification notification = sbn.getNotification();
+                // Filter notification channel
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (action.hasChannel()) {
+                        if (action.getChannel() == null && !(notification.getChannelId() == null || notification.getChannelId().equals(WonderPushUserPreferences.getDefaultChannelId()))) {
+                            continue;
+                        } else if (action.getChannel() != null && !action.getChannel().equals(notification.getChannelId())) {
+                            continue;
+                        }
+                    }
+                }
+                // Filter group
+                if (action.hasGroup()) {
+                    if (action.getGroup() == null && notification.getGroup() != null
+                            || action.getGroup() != null && !action.getGroup().equals(notification.getGroup())) {
+                        continue;
+                    }
+                }
+                // Filter tag
+                if (action.hasTag()) {
+                    if (action.getTag() == null && sbn.getTag() != null
+                            || action.getTag() != null && !action.getTag().equals(sbn.getTag())) {
+                        continue;
+                    }
+                }
+                // Filter category
+                if (action.hasCategory()) {
+                    if (action.getCategory() == null && notification.category != null
+                            || action.getCategory() != null && !action.getCategory().equals(notification.category)) {
+                        continue;
+                    }
+                }
+                // Filter sort key
+                if (action.hasSortKey()) {
+                    if (action.getSortKey() == null && notification.getSortKey() != null
+                            || action.getSortKey() != null && !action.getSortKey().equals(notification.getSortKey())) {
+                        continue;
+                    }
+                }
+                // All filters passed, cancel this notification
+                notificationManager.cancel(sbn.getTag(), sbn.getId());
+            }
         }
     }
 
