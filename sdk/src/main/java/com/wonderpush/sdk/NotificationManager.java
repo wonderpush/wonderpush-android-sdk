@@ -170,6 +170,15 @@ class NotificationManager {
             }
         } else {
             notify(context, work.getTag(), work.getLocalNotificationId(), notification);
+            // Display group summary notification, if any
+            Notification groupSummaryNotification = buildNotificationGroupSummary(notif, context, work.getPendingIntentBuilder(context));
+            if (groupSummaryNotification != null) {
+                String tag = null; // should not stay null, but null is a legal value anyway
+                if (notif.getAlert() != null && notif.getAlert().getGroup() != null) {
+                    tag = notif.getAlert().getGroup() + "-GROUP_SUMMARY_NOTIFICATION";
+                }
+                notify(context, tag, 0, groupSummaryNotification);
+            }
         }
     }
 
@@ -275,6 +284,18 @@ class NotificationManager {
             return buildPendingIntent(false, extrasOverride, null);
         }
 
+        public PendingIntent buildForGroupSummary() {
+            if (this.notif.getAlert() == null || !this.notif.getAlert().hasGroupTargetUrl()) {
+                return this.buildForDefault();
+            }
+            if (this.notif.getAlert().getGroupTargetUrl() == null) {
+                return null;
+            }
+            Bundle extrasOverride = new Bundle();
+            extrasOverride.putString("overrideTargetUrl", this.notif.getAlert().getGroupTargetUrl());
+            return buildPendingIntent(true, extrasOverride, null);
+        }
+
         private PendingIntent buildPendingIntent(boolean fromUserInteraction, Bundle extrasOverride, Map<String, String> extraQueryParams) {
             Intent resultIntent = new Intent();
             resultIntent.setClass(context, WonderPushService.class);
@@ -293,6 +314,10 @@ class NotificationManager {
                     .authority(WonderPush.INTENT_NOTIFICATION_AUTHORITY)
                     .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER, notif.getInputJSONString())
                     .appendQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_LOCAL_NOTIFICATION_ID, String.valueOf(localNotificationId))
+                    // Add cache busting so that the group summary notification intent is different from the one of its last notification (extras are ignored for this comparison)
+                    // and the groupTargetUrl override (an extra-only difference) is either ignored or overrides that last notification too (depending on whether PendingIntent.FLAG_UPDATE_CURRENT is used or not)
+                    // We could add the notification's tag as query parameter too, but it's more cumbersome to pass it down here.
+                    .appendQueryParameter("_cacheBuster", "" + System.currentTimeMillis() + "-" + Math.random())
                     ;
             if (extraQueryParams != null) {
                 for (Map.Entry<String, String> extraQueryParamEntry : extraQueryParams.entrySet()) {
@@ -318,8 +343,19 @@ class NotificationManager {
 
     }
 
+    protected static Notification buildNotificationGroupSummary(NotificationModel notif, Context context,
+                                                                PendingIntentBuilder pendingIntentBuilder) {
+        return buildNotification_inner(notif, context, pendingIntentBuilder, true);
+    }
+
     protected static Notification buildNotification(NotificationModel notif, Context context,
                                                     PendingIntentBuilder pendingIntentBuilder) {
+        return buildNotification_inner(notif, context, pendingIntentBuilder, false);
+    }
+
+    protected static Notification buildNotification_inner(NotificationModel notif, Context context,
+                                                          PendingIntentBuilder pendingIntentBuilder,
+                                                          boolean buildGroupSummary) {
         if (NotificationModel.Type.DATA.equals(notif.getType())) {
             return null;
         }
@@ -330,6 +366,19 @@ class NotificationManager {
         if (alert == null || (alert.getTitle() == null && alert.getText() == null)) {
             // Nothing to display, don't create a notification
             return null;
+        }
+        // Special group considerations
+        if (buildGroupSummary) {
+            // No group summary necessary
+            if (alert.getGroup() == null) {
+                return null;
+            }
+            // Old Android version that does not handle grouping
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                // On pre Android-7.0 (N, API 24) we prefer to let each notification appear individually,
+                // rather than creating a group notification that would hide them all.
+                return null;
+            }
         }
         // Apply defaults
         if (alert.getTitle() == null && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -362,7 +411,7 @@ class NotificationManager {
         }
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channel.getId())
-                .setContentIntent(pendingIntentBuilder.buildForDefault())
+                .setContentIntent(buildGroupSummary ? pendingIntentBuilder.buildForGroupSummary() : pendingIntentBuilder.buildForDefault())
                 .setAutoCancel(true)
                 .setContentTitle(alert.getTitle())
                 .setContentText(alert.getText())
@@ -373,7 +422,8 @@ class NotificationManager {
                 .setLargeIcon(alert.getLargeIcon())
                 .setCategory(alert.getCategory())
                 .setGroup(alert.getGroup())
-                //.setGroupSummary(alert.getGroupSummary())
+                .setGroupSummary(buildGroupSummary)
+                .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
                 .setSortKey(alert.getSortKey())
                 .setOngoing(alert.getOngoing())
                 ;

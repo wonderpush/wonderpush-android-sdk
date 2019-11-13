@@ -166,7 +166,8 @@ class AlertModel implements Cloneable {
     private String category;
     private Integer color;
     private String group;
-    //private Boolean groupSummary; // should actually be controlled automatically by the SDK, not from a standalone push notification
+    private String groupTargetUrl;
+    private boolean groupTargetUrlPresent;
     private String sortKey;
     private Boolean localOnly;
     private Integer number;
@@ -279,11 +280,8 @@ class AlertModel implements Cloneable {
         }
         setColor(JSONUtil.getString(wpAlert, "color"));
         setGroup(JSONUtil.getString(wpAlert, "group"));
-        //if (!wpAlert.isNull("groupSummary")) {
-        //    setGroupSummary(wpAlert.optBoolean("groupSummary", false));
-        //} else {
-        //    setGroupSummary(null);
-        //}
+        setHasGroupTargetUrl(wpAlert.has("groupTargetUrl"));
+        setGroupTargetUrl(JSONUtil.getString(wpAlert, "groupTargetUrl"));
         setSortKey(JSONUtil.getString(wpAlert, "sortKey"));
         if (!wpAlert.isNull("localOnly")) {
             setLocalOnly(wpAlert.optBoolean("localOnly", false));
@@ -462,9 +460,10 @@ class AlertModel implements Cloneable {
         if (from.getGroup() != null) {
             setGroup(from.getGroup());
         }
-        //if (from.hasGroupSummary()) {
-        //    setGroupSummary(from.getGroupSummary());
-        //}
+        setHasGroupTargetUrl(from.hasGroupTargetUrl());
+        if (from.getGroupTargetUrl() != null) {
+            setGroupTargetUrl(from.getGroupTargetUrl());
+        }
         if (from.getSortKey() != null) {
             setSortKey(from.getSortKey());
         }
@@ -940,17 +939,21 @@ class AlertModel implements Cloneable {
         this.group = group;
     }
 
-    //public boolean hasGroupSummary() {
-    //    return groupSummary;
-    //}
-    //
-    //public boolean getGroupSummary() {
-    //    return groupSummary != null && groupSummary;
-    //}
-    //
-    //public void setGroupSummary(Boolean groupSummary) {
-    //    this.groupSummary = groupSummary;
-    //}
+    public String getGroupTargetUrl() {
+        return groupTargetUrl;
+    }
+
+    public void setGroupTargetUrl(String groupTargetUrl) {
+        this.groupTargetUrl = groupTargetUrl;
+    }
+
+    public boolean hasGroupTargetUrl() {
+        return groupTargetUrlPresent;
+    }
+
+    public void setHasGroupTargetUrl(boolean groupTargetUrlPresent) {
+        this.groupTargetUrlPresent = groupTargetUrlPresent;
+    }
 
     public String getSortKey() {
         return sortKey;
