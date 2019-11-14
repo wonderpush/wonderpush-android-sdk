@@ -1,6 +1,7 @@
 package com.wonderpush.sdk;
 
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -359,6 +360,46 @@ class JSONUtil {
                 } catch (ClassCastException ex) {
                     Log.e(WonderPush.TAG, "Unexpected exception in JSONArrayToList", ex);
                 }
+            }
+        }
+        return rtn;
+    }
+
+    static Bundle toBundle(JSONObject input) {
+        if (input == null) {
+            return null;
+        }
+        Bundle rtn = new Bundle();
+        Iterator<String> it = input.keys();
+        while (it.hasNext()) {
+            String key = it.next();
+            Object value = input.opt(key);
+            if (value == null || value == JSONObject.NULL) {
+                rtn.putString(key, null);
+            } else if (value instanceof String) {
+                rtn.putString(key, (String) value);
+            } else if (value instanceof Boolean) {
+                rtn.putBoolean(key, (Boolean) value);
+            } else if (value instanceof Double) {
+                rtn.putDouble(key, (Double) value);
+            } else if (value instanceof Integer) {
+                rtn.putInt(key, (Integer) value);
+            } else if (value instanceof Long) {
+                rtn.putLong(key, (Long) value);
+            } else if (value instanceof Number) {
+                rtn.putDouble(key, ((Number) value).doubleValue());
+            } else if (value instanceof JSONObject) {
+                rtn.putBundle(key, toBundle((JSONObject) value));
+            } else if (value instanceof JSONArray) {
+                // TODO Detect common type between all values and build an array of the appropriate type
+                WonderPush.logError("Coercing a JSONArray into an String[] for JSONObject to Bundle conversion: " + input.toString());
+                JSONArray jsonArray = (JSONArray) value;
+                int length = jsonArray.length();
+                String[] list = new String[length];
+                for (int i = 0; i < length; ++i) {
+                    list[i] = jsonArray.optString(i, null);
+                }
+                rtn.putStringArray(key, list);
             }
         }
         return rtn;

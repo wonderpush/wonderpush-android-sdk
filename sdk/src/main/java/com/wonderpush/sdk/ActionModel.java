@@ -75,6 +75,7 @@ class ActionModel implements Cloneable {
     private String category; // for CLOSE_NOTIFICATIONS
     private boolean hasSortKey; // for CLOSE_NOTIFICATIONS
     private String sortKey; // for CLOSE_NOTIFICATIONS
+    private JSONObject extras; // for CLOSE_NOTIFICATIONS
 
     public ActionModel() {
     }
@@ -110,6 +111,7 @@ class ActionModel implements Cloneable {
         category = JSONUtil.getString(data, "category");
         hasSortKey = data.has("sortKey");
         sortKey = JSONUtil.getString(data, "sortKey");
+        extras = data.optJSONObject("extras");
     }
 
     private static Boolean optBool(JSONObject object, String field, Boolean defaultValue) {
@@ -139,6 +141,11 @@ class ActionModel implements Cloneable {
         if (tags != null) {
             try {
                 rtn.tags = new JSONArray(tags.toString());
+            } catch (JSONException ignored) {}
+        }
+        if (extras != null) {
+            try {
+                rtn.extras = new JSONObject(extras.toString());
             } catch (JSONException ignored) {}
         }
         return rtn;
@@ -323,4 +330,13 @@ class ActionModel implements Cloneable {
     public void setSortKey(String sortKey) {
         this.sortKey = sortKey;
     }
+
+    public JSONObject getExtras() {
+        return extras;
+    }
+
+    public void setExtras(JSONObject extras) {
+        this.extras = extras;
+    }
+
 }

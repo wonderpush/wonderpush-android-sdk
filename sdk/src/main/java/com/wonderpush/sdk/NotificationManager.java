@@ -511,6 +511,26 @@ class NotificationManager {
                 defaults &= ~Notification.DEFAULT_SOUND;
             }
         }
+        // TODO Enable when switching to androidx, where the NotificationCompat.Builder handles it
+        //if (alert.getAllowSystemGeneratedContextualActions() != null) {
+        //    builder.setAllowSystemGeneratedContextualActions(alert.getAllowSystemGeneratedContextualActions());
+        //}
+        if (alert.getBadgeIconType() != null) {
+            builder.setBadgeIconType(alert.getBadgeIconTypeInt());
+        }
+        // TODO Enable when switching to androidx, where the NotificationCompat.Builder handles it
+        //if (alert.getChronometerCountDown() != null) {
+        //    builder.setChronometerCountDown(alert.getChronometerCountDown());
+        //}
+        if (alert.getColorized() != null) {
+            builder.setColorized(true);
+        }
+        if (alert.getExtras() != null) {
+            builder.addExtras(JSONUtil.toBundle(alert.getExtras()));
+        }
+        if (alert.getTimeoutAfter() != null) {
+            builder.setTimeoutAfter(alert.getTimeoutAfter());
+        }
 
         // Apply channel options for importance
         if (channel.getImportance() != null) {
@@ -1315,6 +1335,29 @@ class NotificationManager {
                 if (action.hasSortKey()) {
                     if (action.getSortKey() == null && notification.getSortKey() != null
                             || action.getSortKey() != null && !action.getSortKey().equals(notification.getSortKey())) {
+                        continue;
+                    }
+                }
+                // Filter on extras
+                Bundle extras = JSONUtil.toBundle(action.getExtras());
+                if (extras != null && !extras.isEmpty()) {
+                    if (notification.extras == null) {
+                        continue;
+                    }
+                    boolean remove = true;
+                    for (String key : extras.keySet()) {
+                        Object value = extras.get(key);
+                        if (value == null && (notification.extras.containsKey(key) || notification.extras.get(key) != null)) {
+                            remove = false;
+                        // TODO Proper per-type comparison
+                        } else if (value != null && (notification.extras.get(key) == null || !value.toString().equals(notification.extras.get(key).toString()))) {
+                            remove = false;
+                        }
+                        if (!remove) {
+                            break;
+                        }
+                    }
+                    if (!remove) {
                         continue;
                     }
                 }

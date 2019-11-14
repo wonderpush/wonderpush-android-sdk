@@ -8,12 +8,14 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Base64InputStream;
 import android.util.Log;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -189,6 +192,12 @@ class AlertModel implements Cloneable {
     private Integer smallIcon;
     private Bitmap largeIcon;
     private List<NotificationButtonModel> buttons;
+    private Boolean allowSystemGeneratedContextualActions;
+    private String badgeIconType; // one of NotificationCompat.BADGE_ICON_* constants
+    private Boolean chronometerCountDown;
+    private Boolean colorized;
+    private JSONObject extras;
+    private Long timeoutAfter;
     // Modify forCurrentSettings() and clone() when adding a field above
     private AlertModel foreground;
 
@@ -393,6 +402,36 @@ class AlertModel implements Cloneable {
             setLargeIcon(JSONUtil.getString(wpAlert, "largeIcon"));
         }
         setButtons(wpAlert.optJSONArray("buttons"));
+        if (wpAlert.isNull("allowSystemGeneratedContextualActions")) {
+            setAllowSystemGeneratedContextualActions(null);
+        } else {
+            setAllowSystemGeneratedContextualActions(wpAlert.optBoolean("allowSystemGeneratedContextualActions", true));
+        }
+        if (wpAlert.isNull("badgeIconType")) {
+            setBadgeIconType(null);
+        } else {
+            setBadgeIconType(JSONUtil.getString(wpAlert, "badgeIconType"));
+        }
+        if (wpAlert.isNull("chronometerCountDown")) {
+            setChronometerCountDown(null);
+        } else {
+            setChronometerCountDown(wpAlert.optBoolean("chronometerCountDown", true));
+        }
+        if (wpAlert.isNull("colorized")) {
+            setColorized(null);
+        } else {
+            setColorized(wpAlert.optBoolean("colorized", true));
+        }
+        if (wpAlert.isNull("extras")) {
+            setExtras(null);
+        } else {
+            setExtras(wpAlert.optJSONObject("extras"));
+        }
+        if (wpAlert.isNull("timeoutAfter")) {
+            setTimeoutAfter(null);
+        } else {
+            setTimeoutAfter(wpAlert.optLong("timeoutAfter", 0));
+        }
     }
 
     protected AlertModel(JSONObject inputJSON) {
@@ -529,6 +568,28 @@ class AlertModel implements Cloneable {
             setLargeIcon(from.getLargeIcon());
         }
         // DO NOT vary buttons
+        if (from.getAllowSystemGeneratedContextualActions() != null) {
+            setAllowSystemGeneratedContextualActions(from.getAllowSystemGeneratedContextualActions());
+        }
+        if (from.getBadgeIconType() != null) {
+            setBadgeIconType(from.getBadgeIconType());
+        }
+        if (from.getChronometerCountDown() != null) {
+            setChronometerCountDown(from.getChronometerCountDown());
+        }
+        if (from.getColorized() != null) {
+            setColorized(from.getColorized());
+        }
+        if (from.getExtras() != null) {
+            try {
+                setExtras(new JSONObject(from.getExtras().toString()));
+            } catch (JSONException ex) {
+                Log.e(WonderPush.TAG, "Failed to clone notification extras, ignoring them", ex);
+            }
+        }
+        if (from.getTimeoutAfter() != null) {
+            setTimeoutAfter(from.getTimeoutAfter());
+        }
     }
 
     /**
@@ -555,6 +616,13 @@ class AlertModel implements Cloneable {
             rtn.buttons = new LinkedList<>();
             for (NotificationButtonModel button : buttons) {
                 rtn.buttons.add((NotificationButtonModel) button.clone());
+            }
+        }
+        if (extras != null) {
+            try {
+                rtn.extras = new JSONObject(extras.toString());
+            } catch (JSONException ex) {
+                Log.e(WonderPush.TAG, "Failed to clone notification extras, ignoring them", ex);
             }
         }
         return rtn;
@@ -1300,4 +1368,63 @@ class AlertModel implements Cloneable {
         }
     }
 
+    public Boolean getAllowSystemGeneratedContextualActions() {
+        return allowSystemGeneratedContextualActions;
+    }
+
+    public void setAllowSystemGeneratedContextualActions(Boolean allowSystemGeneratedContextualActions) {
+        this.allowSystemGeneratedContextualActions = allowSystemGeneratedContextualActions;
+    }
+
+    public String getBadgeIconType() {
+        return badgeIconType;
+    }
+
+    public int getBadgeIconTypeInt() {
+        if ("none".equalsIgnoreCase(badgeIconType)) {
+            return NotificationCompat.BADGE_ICON_NONE;
+        } else if ("small".equalsIgnoreCase(badgeIconType)) {
+            return NotificationCompat.BADGE_ICON_SMALL;
+        } else if ("large".equalsIgnoreCase(badgeIconType)) {
+            return NotificationCompat.BADGE_ICON_LARGE;
+        } else {
+            return NotificationCompat.BADGE_ICON_NONE;
+        }
+    }
+
+    public void setBadgeIconType(String badgeIconType) {
+        this.badgeIconType = badgeIconType;
+    }
+
+    public Boolean getChronometerCountDown() {
+        return chronometerCountDown;
+    }
+
+    public void setChronometerCountDown(Boolean chronometerCountDown) {
+        this.chronometerCountDown = chronometerCountDown;
+    }
+
+    public Boolean getColorized() {
+        return colorized;
+    }
+
+    public void setColorized(Boolean colorized) {
+        this.colorized = colorized;
+    }
+
+    public JSONObject getExtras() {
+        return extras;
+    }
+
+    public void setExtras(JSONObject extras) {
+        this.extras = extras;
+    }
+
+    public Long getTimeoutAfter() {
+        return timeoutAfter;
+    }
+
+    public void setTimeoutAfter(Long timeoutAfter) {
+        this.timeoutAfter = timeoutAfter;
+    }
 }
