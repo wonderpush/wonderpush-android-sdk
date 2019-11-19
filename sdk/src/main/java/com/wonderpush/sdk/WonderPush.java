@@ -1634,6 +1634,9 @@ public class WonderPush {
      */
     public static void setUserConsent(boolean value) {
         boolean hadUserConsent = hasUserConsent();
+        if (hadUserConsent && !value) {
+            JSONSyncInstallationCustom.flushAll();
+        }
         WonderPushConfiguration.setUserConsent(value);
         boolean nowHasUserConsent = hasUserConsent();
         if (sIsInitialized && hadUserConsent != nowHasUserConsent) {
