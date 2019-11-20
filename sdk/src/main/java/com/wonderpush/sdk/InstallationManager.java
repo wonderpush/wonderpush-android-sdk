@@ -340,9 +340,7 @@ class InstallationManager {
     }
 
     protected static String getLocaleString() {
-        return String.format("%s_%s", Locale.getDefault().getLanguage()
-                .toLowerCase(Locale.ENGLISH), Locale.getDefault().getCountry()
-                .toUpperCase(Locale.ENGLISH));
+        return WonderPush.getLocale();
     }
 
     protected static String getLocaleCountry() {

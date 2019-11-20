@@ -9,18 +9,8 @@ import android.location.Location;
 class WonderPushRequestParamsDecorator {
 
     protected static void decorate(String resource, RequestParams params) {
-        // Always add lang
-        addParameterIfAbsent(params, "lang", WonderPush.getLang());
-
-        // Always add location
-        addParameterIfAbsent(params, "location", WonderPush.getLocation());
-
         // Always add the sdk version
         addParameterIfAbsent(params, "sdkVersion", WonderPush.SDK_VERSION);
-
-        // Add the SID for web resources
-        if (resource.startsWith("/web"))
-            params.put("sid", WonderPushConfiguration.getSID());
     }
 
     private static void addParameterIfAbsent(RequestParams params, String paramName, String paramValue) {

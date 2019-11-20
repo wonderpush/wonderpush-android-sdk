@@ -134,6 +134,7 @@ public class WonderPush {
 
     private static String sIntegrator = null;
     private static AtomicReference<Location> sLocationOverride = null;
+    private static String sLocale = null;
 
     private static WonderPushDelegate sDelegate;
 
@@ -349,14 +350,6 @@ public class WonderPush {
      * Intent query parameter key for the notification button action `method` argument.
      */
     public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG = "com.wonderpush.action.method.extra_arg";
-
-    protected static final String DEFAULT_LANGUAGE_CODE = "en";
-    protected static final String[] VALID_LANGUAGE_CODES = {
-            "af", "ar", "be", "bg", "bn", "ca", "cs", "da", "de", "el", "en", "en_GB", "en_US", "es", "es_ES", "es_MX",
-            "et", "fa", "fi", "fr", "fr_FR", "fr_CA", "he", "hi", "hr", "hu", "id", "is", "it", "ja", "ko", "lt", "lv",
-            "mk", "ms", "nb", "nl", "pa", "pl", "pt", "pt_PT", "pt_BR", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "sw",
-            "ta", "th", "tl", "tr", "uk", "vi", "zh", "zh_CN", "zh_TW", "zh_HK",
-    };
 
     static {
         // Ensure we get an @APP_OPEN with deferred initialization
@@ -654,46 +647,69 @@ public class WonderPush {
     }
 
     /**
+     * Overrides the user's locale.
+     *
+     * You should use an xx-XX form of RFC 1766, composed of a lowercase ISO 639-1 language code,
+     * an underscore or a dash, and an uppercase ISO 3166-1 alpha-2 country code.
+     *
+     * Defaults to getting the language and country codes from the system default locale.
+     *
+     * @param locale The locale to use as the user's locale.
+     *               Use {@code null} to disable the override.
+     */
+    public static void setLocale(String locale) {
+        if (locale != null) {
+            // Validate locale against simple expected values,
+            // but accept any input as is
+            String localeUC = locale.toUpperCase();
+            if (locale.length() != 2 && locale.length() != 5) {
+                Log.w(TAG, "The given locale \"" + locale + "\" is not of the form xx-XX of RFC 1766");
+            } else if (!(
+                    localeUC.charAt(0) >= 'A' && localeUC.charAt(0) <= 'Z'
+                    && localeUC.charAt(1) >= 'A' && localeUC.charAt(1) <= 'Z'
+                    && (locale.length() == 2 || locale.length() == 5
+                        && (localeUC.charAt(2) == '-' || localeUC.charAt(2) == '_')
+                        && localeUC.charAt(3) >= 'A' && localeUC.charAt(3) <= 'Z'
+                        && localeUC.charAt(4) >= 'A' && localeUC.charAt(4) <= 'Z'
+                    )
+            )) {
+                Log.w(TAG, "The given locale \"" + locale + "\" is not of the form xx-XX of RFC 1766");
+            } else {
+                // Normalize simple expected values into xx_XX
+                locale = locale.substring(0, 2).toLowerCase() + (locale.length() == 5 ? "_" + locale.substring(3, 5).toUpperCase() : "");
+            }
+        }
+        sLocale = locale;
+    }
+
+    /**
      * Gets the current language, guessed from the system.
      *
      * @return The locale in use.
      */
-    protected static String getLang() {
-        Locale locale = Locale.getDefault();
-
-        if (null == locale)
-            return DEFAULT_LANGUAGE_CODE;
-
-        String language = locale.getLanguage();
-        String country = locale.getCountry();
-        String localeString = String.format("%s_%s",
-                language != null ? language.toLowerCase(Locale.ENGLISH) : "",
-                country != null ? country.toUpperCase(Locale.ENGLISH) : "");
-
-        // 1. if no language is specified, return the default language
-        if (null == language)
-            return DEFAULT_LANGUAGE_CODE;
-
-        // 2. try to match the language or the entire locale string among the
-        // list of available language codes
-        String matchedLanguageCode = null;
-        for (String languageCode : VALID_LANGUAGE_CODES) {
-            if (languageCode.equals(localeString)) {
-                // return here as this is the most precise match we can get
-                return localeString;
-            }
-
-            if (languageCode.equals(language)) {
-                // set the matched language code, and continue iterating as we
-                // may match the localeString in a later iteration.
-                matchedLanguageCode = language;
-            }
+    protected static String getLocale() {
+        if (sLocale != null) {
+            return sLocale;
         }
 
-        if (null != matchedLanguageCode)
-            return matchedLanguageCode;
+        Locale locale = Locale.getDefault();
+        if (locale == null) {
+            return null;
+        }
 
-        return DEFAULT_LANGUAGE_CODE;
+        String language = locale.getLanguage();
+        if (TextUtils.isEmpty(language)) {
+            return null;
+        }
+        language = language.toLowerCase(Locale.ENGLISH);
+
+        String country = locale.getCountry();
+        if (TextUtils.isEmpty(country))  {
+            return language;
+        } else {
+            country = country.toUpperCase(Locale.ENGLISH);
+            return language + "_" + country;
+        }
     }
 
     /**
