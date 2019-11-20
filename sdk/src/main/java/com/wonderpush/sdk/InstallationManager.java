@@ -344,13 +344,7 @@ class InstallationManager {
     }
 
     protected static String getLocaleCountry() {
-        String rtn = Locale.getDefault().getCountry();
-        if ("".equals(rtn)) {
-            rtn = null;
-        } else {
-            rtn = rtn.toUpperCase();
-        }
-        return rtn;
+        return WonderPush.getCountry();
     }
 
     protected static String getLocaleCurrency() {

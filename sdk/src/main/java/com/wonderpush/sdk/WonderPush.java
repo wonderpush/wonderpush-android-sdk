@@ -135,6 +135,7 @@ public class WonderPush {
     private static String sIntegrator = null;
     private static AtomicReference<Location> sLocationOverride = null;
     private static String sLocale = null;
+    private static String sCountry = null;
 
     private static WonderPushDelegate sDelegate;
 
@@ -710,6 +711,50 @@ public class WonderPush {
             country = country.toUpperCase(Locale.ENGLISH);
             return language + "_" + country;
         }
+    }
+
+    /**
+     * Overrides the user's country.
+     *
+     * You should use an ISO 3166-1 alpha-2 country code.
+     *
+     * Defaults to getting the country code from the system default locale.
+     *
+     * @param country The country to use as the user's country.
+     *                Use {@code null} to disable the override.
+     */
+    public static void setCountry(String country) {
+        if (country != null) {
+            // Validate against simple expected values,
+            // but accept any input as is
+            String countryUC = country.toUpperCase();
+            if (country.length() != 2) {
+                Log.w(TAG, "The given country \"" + country + "\" is not of the form XX of ISO 3166-1 alpha-2");
+            } else if (!(
+                    countryUC.charAt(0) >= 'A' && countryUC.charAt(0) <= 'Z'
+                    && countryUC.charAt(1) >= 'A' && countryUC.charAt(1) <= 'Z'
+            )) {
+                Log.w(TAG, "The given country \"" + country + "\" is not of the form XX of ISO 3166-1 alpha-2");
+            } else {
+                // Normalize simple expected value into XX
+                country = countryUC;
+            }
+        }
+        sCountry = country;
+    }
+
+    protected static String getCountry() {
+        if (sCountry != null) {
+            return sCountry;
+        }
+
+        String rtn = Locale.getDefault().getCountry();
+        if (TextUtils.isEmpty(rtn)) {
+            rtn = null;
+        } else {
+            rtn = rtn.toUpperCase();
+        }
+        return rtn;
     }
 
     /**
