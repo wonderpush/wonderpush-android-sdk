@@ -18,11 +18,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Currency;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -348,19 +346,7 @@ class InstallationManager {
     }
 
     protected static String getLocaleCurrency() {
-        try {
-            Currency currency = Currency.getInstance(Locale.getDefault());
-            if (currency == null) return null;
-            String rtn = currency.getCurrencyCode();
-            if ("".equals(rtn)) {
-                rtn = null;
-            } else {
-                rtn = rtn.toUpperCase();
-            }
-            return rtn;
-        } catch (Exception e) { // mostly for IllegalArgumentException
-            return null;
-        }
+        return WonderPush.getCurrency();
     }
 
     protected static String getSDKVersion() {

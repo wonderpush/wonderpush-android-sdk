@@ -28,6 +28,7 @@ import org.json.JSONObject;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -136,6 +137,7 @@ public class WonderPush {
     private static AtomicReference<Location> sLocationOverride = null;
     private static String sLocale = null;
     private static String sCountry = null;
+    private static String sCurrency = null;
 
     private static WonderPushDelegate sDelegate;
 
@@ -755,6 +757,57 @@ public class WonderPush {
             rtn = rtn.toUpperCase();
         }
         return rtn;
+    }
+
+    /**
+     * Overrides the user's currency.
+     *
+     * You should use an ISO 4217 currency code.
+     *
+     * Defaults to getting the currency code from the system default locale.
+     *
+     * @param currency The currency to use as the user's currency.
+     *                Use {@code null} to disable the override.
+     */
+    public static void setCurrency(String currency) {
+        if (currency != null) {
+            // Validate against simple expected values,
+            // but accept any input as is
+            String currencyUC = currency.toUpperCase();
+            if (currency.length() != 3) {
+                Log.w(TAG, "The given currency \"" + currency + "\" is not of the form XXX of ISO 4217");
+            } else if (!(
+                    currencyUC.charAt(0) >= 'A' && currencyUC.charAt(0) <= 'Z'
+                    && currencyUC.charAt(1) >= 'A' && currencyUC.charAt(1) <= 'Z'
+                    && currencyUC.charAt(2) >= 'A' && currencyUC.charAt(2) <= 'Z'
+            )) {
+                Log.w(TAG, "The given currency \"" + currency + "\" is not of the form XXX of ISO 4217");
+            } else {
+                // Normalize simple expected value into XXX
+                currency = currencyUC;
+            }
+        }
+        sCurrency = currency;
+    }
+
+    protected static String getCurrency() {
+        if (sCurrency != null) {
+            return sCurrency;
+        }
+
+        try {
+            Currency currency = Currency.getInstance(Locale.getDefault());
+            if (currency == null) return null;
+            String rtn = currency.getCurrencyCode();
+            if (TextUtils.isEmpty(rtn)) {
+                rtn = null;
+            } else {
+                rtn = rtn.toUpperCase();
+            }
+            return rtn;
+        } catch (Exception e) { // mostly for IllegalArgumentException
+            return null;
+        }
     }
 
     /**
