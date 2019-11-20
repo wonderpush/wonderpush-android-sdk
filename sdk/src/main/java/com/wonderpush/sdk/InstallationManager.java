@@ -26,7 +26,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicReference;
 
 class InstallationManager {
 
@@ -258,12 +257,6 @@ class InstallationManager {
             @Override
             public void run() {
                 JSONObject properties = new JSONObject();
-                AtomicReference<String> federatedId = null;
-                try {
-                    federatedId = WonderPush.getFederatedIdAlreadyInBackground();
-                } catch (Exception ex) {
-                    Log.e(TAG, "Unexpected error while reading federatedId", ex);
-                }
                 try {
                     JSONObject application = new JSONObject();
                     application.put("version", getApplicationVersion());
@@ -273,14 +266,6 @@ class InstallationManager {
 
                     JSONObject device = new JSONObject();
                     device.put("id", WonderPush.getDeviceId());
-                    if (federatedId != null) {
-                        String federatedIdStr = federatedId.get();
-                        if (federatedIdStr == null) {
-                            device.put("federatedId", JSONObject.NULL);
-                        } else {
-                            device.put("federatedId", "0:" + federatedIdStr);
-                        }
-                    }
                     device.put("platform", "Android");
                     device.put("osVersion", getOsVersion());
                     device.put("brand", getDeviceBrand());
