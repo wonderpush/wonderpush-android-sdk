@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -810,6 +811,78 @@ public class WonderPush {
                 }
             } catch (Exception e) { // mostly for IllegalArgumentException
             }
+        }
+        return rtn;
+    }
+
+    /**
+     * Overrides the user's timeZone.
+     *
+     * You should use an IANA time zone database codes, Continent/Country style preferably,
+     * abbreviations like CET, PST, UTC, which have the drawback of changing on daylight saving transitions.
+     *
+     * Defaults to getting the time zone code from the system default locale.
+     *
+     * @param timeZone The time zone to use as the user's time zone.
+     *                Use {@code null} to disable the override.
+     */
+    public static void setTimeZone(String timeZone) {
+        if (timeZone != null) {
+            // Validate against simple expected values,
+            // but accept any input as is
+            String timeZoneUC = timeZone.toUpperCase();
+            if (timeZone.indexOf('/') >= 0) {
+                if (!(timeZone.startsWith("Africa/")
+                        || timeZone.startsWith("America/")
+                        || timeZone.startsWith("Antarctica/")
+                        || timeZone.startsWith("Asia/")
+                        || timeZone.startsWith("Atlantic/")
+                        || timeZone.startsWith("Australia/")
+                        || timeZone.startsWith("Etc/")
+                        || timeZone.startsWith("Europe/")
+                        || timeZone.startsWith("Indian/")
+                        || timeZone.startsWith("Pacific/")
+                ) || timeZone.endsWith("/")) {
+                    Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
+                }
+            } else {
+                boolean allLetters = true;
+                for (int i = 0; i < timeZoneUC.length(); ++i) {
+                    if (timeZoneUC.charAt(i) < 'A' || timeZoneUC.charAt(i) > 'Z') {
+                        allLetters = false;
+                        break;
+                    }
+                }
+                if (!allLetters) {
+                    Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
+                } else if (!(timeZone.length() == 1
+                        || timeZoneUC.endsWith("T")
+                        || timeZoneUC.equals("UTC")
+                        || timeZoneUC.equals("AOE")
+                        || timeZoneUC.equals("MSD")
+                        || timeZoneUC.equals("MSK")
+                        || timeZoneUC.equals("WIB")
+                        || timeZoneUC.equals("WITA"))) {
+                    Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
+                } else {
+                    // Normalize abbreviations in uppercase
+                    timeZone = timeZoneUC;
+                }
+            }
+        }
+        WonderPushConfiguration.setTimeZone(timeZone);
+    }
+
+    /**
+     * Gets the user's time zone, either as previously stored, or as guessed from the system.
+     *
+     * @return The user's time zone.
+     * @see WonderPush#setTimeZone(String)
+     */
+    public static String getTimeZone() {
+        String rtn = WonderPushConfiguration.getTimeZone();
+        if (rtn == null) {
+            rtn = TimeZone.getDefault().getID();
         }
         return rtn;
     }

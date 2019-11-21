@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.TreeSet;
 
 class InstallationManager {
@@ -328,7 +327,7 @@ class InstallationManager {
     }
 
     protected static String getUserTimezone() {
-        return TimeZone.getDefault().getID();
+        return WonderPush.getTimeZone();
     }
 
     protected static String getCarrierName() {

@@ -63,6 +63,7 @@ class WonderPushConfiguration {
     private static final String COUNTRY_PREF_NAME = "__country";
     private static final String CURRENCY_PREF_NAME = "__currency";
     private static final String LOCALE_PREF_NAME = "__locale";
+    private static final String TIME_ZONE_PREF_NAME = "__time_zone";
 
     private static final String DEVICE_DATE_SYNC_OFFSET_PREF_NAME = "__device_date_sync_offset";
     private static final String DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME = "__device_date_sync_uncertainty";
@@ -130,6 +131,7 @@ class WonderPushConfiguration {
             currentUserArchive.putOpt(COUNTRY_PREF_NAME, getCountry());
             currentUserArchive.putOpt(CURRENCY_PREF_NAME, getCurrency());
             currentUserArchive.putOpt(LOCALE_PREF_NAME, getLocale());
+            currentUserArchive.putOpt(TIME_ZONE_PREF_NAME, getTimeZone());
             JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
             if (usersArchive == null) {
                 usersArchive = new JSONObject();
@@ -170,6 +172,7 @@ class WonderPushConfiguration {
         setCountry(JSONUtil.optString(newUserArchive, COUNTRY_PREF_NAME));
         setCurrency(JSONUtil.optString(newUserArchive, CURRENCY_PREF_NAME));
         setLocale(JSONUtil.optString(newUserArchive, LOCALE_PREF_NAME));
+        setTimeZone(JSONUtil.optString(newUserArchive, TIME_ZONE_PREF_NAME));
     }
 
     static void clearForUserId(String userId) {
@@ -1074,6 +1077,14 @@ class WonderPushConfiguration {
 
     static void setLocale(String value) {
         putString(LOCALE_PREF_NAME, value);
+    }
+
+    static String getTimeZone() {
+        return getString(TIME_ZONE_PREF_NAME);
+    }
+
+    static void setTimeZone(String value) {
+        putString(TIME_ZONE_PREF_NAME, value);
     }
 
 }
