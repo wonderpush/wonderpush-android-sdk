@@ -569,10 +569,10 @@ public class WonderPush {
     /**
      * Overrides the user's geolocation.
      *
-     * Using this method you can have the user's location be set to wherever you want.
-     * This may be useful to use a pre-recorded location.
+     * <p>Using this method you can have the user's location be set to wherever you want.
+     * This may be useful to use a pre-recorded location.</p>
      *
-     * Note that the value is not persisted.
+     * <p>Note that the value is not persisted.</p>
      *
      * @param location The location to use as the user's current geolocation.
      *                 Using {@code null} has the same effect as calling {@link #disableGeolocation()}.
@@ -652,10 +652,10 @@ public class WonderPush {
     /**
      * Overrides the user's locale.
      *
-     * You should use an xx-XX form of RFC 1766, composed of a lowercase ISO 639-1 language code,
-     * an underscore or a dash, and an uppercase ISO 3166-1 alpha-2 country code.
+     * <p>You should use an {@code xx-XX} form of RFC 1766, composed of a lowercase ISO 639-1 language code,
+     * an underscore or a dash, and an uppercase ISO 3166-1 alpha-2 country code.</p>
      *
-     * Defaults to getting the language and country codes from the system default locale.
+     * <p>Defaults to getting the language and country codes from the system default locale.</p>
      *
      * @param locale The locale to use as the user's locale.
      *               Use {@code null} to disable the override.
@@ -717,9 +717,9 @@ public class WonderPush {
     /**
      * Overrides the user's country.
      *
-     * You should use an ISO 3166-1 alpha-2 country code.
+     * <p>You should use an ISO 3166-1 alpha-2 country code.</p>
      *
-     * Defaults to getting the country code from the system default locale.
+     * <p>Defaults to getting the country code from the system default locale.</p>
      *
      * @param country The country to use as the user's country.
      *                Use {@code null} to disable the override.
@@ -767,9 +767,9 @@ public class WonderPush {
     /**
      * Overrides the user's currency.
      *
-     * You should use an ISO 4217 currency code.
+     * <p>You should use an ISO 4217 currency code.</p>
      *
-     * Defaults to getting the currency code from the system default locale.
+     * <p>Defaults to getting the currency code from the system default locale.</p>
      *
      * @param currency The currency to use as the user's currency.
      *                 Use {@code null} to disable the override.
@@ -823,10 +823,10 @@ public class WonderPush {
     /**
      * Overrides the user's timeZone.
      *
-     * You should use an IANA time zone database codes, Continent/Country style preferably,
-     * abbreviations like CET, PST, UTC, which have the drawback of changing on daylight saving transitions.
+     * <p>You should use an IANA time zone database codes, {@code Continent/Country} style preferably,
+     * abbreviations like {@code CET}, {@code PST}, {@code UTC}, which have the drawback of changing on daylight saving transitions.</p>
      *
-     * Defaults to getting the time zone code from the system default locale.
+     * <p>Defaults to getting the time zone code from the system default locale.</p>
      *
      * @param timeZone The time zone to use as the user's time zone.
      *                Use {@code null} to disable the override.
