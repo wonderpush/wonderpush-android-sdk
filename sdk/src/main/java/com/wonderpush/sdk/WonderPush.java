@@ -572,6 +572,8 @@ public class WonderPush {
      * Using this method you can have the user's location be set to wherever you want.
      * This may be useful to use a pre-recorded location.
      *
+     * Note that the value is not persisted.
+     *
      * @param location The location to use as the user's current geolocation.
      *                 Using {@code null} has the same effect as calling {@link #disableGeolocation()}.
      */
@@ -681,6 +683,7 @@ public class WonderPush {
             }
         }
         WonderPushConfiguration.setLocale(locale);
+        refreshPreferencesAndConfiguration(false);
     }
 
     /**
@@ -739,6 +742,7 @@ public class WonderPush {
             }
         }
         WonderPushConfiguration.setCountry(country);
+        refreshPreferencesAndConfiguration(false);
     }
 
     /**
@@ -789,6 +793,7 @@ public class WonderPush {
             }
         }
         WonderPushConfiguration.setCurrency(currency);
+        refreshPreferencesAndConfiguration(false);
     }
 
     /**
@@ -871,6 +876,7 @@ public class WonderPush {
             }
         }
         WonderPushConfiguration.setTimeZone(timeZone);
+        refreshPreferencesAndConfiguration(false);
     }
 
     /**
