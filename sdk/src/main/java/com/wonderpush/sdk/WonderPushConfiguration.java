@@ -60,6 +60,10 @@ class WonderPushConfiguration {
     private static final String LAST_APPOPEN_INFO_PREF_NAME = "__last_appopen_info_json";
     private static final String LAST_APPCLOSE_DATE_PREF_NAME = "__last_appclose_date";
 
+    private static final String COUNTRY_PREF_NAME = "__country";
+    private static final String CURRENCY_PREF_NAME = "__currency";
+    private static final String LOCALE_PREF_NAME = "__locale";
+
     private static final String DEVICE_DATE_SYNC_OFFSET_PREF_NAME = "__device_date_sync_offset";
     private static final String DEVICE_DATE_SYNC_UNCERTAINTY_PREF_NAME = "__device_date_sync_uncertainty";
 
@@ -123,6 +127,9 @@ class WonderPushConfiguration {
             currentUserArchive.putOpt(LAST_APPOPEN_DATE_PREF_NAME, getLastAppOpenDate());
             currentUserArchive.putOpt(LAST_APPOPEN_INFO_PREF_NAME, getLastAppOpenInfoJson());
             currentUserArchive.putOpt(LAST_APPCLOSE_DATE_PREF_NAME, getLastAppCloseDate());
+            currentUserArchive.putOpt(COUNTRY_PREF_NAME, getCountry());
+            currentUserArchive.putOpt(CURRENCY_PREF_NAME, getCurrency());
+            currentUserArchive.putOpt(LOCALE_PREF_NAME, getLocale());
             JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
             if (usersArchive == null) {
                 usersArchive = new JSONObject();
@@ -160,6 +167,9 @@ class WonderPushConfiguration {
         setLastAppOpenDate(newUserArchive.optLong(LAST_APPOPEN_DATE_PREF_NAME));
         setLastAppOpenInfoJson(newUserArchive.optJSONObject(LAST_APPOPEN_INFO_PREF_NAME));
         setLastAppCloseDate(newUserArchive.optLong(LAST_APPCLOSE_DATE_PREF_NAME));
+        setCountry(JSONUtil.optString(newUserArchive, COUNTRY_PREF_NAME));
+        setCurrency(JSONUtil.optString(newUserArchive, CURRENCY_PREF_NAME));
+        setLocale(JSONUtil.optString(newUserArchive, LOCALE_PREF_NAME));
     }
 
     static void clearForUserId(String userId) {
@@ -1040,6 +1050,30 @@ class WonderPushConfiguration {
         } else {
             putBoolean(OVERRIDE_NOTIFICATION_RECEIPT_PREF_NAME, value);
         }
+    }
+
+    static String getCountry() {
+        return getString(COUNTRY_PREF_NAME);
+    }
+
+    static void setCountry(String value) {
+        putString(COUNTRY_PREF_NAME, value);
+    }
+
+    static String getCurrency() {
+        return getString(CURRENCY_PREF_NAME);
+    }
+
+    static void setCurrency(String value) {
+        putString(CURRENCY_PREF_NAME, value);
+    }
+
+    static String getLocale() {
+        return getString(LOCALE_PREF_NAME);
+    }
+
+    static void setLocale(String value) {
+        putString(LOCALE_PREF_NAME, value);
     }
 
 }

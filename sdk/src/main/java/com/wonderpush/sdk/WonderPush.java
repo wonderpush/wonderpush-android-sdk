@@ -135,9 +135,6 @@ public class WonderPush {
 
     private static String sIntegrator = null;
     private static AtomicReference<Location> sLocationOverride = null;
-    private static String sLocale = null;
-    private static String sCountry = null;
-    private static String sCurrency = null;
 
     private static WonderPushDelegate sDelegate;
 
@@ -682,37 +679,35 @@ public class WonderPush {
                 locale = locale.substring(0, 2).toLowerCase() + (locale.length() == 5 ? "_" + locale.substring(3, 5).toUpperCase() : "");
             }
         }
-        sLocale = locale;
+        WonderPushConfiguration.setLocale(locale);
     }
 
     /**
-     * Gets the current language, guessed from the system.
+     * Gets the user's locale, either as previously stored, or as guessed from the system.
      *
-     * @return The locale in use.
+     * @return The user's locale.
+     * @see WonderPush#setLocale(String)
      */
-    protected static String getLocale() {
-        if (sLocale != null) {
-            return sLocale;
-        }
+    public static String getLocale() {
+        String rtn = WonderPushConfiguration.getLocale();
+        if (rtn == null) {
+            Locale locale = Locale.getDefault();
+            if (locale != null) {
+                String language = locale.getLanguage();
+                if (!TextUtils.isEmpty(language)) {
+                    language = language.toLowerCase(Locale.ENGLISH);
 
-        Locale locale = Locale.getDefault();
-        if (locale == null) {
-            return null;
+                    String country = locale.getCountry();
+                    if (TextUtils.isEmpty(country)) {
+                        rtn = language;
+                    } else {
+                        country = country.toUpperCase(Locale.ENGLISH);
+                        rtn = language + "_" + country;
+                    }
+                }
+            }
         }
-
-        String language = locale.getLanguage();
-        if (TextUtils.isEmpty(language)) {
-            return null;
-        }
-        language = language.toLowerCase(Locale.ENGLISH);
-
-        String country = locale.getCountry();
-        if (TextUtils.isEmpty(country))  {
-            return language;
-        } else {
-            country = country.toUpperCase(Locale.ENGLISH);
-            return language + "_" + country;
-        }
+        return rtn;
     }
 
     /**
@@ -742,19 +737,24 @@ public class WonderPush {
                 country = countryUC;
             }
         }
-        sCountry = country;
+        WonderPushConfiguration.setCountry(country);
     }
 
-    protected static String getCountry() {
-        if (sCountry != null) {
-            return sCountry;
-        }
-
-        String rtn = Locale.getDefault().getCountry();
-        if (TextUtils.isEmpty(rtn)) {
-            rtn = null;
-        } else {
-            rtn = rtn.toUpperCase();
+    /**
+     * Gets the user's country, either as previously stored, or as guessed from the system.
+     *
+     * @return The user's country.
+     * @see WonderPush#setCountry(String)
+     */
+    public static String getCountry() {
+        String rtn = WonderPushConfiguration.getCountry();
+        if (rtn == null) {
+            rtn = Locale.getDefault().getCountry();
+            if (TextUtils.isEmpty(rtn)) {
+                rtn = null;
+            } else {
+                rtn = rtn.toUpperCase();
+            }
         }
         return rtn;
     }
@@ -767,7 +767,7 @@ public class WonderPush {
      * Defaults to getting the currency code from the system default locale.
      *
      * @param currency The currency to use as the user's currency.
-     *                Use {@code null} to disable the override.
+     *                 Use {@code null} to disable the override.
      */
     public static void setCurrency(String currency) {
         if (currency != null) {
@@ -787,27 +787,31 @@ public class WonderPush {
                 currency = currencyUC;
             }
         }
-        sCurrency = currency;
+        WonderPushConfiguration.setCurrency(currency);
     }
 
-    protected static String getCurrency() {
-        if (sCurrency != null) {
-            return sCurrency;
-        }
-
-        try {
-            Currency currency = Currency.getInstance(Locale.getDefault());
-            if (currency == null) return null;
-            String rtn = currency.getCurrencyCode();
-            if (TextUtils.isEmpty(rtn)) {
-                rtn = null;
-            } else {
-                rtn = rtn.toUpperCase();
+    /**
+     * Gets the user's currency, either as previously stored, or as guessed from the system.
+     *
+     * @return The user's currency.
+     * @see WonderPush#setCurrency(String)
+     */
+    public static String getCurrency() {
+        String rtn = WonderPushConfiguration.getCurrency();
+        if (rtn == null) {
+            try {
+                Currency currency = Currency.getInstance(Locale.getDefault());
+                if (currency == null) return null;
+                rtn = currency.getCurrencyCode();
+                if (TextUtils.isEmpty(rtn)) {
+                    rtn = null;
+                } else {
+                    rtn = rtn.toUpperCase();
+                }
+            } catch (Exception e) { // mostly for IllegalArgumentException
             }
-            return rtn;
-        } catch (Exception e) { // mostly for IllegalArgumentException
-            return null;
         }
+        return rtn;
     }
 
     /**
