@@ -182,7 +182,12 @@ class CacheUtil {
         Arrays.sort(files, new Comparator<File>() {
             @Override
             public int compare(File lhs, File rhs) {
-                return (int) (rhs.lastModified() - lhs.lastModified());
+                // TODO Once minSdkVersion is 19, we can return Long.compare(rhs.lastModified(), lhs.lastModified())
+                long lvalue = lhs.lastModified();
+                long rvalue = rhs.lastModified();
+                if (rvalue == lvalue) return 0;
+                if (rvalue < lvalue) return -1;
+                return 1;
             }
         });
 
