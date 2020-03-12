@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <dimen name="wonderpush_shadow_height">10dp</dimen>
-    <dimen name="wonderpush_panel_height">90dp</dimen>
-    <dimen name="wonderpush_topbar_height">54dp</dimen>
-</resources>
