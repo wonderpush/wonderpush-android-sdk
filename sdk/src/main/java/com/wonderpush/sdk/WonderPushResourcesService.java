@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
-import android.support.v4.app.WonderPushJobIntentService;
+import androidx.annotation.NonNull;
+import androidx.core.app.WonderPushJobIntentService;
 import android.util.Log;
 
 /**

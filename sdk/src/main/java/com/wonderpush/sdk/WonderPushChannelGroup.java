@@ -1,6 +1,6 @@
 package com.wonderpush.sdk;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONException;

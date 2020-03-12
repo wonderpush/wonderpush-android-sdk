@@ -2,7 +2,7 @@ package com.wonderpush.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.app.NotificationManagerCompat;
+import androidx.core.app.NotificationManagerCompat;
 import android.util.Log;
 
 import org.json.JSONArray;
