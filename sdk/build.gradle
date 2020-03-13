@@ -30,7 +30,7 @@ android {
 
 dependencies {
     implementation 'com.loopj.android:android-async-http:1.4.9'
-    implementation "com.google.firebase:firebase-messaging:20.1.2"
+    implementation "com.google.firebase:firebase-messaging:20.1.0"
     implementation 'androidx.core:core:1.0.0' // Note: this dependency is already depended on by at least com.google.firebase:firebase-messaging:20.1.2
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0' // Note: this dependency is already depended on by at least com.google.firebase:firebase-messaging:20.1.2
 
