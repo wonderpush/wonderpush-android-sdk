@@ -31,10 +31,8 @@ android {
 dependencies {
     implementation 'com.loopj.android:android-async-http:1.4.9'
     implementation "com.google.firebase:firebase-messaging:20.1.2"
-    // Use the full support-v4 instead of the module support-compat
-    // because com.google.firebase:firebase-messaging (indirectly) depends on it
-    // and all modules must use the same version.
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.core:core:1.0.0' // Note: this dependency is already depended on by at least com.google.firebase:firebase-messaging:20.1.2
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0' // Note: this dependency is already depended on by at least com.google.firebase:firebase-messaging:20.1.2
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.json:json:20160810'
