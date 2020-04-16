@@ -124,7 +124,13 @@ class InstallationManager {
         if (field == null || value == null) return; // Note: We accept removing JSONObject.NULL
         // The contract is to actually remove every listed values (all duplicated appearances), not shuffle or deduplicate everything else
         List<Object> values = getPropertyValues(field);
-        JSONArray inputs = value instanceof JSONArray ? (JSONArray) value : new JSONArray().put(value);
+        JSONArray inputs = null;
+        try {
+            inputs = new JSONArray((value instanceof JSONArray ? (JSONArray) value : new JSONArray().put(value)).toString());
+        } catch (JSONException ex) {
+            Log.e(WonderPush.TAG, "Unexpected exception in removeProperty", ex);
+            return;
+        }
         Set<Object> set = new HashSet<>(JSONUtil.JSONArrayToList(inputs, Object.class));
         if (set.isEmpty()) return;
         JSONArray newValues = new JSONArray();
