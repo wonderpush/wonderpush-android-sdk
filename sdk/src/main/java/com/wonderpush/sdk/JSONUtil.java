@@ -15,13 +15,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-class JSONUtil {
+public class JSONUtil {
 
-    protected static void merge(JSONObject base, JSONObject diff) throws JSONException {
+    public static void merge(JSONObject base, JSONObject diff) throws JSONException {
         merge(base, diff, true);
     }
 
-    protected static void merge(JSONObject base, JSONObject diff, boolean nullFieldRemoves) throws JSONException {
+    public static void merge(JSONObject base, JSONObject diff, boolean nullFieldRemoves) throws JSONException {
         if (base == null) throw new NullPointerException();
         if (diff == null) return;
 
@@ -55,7 +55,7 @@ class JSONUtil {
         }
     }
 
-    protected static JSONObject diff(JSONObject from, JSONObject to) throws JSONException {
+    public static JSONObject diff(JSONObject from, JSONObject to) throws JSONException {
         if (from == null) {
             if (to == null) {
                 return null;
@@ -108,7 +108,7 @@ class JSONUtil {
         return rtn;
     }
 
-    protected static void stripNulls(JSONObject object) throws JSONException {
+    public static void stripNulls(JSONObject object) throws JSONException {
         if (object == null) return;
         Iterator<String> it = object.keys();
         while (it.hasNext()) {
@@ -122,7 +122,7 @@ class JSONUtil {
         }
     }
 
-    protected static boolean equals(JSONObject a, JSONObject b) {
+    public static boolean equals(JSONObject a, JSONObject b) {
         if (a == b) {
             return true;
         } else if (a == null || b == null) {
@@ -143,7 +143,7 @@ class JSONUtil {
         return true;
     }
 
-    protected static boolean equals(JSONArray a, JSONArray b) {
+    public static boolean equals(JSONArray a, JSONArray b) {
         if (a == b) {
             return true;
         } else if (a == null || b == null) {
@@ -161,7 +161,7 @@ class JSONUtil {
         return true;
     }
 
-    protected static boolean equals(Object a, Object b) {
+    public static boolean equals(Object a, Object b) {
         if (a == b) {
             return true;
         } else if (a == null || b == null) {
@@ -177,7 +177,7 @@ class JSONUtil {
         }
     }
 
-    protected static String getString(JSONObject object, String field) {
+    public static String getString(JSONObject object, String field) {
         if (!object.has(field) || object.isNull(field)) {
             return null;
         } else {
@@ -185,7 +185,7 @@ class JSONUtil {
         }
     }
 
-    protected static JSONObject deepCopy(JSONObject from) throws JSONException {
+    public static JSONObject deepCopy(JSONObject from) throws JSONException {
         if (from == null) {
             return null;
         }

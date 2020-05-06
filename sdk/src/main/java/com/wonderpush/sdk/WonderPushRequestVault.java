@@ -5,7 +5,6 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class will make sure important {@link WonderPushRestClient.Request} objects are run eventually, even if the user

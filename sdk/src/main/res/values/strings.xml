@@ -9,4 +9,10 @@
     <string name="wonderpush_could_not_open_location">Could not open location. Do you have Google Maps installed?</string>
     <string name="wonderpush_export_data_chooser">Export data to</string>
 
+    <!-- In-app messaging -->
+
+    <string name="card_content_descriptor">card</string>
+    <string name="modal_content_descriptor">modal</string>
+    <string name="modal_inner_content_descriptor">modal inner</string>
+
 </resources>

@@ -12,8 +12,8 @@ android {
         abortOnError false
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
@@ -35,6 +35,19 @@ dependencies {
     // because com.google.firebase:firebase-messaging (indirectly) depends on it
     // and all modules must use the same version.
     implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:customtabs:28.0.0'
+    implementation 'com.android.support:cardview-v7:28.0.0'
+    implementation 'com.google.dagger:dagger:2.24'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    implementation 'javax.inject:javax.inject:1'
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
+    implementation "com.squareup.picasso:picasso:2.71828"
+    implementation "com.android.support:exifinterface:28.0.0" // necessary to bump dependency from picasso
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.json:json:20160810'
@@ -150,20 +163,48 @@ signing {
 
 task androidJavadocs(type: Javadoc) {
     title = 'WonderPush Android SDK Reference'
-    source = 'src/main/java/com/wonderpush/sdk' //android.sourceSets.main.java.srcDirs
+    source = [
+            'src/main/java/com/wonderpush/sdk/DeepLinkEvent.java',
+            'src/main/java/com/wonderpush/sdk/WonderPush.java',
+            'src/main/java/com/wonderpush/sdk/WonderPushAbstractDelegate.java',
+            'src/main/java/com/wonderpush/sdk/WonderPushChannel.java',
+            'src/main/java/com/wonderpush/sdk/WonderPushChannelGroup.java',
+            'src/main/java/com/wonderpush/sdk/WonderPushDelegate.java',
+            'src/main/java/com/wonderpush/sdk/WonderPushFirebaseMessagingService.java',
+            'src/main/java/com/wonderpush/sdk/WonderPushUserPreferences.java',
+            'src/main/java/com/wonderpush/sdk/WonderPushInitializer.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/InAppMessagingImpressionListener.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/InAppMessagingClickListener.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/Text.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/ModalMessage.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/Button.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/ImageData.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/BannerMessage.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/CardMessage.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/InAppMessage.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/ImageOnlyMessage.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/model/MessageType.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/InAppMessagingDisplayErrorListener.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/InAppMessaging.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/InAppMessagingDisplayCallbacks.java',
+            'src/main/java/com/wonderpush/sdk/inappmessaging/InAppMessagingDisplay.java'
+    ] //android.sourceSets.main.java.srcDirs
     doFirst {
         classpath = project.files(
                 project.android.libraryVariants.toList().first().javaCompileProvider.get().classpath.files,
                 project.android.getBootClasspath(),
+                "$projectDir/build/intermediates/javac/release/compileReleaseJavaWithJavac/classes",
+                "$projectDir/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
                 android.sourceSets.main.java.srcDirs
         )
     }
     options.overview = project.rootDir.path + '/overview.html'
     options.showFromPublic()
     // JDK 1.8 is more strict then 1.7. Have JDK 1.8 behave like 1.7 for javadoc generation
-    if (org.gradle.internal.jvm.Jvm.current().getJavaVersion() == JavaVersion.VERSION_1_8) {
-        options.addStringOption('Xdoclint:none', '-quiet')
-    }
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+project.afterEvaluate {
+    androidJavadocs.dependsOn(assembleDebug)
 }
 
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {

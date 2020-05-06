@@ -146,7 +146,7 @@ public class WonderPushFirebaseMessagingService extends FirebaseMessagingService
 
             NotificationModel notif;
             try {
-                notif = NotificationModel.fromRemoteMessage(message);
+                notif = NotificationModel.fromRemoteMessage(message, context);
             } catch (NotificationModel.NotTargetedForThisInstallationException ex) {
                 WonderPush.logDebug(ex.getMessage());
                 return true;

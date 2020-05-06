@@ -6,9 +6,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-class ActionModel implements Cloneable {
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class ActionModel implements Cloneable {
 
     private static final String TAG = WonderPush.TAG;
+
+    public static List<ActionModel> from(JSONArray primaryActions) {
+        if (null == primaryActions) return Collections.emptyList();
+        List<ActionModel> result = new ArrayList<>();
+        for (int i = 0; i < primaryActions.length(); i++) {
+            JSONObject actionJson = primaryActions.optJSONObject(i);
+            if (actionJson != null) result.add(new ActionModel(actionJson));
+        }
+        return result;
+    }
 
     public enum Type {
         CLOSE("close"),
@@ -65,6 +79,7 @@ class ActionModel implements Cloneable {
     private Boolean force;
     private String method;
     private String methodArg;
+    private NotificationMapModel.Map map;
     private boolean hasChannel; // for CLOSE_NOTIFICATIONS
     private String channel; // for CLOSE_NOTIFICATIONS
     private boolean hasGroup; // for CLOSE_NOTIFICATIONS
@@ -189,6 +204,14 @@ class ActionModel implements Cloneable {
 
     public void setCustom(JSONObject custom) {
         this.custom = custom;
+    }
+
+    public NotificationMapModel.Map getMap() {
+        return map;
+    }
+
+    public void setMap(NotificationMapModel.Map map) {
+        this.map = map;
     }
 
     public JSONArray getTags() {

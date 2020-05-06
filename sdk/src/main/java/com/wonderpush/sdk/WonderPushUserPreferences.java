@@ -27,9 +27,9 @@ import java.util.TreeSet;
  * <p>
  *     Starting with Android O, you will have to implement Notification Channels.
  *     This class helps you in this process.
- * <p>
- *
  * </p>
+ *
+ * <p>
  *     <a href="https://developer.android.com/preview/features/notification-channels.html">Read more about Android O Notification Channels</a>.
  * </p>
  *
@@ -38,9 +38,9 @@ import java.util.TreeSet;
  * <p>
  *     Prior to Android O, the SDK can handle every aspect of the notification.
  *     Starting with Android O, the user is in charge of the importance of notifications,
- *     whether they should vibrate or emit a sound, etc.<br/>
+ *     whether they should vibrate or emit a sound, etc.<br>
  *     In order to ease the transition as well as bring Android O notification channels benefits
- *     to previous versions of Android, use this class to define channels.<br/>
+ *     to previous versions of Android, use this class to define channels.<br>
  *     The channels and groups defined here will be matched to Android O channels as soon as the
  *     device OS is upgraded. The application is free to manage notification groups and channels
  *     by itself and it needs not make this class aware of them.

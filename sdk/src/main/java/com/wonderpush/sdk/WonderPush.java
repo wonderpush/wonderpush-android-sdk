@@ -21,6 +21,8 @@ import android.util.Log;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.wonderpush.sdk.inappmessaging.InAppMessaging;
+import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -57,7 +59,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  *   Troubleshooting tip:
  *   As the SDK should not interfere with your application other than when a notification is to be shown,
- *   make sure to monitor your logs for the <tt>WonderPush</tt> tag during development,
+ *   make sure to monitor your logs for the WonderPush tag during development,
  *   if things did not went as smoothly as they should have.
  * </p>
  */
@@ -70,6 +72,8 @@ public class WonderPush {
     static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
     private static String sSenderId;
     private static FirebaseApp sFirebaseApp;
+    private static InAppMessaging sInAppMessaging;
+    private static InAppMessagingDisplay sInAppMessagingDisplay;
     private static Context sApplicationContext;
     protected static Application sApplication;
 
@@ -286,6 +290,21 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA = "data";
+
+    /**
+     * Local intent broadcast when an event is tracked by the WonderPush SDK.
+     */
+    public static final String INTENT_EVENT_TRACKED = "wonderpushEventTracked";
+
+    /**
+     * Intent extra key holding the type of event being tracked.
+     */
+    public static final String INTENT_EVENT_TRACKED_EVENT_TYPE = "eventType";
+
+    /**
+     * Intent extra key holding custom data serialized as JSON of event being tracked.
+     */
+    public static final String INTENT_EVENT_TRACKED_CUSTOM_DATA = "customData";
 
     /**
      * Local intent broadcasted when a resource has been successfully preloaded.
@@ -907,7 +926,7 @@ public class WonderPush {
      *
      * <p>
      *   In order to remove a value, don't forget to use the
-     *   {@link <a href="http://d.android.com/reference/org/json/JSONObject.html#NULL">JSONObject.NULL</a>}
+     *   <a href="http://d.android.com/reference/org/json/JSONObject.html#NULL">JSONObject.NULL</a>
      *   object as value.
      * </p>
      *
@@ -1024,7 +1043,7 @@ public class WonderPush {
      *
      * <p>
      *   In order to remove a value, don't forget to use the
-     *   {@link <a href="http://d.android.com/reference/org/json/JSONObject.html#NULL">JSONObject.NULL</a>}
+     *   <a href="http://d.android.com/reference/org/json/JSONObject.html#NULL">JSONObject.NULL</a>
      *   object as value.
      * </p>
      *
@@ -1141,6 +1160,15 @@ public class WonderPush {
 
         RequestParams parameters = new RequestParams();
         parameters.put("body", event.toString());
+
+        // Broadcast locally that an event was tracked
+        Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
+        eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
+        if (customData != null) {
+            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
+        }
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
+
         postEventually(eventEndpoint, parameters);
     }
 
@@ -1514,6 +1542,15 @@ public class WonderPush {
         }
     }
 
+    static void initializeInAppMessaging(Context context) {
+        Application application = (Application)context.getApplicationContext();
+        if (sInAppMessaging == null) {
+            sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker());
+        }
+        if (sInAppMessagingDisplay == null) {
+            sInAppMessagingDisplay = InAppMessagingDisplay.getInstance(application, sInAppMessaging);
+        }
+    }
     /**
      * @see #ensureInitialized(Context, boolean)
      * @param context
@@ -1827,6 +1864,8 @@ public class WonderPush {
             }
         }
 
+        if (isInitialized()) initializeInAppMessaging(context);
+
         // Warn the user once if not initialization means has been found
         if (!isInitialized()) {
             Log.e(TAG, "Could not initialize WonderPush using the initializer class, BuildConfig options or manifest <meta-data> options!");
@@ -2012,7 +2051,7 @@ public class WonderPush {
      *
      * @param userId
      *            The user id, unique to your application.
-     *            Use {@code null} for anonymous users.<br />
+     *            Use {@code null} for anonymous users.<br>
      *            You are strongly encouraged to use your own unique internal identifier.
      */
     @SuppressWarnings("unused")
@@ -2304,5 +2343,16 @@ public class WonderPush {
         }
 
         return url;
+    }
+
+    public static class InternalEventTracker {
+        private InternalEventTracker() {}
+
+        public void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
+            WonderPush.trackInternalEvent(type, eventData, customData);
+        }
+        public void trackInternalEvent(String type, JSONObject eventData) {
+            WonderPush.trackInternalEvent(type, eventData);
+        }
     }
 }

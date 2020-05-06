@@ -21,7 +21,7 @@ import java.util.Arrays;
  * <p>
  *     It also contains some additions that may no longer be available under Android O where the user
  *     is in full control of these settings, such as preventing a notification that usually makes a
- *     sound or vibrates to vibrate while the device is in silent mode.<br/>
+ *     sound or vibrates to vibrate while the device is in silent mode.<br>
  *     Some feature like the color should remain configurable using this class under Android O.
  * </p>
  *

@@ -9,6 +9,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ServiceInfo;
 import android.net.Uri;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -95,7 +96,7 @@ public class WonderPushService extends Service {
         boolean launchSuccessful = false;
         boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
 
-        NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+        NotificationModel notif = NotificationModel.fromLocalIntent(intent, getApplicationContext());
         if (notif == null) {
             Log.e(TAG, "handleOpenFromNotificationCenter() could not extract notification from intent: " + intent);
             return;
@@ -130,7 +131,7 @@ public class WonderPushService extends Service {
                 activityIntent.setAction(Intent.ACTION_VIEW);
                 activityIntent.setData(Uri.parse(targetUrl));
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
-                        intent.getParcelableExtra("receivedPushNotificationIntent"));
+                        (Parcelable) intent.getParcelableExtra("receivedPushNotificationIntent"));
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                         notif.getType().toString());
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
@@ -289,7 +290,7 @@ public class WonderPushService extends Service {
     }
 
     private boolean openNotificationDefaultBehavior(Intent intent) {
-        NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+        NotificationModel notif = NotificationModel.fromLocalIntent(intent, getApplicationContext());
         if (notif == null) {
             Log.e(TAG, "openNotificationDefaultBehavior() could not extract notification from intent: " + intent);
             return false;
@@ -333,7 +334,7 @@ public class WonderPushService extends Service {
                 Log.e(WonderPush.TAG, "Cannot launch application: no default launch intent. Make sure to have an activity with action MAIN and category LAUNCHER in your manifest.");
             } else {
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
-                        intent.getParcelableExtra("receivedPushNotificationIntent"));
+                        (Parcelable) intent.getParcelableExtra("receivedPushNotificationIntent"));
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                         notif.getType().toString());
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,

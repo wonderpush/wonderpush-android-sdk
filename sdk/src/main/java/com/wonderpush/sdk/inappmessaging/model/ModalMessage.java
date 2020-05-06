@@ -1,0 +1,216 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.wonderpush.sdk.inappmessaging.model;
+
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+
+import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.NotificationMetadata;
+
+import org.json.JSONObject;
+
+import java.util.Collections;
+import java.util.List;
+
+/** Encapsulates an In App Modal Message. */
+public class ModalMessage extends InAppMessage implements InAppMessage.InAppMessageWithImage {
+  /*
+   * !!!!!WARNING!!!!! We are overriding equality in this class. Please add equality checks for all
+   * new private class members.
+   */
+  @NonNull private final Text title;
+
+  @Nullable private final Text body;
+  @Nullable private final ImageData imageData;
+  @NonNull private final List<ActionModel> actions;
+  @Nullable private final Button button;
+  @NonNull private final String backgroundHexColor;
+
+  /** @hide */
+  @Override
+  public int hashCode() {
+    int bodyHash = body != null ? body.hashCode() : 0;
+    int actionHash = 0;
+    for(ActionModel action : actions) actionHash += action.hashCode();
+    int imageHash = imageData != null ? imageData.hashCode() : 0;
+    int buttonHash = button != null ? button.hashCode() : 0;
+    return title.hashCode() + bodyHash + backgroundHexColor.hashCode() + actionHash + imageHash + buttonHash;
+  }
+
+  /** @hide */
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true; // same instance
+    }
+    if (!(o instanceof ModalMessage)) {
+      return false; // not the correct instance type
+    }
+    ModalMessage m = (ModalMessage) o;
+    if (hashCode() != m.hashCode()) {
+      return false; // the hashcodes don't match
+    }
+    if ((body == null && m.body != null) || (body != null && !body.equals(m.body))) {
+      return false; // the bodies don't match
+    }
+    if ((actions == null && m.actions != null) || (actions != null && !actions.equals(m.actions))) {
+      return false; // the actions don't match
+    }
+    if ((imageData == null && m.imageData != null)
+        || (imageData != null && !imageData.equals(m.imageData))) {
+      return false; // the image data don't match
+    }
+    if (!title.equals(m.title)) {
+      return false; // the titles don't match
+    }
+    if ((button == null && m.button != null) || (button != null && !button.equals(m.button))) {
+      return false;
+    }
+    if (backgroundHexColor.equals(m.backgroundHexColor)) {
+      return true; // everything matches
+    }
+    return false;
+  }
+  /*
+   * !!!!!WARNING!!!!! We are overriding equality in this class. Please add equality checks for all
+   * new private class members.
+   */
+  private ModalMessage(
+      @NonNull NotificationMetadata notificationMetadata,
+      @NonNull Text title,
+      @Nullable Text body,
+      @Nullable ImageData imageData,
+      @NonNull List<ActionModel> actions,
+      @Nullable Button button,
+      @NonNull String backgroundHexColor,
+      @NonNull JSONObject data) {
+    super(notificationMetadata, MessageType.MODAL, data);
+    this.title = title;
+    this.body = body;
+    this.imageData = imageData;
+    this.actions = actions;
+    this.backgroundHexColor = backgroundHexColor;
+    this.button = button;
+  }
+
+  /** Gets the title {@link Text} associated with this message */
+  @NonNull
+  public Text getTitle() {
+    return title;
+  }
+
+  /** Gets the body {@link Text} associated with this message */
+  @Nullable
+  public Text getBody() {
+    return body;
+  }
+
+  /** Gets the {@link ImageData} associated with this message */
+  @Nullable
+  public ImageData getImageData() {
+    return imageData;
+  }
+
+  /** Gets the background hex color associated with this message */
+  @NonNull
+  public String getBackgroundHexColor() {
+    return backgroundHexColor;
+  }
+
+  /** Gets the {@link ActionModel}s associated with this message */
+  @NonNull
+  public List<ActionModel> getActions() {
+    return actions;
+  }
+
+  @Nullable
+  public Button getButton() {
+    return button;
+  }
+
+  /**
+   * only used by headless sdk and tests
+   *
+   * @hide
+   */
+  public static Builder builder() {
+    return new ModalMessage.Builder();
+  }
+
+  /**
+   * Builder for {@link ModalMessage}
+   *
+   * @hide
+   */
+  public static class Builder {
+    @Nullable
+    Text title;
+    @Nullable
+    Text body;
+    @Nullable ImageData imageData;
+    @Nullable List<ActionModel> actions;
+    @Nullable String backgroundHexColor;
+    @Nullable Button button;
+
+    public Builder setTitle(@Nullable Text title) {
+      this.title = title;
+      return this;
+    }
+
+    public Builder setBody(@Nullable Text body) {
+      this.body = body;
+      return this;
+    }
+
+    public Builder setImageData(@Nullable ImageData imageData) {
+      this.imageData = imageData;
+      return this;
+    }
+
+    public Builder setActions(@Nullable List<ActionModel> actions) {
+      this.actions = actions;
+      return this;
+    }
+
+    public Builder setButton(@Nullable Button button) {
+      this.button = button;
+      return this;
+    }
+
+    public Builder setBackgroundHexColor(@Nullable String backgroundHexColor) {
+      this.backgroundHexColor = backgroundHexColor;
+      return this;
+    }
+
+    public ModalMessage build(
+            NotificationMetadata notificationMetadata, @NonNull JSONObject data) {
+      if (title == null) {
+        throw new IllegalArgumentException("Modal model must have a title");
+      }
+      if (actions != null && actions.size() > 0 && button == null) {
+        throw new IllegalArgumentException("Modal model action must be null or have a button");
+      }
+      if (TextUtils.isEmpty(backgroundHexColor)) {
+        throw new IllegalArgumentException("Modal model must have a background color");
+      }
+
+      // We know backgroundColor is not null here because isEmpty checks for null.
+      return new ModalMessage(
+              notificationMetadata, title, body, imageData, actions == null ? Collections.emptyList() : actions, button, backgroundHexColor, data);
+    }
+  }
+}

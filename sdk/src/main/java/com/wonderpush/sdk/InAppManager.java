@@ -90,7 +90,7 @@ class InAppManager {
         }
         Context context = dialog.getContext();
         try {
-            NotificationManager.handleNotificationActions(context, dialog.getNotificationModel(), buttonClicked.actions);
+            NotificationManager.handleActions(context, new NotificationMetadata(dialog.getNotificationModel()), buttonClicked.actions);
         } catch (Exception ex) {
             Log.e(NotificationManager.TAG, "Unexpected error while handling button actions", ex);
         }
@@ -150,6 +150,7 @@ class InAppManager {
             openButton.label = context.getResources().getString(R.string.wonderpush_open);
             ActionModel openAction = new ActionModel();
             openAction.setType(ActionModel.Type.MAP_OPEN);
+            openAction.setMap(map);
             openButton.actions.add(openAction);
             notif.addButton(openButton);
         }

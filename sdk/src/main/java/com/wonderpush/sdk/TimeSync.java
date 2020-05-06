@@ -2,7 +2,7 @@ package com.wonderpush.sdk;
 
 import android.os.SystemClock;
 
-class TimeSync {
+public class TimeSync {
 
     private static long startupDateToServerDateOffset = 0;
     private static long startupDateToServerDateUncertainty = Long.MAX_VALUE;
@@ -14,7 +14,7 @@ class TimeSync {
      * Get the current timestamp in milliseconds, UTC.
      * @return A timestamp in milliseconds
      */
-    protected static long getTime() {
+    public static long getTime() {
         // Initialization
         if (deviceDateToServerDateUncertainty == Long.MAX_VALUE) {
             deviceDateToServerDateUncertainty = WonderPushConfiguration.getDeviceDateSyncUncertainty();

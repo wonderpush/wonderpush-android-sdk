@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-class NotificationManager {
+public class NotificationManager {
 
     static final String TAG = WonderPush.TAG;
 
@@ -51,7 +51,7 @@ class NotificationManager {
             return;
         }
 
-        handleNotificationActions(context, notif, notif.getReceiveActions());
+        handleActions(context, new NotificationMetadata(notif), notif.getReceiveActions());
 
         try {
             final JSONObject trackData = new JSONObject();
@@ -759,7 +759,7 @@ class NotificationManager {
 
     public static boolean showPotentialNotification(Context context, Intent intent) {
         if (containsExplicitNotification(intent) || containsWillOpenNotificationAutomaticallyOpenable(intent)) {
-            final NotificationModel notif = NotificationModel.fromLocalIntent(intent);
+            final NotificationModel notif = NotificationModel.fromLocalIntent(intent, context);
             if (notif == null) {
                 Log.e(TAG, "Failed to extract notification object");
                 return false;
@@ -884,23 +884,23 @@ class NotificationManager {
             // Notification button-specific actions
             actions = notif.getAlert().getButtons().get(clickedButtonIndex).actions;
         }
-        handleNotificationActions(context, notif, actions);
+        handleActions(context, new NotificationMetadata(notif), actions);
     }
 
-    protected static void handleNotificationActions(Context context, NotificationModel notif, List<ActionModel> actions) {
+    public static void handleActions(Context context, NotificationMetadata notificationMetadata, List<ActionModel> actions) {
         if (actions == null)
             return;
 
         try {
             for (ActionModel action : actions) {
-                handleAction(context, notif, action);
+                handleAction(context, notificationMetadata, action);
             }
         } catch (Exception ex) {
             Log.e(TAG, "Unexpected error while handling actions", ex);
         }
     }
 
-    protected static void handleAction(Context context, NotificationModel notif, ActionModel action) {
+    protected static void handleAction(Context context, NotificationMetadata notificationMetadata, ActionModel action) {
         try {
             if (action == null || action.getType() == null) {
                 // Skip unrecognized action types
@@ -912,7 +912,7 @@ class NotificationManager {
                     // Noop
                     break;
                 case MAP_OPEN:
-                    handleMapOpenAction(context, notif, action);
+                    handleMapOpenAction(context, action);
                     break;
                 case LINK:
                     handleLinkAction(context, action);
@@ -921,7 +921,7 @@ class NotificationManager {
                     handleRatingAction(context, action);
                     break;
                 case TRACK_EVENT:
-                    handleTrackEventAction(notif, action);
+                    handleTrackEventAction(notificationMetadata, action);
                     break;
                 case UPDATE_INSTALLATION:
                     handleUpdateInstallationAction(action);
@@ -1009,7 +1009,7 @@ class NotificationManager {
         }
     }
 
-    protected static void handleTrackEventAction(NotificationModel notif, ActionModel action) {
+    protected static void handleTrackEventAction(NotificationMetadata notificationMetadata, ActionModel action) {
         JSONObject event = action.getEvent();
         if (event == null) {
             Log.e(TAG, "Got no event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
@@ -1021,8 +1021,8 @@ class NotificationManager {
         }
         JSONObject trackingData = new JSONObject();
         try {
-            trackingData.putOpt("campaignId", notif.getCampaignId());
-            trackingData.putOpt("notificationId", notif.getNotificationId());
+            trackingData.putOpt("campaignId", notificationMetadata.getCampaignId());
+            trackingData.putOpt("notificationId", notificationMetadata.getNotificationId());
         } catch (JSONException ex) {
             Log.e(TAG, "Unexpected error while adding notification tracking info in trackEvent", ex);
         }
@@ -1224,11 +1224,11 @@ class NotificationManager {
         LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(intent);
     }
 
-    private static void handleMapOpenAction(Context context, NotificationModel notif, ActionModel action) {
+    private static void handleMapOpenAction(Context context, ActionModel action) {
         try {
             NotificationMapModel.Place place;
             try {
-                place = ((NotificationMapModel) notif).getMap().getPlace();
+                place = action.getMap().getPlace();
             } catch (Exception e) {
                 Log.e(NotificationManager.TAG, "Could not get the place from the map", e);
                 return;

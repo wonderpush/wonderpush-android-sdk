@@ -12,8 +12,12 @@
     *** WONDERPUSH_*;
 }
 
-# AdvertisingIdClient and the like are optional, don't warn
--dontwarn com.google.android.gms.ads.identifier.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+# A resource is loaded with a relative path so the package of this class must be preserved.
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 
 ## For easier debugging, we strongly recommend keeping WonderPush class names unobfuscated
 #-keepattributes SourceFile,LineNumberTable

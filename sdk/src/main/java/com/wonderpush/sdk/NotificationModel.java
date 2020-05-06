@@ -1,5 +1,6 @@
 package com.wonderpush.sdk;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -7,6 +8,10 @@ import android.os.Parcelable;
 import android.util.Log;
 
 import com.google.firebase.messaging.RemoteMessage;
+import com.wonderpush.sdk.inappmessaging.InAppMessaging;
+import com.wonderpush.sdk.inappmessaging.internal.CampaignCacheClient;
+import com.wonderpush.sdk.inappmessaging.model.Campaign;
+import com.wonderpush.sdk.inappmessaging.model.FetchEligibleCampaignsResponse;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -136,6 +141,7 @@ abstract class NotificationModel implements Parcelable {
     private String targetedInstallation;
     private String campaignId;
     private String notificationId;
+    private String viewId;
     private Type type;
     private AlertModel alert;
     private String targetUrl;
@@ -148,13 +154,13 @@ abstract class NotificationModel implements Parcelable {
     private final List<ButtonModel> buttons = new ArrayList<>(3);
     private String title;
 
-    public static NotificationModel fromRemoteMessage(RemoteMessage remoteMessage)
+    public static NotificationModel fromRemoteMessage(RemoteMessage remoteMessage, Context context)
             throws NotTargetedForThisInstallationException
     {
-        return fromGCMBroadcastIntent(remoteMessage.toIntent());
+        return fromGCMBroadcastIntent(remoteMessage.toIntent(), context);
     }
 
-    public static NotificationModel fromGCMBroadcastIntent(Intent intent)
+    public static NotificationModel fromGCMBroadcastIntent(Intent intent, Context context)
             throws NotTargetedForThisInstallationException
     {
         try {
@@ -178,6 +184,24 @@ abstract class NotificationModel implements Parcelable {
             try {
                 JSONObject wpData = new JSONObject(wpDataJson);
                 WonderPush.logDebug("Received broadcasted intent WonderPush data: " + wpDataJson);
+                if (Type.DATA.equals(Type.fromString(wpData.optString("type", "")))
+                    && wpData.optJSONObject("inApp") != null) {
+                    // This is an in-app message
+                    final Campaign.ThickContent campaign = Campaign.ThickContent.fromJSON(wpData.optJSONObject("inApp"));
+                    if (null != campaign) {
+                        InAppMessaging inAppMessaging = InAppMessaging.getInstance();
+                        CampaignCacheClient campaignCacheClient = inAppMessaging != null ? inAppMessaging.getCampaignCacheClient() : null;
+                        if (campaignCacheClient != null) {
+                            campaignCacheClient.get()
+                                    .defaultIfEmpty(FetchEligibleCampaignsResponse.buildFromJSON(new JSONObject()))
+                                    .doOnSuccess(response -> response.addMessage(campaign))
+                                    .doOnSuccess(response -> campaignCacheClient.put(response)
+                                            .doOnError(e -> Log.w(WonderPush.TAG, "Cache write error: " + e.getMessage())).subscribe())
+                                    .subscribe();
+                        }
+                    }
+                    return null;
+                }
                 return fromGCMNotificationJSONObject(wpData, extras);
             } catch (JSONException e) {
                 WonderPush.logDebug("data is not a well-formed JSON object", e);
@@ -188,7 +212,7 @@ abstract class NotificationModel implements Parcelable {
         return null;
     }
 
-    public static NotificationModel fromLocalIntent(Intent intent) {
+    public static NotificationModel fromLocalIntent(Intent intent, Context context) {
         if (NotificationManager.containsExplicitNotification(intent)) {
 
             String notifString = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER);
@@ -208,7 +232,7 @@ abstract class NotificationModel implements Parcelable {
 
             try {
                 Intent pushIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
-                return fromGCMBroadcastIntent(pushIntent);
+                return fromGCMBroadcastIntent(pushIntent, context);
             } catch (NotTargetedForThisInstallationException e) {
                 WonderPush.logError("Notifications not targeted for this installation should have been filtered earlier", e);
             }
@@ -259,6 +283,7 @@ abstract class NotificationModel implements Parcelable {
             rtn.setTargetedInstallation(JSONUtil.getString(wpData, "@"));
             rtn.setCampaignId(JSONUtil.getString(wpData, "c"));
             rtn.setNotificationId(JSONUtil.getString(wpData, "n"));
+            rtn.setViewId(JSONUtil.getString(wpData, "v"));
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", true));
 
@@ -332,6 +357,14 @@ abstract class NotificationModel implements Parcelable {
 
     public void setNotificationId(String notificationId) {
         this.notificationId = notificationId;
+    }
+
+    public String getViewId() {
+        return viewId;
+    }
+
+    public void setViewId(String viewId) {
+        this.viewId = viewId;
     }
 
     public Type getType() {
