@@ -145,7 +145,7 @@ public class WonderPush {
 
     static final int API_INT = 1;
     static final String API_VERSION = "v" + API_INT;
-    static final String SDK_SHORT_VERSION = "3.2.1-SNAPSHOT";
+    static final String SDK_SHORT_VERSION = "3.3.0";
     static final String SDK_VERSION = "Android-" + SDK_SHORT_VERSION;
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
 
