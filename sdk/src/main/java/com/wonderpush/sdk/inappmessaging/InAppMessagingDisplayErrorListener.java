@@ -18,10 +18,17 @@ import android.support.annotation.NonNull;
 
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
+/**
+ * An interface you can implement in order to display messages when an error occurs during the presentation of an in-app message.
+ * Pass an instance to {@link InAppMessaging#addDisplayErrorListener(InAppMessagingDisplayErrorListener)}
+ */
 public interface InAppMessagingDisplayErrorListener {
 
-  // Triggered when there is an issue rendering the content (ie, image_url is invalid
-  // or file_type is unsupported
+  /**
+   * The implementation should optionally display an error message to the user.
+   * @param inAppMessage
+   * @param errorReason
+   */
   void displayErrorEncountered(
           @NonNull InAppMessage inAppMessage,
           @NonNull InAppMessagingDisplayCallbacks.InAppMessagingErrorReason errorReason);

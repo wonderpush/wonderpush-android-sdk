@@ -110,6 +110,12 @@ public class InAppMessaging {
     return appComponent;
   }
 
+  /**
+   * Internal method.
+   * @param application
+   * @param internalEventTracker
+   * @return
+   */
   @NonNull
   @Keep
   public static InAppMessaging initialize(Application application, WonderPush.InternalEventTracker internalEventTracker) {
@@ -172,10 +178,8 @@ public class InAppMessaging {
     this.iamDisplay = messageDisplay;
   }
 
-  /*
-   * Unregisters a iamDisplay to in app message display events.
-   *
-   * @hide
+  /**
+   * Remove previously registered display listeners.
    */
   @Keep
   public void clearDisplayListener() {
@@ -288,15 +292,14 @@ public class InAppMessaging {
     developerListenerManager.removeDisplayErrorListener(displayErrorListener);
   }
 
-  /*
-   * Programmatically trigger a contextual trigger. This will display any eligible in-app messages
-   * that are triggered by this event
+  /**
+   * Tell the in-app messaging SDK that an event of the given type was triggered.
+   * Useful for testing.
    *
-   * @param eventName
-   * @hide // hiding until api is finalized
+   * @param eventType
    */
-  public void triggerEvent(String eventName) {
-    programaticContextualTriggers.triggerEvent(eventName);
+  public void triggerEvent(String eventType) {
+    programaticContextualTriggers.triggerEvent(eventType);
   }
 
   private void triggerInAppMessage(TriggeredInAppMessage inAppMessage) {

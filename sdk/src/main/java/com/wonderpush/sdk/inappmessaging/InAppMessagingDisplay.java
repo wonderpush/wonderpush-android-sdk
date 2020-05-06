@@ -25,6 +25,13 @@ import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
  */
 @Keep
 public interface InAppMessagingDisplay {
+  /**
+   * Called when an in-app message should be displayed. It's the responsibility of the implementation to display the in-app message
+   * and use the callbacks parameter to report views and clicks.
+   * @param inAppMessage - The in-app message.
+   * @param callbacks - The object used to report views, clicks and dismisses.
+   * @param delay - A delay in milliseconds. The implementation should wait this amount of time before triggering the display.
+   */
   @Keep
   void displayMessage(
           @NonNull InAppMessage inAppMessage,

@@ -21,9 +21,15 @@ import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
 import java.util.List;
 
+/**
+ * An interface you can implement and feed to {@link InAppMessaging#addClickListener(InAppMessagingClickListener)} in order to get called back when users click on in-app messages.
+ */
 public interface InAppMessagingClickListener {
 
-  // Triggered when a message is tapped (ie: button, in the modal view) and which action was
-  // triggered (which provides support for the multi-button templates)
+  /**
+   * Triggered when a message is tapped (ie: button, in the modal view) and which actions were triggered.
+   * @param inAppMessage
+   * @param actions
+   */
   void messageClicked(@NonNull InAppMessage inAppMessage, @NonNull List<ActionModel> actions);
 }

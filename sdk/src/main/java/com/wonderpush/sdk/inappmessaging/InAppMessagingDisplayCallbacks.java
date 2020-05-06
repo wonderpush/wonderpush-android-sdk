@@ -21,21 +21,38 @@ import com.wonderpush.sdk.ActionModel;
 
 import java.util.List;
 
+/**
+ * An interface implemented by the in-app messaging SDK that gets passed to the {@link InAppMessagingDisplay} instance
+ * to allow reporting of clicks and views.
+ */
 public interface InAppMessagingDisplayCallbacks {
 
-  // log the campaign impression:
+  /**
+   * Log the impression
+   */
   void impressionDetected();
 
-  // log when a message is dismissed, and specify dismiss type
+  /**
+   * Log the dismiss
+   * @param dismissType
+   */
   void messageDismissed(@NonNull InAppMessagingDismissType dismissType);
 
-  // log when a message is tap (ie: button, in the modal view)  with the Action followed
+  /**
+   * Log the click, passing along the corresponding actions.
+   * @param actions
+   */
   void messageClicked(@NonNull List<ActionModel> actions);
 
-  // log when there is an issue rendering the content (ie, image_url is invalid
-  // or file_type is unsupported
+  /**
+   * Report display errors.
+   * @param inAppMessagingErrorReason
+   */
   void displayErrorEncountered(@NonNull InAppMessagingErrorReason inAppMessagingErrorReason);
 
+  /**
+   * Describes how the user dismissed an in-app message.
+   */
   enum InAppMessagingDismissType {
     // Unspecified dismiss type
     UNKNOWN_DISMISS_TYPE,
@@ -50,6 +67,9 @@ public interface InAppMessagingDisplayCallbacks {
     SWIPE
   }
 
+  /**
+   * Describes the common errors encountered when displaying in-app messages.
+   */
   enum InAppMessagingErrorReason {
     // Generic error
     UNSPECIFIED_RENDER_ERROR,

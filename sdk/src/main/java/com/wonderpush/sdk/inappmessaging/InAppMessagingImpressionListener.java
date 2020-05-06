@@ -18,8 +18,14 @@ import android.support.annotation.NonNull;
 
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
+/**
+ * An interface you can implement and feed to {@link InAppMessaging#addImpressionListener(InAppMessagingImpressionListener)} in order to get called back when users see an in-app message.
+ */
 public interface InAppMessagingImpressionListener {
 
-  // impression detected
+  /**
+   * Impression detected
+   * @param inAppMessage
+   */
   void impressionDetected(@NonNull InAppMessage inAppMessage);
 }
