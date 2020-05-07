@@ -2381,5 +2381,11 @@ public class WonderPush {
         public void trackInternalEvent(String type, JSONObject eventData) {
             WonderPush.trackInternalEvent(type, eventData);
         }
+        public void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData) {
+            WonderPush.trackInternalEventWithMeasurementsApi(type, eventData);
+        }
+        public void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData, JSONObject customData) {
+            WonderPush.trackInternalEventWithMeasurementsApi(type, eventData, customData);
+        }
     }
 }
