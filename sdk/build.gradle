@@ -17,7 +17,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 15
         consumerProguardFiles 'proguard-exported.pro'
     }
     buildTypes {
