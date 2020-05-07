@@ -1111,6 +1111,17 @@ public class WonderPush {
         trackInternalEvent(type, eventData, null);
     }
 
+    static void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData) {
+        trackInternalEventWithMeasurementsApi(type, eventData, null);
+    }
+
+    static void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData, JSONObject customData) {
+        if (type.charAt(0) != '@') {
+            throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
+        }
+        sendEvent(type, eventData, customData, true);
+    }
+
     static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
         if (type.charAt(0) != '@') {
             throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
@@ -1119,6 +1130,10 @@ public class WonderPush {
     }
 
     private static void sendEvent(String type, JSONObject eventData, JSONObject customData) {
+        sendEvent(type, eventData, customData, false);
+    }
+
+    private static void sendEvent(String type, JSONObject eventData, JSONObject customData, boolean useMeasurementsApi) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
             return;
@@ -1170,7 +1185,11 @@ public class WonderPush {
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
-        postEventually(eventEndpoint, parameters);
+        if (useMeasurementsApi) {
+            WonderPushMeasurementsApiClient.post("/events", event, null);
+        } else {
+            postEventually(eventEndpoint, parameters);
+        }
     }
 
     /**

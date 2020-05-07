@@ -65,6 +65,8 @@ public class NotificationManager {
             }
             if (notifReceipt) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
+            } else {
+                WonderPush.trackInternalEventWithMeasurementsApi("@NOTIFICATION_RECEIVED", trackData);
             }
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
         } catch (JSONException ex) {
