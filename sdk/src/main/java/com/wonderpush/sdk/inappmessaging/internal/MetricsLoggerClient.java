@@ -18,6 +18,7 @@ import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.TimeSync;
 import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
@@ -38,28 +39,40 @@ public class MetricsLoggerClient {
 
   private final DeveloperListenerManager developerListenerManager;
   private final WonderPush.InternalEventTracker internalEventTracker;
+  private final InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration;
 
   @Inject
   public MetricsLoggerClient(DeveloperListenerManager developerListenerManager,
-                             WonderPush.InternalEventTracker internalEventTracker) {
+                             WonderPush.InternalEventTracker internalEventTracker,
+                             InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration) {
     this.developerListenerManager = developerListenerManager;
     this.internalEventTracker = internalEventTracker;
+    this.inAppMessagingConfiguration = inAppMessagingConfiguration;
   }
 
   private void logInternalEvent(String eventName, NotificationMetadata metadata) {
+    logInternalEvent(eventName, metadata, false);
+  }
+
+  private void logInternalEvent(String eventName, NotificationMetadata metadata, boolean useMeasurementsApi) {
     JSONObject eventData = new JSONObject();
     try {
       if (metadata.getCampaignId() != null) eventData.put("campaignId", metadata.getCampaignId());
       if (metadata.getNotificationId() != null) eventData.put("notificationId", metadata.getNotificationId());
       if (metadata.getViewId() != null) eventData.put("viewId", metadata.getViewId());
       eventData.put("actionDate", TimeSync.getTime());
-      this.internalEventTracker.trackInternalEvent(eventName, eventData);
+      if (useMeasurementsApi) {
+        this.internalEventTracker.trackInternalEventWithMeasurementsApi(eventName, eventData);
+      } else {
+        this.internalEventTracker.trackInternalEvent(eventName, eventData);
+      }
     } catch (JSONException e) {}
   }
 
   /** Log impression */
   public void logImpression(InAppMessage message) {
-    this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata());
+    boolean useMeasurementsApi = !inAppMessagingConfiguration.inAppViewedReceipts();
+    this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata(), useMeasurementsApi);
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
