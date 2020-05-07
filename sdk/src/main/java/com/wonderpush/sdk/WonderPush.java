@@ -148,6 +148,7 @@ public class WonderPush {
     static final String SDK_SHORT_VERSION = "3.3.1-SNAPSHOT";
     static final String SDK_VERSION = "Android-" + SDK_SHORT_VERSION;
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
+    protected static final String MEASUREMENTS_API_URL = "https://measurements-api.wonderpush.com/v1";
 
     /**
      * How long in ms should two interactions should be separated in time,
