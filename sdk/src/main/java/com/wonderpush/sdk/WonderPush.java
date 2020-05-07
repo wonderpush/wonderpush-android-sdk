@@ -1566,6 +1566,12 @@ public class WonderPush {
         Application application = (Application)context.getApplicationContext();
         if (sInAppMessaging == null) {
             sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker(), new InAppMessaging.InAppMessagingConfiguration() {
+                @Override
+                public boolean inAppViewedReceipts() {
+                    Boolean b = WonderPushConfiguration.getOverrideNotificationReceipt();
+                    if (b != null) return b;
+                    return false;
+                }
             });
         }
         if (sInAppMessagingDisplay == null) {

@@ -108,6 +108,7 @@ public class InAppMessaging {
   }
 
   public interface InAppMessagingConfiguration {
+    boolean inAppViewedReceipts();
   }
 
   /**
