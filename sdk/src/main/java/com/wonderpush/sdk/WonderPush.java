@@ -1565,7 +1565,8 @@ public class WonderPush {
     static void initializeInAppMessaging(Context context) {
         Application application = (Application)context.getApplicationContext();
         if (sInAppMessaging == null) {
-            sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker());
+            sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker(), new InAppMessaging.InAppMessagingConfiguration() {
+            });
         }
         if (sInAppMessagingDisplay == null) {
             sInAppMessagingDisplay = InAppMessagingDisplay.getInstance(application, sInAppMessaging);

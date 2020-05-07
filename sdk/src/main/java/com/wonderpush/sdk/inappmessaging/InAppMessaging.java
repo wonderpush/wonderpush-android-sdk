@@ -29,10 +29,7 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.components.AppCompon
 import com.wonderpush.sdk.inappmessaging.internal.injection.components.DaggerAppComponent;
 import com.wonderpush.sdk.inappmessaging.internal.injection.components.DaggerUniversalComponent;
 import com.wonderpush.sdk.inappmessaging.internal.injection.components.UniversalComponent;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ApiClientModule;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ApplicationModule;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.InternalEventTrackerModule;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
+import com.wonderpush.sdk.inappmessaging.internal.injection.modules.*;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.internal.time.SystemClock;
@@ -110,6 +107,9 @@ public class InAppMessaging {
     return appComponent;
   }
 
+  public interface InAppMessagingConfiguration {
+  }
+
   /**
    * Internal method.
    * @param application
@@ -118,7 +118,10 @@ public class InAppMessaging {
    */
   @NonNull
   @Keep
-  public static InAppMessaging initialize(Application application, WonderPush.InternalEventTracker internalEventTracker) {
+  public static InAppMessaging initialize(Application application,
+                                          WonderPush.InternalEventTracker internalEventTracker,
+                                          InAppMessagingConfiguration configuration) {
+    if (ConfigurationModule.getInstance() == null) ConfigurationModule.setInstance(configuration);
     if (instance == null) {
       instance = initializeAppComponent(application, internalEventTracker).providesInAppMessaging();
     }
