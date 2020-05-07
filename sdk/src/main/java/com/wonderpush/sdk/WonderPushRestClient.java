@@ -667,19 +667,20 @@ class WonderPushRestClient {
          * @return The authorization header or null for GET requests
          */
         protected BasicHeader getAuthorizationHeader() {
+            return getAuthorizationHeader(mMethod, Uri.parse(String.format("%s%s", WonderPush.getBaseURL(), mResource)), mParams);
+        }
+
+        protected static BasicHeader getAuthorizationHeader(HttpMethod method, Uri uri, RequestParams params) {
             try {
                 StringBuilder sb = new StringBuilder();
 
                 // Step 1: add HTTP method uppercase
-                sb.append(mMethod.name().toUpperCase());
+                sb.append(method.name().toUpperCase());
                 sb.append('&');
 
                 // Step 2: add the URI
-                Uri uri = Uri.parse(mResource);
-
                 // Query string is stripped from resource
-                sb.append(encode(String.format("%s%s", WonderPush.getBaseURL(),
-                        uri.getEncodedPath())));
+                sb.append(encode(String.format("%s://%s%s", uri.getScheme(), uri.getHost(), uri.getEncodedPath())));
 
                 // Step 3: add URL encoded parameters
                 sb.append('&');
@@ -692,8 +693,8 @@ class WonderPushRestClient {
                 }
 
                 // Params from the request
-                if (mParams != null) {
-                    unencodedParams.addAll(mParams.getParamsList());
+                if (params != null) {
+                    unencodedParams.addAll(params.getParamsList());
                 }
 
                 // Encode and sort params
