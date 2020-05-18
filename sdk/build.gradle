@@ -19,6 +19,7 @@ android {
     defaultConfig {
         minSdkVersion 15
         consumerProguardFiles 'proguard-exported.pro'
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -26,6 +27,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
+    useLibrary 'android.test.mock'
 }
 
 dependencies {
@@ -51,6 +56,11 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.json:json:20160810'
+    testImplementation group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
 }
 
 if (file('local.gradle').exists()) {
