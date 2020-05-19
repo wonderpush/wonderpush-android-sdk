@@ -1,5 +1,6 @@
 package com.wonderpush.sdk;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -9,7 +10,7 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
     public SimpleVersion(String versionString) {
         ArrayList<Integer> tokens = new ArrayList<>();
         StringBuffer currentIntegerString = null;
-        for (int i = 0; i < versionString.length(); i++) {
+        for (int i = 0; versionString != null && i < versionString.length(); i++) {
             char c = versionString.charAt(i);
             if (c == 'v' && i == 0) continue;
 
