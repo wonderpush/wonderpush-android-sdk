@@ -24,6 +24,10 @@ import com.google.firebase.FirebaseOptions;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 
+import com.wonderpush.sdk.remoteconfig.AsyncHttpClientRemoteConfigFetcher;
+import com.wonderpush.sdk.remoteconfig.RemoteConfig;
+import com.wonderpush.sdk.remoteconfig.RemoteConfigManager;
+import com.wonderpush.sdk.remoteconfig.SharedPreferencesRemoteConfigStorage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -80,6 +84,7 @@ public class WonderPush {
     private static Looper sLooper;
     private static Handler sDeferHandler;
     protected static final ScheduledExecutorService sScheduledExecutor;
+    static RemoteConfigManager remoteConfigManager;
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
         new Thread(new Runnable() {
@@ -1892,6 +1897,14 @@ public class WonderPush {
         }
 
         if (isInitialized()) initializeInAppMessaging(context);
+
+        if (isInitialized() && remoteConfigManager == null) {
+            AsyncHttpClientRemoteConfigFetcher fetcher = new AsyncHttpClientRemoteConfigFetcher(clientId, (Runnable r, long defer) -> {
+                WonderPush.safeDefer(r, defer);
+            });
+            SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
+            remoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
+        }
 
         // Warn the user once if not initialization means has been found
         if (!isInitialized()) {
