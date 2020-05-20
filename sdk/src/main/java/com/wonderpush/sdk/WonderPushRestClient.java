@@ -320,6 +320,7 @@ class WonderPushRestClient {
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                         syncTime(response);
+                        declareConfigVersion(response);
                         WonderPush.setNetworkAvailable(true);
                         if (handler != null) {
                             handler.onSuccess(statusCode, new Response(response));
@@ -335,6 +336,7 @@ class WonderPushRestClient {
                     public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                         WonderPush.logError("Error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: " + errorResponse);
                         syncTime(errorResponse);
+                        declareConfigVersion(errorResponse);
                         WonderPush.logDebug("Request Error: " + errorResponse);
                         WonderPush.setNetworkAvailable(errorResponse != null);
                         if (handler != null) {
@@ -360,6 +362,13 @@ class WonderPushRestClient {
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, String responseString) {
                         WonderPush.logError("Unexpected string answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + responseString.length() + ") \"" + responseString + "\"");
+                    }
+
+                    private void declareConfigVersion(JSONObject data) {
+                        String version = data.optString("_configVersion", null);
+                        if (version != null && WonderPush.remoteConfigManager != null) {
+                            WonderPush.remoteConfigManager.declareVersion(version);
+                        }
                     }
 
                     private void syncTime(JSONObject data) {
