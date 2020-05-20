@@ -19,7 +19,6 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import com.wonderpush.sdk.WonderPush;
-import com.wonderpush.sdk.inappmessaging.internal.CampaignCacheClient;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.DisplayCallbacksFactory;
 import com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManager;
@@ -32,7 +31,6 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.components.Universal
 import com.wonderpush.sdk.inappmessaging.internal.injection.modules.*;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
-import com.wonderpush.sdk.inappmessaging.internal.time.SystemClock;
 import com.wonderpush.sdk.inappmessaging.model.TriggeredInAppMessage;
 
 import java.util.concurrent.Executor;
@@ -56,7 +54,6 @@ public class InAppMessaging {
   private final DisplayCallbacksFactory displayCallbacksFactory;
   private final DeveloperListenerManager developerListenerManager;
   private final ProgramaticContextualTriggers programaticContextualTriggers;
-  private final CampaignCacheClient campaignCacheClient;
 
   private boolean areMessagesSuppressed;
   private InAppMessagingDisplay iamDisplay;
@@ -70,14 +67,12 @@ public class InAppMessaging {
       InAppMessageStreamManager inAppMessageStreamManager,
       @ProgrammaticTrigger ProgramaticContextualTriggers programaticContextualTriggers,
       DisplayCallbacksFactory displayCallbacksFactory,
-      DeveloperListenerManager developerListenerManager,
-      CampaignCacheClient campaignCacheClient) {
+      DeveloperListenerManager developerListenerManager) {
     this.inAppMessageStreamManager = inAppMessageStreamManager;
     this.programaticContextualTriggers = programaticContextualTriggers;
     this.areMessagesSuppressed = false;
     this.displayCallbacksFactory = displayCallbacksFactory;
     this.developerListenerManager = developerListenerManager;
-    this.campaignCacheClient = campaignCacheClient;
 
     Logging.logi("Starting InAppMessaging runtime");
 
@@ -101,7 +96,6 @@ public class InAppMessaging {
   private static AppComponent initializeAppComponent(Application application, WonderPush.InternalEventTracker internalEventTracker) {
     if (appComponent == null) {
       appComponent = DaggerAppComponent.builder()
-              .apiClientModule(new ApiClientModule(application, new SystemClock()))
               .universalComponent(initializeUniversalComponent(application, internalEventTracker))
               .build();
     }

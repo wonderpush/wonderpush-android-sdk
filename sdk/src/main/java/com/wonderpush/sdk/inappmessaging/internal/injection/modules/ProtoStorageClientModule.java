@@ -39,13 +39,6 @@ public class ProtoStorageClientModule {
 
   @Provides
   @Singleton
-  @CampaignCache
-  public ProtoStorageClient providesProtoStorageClientForCampaign(Application application) {
-    return new ProtoStorageClient(application, CAMPAIGN_CACHE_FILE);
-  }
-
-  @Provides
-  @Singleton
   @ImpressionStore
   public ProtoStorageClient providesProtoStorageClientForImpressionStore(Application application) {
     return new ProtoStorageClient(application, IMPRESSIONS_STORE_FILE);

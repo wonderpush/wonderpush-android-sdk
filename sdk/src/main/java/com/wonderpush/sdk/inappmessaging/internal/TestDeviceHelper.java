@@ -15,7 +15,6 @@
 package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.wonderpush.sdk.inappmessaging.model.Campaign;
-import com.wonderpush.sdk.inappmessaging.model.FetchEligibleCampaignsResponse;
 
 import java.util.List;
 
@@ -67,13 +66,12 @@ public class TestDeviceHelper {
   /**
    * Updates test device status based on a response from the IAM server.
    *
-   * @param response campaign fetch response from the IAM server.
+   * @param messages campaign fetch response from the IAM server.
    */
-  public void processCampaignFetch(FetchEligibleCampaignsResponse response) {
+  public void processCampaignFetch(List<Campaign.ThickContent> messages) {
     // We only care about this logic if we are not already a test device.
     if (!isTestDevice) {
       updateFreshInstallStatus();
-      List<Campaign.ThickContent> messages = response.getMessagesList();
       for (Campaign.ThickContent message : messages) {
         if (message.getIsTestCampaign()) {
           setTestDeviceStatus(true);

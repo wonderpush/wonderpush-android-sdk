@@ -26,9 +26,9 @@ import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.model.Campaign;
 import com.wonderpush.sdk.inappmessaging.model.CommonTypesProto;
-import com.wonderpush.sdk.inappmessaging.model.FetchEligibleCampaignsResponse;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -66,9 +66,9 @@ public class AnalyticsEventsManager {
   }
 
   //@VisibleForTesting
-  static Set<String> extractAnalyticsEventNames(FetchEligibleCampaignsResponse response) {
+  static Set<String> extractAnalyticsEventNames(List<Campaign.ThickContent> messages) {
     Set<String> analyticsEvents = new HashSet<>();
-    for (Campaign.ThickContent content : response.getMessagesList()) {
+    for (Campaign.ThickContent content : messages) {
       for (CommonTypesProto.TriggeringCondition condition : content.getTriggeringConditionsList()) {
         if (condition.getEvent() != null && !TextUtils.isEmpty(condition.getEvent().getName())) {
           analyticsEvents.add(condition.getEvent().getName());
@@ -78,10 +78,10 @@ public class AnalyticsEventsManager {
     return analyticsEvents;
   }
 
-  public void updateContextualTriggers(FetchEligibleCampaignsResponse serviceResponse) {
+  public void updateContextualTriggers(List<Campaign.ThickContent> messages) {
     Logging.logd(
             "Updating contextual triggers for the following analytics events: " + analyticsEventNames);
-    analyticsEventNames = extractAnalyticsEventNames(serviceResponse);
+    analyticsEventNames = extractAnalyticsEventNames(messages);
   }
 
   private class AnalyticsFlowableSubscriber implements FlowableOnSubscribe<String> {

@@ -16,7 +16,6 @@ package com.wonderpush.sdk.inappmessaging.internal.injection.components;
 
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.DisplayCallbacksFactory;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ConfigurationModule;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 
@@ -30,7 +29,7 @@ import dagger.Component;
 @InAppMessagingScope
 @Component(
     dependencies = {UniversalComponent.class},
-    modules = {ApiClientModule.class, ConfigurationModule.class})
+    modules = {ConfigurationModule.class})
 public interface AppComponent {
   InAppMessaging providesInAppMessaging();
 
@@ -38,8 +37,6 @@ public interface AppComponent {
 
   @Component.Builder
   interface Builder {
-
-    Builder apiClientModule(ApiClientModule module);
 
     Builder configurationModule(ConfigurationModule module);
 
