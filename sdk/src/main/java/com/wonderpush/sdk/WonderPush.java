@@ -1577,6 +1577,18 @@ public class WonderPush {
                     if (b != null) return b;
                     return false;
                 }
+
+                @Override
+                public void fetchInAppConfig(InAppMessaging.JSONObjectHandler handler) {
+                    if (remoteConfigManager == null) {
+                        handler.handle(null, null);
+                        return;
+                    }
+                    remoteConfigManager.read((RemoteConfig config, Throwable error) -> {
+                        handler.handle(config != null ? config.getData().optJSONObject("inAppConfig") : null, error);
+                    });
+                }
+
             });
         }
         if (sInAppMessagingDisplay == null) {

@@ -41,6 +41,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import io.reactivex.disposables.Disposable;
+import org.json.JSONObject;
 
 /**
  * The entry point of the In App Messaging headless SDK.
@@ -107,8 +108,13 @@ public class InAppMessaging {
     return appComponent;
   }
 
+  public interface JSONObjectHandler {
+    void handle(@Nullable JSONObject jsonObject, @Nullable Throwable error);
+  }
+
   public interface InAppMessagingConfiguration {
     boolean inAppViewedReceipts();
+    void fetchInAppConfig(JSONObjectHandler handler);
   }
 
   /**
