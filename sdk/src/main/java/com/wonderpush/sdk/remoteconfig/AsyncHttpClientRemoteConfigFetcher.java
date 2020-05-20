@@ -39,8 +39,9 @@ public class AsyncHttpClientRemoteConfigFetcher implements RemoteConfigFetcher {
                         return;
                     }
 
-                    String version = response.optString("_configVersion");
-                    long maxAge = response.optLong("_configMaxAge", Constants.REMOTE_CONFIG_DEFAULT_MAXIMUM_CONFIG_AGE);
+                    String version = response.optString("version", Integer.toString(response.optInt("version", 0)));
+
+                    long maxAge = response.optLong("maxAge", Constants.REMOTE_CONFIG_DEFAULT_MAXIMUM_CONFIG_AGE);
                     if (version != null) {
                         RemoteConfig config = RemoteConfig.with(response, version, DateHelper.now(), maxAge);
                         handler.handle(config, null);

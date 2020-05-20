@@ -1,5 +1,6 @@
 package com.wonderpush.sdk.remoteconfig;
 
+import com.wonderpush.sdk.SimpleVersion;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -497,9 +498,10 @@ public class RemoteConfigTest {
 
         assertNotNull(configJSON);
         Date fetchDate = DateHelper.now();
-        String version = configJSON.optString("_configVersion");
-        long maxAge = configJSON.optLong("_configMaxAge");
-        assertEquals(version, "1.0.0");
+        assertTrue(configJSON.has("version"));
+        String version = configJSON.optString("version", Integer.toString(configJSON.optInt("version", 0))  );
+        long maxAge = configJSON.optLong("maxAge");
+        assertEquals(0, new SimpleVersion(version).compareTo(new SimpleVersion("1.0")));
         assertEquals(maxAge, 123456);
 
         RemoteConfig remoteConfig = RemoteConfig.with(configJSON, version, fetchDate, maxAge);
