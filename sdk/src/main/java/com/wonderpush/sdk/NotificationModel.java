@@ -8,10 +8,6 @@ import android.os.Parcelable;
 import android.util.Log;
 
 import com.google.firebase.messaging.RemoteMessage;
-import com.wonderpush.sdk.inappmessaging.InAppMessaging;
-import com.wonderpush.sdk.inappmessaging.internal.CampaignCacheClient;
-import com.wonderpush.sdk.inappmessaging.model.Campaign;
-import com.wonderpush.sdk.inappmessaging.model.FetchEligibleCampaignsResponse;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -184,24 +180,6 @@ abstract class NotificationModel implements Parcelable {
             try {
                 JSONObject wpData = new JSONObject(wpDataJson);
                 WonderPush.logDebug("Received broadcasted intent WonderPush data: " + wpDataJson);
-                if (Type.DATA.equals(Type.fromString(wpData.optString("type", "")))
-                    && wpData.optJSONObject("inApp") != null) {
-                    // This is an in-app message
-                    final Campaign.ThickContent campaign = Campaign.ThickContent.fromJSON(wpData.optJSONObject("inApp"));
-                    if (null != campaign) {
-                        InAppMessaging inAppMessaging = InAppMessaging.getInstance();
-                        CampaignCacheClient campaignCacheClient = inAppMessaging != null ? inAppMessaging.getCampaignCacheClient() : null;
-                        if (campaignCacheClient != null) {
-                            campaignCacheClient.get()
-                                    .defaultIfEmpty(FetchEligibleCampaignsResponse.buildFromJSON(new JSONObject()))
-                                    .doOnSuccess(response -> response.addMessage(campaign))
-                                    .doOnSuccess(response -> campaignCacheClient.put(response)
-                                            .doOnError(e -> Log.w(WonderPush.TAG, "Cache write error: " + e.getMessage())).subscribe())
-                                    .subscribe();
-                        }
-                    }
-                    return null;
-                }
                 return fromGCMNotificationJSONObject(wpData, extras);
             } catch (JSONException e) {
                 WonderPush.logDebug("data is not a well-formed JSON object", e);

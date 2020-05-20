@@ -321,13 +321,4 @@ public class InAppMessaging {
           inAppMessage.getDelay());
     }
   }
-
-  /**
-   * Internal method.
-   * @hide
-   */
-  // FIXME: this method is here for internal use only and will be deprecated as soon as we stop using background push to send in-app messages.
-  public CampaignCacheClient getCampaignCacheClient() {
-    return campaignCacheClient;
-  }
 }
