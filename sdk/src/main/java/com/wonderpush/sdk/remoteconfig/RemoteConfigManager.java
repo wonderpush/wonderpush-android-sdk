@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import com.wonderpush.sdk.SimpleVersion;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -49,6 +50,7 @@ public class RemoteConfigManager {
     }
 
     public void declareVersion(@Nonnull String version) {
+        if (!new SimpleVersion(version).isValid()) return;
         remoteConfigStorage.declareVersion(version, (Throwable declareVersionError) -> {
             if (declareVersionError != null) {
                 Log.e(TAG, "Error declaring version to storage", declareVersionError);

@@ -1,6 +1,5 @@
 package com.wonderpush.sdk.remoteconfig;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,12 +7,13 @@ import org.junit.Test;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static org.junit.Assert.*;
 
 public class RemoteConfigTest {
@@ -317,6 +317,20 @@ public class RemoteConfigTest {
         });
 
         future.get();
+    }
+
+    /**
+     * Ensure we don't store invalid versions
+     */
+    @Test
+    public void testInvalidVersion() {
+        manager.declareVersion("toto");
+        AtomicBoolean called = new AtomicBoolean(false);
+        storage.loadRemoteConfigAndHighestDeclaredVersion((RemoteConfig config, String highestVersion, Throwable e) -> {
+            called.set(true);
+            assertNull(highestVersion);
+        });
+        assertTrue(called.get());
     }
 
     /**
