@@ -6,4 +6,5 @@ public class Constants {
     public static final String INTENT_REMOTE_CONFIG_UPDATED = "INTENT_REMOTE_CONFIG_UPDATED";
     public static final String EXTRA_REMOTE_CONFIG = "EXTRA_REMOTE_CONFIG";
     public static final String REMOTE_CONFIG_BASE_URL = "https://cdn.by.wonderpush.com/config/clientids/";
+    public static final String REMOTE_CONFIG_SUFFIX = "-Android";
 }
