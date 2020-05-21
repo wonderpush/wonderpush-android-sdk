@@ -15,6 +15,7 @@ public class SimpleVersionTest {
 
         Assert.assertTrue(new SimpleVersion("0").isValid());
         Assert.assertTrue(new SimpleVersion("1").isValid());
+        Assert.assertTrue(new SimpleVersion("1589987090471").isValid());
         Assert.assertTrue(new SimpleVersion("1234").isValid());
         Assert.assertTrue(new SimpleVersion("1.0").isValid());
         Assert.assertTrue(new SimpleVersion("0.1.0.0.0.0.0.1").isValid());
@@ -32,6 +33,7 @@ public class SimpleVersionTest {
         Assert.assertEquals(new SimpleVersion("2.0").compareTo(new SimpleVersion("1.0")), 1);
         Assert.assertEquals(new SimpleVersion("2.0.2").compareTo(new SimpleVersion("2.0.1")), 1);
         Assert.assertEquals(new SimpleVersion("2.0.1").compareTo(new SimpleVersion("2.0")), 1);
+        Assert.assertEquals(new SimpleVersion("1589987090471").compareTo(new SimpleVersion("1589987090470")), 1);
 
         // Increase
         Assert.assertEquals(new SimpleVersion("0.1").compareTo(new SimpleVersion("1.0")), -1);

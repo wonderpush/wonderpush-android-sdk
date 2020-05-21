@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class SimpleVersion implements Comparable<SimpleVersion> {
-    private int[] tokens;
+    private long[] tokens;
     private boolean valid = false;
     public SimpleVersion(String versionString) {
-        ArrayList<Integer> tokens = new ArrayList<>();
+        ArrayList<Long> tokens = new ArrayList<>();
         StringBuffer currentIntegerString = null;
         for (int i = 0; versionString != null && i < versionString.length(); i++) {
             char c = versionString.charAt(i);
@@ -16,7 +16,7 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
 
             if (!isNumeric(c)) {
                 if (currentIntegerString == null) return; // invalid
-                tokens.add(Integer.parseInt(currentIntegerString.toString()));
+                tokens.add(Long.parseLong(currentIntegerString.toString()));
                 currentIntegerString = null;
                 continue;
             }
@@ -25,12 +25,12 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
             currentIntegerString.append(c);
         }
         if (currentIntegerString == null) return; // invalid
-        tokens.add(Integer.parseInt(currentIntegerString.toString()));
+        tokens.add(Long.parseLong(currentIntegerString.toString()));
 
         valid = true;
         // remove trailing zeros
         while (tokens.size() > 0 && tokens.get(tokens.size() - 1) == 0) tokens.remove(tokens.size() - 1);
-        this.tokens = new int[tokens.size()];
+        this.tokens = new long[tokens.size()];
         for (int i = 0; i < tokens.size(); i++) this.tokens[i] = tokens.get(i);
     }
 
@@ -47,7 +47,7 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
         StringBuffer result = new StringBuffer();
         for (int i = 0; i < this.tokens.length; i++) {
             if (i > 0) result.append('.');
-            result.append(Integer.toString(this.tokens[i]));
+            result.append(Long.toString(this.tokens[i]));
         }
         return result.toString();
     }
@@ -62,8 +62,8 @@ public class SimpleVersion implements Comparable<SimpleVersion> {
         }
 
         for (int i = 0; i < Math.max(this.tokens.length, other.tokens.length); i++) {
-            int thisValue = i < this.tokens.length ? this.tokens[i] : 0;
-            int otherValue = i < other.tokens.length ? other.tokens[i] : 0;
+            long thisValue = i < this.tokens.length ? this.tokens[i] : 0;
+            long otherValue = i < other.tokens.length ? other.tokens[i] : 0;
             if (thisValue < otherValue) return -1;
             else if (otherValue < thisValue) return 1;
         }

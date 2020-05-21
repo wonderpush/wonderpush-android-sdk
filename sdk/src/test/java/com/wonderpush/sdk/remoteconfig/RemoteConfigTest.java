@@ -499,7 +499,7 @@ public class RemoteConfigTest {
         assertNotNull(configJSON);
         Date fetchDate = DateHelper.now();
         assertTrue(configJSON.has("version"));
-        String version = configJSON.optString("version", Integer.toString(configJSON.optInt("version", 0))  );
+        String version = configJSON.optString("version", Long.toString(configJSON.optLong("version", 0))  );
         long maxAge = configJSON.optLong("maxAge");
         assertEquals(0, new SimpleVersion(version).compareTo(new SimpleVersion("1.0")));
         assertEquals(maxAge, 123456);
