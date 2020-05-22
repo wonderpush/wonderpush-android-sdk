@@ -72,6 +72,15 @@ public class RemoteConfigManager {
                     long configAge = now.getTime() - config.getFetchDate().getTime();
                     if (configAge < minimumConfigAge) return;
 
+                    // If we're declaring the same version as the current config, update the current config's fetchDate
+                    if (RemoteConfig.compareVersions(config.getVersion(), version) == 0) {
+                        RemoteConfig configWithUpdatedDate = RemoteConfig.with(config.getData(), config.getVersion(), now, config.getMaxAge());
+                        remoteConfigStorage.storeRemoteConfig(configWithUpdatedDate, (Throwable storageError) -> {
+                            if (storageError == null) storedConfig = configWithUpdatedDate;
+                        });
+                        return;
+                    }
+
                     // Only fetch a higher version
                     if (RemoteConfig.compareVersions(config.getVersion(), highestVersion) >= 0) return;
                 }

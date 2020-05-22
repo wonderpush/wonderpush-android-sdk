@@ -56,7 +56,7 @@ public class RemoteConfigTest {
         @Override
         public void storeRemoteConfig(RemoteConfig config, @Nullable ErrorHandler handler) {
             storedConfig = config;
-            handler.handle(error);
+            if (handler != null) handler.handle(error);
         }
 
         @Override
@@ -474,6 +474,88 @@ public class RemoteConfigTest {
                     // Config fetch date should have been updated even though we've fetched the same version again
                     assertNotNull(conf1.getFetchDate());
                     assertTrue(conf1.getFetchDate().getTime() - fetchDate.getTime() > timeToWait);
+
+                    // Finish test
+                    future.complete(null);
+                });
+            }, timeToWait);
+        });
+
+        future.get();
+    }
+
+    /**
+     * When a version is declared, that is the same as the current stored config, its fetch date should be updated.
+     */
+    @Test
+    public void testUpdateConfigAge2() throws ExecutionException, InterruptedException {
+        manager.minimumFetchInterval = 0;
+        manager.minimumConfigAge = 0;
+        manager.maximumConfigAge = 10000;
+
+        fetcher.fetchedConfig = RemoteConfig.with(new JSONObject(), "1");
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        long timeToWait = 500;
+        manager.read((RemoteConfig conf, Throwable error) -> {
+            Date fetchDate = conf.getFetchDate();
+
+            // Config should be newer than 100ms
+            assertNotNull(fetchDate);
+            assertTrue(DateHelper.now().getTime() - fetchDate.getTime() < 100);
+
+            // Wait 500ms
+            setTimeout(() -> {
+                fetcher.lastRequestedDate = null;
+                manager.declareVersion("1");
+                assertNull(fetcher.lastRequestedDate);
+                manager.read((RemoteConfig conf1, Throwable error1) -> {
+
+                    assertNull(fetcher.lastRequestedDate);
+                    // Config fetch date should have been updated even though we haven't fetched any new config
+                    assertNotNull(conf1.getFetchDate());
+                    long toto = conf1.getFetchDate().getTime() - fetchDate.getTime();
+                    assertTrue(conf1.getFetchDate().getTime() - fetchDate.getTime() > timeToWait);
+
+                    // Finish test
+                    future.complete(null);
+                });
+            }, timeToWait);
+        });
+
+        future.get();
+    }
+
+    /**
+     * When a version is declared, that is earlier as the stored config's version, its fetch date should NOT be updated.
+     * This is the opposite of testUpdateConfigAge2.
+     */
+    @Test(timeout = 1000)
+    public void testUpdateConfigAge3() throws ExecutionException, InterruptedException {
+        manager.minimumFetchInterval = 0;
+        manager.minimumConfigAge = 0;
+        manager.maximumConfigAge = 10000;
+
+        fetcher.fetchedConfig = RemoteConfig.with(new JSONObject(), "1");
+        Date fetchDate = fetcher.fetchedConfig.getFetchDate();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        long timeToWait = 500;
+        manager.read((RemoteConfig conf, Throwable error) -> {
+
+            // Config should be newer than 100ms
+            assertNotNull(fetchDate);
+            assertTrue(DateHelper.now().getTime() - fetchDate.getTime() < 100);
+
+            // Wait 500ms
+            setTimeout(() -> {
+                fetcher.fetchedConfig = RemoteConfig.with(new JSONObject(), "1", DateHelper.now());
+                manager.declareVersion("0.5");
+                manager.read((RemoteConfig conf1, Throwable error1) -> {
+
+                    // Config fetch date should have been updated even though we haven't fetched any new config
+                    assertNotNull(conf1.getFetchDate());
+                    assertEquals(conf1.getFetchDate(), fetchDate);
 
                     // Finish test
                     future.complete(null);
