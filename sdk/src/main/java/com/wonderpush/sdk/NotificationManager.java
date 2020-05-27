@@ -942,6 +942,8 @@ public class NotificationManager {
                 case REMOVE_TAG:
                     handleRemoveTagAction(action);
                     break;
+                case SUBSCRIBE_TO_NOTIFICATIONS:
+                    handleSubscribeToNotifications(action);
                 case REMOVE_ALL_TAGS:
                     handleRemoveAllTagsAction(action);
                     break;
@@ -1183,6 +1185,10 @@ public class NotificationManager {
             }
         }
         WonderPush.addTag(tags.toArray(new String[0]));
+    }
+
+    private static void handleSubscribeToNotifications(ActionModel action) {
+        WonderPush.subscribeToNotifications();
     }
 
     private static void handleRemoveTagAction(ActionModel action) {

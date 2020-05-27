@@ -39,6 +39,7 @@ public class ActionModel implements Cloneable {
         RATING("rating"),
         MAP_OPEN("mapOpen"),
         CLOSE_NOTIFICATIONS("closeNotifications"),
+        SUBSCRIBE_TO_NOTIFICATIONS("subscribeToNotifications"),
         _DUMP_STATE("_dumpState"),
         _OVERRIDE_SET_LOGGING("_overrideSetLogging"),
         _OVERRIDE_NOTIFICATION_RECEIPT("_overrideNotificationReceipt"),
