@@ -487,7 +487,7 @@ public class RemoteConfigTest {
     /**
      * When a version is declared, that is the same as the current stored config, its fetch date should be updated.
      */
-    @Test
+    @Test(timeout = 1000)
     public void testUpdateConfigAge2() throws ExecutionException, InterruptedException {
         manager.minimumFetchInterval = 0;
         manager.minimumConfigAge = 0;
