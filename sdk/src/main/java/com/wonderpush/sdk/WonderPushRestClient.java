@@ -365,7 +365,7 @@ class WonderPushRestClient {
                     }
 
                     private void declareConfigVersion(JSONObject data) {
-                        if (!data.has("_configVersion")) return;
+                        if (data == null || !data.has("_configVersion")) return;
                         String version = data.optString("_configVersion", Integer.toString(data.optInt("_configVersion", 0)));
                         if (version != null && WonderPush.remoteConfigManager != null) {
                             WonderPush.remoteConfigManager.declareVersion(version);
