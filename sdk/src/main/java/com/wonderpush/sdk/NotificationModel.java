@@ -144,6 +144,7 @@ abstract class NotificationModel implements Parcelable {
     public List<ActionModel> receiveActions = new ArrayList<>();
     public List<ActionModel> actions = new ArrayList<>();
     private boolean receipt;
+    private boolean receiptUsingMeasurements;
 
     // Common in-app message data
     private final AtomicReference<ButtonModel> choice = new AtomicReference<>();
@@ -264,6 +265,7 @@ abstract class NotificationModel implements Parcelable {
             rtn.setViewId(JSONUtil.getString(wpData, "v"));
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", true));
+            rtn.setReceiptUsingMeasurements(wpData.optBoolean("receiptUsingMeasurements", false));
 
             // Read receive actions
             JSONArray receiveActions = wpData.optJSONArray("receiveActions");
@@ -403,6 +405,14 @@ abstract class NotificationModel implements Parcelable {
 
     public void setReceipt(boolean receipt) {
         this.receipt = receipt;
+    }
+
+    public boolean getReceiptUsingMeasurements() {
+        return receiptUsingMeasurements;
+    }
+
+    public void setReceiptUsingMeasurements(boolean receiptUsingMeasurements) {
+        this.receiptUsingMeasurements = receiptUsingMeasurements;
     }
 
     public String getTitle() {

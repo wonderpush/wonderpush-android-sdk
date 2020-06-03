@@ -59,13 +59,14 @@ public class NotificationManager {
             trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", TimeSync.getTime());
             boolean notifReceipt = notif.getReceipt();
+            boolean receiptUsingMeasurements = notif.getReceiptUsingMeasurements();
             Boolean overrideNotificationReceipt = WonderPushConfiguration.getOverrideNotificationReceipt();
             if (overrideNotificationReceipt != null) {
                 notifReceipt = overrideNotificationReceipt;
             }
             if (notifReceipt) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
-            } else {
+            } else if (receiptUsingMeasurements) {
                 WonderPush.trackInternalEventWithMeasurementsApi("@NOTIFICATION_RECEIVED", trackData);
             }
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
