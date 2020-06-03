@@ -89,7 +89,7 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
             //}
             if (token != null) {
                 WonderPush.logDebug("Storing new token");
-                storeRegistrationId(context, WonderPush.getSenderId(), token);
+                storeRegistrationId(context, "HCM", WonderPush.getSenderId(), token);
             } else {
                 // We cannot trust this token to be for our sender id, refresh ours
                 // Note: we have taken measures to ensure we won't loop if this call triggers new calls to onNewToken()
@@ -252,8 +252,7 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
                         WonderPush.logDebug("HmsInstanceId.getToken() = null");
                     } else {
                         WonderPush.logDebug("HmsInstanceId.getToken() = " + pushToken);
-                        // TODO Identify HCM
-                        storeRegistrationId(WonderPush.getApplicationContext(), WonderPush.getHCMAppId(), pushToken);
+                        storeRegistrationId(WonderPush.getApplicationContext(), "HCM", WonderPush.getHCMAppId(), pushToken);
                     }
                 } catch (Exception ex) {
                     Log.e(WonderPush.TAG, "Could not get HMS InstanceId", ex);
@@ -263,8 +262,8 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
     }
 
     // FIXME Copied from WonderPushHmsMessageService, refactor
-    static void storeRegistrationId(Context context, String senderIds, String registrationId) {
-        WonderPush.logDebug("storeRegistrationId(" + senderIds + ", " + registrationId + ")");
+    static void storeRegistrationId(Context context, String service, String senderIds, String registrationId) {
+        WonderPush.logDebug("storeRegistrationId(" + service + ", " + senderIds + ", " + registrationId + ")");
         WonderPushConfiguration.initialize(context);
         String oldRegistrationId = WonderPushConfiguration.getGCMRegistrationId();
         try {
@@ -275,6 +274,9 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
                 // New sender id
                 || senderIds == null && WonderPushConfiguration.getGCMRegistrationSenderIds() != null
                 || senderIds != null && !senderIds.equals(WonderPushConfiguration.getGCMRegistrationSenderIds())
+                // New service
+                || service == null && WonderPushConfiguration.getGCMRegistrationService() != null
+                || service != null && !service.equals(WonderPushConfiguration.getGCMRegistrationService())
                 // Last associated with an other userId?
                 || WonderPushConfiguration.getUserId() == null && WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId() != null
                 || WonderPushConfiguration.getUserId() != null && !WonderPushConfiguration.getUserId().equals(WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId())
@@ -297,6 +299,7 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
                     }
                     pushToken.put("senderIds", senderIdsArray);
                 }
+                pushToken.put("service", service);
                 properties.put("pushToken", pushToken);
 
                 WonderPush.ensureInitialized(context);
@@ -313,6 +316,7 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
 
         WonderPushConfiguration.setGCMRegistrationId(registrationId);
         WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
+        WonderPushConfiguration.setGCMRegistrationService(service);
 
         if (oldRegistrationId == null && registrationId != null
                 || oldRegistrationId != null && !oldRegistrationId.equals(registrationId)) {

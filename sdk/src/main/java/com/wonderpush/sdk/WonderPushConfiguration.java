@@ -51,6 +51,7 @@ class WonderPushConfiguration {
     private static final String CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME = "__wonderpush_gcm_registration_id_associated_to_user_id";
     private static final String CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME = "__wonderpush_gcm_registration_id_access_token";
     private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
+    private static final String GCM_REGISTRATION_SERVICE_PREF_NAME = "__wonderpush_gcm_registration_service";
 
     private static final String LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME = "__last_received_notification_info_json";
     private static final String LAST_OPENED_NOTIFICATION_INFO_JSON_PREF_NAME = "__last_opened_notification_info_json";
@@ -875,6 +876,23 @@ class WonderPushConfiguration {
      */
     static void setGCMRegistrationSenderIds(String senderIds) {
         putString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME, senderIds);
+    }
+
+    /**
+     * Get the push service stored in the user's shared preferences.
+     */
+    static String getGCMRegistrationService() {
+        return getString(GCM_REGISTRATION_SERVICE_PREF_NAME);
+    }
+
+    /**
+     * Set the push service stored in the user's shared preferences.
+     *
+     * @param service
+     *            The push servuce to be stored
+     */
+    static void setGCMRegistrationService(String service) {
+        putString(GCM_REGISTRATION_SERVICE_PREF_NAME, service);
     }
 
     /**
