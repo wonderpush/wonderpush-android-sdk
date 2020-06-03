@@ -394,8 +394,8 @@ public class NotificationManager {
             }
             alert.setTitle(ai != null ? pm.getApplicationLabel(ai) : null);
         }
-        int defaultIconResource = WonderPushFirebaseMessagingService.getNotificationIcon(context);
-        int defaultColor = WonderPushFirebaseMessagingService.getNotificationColor(context);
+        int defaultIconResource = WonderPushFirebaseMessagingService.getNotificationIcon(context); // FIXME Handle reading this from HMS
+        int defaultColor = WonderPushFirebaseMessagingService.getNotificationColor(context); // FIXME Handle reading this from HMS
 
         WonderPushChannel channel = WonderPushUserPreferences.channelToUseForNotification(alert.getChannel());
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;

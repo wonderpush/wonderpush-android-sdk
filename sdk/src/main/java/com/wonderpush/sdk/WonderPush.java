@@ -71,6 +71,7 @@ public class WonderPush {
 
     static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
     private static String sSenderId;
+    private static String sHCMAppId;
     private static FirebaseApp sFirebaseApp;
     private static InAppMessaging sInAppMessaging;
     private static InAppMessagingDisplay sInAppMessagingDisplay;
@@ -1396,6 +1397,14 @@ public class WonderPush {
                         logDebug("Using senderId from Firebase: " + sSenderId);
                     }
                 }
+                if (sHCMAppId == null) {
+                    sHCMAppId = WonderPushHuaweiMessagingService.getDefaultAppId();
+                    if (sHCMAppId == null) {
+                        Log.w(TAG, "No HCM App ID " + sHCMAppId + ". Check your HMS integration. Please refer to the documentation.");
+                    } else {
+                        logDebug("Using App Id from HMS: " + sHCMAppId);
+                    }
+                }
 
                 WonderPush.logDebug("Initializing FirebaseApp…");
                 try {
@@ -1527,7 +1536,9 @@ public class WonderPush {
             WonderPushConfiguration.setGCMRegistrationId(null);
             WonderPushFirebaseMessagingService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
         } else {
-            WonderPushFirebaseMessagingService.registerForPushNotification(WonderPush.getApplicationContext());
+            // FIXME Needs logic to use FCM and fallback to HCM
+            //WonderPushFirebaseMessagingService.registerForPushNotification(WonderPush.getApplicationContext());
+            WonderPushHuaweiMessagingService.registerForPushNotification(WonderPush.getApplicationContext());
         }
 
         // Refresh preferences
@@ -1591,6 +1602,7 @@ public class WonderPush {
         Boolean logging = null;
         Boolean requiresUserConsent = null;
         String senderId = null;
+        String hcmAppId = null;
         String integrator = null;
         Boolean geolocation = null;
 
@@ -1657,6 +1669,9 @@ public class WonderPush {
                                     case "WONDERPUSH_SENDER_ID":
                                         senderId = strValue;
                                         break;
+                                    case "WONDERPUSH_HCM_APP_ID":
+                                        hcmAppId = strValue;
+                                        break;
                                     case "WONDERPUSH_INTEGRATOR":
                                         integrator = strValue;
                                         break;
@@ -1718,6 +1733,11 @@ public class WonderPush {
                 if (!TextUtils.isEmpty(resString)) {
                     senderId = resString;
                 }
+                res = resources.getIdentifier("wonderpush_hcmAppId", "string", context.getPackageName());
+                resString = res == 0 ? null : resources.getString(res);
+                if (!TextUtils.isEmpty(resString)) {
+                    hcmAppId = resString;
+                }
                 res = resources.getIdentifier("wonderpush_integrator", "string", context.getPackageName());
                 resString = res == 0 ? null : resources.getString(res);
                 if (!TextUtils.isEmpty(resString)) {
@@ -1757,6 +1777,10 @@ public class WonderPush {
             resValue = metaData.get("com.wonderpush.sdk.senderId");
             if (resValue instanceof String && ((String)resValue).length() > 0) {
                 senderId = (String) resValue;
+            }
+            resValue = metaData.get("com.wonderpush.sdk.hcmAppId");
+            if (resValue instanceof String && ((String)resValue).length() > 0) {
+                hcmAppId = (String) resValue;
             }
             resValue = metaData.get("com.wonderpush.sdk.integrator");
             if (resValue instanceof String && ((String)resValue).length() > 0) {
@@ -1809,6 +1833,10 @@ public class WonderPush {
         if (senderId != null) {
             logDebug("Applying configuration: senderId: " + senderId);
             sSenderId = senderId;
+        }
+        if (hcmAppId != null) {
+            logDebug("Applying configuration: hcmAppId: " + hcmAppId);
+            sHCMAppId = hcmAppId;
         }
         if (integrator != null) {
             logDebug("Applying configuration: integrator: " + integrator);
@@ -2250,6 +2278,10 @@ public class WonderPush {
 
     static String getSenderId() {
         return sSenderId;
+    }
+
+    static String getHCMAppId() {
+        return sHCMAppId;
     }
 
     static FirebaseApp getFirebaseApp() {
