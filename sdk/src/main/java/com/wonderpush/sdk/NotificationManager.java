@@ -64,10 +64,10 @@ public class NotificationManager {
             if (overrideNotificationReceipt != null) {
                 notifReceipt = overrideNotificationReceipt;
             }
-            if (notifReceipt) {
-                WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
-            } else if (receiptUsingMeasurements) {
+            if (receiptUsingMeasurements) {
                 WonderPush.trackInternalEventWithMeasurementsApi("@NOTIFICATION_RECEIVED", trackData);
+            } else if (notifReceipt) {
+                WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
             }
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
         } catch (JSONException ex) {
