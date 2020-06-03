@@ -264,7 +264,7 @@ abstract class NotificationModel implements Parcelable {
             rtn.setNotificationId(JSONUtil.getString(wpData, "n"));
             rtn.setViewId(JSONUtil.getString(wpData, "v"));
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
-            rtn.setReceipt(wpData.optBoolean("receipt", true));
+            rtn.setReceipt(wpData.optBoolean("receipt", false));
             rtn.setReceiptUsingMeasurements(wpData.optBoolean("receiptUsingMeasurements", false));
 
             // Read receive actions
