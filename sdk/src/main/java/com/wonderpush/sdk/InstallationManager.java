@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-class InstallationManager {
+public class InstallationManager {
 
     static final String TAG = WonderPush.TAG;
 
@@ -242,7 +242,7 @@ class InstallationManager {
         return getTags().contains(tag);
     }
 
-    static void updateInstallation(JSONObject properties, boolean overwrite) {
+    public static void updateInstallation(JSONObject properties, boolean overwrite) {
         if (!WonderPush.hasUserConsent()) {
             WonderPush.logError("Not tracking updating installation without user consent. properties=" + properties + ", overwrite=" + overwrite);
             return;

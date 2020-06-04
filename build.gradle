@@ -21,5 +21,12 @@ allprojects {
 }
 
 task clean(type: Delete) {
-    delete rootProject.buildDir
+    subprojects.each {
+        it.afterEvaluate {
+            def cleanTask = it.tasks.findByName('clean')
+            if (cleanTask) {
+                dependsOn(cleanTask)
+            }
+        }
+    }
 }

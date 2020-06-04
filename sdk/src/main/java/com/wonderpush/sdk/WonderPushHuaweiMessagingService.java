@@ -89,7 +89,7 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
             //}
             if (token != null) {
                 WonderPush.logDebug("Storing new token");
-                storeRegistrationId(context, "HCM", WonderPush.getSenderId(), token);
+                storeRegistrationId(context, "HCM", WonderPush.getHCMAppId(), token);
             } else {
                 // We cannot trust this token to be for our sender id, refresh ours
                 // Note: we have taken measures to ensure we won't loop if this call triggers new calls to onNewToken()
@@ -141,7 +141,7 @@ public class WonderPushHuaweiMessagingService extends HmsMessageService {
             try {
                 String wpDataJson = message.getDataOfMap().get(WONDERPUSH_NOTIFICATION_EXTRA_KEY);
                 JSONObject wpData = new JSONObject(wpDataJson);
-                notif = NotificationModel.fromGCMNotificationJSONObject(wpData, null); // FIXME Mentions GCM, move logic?
+                notif = NotificationModel.fromNotificationJSONObject(wpData);
             } catch (NotificationModel.NotTargetedForThisInstallationException ex) {
                 WonderPush.logDebug(ex.getMessage());
                 return true;

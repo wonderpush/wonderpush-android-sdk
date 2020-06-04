@@ -15,12 +15,6 @@
             android:initOrder="90" />
 
         <service
-            android:name="com.wonderpush.sdk.WonderPushFirebaseMessagingService">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
-        <service
             android:name="com.wonderpush.sdk.WonderPushHuaweiMessagingService"
             android:exported="false">
             <intent-filter>
