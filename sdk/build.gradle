@@ -30,7 +30,6 @@ android {
 
 dependencies {
     implementation 'com.loopj.android:android-async-http:1.4.9'
-    implementation 'com.huawei.hms:push:4.0.3.301'
     // Use the full support-v4 instead of the module support-compat
     // because com.google.firebase:firebase-messaging (indirectly) depends on it
     // and all modules must use the same version.

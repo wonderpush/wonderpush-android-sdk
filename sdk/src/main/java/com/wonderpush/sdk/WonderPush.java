@@ -6,8 +6,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.Resources;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -67,7 +65,6 @@ public class WonderPush {
     protected static boolean SHOW_DEBUG = false;
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
-    private static String sHCMAppId;
     private static InAppMessaging sInAppMessaging;
     private static InAppMessagingDisplay sInAppMessagingDisplay;
     private static Context sApplicationContext;
@@ -324,22 +321,22 @@ public class WonderPush {
     protected static final String INTENT_RESOURCE_PRELOADED_EXTRA_PATH = "wonderpushResourcePreloadedPath";
 
     /**
-     * Intent scheme for FCM notification data when the user clicks the notification.
+     * Intent scheme for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_SCHEME = "wonderpush";
 
     /**
-     * Intent authority for FCM notification data when the user clicks the notification.
+     * Intent authority for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_AUTHORITY = "notification";
 
     /**
-     * Intent data type for FCM notification data when the user clicks the notification.
+     * Intent data type for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_TYPE = "application/vnd.wonderpush.notification";
 
     /**
-     * Intent query parameter key for FCM notification data when the user clicks the notification.
+     * Intent query parameter key for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER = "body";
 
@@ -1399,14 +1396,6 @@ public class WonderPush {
                 sClientId = clientId;
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
-                if (sHCMAppId == null) {
-                    sHCMAppId = WonderPushHuaweiMessagingService.getDefaultAppId();
-                    if (sHCMAppId == null) {
-                        Log.w(TAG, "No HCM App ID " + sHCMAppId + ". Check your HMS integration. Please refer to the documentation.");
-                    } else {
-                        logDebug("Using App Id from HMS: " + sHCMAppId);
-                    }
-                }
 
                 PushServiceManager.initialize(getApplicationContext());
                 WonderPushConfiguration.initialize(getApplicationContext());
@@ -1584,7 +1573,6 @@ public class WonderPush {
         String clientSecret = WonderPushSettings.getString("WONDERPUSH_CLIENT_SECRET", "wonderpush_clientSecret", "com.wonderpush.sdk.clientSecret");
         Boolean logging = WonderPushSettings.getBoolean("WONDERPUSH_LOGGING", "wonderpush_logging", "com.wonderpush.sdk.logging");
         Boolean requiresUserConsent = WonderPushSettings.getBoolean("WONDERPUSH_REQUIRES_USER_CONSENT", "wonderpush_requiresUserConsent", "com.wonderpush.sdk.requiresUserConsent");
-        String hcmAppId = WonderPushSettings.getString("WONDERPUSH_HCM_APP_ID", "wonderpush_hcmAppId", "com.wonderpush.sdk.hcmAppId");
         String integrator = WonderPushSettings.getString("WONDERPUSH_INTEGRATOR", "wonderpush_integrator", "com.wonderpush.sdk.integrator");
         Boolean geolocation = WonderPushSettings.getBoolean("WONDERPUSH_GEOLOCATION", "wonderpush_geolocation", "com.wonderpush.sdk.geolocation");
 
@@ -1605,10 +1593,6 @@ public class WonderPush {
         if (requiresUserConsent != null) {
             logDebug("Applying configuration: requiresUserConsent: " + requiresUserConsent);
             WonderPush.setRequiresUserConsent(requiresUserConsent);
-        }
-        if (hcmAppId != null) {
-            logDebug("Applying configuration: hcmAppId: " + hcmAppId);
-            sHCMAppId = hcmAppId;
         }
         if (integrator != null) {
             logDebug("Applying configuration: integrator: " + integrator);
@@ -2049,10 +2033,6 @@ public class WonderPush {
         if (null == sApplicationContext)
             Log.e(TAG, "Application context is null, did you call WonderPush.initialize()?");
         return sApplicationContext;
-    }
-
-    static String getHCMAppId() {
-        return sHCMAppId;
     }
 
     /**
