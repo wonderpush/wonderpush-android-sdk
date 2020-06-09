@@ -2,9 +2,8 @@ package com.wonderpush.sdk.push.fcm;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -123,7 +122,7 @@ public class FCMPushService implements PushService {
             Bundle metaData = sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
             int resId = metaData.getInt("com.google.firebase.messaging.default_notification_color");
             if (resId != 0) {
-                color = ContextCompat.getColor(sContext, resId);
+                color = contextCompatGetColor(sContext, resId);
             }
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while getting notification color", e);
@@ -131,12 +130,17 @@ public class FCMPushService implements PushService {
         return color;
     }
 
+    @SuppressWarnings("deprecation")
+    public static int contextCompatGetColor(Context context, int id) {
+        return Build.VERSION.SDK_INT >= 23 ? context.getColor(id) : context.getResources().getColor(id);
+    }
+
     public static void fetchInstanceId() {
         if (WonderPush.getLogging()) Log.d(TAG, "FirebaseInstanceId.getInstanceId() called…");
         FirebaseInstanceId.getInstance(getFirebaseApp()).getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
                     @Override
-                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                    public void onComplete(Task<InstanceIdResult> task) {
                         if (!task.isSuccessful()) {
                             Log.e(TAG, "Could not get Firebase InstanceId", task.getException());
                             return;
