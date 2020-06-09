@@ -47,6 +47,19 @@ public class FCMPushService implements PushService {
     public void initialize(Context context) {
         sContext = context;
         if (WonderPush.getLogging()) Log.d(TAG, "Initializing FirebaseApp…");
+
+        sSenderId = WonderPushSettings.getString("WONDERPUSH_SENDER_ID", "wonderpush_senderId", "com.wonderpush.sdk.senderId");
+        if (sSenderId != null) {
+            if (WonderPush.getLogging()) Log.d(TAG, "Applying configuration: senderId: " + sSenderId);
+        } else {
+            sSenderId = getDefaultSenderId();
+            if (WONDERPUSH_DEFAULT_SENDER_ID.equals(sSenderId)) {
+                Log.w(TAG, "Using WonderPush own Firebase FCM Sender ID " + sSenderId + ". Your push tokens will not be portable. Please refer to the documentation.");
+            } else {
+                if (WonderPush.getLogging()) Log.d(TAG, "Using senderId from Firebase: " + sSenderId);
+            }
+        }
+
         try {
             sFirebaseApp = FirebaseApp.initializeApp(
                     sContext,
@@ -61,18 +74,6 @@ public class FCMPushService implements PushService {
         } catch (IllegalStateException alreadyInitialized) {
             if (WonderPush.getLogging()) Log.d(TAG, "FirebaseApp already initialized", alreadyInitialized);
             sFirebaseApp = FirebaseApp.getInstance(FIREBASE_APP_NAME);
-        }
-
-        sSenderId = WonderPushSettings.getString("WONDERPUSH_SENDER_ID", "wonderpush_senderId", "com.wonderpush.sdk.senderId");
-        if (sSenderId != null) {
-            if (WonderPush.getLogging()) Log.d(TAG, "Applying configuration: senderId: " + sSenderId);
-        } else {
-            sSenderId = getDefaultSenderId();
-            if (WONDERPUSH_DEFAULT_SENDER_ID.equals(sSenderId)) {
-                Log.w(TAG, "Using WonderPush own Firebase FCM Sender ID " + sSenderId + ". Your push tokens will not be portable. Please refer to the documentation.");
-            } else {
-                if (WonderPush.getLogging()) Log.d(TAG, "Using senderId from Firebase: " + sSenderId);
-            }
         }
     }
 
