@@ -26,6 +26,10 @@ public class PushServiceManager {
 
     public static void initialize(Context context) {
         sContext = context.getApplicationContext();
+        for (PushService pushService : DiscoveryService.instantiatePushServices(context)) {
+            register(pushService);
+        }
+        initializePushServices();
     }
 
     public static void register(PushService service) {
@@ -33,7 +37,7 @@ public class PushServiceManager {
         sKnownPushServices.put(service.getIdentifier(), service);
     }
 
-    public static void initializePushServices() {
+    private static void initializePushServices() {
         Log.d(TAG, "Known push services:");
         for (PushService pushService : sKnownPushServices.values()) {
             Log.d(TAG, "- " + pushService.getIdentifier() + ": " + pushService.getName() + " v" + pushService.getVersion());
@@ -46,7 +50,10 @@ public class PushServiceManager {
     }
 
     public static void refreshSubscription() {
-        if (sUsedPushService == null) return;
+        if (sUsedPushService == null) {
+            Log.e(TAG, "Cannot refresh push subscription, no push service available");
+            return;
+        }
         sUsedPushService.execute();
     }
 

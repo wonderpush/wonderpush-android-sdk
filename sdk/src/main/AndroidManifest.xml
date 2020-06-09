@@ -34,6 +34,12 @@
             </intent-filter>
         </service>
 
+        <!-- Required for modular support of push services -->
+        <service
+            android:name="com.wonderpush.sdk.push.DiscoveryService"
+            android:exported="false">
+        </service>
+
         <provider
             android:authorities="${applicationId}.wonderpush.fileprovider"
             android:name="android.support.v4.content.FileProvider"

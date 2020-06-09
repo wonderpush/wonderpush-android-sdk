@@ -6,6 +6,14 @@
     <application>
 
         <service
+            android:name="com.wonderpush.sdk.push.DiscoveryService"
+            android:exported="false">
+            <meta-data
+                android:name="com.wonderpush.sdk.push:com.wonderpush.sdk.push.hcm.HCMPushService"
+                android:value="com.wonderpush.sdk.push.PushService" />
+        </service>
+
+        <service
             android:name="com.wonderpush.sdk.push.hcm.HuaweiMessagingService"
             android:exported="false">
             <intent-filter>
