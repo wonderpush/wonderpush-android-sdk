@@ -8,6 +8,15 @@ public class PushServiceResult {
     private String service;
     private String senderIds;
 
+    @Override
+    public String toString() {
+        return "PushServiceResult{" +
+                "service='" + service + '\'' +
+                ", senderIds='" + senderIds + '\'' +
+                ", data='" + data + '\'' +
+                '}';
+    }
+
     public String getData() {
         return data;
     }

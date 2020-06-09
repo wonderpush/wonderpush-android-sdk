@@ -38,6 +38,11 @@ public class FCMPushService implements PushService {
     }
 
     @Override
+    public String getName() {
+        return "Firebase Cloud Messaging";
+    }
+
+    @Override
     public String getVersion() {
         return BuildConfig.VERSION_NAME;
     }

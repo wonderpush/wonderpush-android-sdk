@@ -6,7 +6,7 @@ public interface PushService {
 
     String getIdentifier();
     String getVersion();
-    String toString();
+    String getName();
     void initialize(Context context);
     boolean isAvailable();
     void execute();

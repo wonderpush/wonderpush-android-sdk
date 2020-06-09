@@ -29,19 +29,20 @@ public class PushServiceManager {
     }
 
     public static void register(PushService service) {
+        Log.d(TAG, "Registering push service: " + service.getIdentifier() + ": " + service.getName() + " v" + service.getVersion());
         sKnownPushServices.put(service.getIdentifier(), service);
     }
 
     public static void initializePushServices() {
         Log.d(TAG, "Known push services:");
         for (PushService pushService : sKnownPushServices.values()) {
-            Log.d(TAG, "- " + pushService.getIdentifier() + ": " + pushService);
+            Log.d(TAG, "- " + pushService.getIdentifier() + ": " + pushService.getName() + " v" + pushService.getVersion());
             pushService.initialize(sContext);
             if (sUsedPushService == null && pushService.isAvailable()) {
                 sUsedPushService = pushService;
             }
         }
-        Log.d(TAG, "Used push service: " + (sUsedPushService == null ? "(none)" : sUsedPushService.getIdentifier() + ": " + sUsedPushService));
+        Log.d(TAG, "Used push service: " + (sUsedPushService == null ? "(none)" : sUsedPushService.getIdentifier() + ": " + sUsedPushService.getName() + " v" + sUsedPushService.getVersion()));
     }
 
     public static void refreshSubscription() {

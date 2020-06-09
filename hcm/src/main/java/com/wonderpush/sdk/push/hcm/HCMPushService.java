@@ -31,6 +31,11 @@ public class HCMPushService implements PushService {
     }
 
     @Override
+    public String getName() {
+        return "Huawei Push Kit";
+    }
+
+    @Override
     public String getVersion() {
         return BuildConfig.VERSION_NAME;
     }
