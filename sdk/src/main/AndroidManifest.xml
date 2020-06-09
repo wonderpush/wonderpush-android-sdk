@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.wonderpush.sdk">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Using these permissions ultimately is the choice of the developer, do not include them here
          or they'll get automatically merged into the final application. -->
     <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
