@@ -1,8 +1,5 @@
 apply plugin: 'com.android.library'
 
-project.group = 'com.wonderpush'
-project.archivesBaseName = 'wonderpush-android-sdk-fcm'
-
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
@@ -11,8 +8,7 @@ android {
         minSdkVersion 14
         targetSdkVersion 29
         versionCode 1
-        versionName "1.0.0"
-        buildConfigField 'String', 'WONDERPUSH_TEST', '"FOO"'
+        versionName "1.0.0-SNAPSHOT"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
@@ -45,6 +41,9 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'com.github.dcendents.android-maven'
 
+project.group = 'com.wonderpush'
+project.archivesBaseName = 'wonderpush-android-sdk-fcm'
+project.version = android.defaultConfig.versionName
 def isSnapshot = version.endsWith('-SNAPSHOT')
 
 install {
@@ -52,10 +51,10 @@ install {
         pom.project {
             packaging 'aar'
             groupId = project.group
-            artifactId = 'wonderpush-android-sdk'
+            artifactId = 'wonderpush-android-sdk-fcm'
 
-            name 'WonderPush Android SDK'
-            description 'WonderPush Android SDK'
+            name 'WonderPush Android SDK FCM'
+            description 'WonderPush Android SDK FCM'
             url 'https://github.com/wonderpush/wonderpush-android-sdk'
 
             scm {
@@ -90,7 +89,7 @@ signing {
 }
 
 task androidJavadocs(type: Javadoc) {
-    title = 'WonderPush Android SDK Reference'
+    title = 'WonderPush Android SDK FCM Reference'
     source = [] //android.sourceSets.main.java.srcDirs
     doFirst {
         classpath = project.files(
