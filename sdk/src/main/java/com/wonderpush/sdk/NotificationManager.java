@@ -937,6 +937,7 @@ public class NotificationManager {
                     break;
                 case RESYNC_INSTALLATION:
                     handleResyncInstallationAction(action);
+                    break;
                 case ADD_TAG:
                     handleAddTagAction(action);
                     break;
@@ -945,6 +946,10 @@ public class NotificationManager {
                     break;
                 case SUBSCRIBE_TO_NOTIFICATIONS:
                     handleSubscribeToNotifications(action);
+                    break;
+                case UNSUBSCRIBE_FROM_NOTIFICATIONS:
+                    handleUnsubscribeFromNotifications(action);
+                    break;
                 case REMOVE_ALL_TAGS:
                     handleRemoveAllTagsAction(action);
                     break;
@@ -1190,6 +1195,10 @@ public class NotificationManager {
 
     private static void handleSubscribeToNotifications(ActionModel action) {
         WonderPush.subscribeToNotifications();
+    }
+
+    private static void handleUnsubscribeFromNotifications(ActionModel action) {
+        WonderPush.unsubscribeFromNotifications();
     }
 
     private static void handleRemoveTagAction(ActionModel action) {
