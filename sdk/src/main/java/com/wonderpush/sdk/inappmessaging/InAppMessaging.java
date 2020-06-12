@@ -112,9 +112,6 @@ public class InAppMessaging {
 
   /**
    * Internal method.
-   * @param application
-   * @param internalEventTracker
-   * @return
    */
   @NonNull
   @Keep
