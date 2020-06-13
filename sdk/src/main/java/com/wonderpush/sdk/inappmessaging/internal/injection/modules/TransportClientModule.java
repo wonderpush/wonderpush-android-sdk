@@ -14,7 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.internal.injection.modules;
 
-import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.InternalEventTracker;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.MetricsLoggerClient;
@@ -34,7 +34,7 @@ public class TransportClientModule {
 
   @Provides
   @InAppMessagingScope
-  static MetricsLoggerClient providesApiClient(DeveloperListenerManager developerListenerManager, WonderPush.InternalEventTracker internalEventTracker, InAppMessaging.InAppMessagingConfiguration configuration) {
+  static MetricsLoggerClient providesApiClient(DeveloperListenerManager developerListenerManager, InternalEventTracker internalEventTracker, InAppMessaging.InAppMessagingConfiguration configuration) {
     return new MetricsLoggerClient(developerListenerManager, internalEventTracker, configuration);
   }
 }

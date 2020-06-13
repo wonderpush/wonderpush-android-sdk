@@ -16,7 +16,7 @@ package com.wonderpush.sdk.inappmessaging.internal.injection.components;
 
 import android.app.Application;
 
-import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.InternalEventTracker;
 import com.wonderpush.sdk.inappmessaging.internal.AnalyticsEventsManager;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.ImpressionStorageClient;
@@ -94,7 +94,7 @@ public interface UniversalComponent {
 
   Application application();
 
-  WonderPush.InternalEventTracker internalEventTracker();
+  InternalEventTracker internalEventTracker();
 
   @AppForeground
   RateLimit appForegroundRateLimit();

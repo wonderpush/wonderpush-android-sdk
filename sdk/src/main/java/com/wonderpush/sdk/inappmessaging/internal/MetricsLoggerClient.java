@@ -15,9 +15,9 @@
 package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.InternalEventTracker;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.TimeSync;
-import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
@@ -38,12 +38,12 @@ import javax.inject.Inject;
 public class MetricsLoggerClient {
 
   private final DeveloperListenerManager developerListenerManager;
-  private final WonderPush.InternalEventTracker internalEventTracker;
+  private final InternalEventTracker internalEventTracker;
   private final InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration;
 
   @Inject
   public MetricsLoggerClient(DeveloperListenerManager developerListenerManager,
-                             WonderPush.InternalEventTracker internalEventTracker,
+                             InternalEventTracker internalEventTracker,
                              InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration) {
     this.developerListenerManager = developerListenerManager;
     this.internalEventTracker = internalEventTracker;
