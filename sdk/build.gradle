@@ -1,9 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
 
-project.group = 'com.wonderpush'
-project.archivesBaseName = 'wonderpush-android-sdk'
-
 android {
     compileSdkVersion 28
     buildToolsVersion "28.0.3"
@@ -19,6 +16,7 @@ android {
     defaultConfig {
         minSdkVersion 14
         consumerProguardFiles 'proguard-exported.pro'
+        versionName "3.4.0-SNAPSHOT"
     }
     buildTypes {
         release {
@@ -80,20 +78,9 @@ tasks.withType(JavaCompile) {
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
-task setVersion {
-    // The version will be derived from source
-    project.version = null
-    def sdkVersionFile = file('src/main/java/com/wonderpush/sdk/WonderPush.java')
-    sdkVersionFile.eachLine {
-        def versionMatcher = (it =~ /(?:.*SDK_SHORT_VERSION = ")(.*)(?:".*)/)
-        if (versionMatcher.matches()) {
-            project.version = versionMatcher[0][1]
-        }
-    }
-    if (project.version.is('unspecified')) {
-        throw new GradleScriptException('Version could not be found.', null)
-    }
-}
+project.group = 'com.wonderpush'
+project.archivesBaseName = 'wonderpush-android-sdk'
+project.version = android.defaultConfig.versionName
 
 afterEvaluate {
     publishing {
