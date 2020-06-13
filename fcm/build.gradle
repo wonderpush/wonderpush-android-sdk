@@ -10,7 +10,6 @@ android {
         versionCode 1
         versionName "1.0.0-SNAPSHOT"
 
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
     }
 
@@ -38,55 +37,61 @@ tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xdiags:verbose"
 }
 
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
-apply plugin: 'com.github.dcendents.android-maven'
 
 project.group = 'com.wonderpush'
 project.archivesBaseName = 'wonderpush-android-sdk-fcm'
 project.version = android.defaultConfig.versionName
-def isSnapshot = version.endsWith('-SNAPSHOT')
 
-install {
-    repositories.mavenInstaller {
-        pom.project {
-            packaging 'aar'
-            groupId = project.group
-            artifactId = 'wonderpush-android-sdk-fcm'
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                artifact androidSourcesJar
+                artifact androidJavadocsJar
+                pom {
+                    packaging = 'aar'
+                    groupId = project.group
+                    artifactId = 'wonderpush-android-sdk-fcm'
 
-            name 'WonderPush Android SDK FCM'
-            description 'WonderPush Android SDK FCM'
-            url 'https://github.com/wonderpush/wonderpush-android-sdk'
+                    name = 'WonderPush Android SDK FCM'
+                    description = 'WonderPush Android SDK FCM'
+                    url = 'https://github.com/wonderpush/wonderpush-android-sdk'
 
-            scm {
-                connection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
-                developerConnection 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
-                url 'https://github.com/wonderpush/wonderpush-android-sdk'
-            }
+                    scm {
+                        connection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                        developerConnection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                        url = 'https://github.com/wonderpush/wonderpush-android-sdk'
+                    }
 
-            licenses {
-                license {
-                    name 'Apache 2.0'
-                    url 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
-                    distribution 'repo'
-                }
-            }
+                    licenses {
+                        license {
+                            name = 'Apache 2.0'
+                            url = 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
+                            distribution = 'repo'
+                        }
+                    }
 
-            developers {
-                developer {
-                    id 'wonderpush'
-                    name 'WonderPush'
+                    developers {
+                        developer {
+                            id = 'wonderpush'
+                            name = 'WonderPush'
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-// uploadArchives
-
-signing {
-    required { !isSnapshot && gradle.taskGraph.hasTask("uploadArchives") }
-    sign configurations.archives
+afterEvaluate {
+    signing {
+        useGpgCmd()
+        sign publishing.publications
+        sign configurations.archives
+    }
 }
 
 task androidJavadocs(type: Javadoc) {
@@ -96,6 +101,8 @@ task androidJavadocs(type: Javadoc) {
         classpath = project.files(
                 project.android.libraryVariants.toList().first().javaCompileProvider.get().classpath.files,
                 project.android.getBootClasspath(),
+                "$projectDir/build/generated/ap_generated_sources/release/out",
+                "$projectDir/build/generated/ap_generated_sources/debug/out",
                 "$projectDir/build/intermediates/javac/release/compileReleaseJavaWithJavac/classes",
                 "$projectDir/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
                 android.sourceSets.main.java.srcDirs
@@ -108,12 +115,12 @@ task androidJavadocs(type: Javadoc) {
 }
 
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from androidJavadocs.destinationDir
 }
 
 task androidSourcesJar(type: Jar) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from android.sourceSets.main.java.sourceFiles
 }
 
