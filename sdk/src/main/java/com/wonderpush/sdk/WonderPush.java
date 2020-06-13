@@ -415,6 +415,9 @@ public class WonderPush {
         }
     }
 
+    /**
+     * Whether debug logging is enabled.
+     */
     public static boolean getLogging() {
         return WonderPush.SHOW_DEBUG;
     }
