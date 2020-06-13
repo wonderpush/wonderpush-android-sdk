@@ -31,7 +31,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(path: ':sdk')
+    compileOnly project(path: ':sdk')
+    runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0-SNAPSHOT,)"
     implementation 'com.huawei.hms:push:4.0.3.301'
 }
 

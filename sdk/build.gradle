@@ -29,6 +29,11 @@ android {
 }
 
 dependencies {
+    // Add a dependency on the FCM push service support by default, so
+    // that the most common build scenarios don't need to add an
+    // explicit dependency on it, and thus we avoid breaking builds.
+    runtimeOnly 'com.wonderpush:wonderpush-android-sdk-fcm:[1.0,2.0)'
+
     implementation 'com.loopj.android:android-async-http:1.4.9'
     // Use the full support-v4 instead of the module support-compat
     // because com.google.firebase:firebase-messaging (indirectly) depends on it

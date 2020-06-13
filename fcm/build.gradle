@@ -25,7 +25,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(':sdk')
+    compileOnly project(':sdk')
+    runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0-SNAPSHOT,)"
     implementation "com.google.firebase:firebase-messaging:17.3.4"
 }
 
