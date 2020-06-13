@@ -14,6 +14,8 @@ allprojects {
         jcenter()
         google()
     }
+    ext."signing.gnupg.keyName" = '0823F63F'
+    //ext."signing.gnupg.passphrase" = 'SECRET PASSPHRASE'
 }
 
 task clean(type: Delete) {
@@ -25,4 +27,8 @@ task clean(type: Delete) {
             }
         }
     }
+}
+
+if (file('local.gradle').exists()) {
+    apply from: 'local.gradle'
 }
