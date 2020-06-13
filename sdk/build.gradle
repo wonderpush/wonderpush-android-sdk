@@ -34,6 +34,18 @@ dependencies {
     // explicit dependency on it, and thus we avoid breaking builds.
     runtimeOnly 'com.wonderpush:wonderpush-android-sdk-fcm:[1.0,2.0)'
 
+    // This is how we can declare incompatibility with previous modules.
+    // This way a newer SDK version can say it is not compatible with
+    // previous module versions, whereas the module version can only
+    // declare a minimal SDK version.
+    // Failing to publish these constraints would allow an older version
+    // of the module to accept the newer although incompatible SDK version.
+    //constraints {
+    //    implementation('com.wonderpush:wonderpush-android-sdk-fcm:[2.0,3.0)') {
+    //        because 'ABI changes'
+    //    }
+    //}
+
     implementation 'com.loopj.android:android-async-http:1.4.9'
     // Use the full support-v4 instead of the module support-compat
     // because com.google.firebase:firebase-messaging (indirectly) depends on it
