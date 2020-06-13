@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.inappmessaging.internal.injection.modules;
 
-import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.InternalEventTracker;
 
 import javax.inject.Singleton;
 
@@ -9,15 +9,15 @@ import dagger.Provides;
 
 @Module
 public class InternalEventTrackerModule {
-    private final WonderPush.InternalEventTracker internalEventTracker;
+    private final InternalEventTracker internalEventTracker;
 
-    public InternalEventTrackerModule(WonderPush.InternalEventTracker internalEventTracker) {
+    public InternalEventTrackerModule(InternalEventTracker internalEventTracker) {
         this.internalEventTracker = internalEventTracker;
     }
 
     @Provides
     @Singleton
-    public WonderPush.InternalEventTracker providesInternalEventTracker() {
+    public InternalEventTracker providesInternalEventTracker() {
         return internalEventTracker;
     }
 

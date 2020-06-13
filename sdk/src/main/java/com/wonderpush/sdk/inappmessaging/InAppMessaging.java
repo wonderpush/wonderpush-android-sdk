@@ -18,7 +18,7 @@ import android.app.Application;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
-import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.InternalEventTracker;
 import com.wonderpush.sdk.inappmessaging.internal.CampaignCacheClient;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.DisplayCallbacksFactory;
@@ -89,7 +89,7 @@ public class InAppMessaging {
             .subscribe(InAppMessaging.this::triggerInAppMessage);
   }
 
-  private static UniversalComponent initializeUniversalComponent(Application application, WonderPush.InternalEventTracker internalEventTracker) {
+  private static UniversalComponent initializeUniversalComponent(Application application, InternalEventTracker internalEventTracker) {
     if (universalComponent == null) {
       universalComponent = DaggerUniversalComponent.builder()
               .internalEventTrackerModule(new InternalEventTrackerModule(internalEventTracker))
@@ -100,7 +100,7 @@ public class InAppMessaging {
     return universalComponent;
   }
 
-  private static AppComponent initializeAppComponent(Application application, WonderPush.InternalEventTracker internalEventTracker) {
+  private static AppComponent initializeAppComponent(Application application, InternalEventTracker internalEventTracker) {
     if (appComponent == null) {
       appComponent = DaggerAppComponent.builder()
               .apiClientModule(new ApiClientModule(application, new SystemClock()))
@@ -115,7 +115,7 @@ public class InAppMessaging {
    */
   @NonNull
   @Keep
-  public static InAppMessaging initialize(Application application, WonderPush.InternalEventTracker internalEventTracker) {
+  public static InAppMessaging initialize(Application application, InternalEventTracker internalEventTracker) {
     if (instance == null) {
       instance = initializeAppComponent(application, internalEventTracker).providesInAppMessaging();
     }

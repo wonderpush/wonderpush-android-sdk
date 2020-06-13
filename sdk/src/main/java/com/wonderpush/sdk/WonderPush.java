@@ -2125,14 +2125,4 @@ public class WonderPush {
         return url;
     }
 
-    public static class InternalEventTracker {
-        private InternalEventTracker() {}
-
-        public void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
-            WonderPush.trackInternalEvent(type, eventData, customData);
-        }
-        public void trackInternalEvent(String type, JSONObject eventData) {
-            WonderPush.trackInternalEvent(type, eventData);
-        }
-    }
 }
