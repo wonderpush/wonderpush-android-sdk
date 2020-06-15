@@ -1,5 +1,9 @@
 apply plugin: 'com.android.library'
 
+project.group = 'com.wonderpush'
+project.archivesBaseName = 'wonderpush-android-sdk-fcm'
+project.version = "1.0.0"
+
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
@@ -8,7 +12,7 @@ android {
         minSdkVersion 14
         targetSdkVersion 29
         versionCode 1
-        versionName "1.0.0-SNAPSHOT"
+        versionName project.version
 
         consumerProguardFiles 'consumer-rules.pro'
     }
@@ -25,7 +29,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly project(':sdk')
-    runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0-SNAPSHOT,)"
+    runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0,)"
     implementation "com.google.firebase:firebase-messaging:17.3.4"
 }
 
@@ -40,47 +44,56 @@ tasks.withType(JavaCompile) {
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
-project.group = 'com.wonderpush'
-project.archivesBaseName = 'wonderpush-android-sdk-fcm'
-project.version = android.defaultConfig.versionName
-
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                from components.release
+publishing {
+    publications {
+        release(MavenPublication) {
+            afterEvaluate {
+                from components.release // identical to artifact bundleReleaseAar
                 artifact androidSourcesJar
                 artifact androidJavadocsJar
-                pom {
-                    packaging = 'aar'
-                    groupId = project.group
-                    artifactId = 'wonderpush-android-sdk-fcm'
+            }
+            groupId = project.group
+            artifactId = project.archivesBaseName
+            version = project.version
+            pom {
+                packaging = 'aar'
+                groupId = project.group
+                artifactId = 'wonderpush-android-sdk-fcm'
 
-                    name = 'WonderPush Android SDK FCM'
-                    description = 'WonderPush Android SDK FCM'
+                name = 'WonderPush Android SDK FCM'
+                description = 'WonderPush Android SDK FCM'
+                url = 'https://github.com/wonderpush/wonderpush-android-sdk'
+
+                scm {
+                    connection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                    developerConnection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
                     url = 'https://github.com/wonderpush/wonderpush-android-sdk'
+                }
 
-                    scm {
-                        connection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
-                        developerConnection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
-                        url = 'https://github.com/wonderpush/wonderpush-android-sdk'
-                    }
-
-                    licenses {
-                        license {
-                            name = 'Apache 2.0'
-                            url = 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
-                            distribution = 'repo'
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id = 'wonderpush'
-                            name = 'WonderPush'
-                        }
+                licenses {
+                    license {
+                        name = 'Apache 2.0'
+                        url = 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
+                        distribution = 'repo'
                     }
                 }
+
+                developers {
+                    developer {
+                        id = 'wonderpush'
+                        name = 'WonderPush'
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'wonderpush-android-sdk-fcm-repository'
+            url = 'https://api.bintray.com/maven/wonderpush/maven/wonderpush-android-sdk-fcm/'
+            credentials {
+                username = wonderpush_publishing_repositories_maven_credentials_username
+                password = wonderpush_publishing_repositories_maven_credentials_password
             }
         }
     }

@@ -5,7 +5,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.6.3'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
     }
 }
 
@@ -14,8 +13,9 @@ allprojects {
         jcenter()
         google()
     }
+    if (wonderpush_signing_gnupg_keyName != '0823F63F') throw "wonderpush_signing_gnupg_keyName is expected to be '0823F63F'"
     ext."signing.gnupg.keyName" = '0823F63F'
-    //ext."signing.gnupg.passphrase" = 'SECRET PASSPHRASE'
+    ext."signing.gnupg.passphrase" = wonderpush_signing_gnupg_passphrase
 }
 
 task clean(type: Delete) {
