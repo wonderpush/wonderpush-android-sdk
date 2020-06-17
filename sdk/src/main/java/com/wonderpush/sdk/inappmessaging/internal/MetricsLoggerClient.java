@@ -26,8 +26,11 @@ import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -50,12 +53,12 @@ public class MetricsLoggerClient {
     this.inAppMessagingConfiguration = inAppMessagingConfiguration;
   }
 
-  private void logInternalEvent(String eventName, NotificationMetadata metadata) {
-    logInternalEvent(eventName, metadata, false);
+  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map data) {
+    logInternalEvent(eventName, metadata, data, false);
   }
 
-  private void logInternalEvent(String eventName, NotificationMetadata metadata, boolean useMeasurementsApi) {
-    JSONObject eventData = new JSONObject();
+  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map data, boolean useMeasurementsApi) {
+    JSONObject eventData = data != null ? new JSONObject(data) : new JSONObject();
     try {
       if (metadata.getCampaignId() != null) eventData.put("campaignId", metadata.getCampaignId());
       if (metadata.getNotificationId() != null) eventData.put("notificationId", metadata.getNotificationId());
@@ -72,7 +75,7 @@ public class MetricsLoggerClient {
   /** Log impression */
   public void logImpression(InAppMessage message) {
     boolean useMeasurementsApi = !inAppMessagingConfiguration.inAppViewedReceipts();
-    this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata(), useMeasurementsApi);
+    this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata(), null, useMeasurementsApi);
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
@@ -80,7 +83,11 @@ public class MetricsLoggerClient {
 
   /** Log click */
   public void logMessageClick(InAppMessage message, List<ActionModel> actions) {
-    this.logInternalEvent("@INAPP_CLICKED", message.getNotificationMetadata());
+    Map data = new HashMap();
+    InAppMessage.ButtonType buttonType = message.getButtonType(actions);
+    if (buttonType == InAppMessage.ButtonType.PRIMARY) data.put("buttonLabel", "primary");
+    if (buttonType == InAppMessage.ButtonType.SECONDARY) data.put("buttonLabel", "secondary");
+    this.logInternalEvent("@INAPP_CLICKED", message.getNotificationMetadata(), data);
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.messageClicked(message, actions);

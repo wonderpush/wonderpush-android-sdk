@@ -14,15 +14,23 @@
 
 package com.wonderpush.sdk.inappmessaging.model;
 
+import android.app.Notification;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 
 import org.json.JSONObject;
 
+import javax.annotation.Nonnull;
+import java.util.List;
+
 /** Encapsulates an In App Message. */
 public abstract class InAppMessage {
+  public enum ButtonType {
+    UNDEFINED, PRIMARY, SECONDARY,
+  }
   public interface InAppMessageWithImage {
     @Nullable
     ImageData getImageData();
@@ -56,4 +64,14 @@ public abstract class InAppMessage {
     return data;
   }
 
+
+  abstract public ButtonType getButtonType(List<ActionModel> actions);
+
+  protected boolean actionsEqual(@NonNull List<ActionModel> actions1, @NonNull List<ActionModel> actions2) {
+    if (actions1.size() != actions2.size()) return false;
+    for (int i = 0; i < actions1.size(); i++) {
+      if (actions1.get(i) != actions2.get(i)) return false;
+    }
+    return true;
+  }
 }

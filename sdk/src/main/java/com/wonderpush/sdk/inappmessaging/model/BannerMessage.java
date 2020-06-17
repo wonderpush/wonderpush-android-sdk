@@ -137,6 +137,11 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     return new BannerMessage.Builder();
   }
 
+  @Override
+  public ButtonType getButtonType(List<ActionModel> actions) {
+    return actionsEqual(actions, this.actions) ? ButtonType.PRIMARY : ButtonType.UNDEFINED;
+  }
+
   /**
    * Builder for {@link BannerMessage}
    *

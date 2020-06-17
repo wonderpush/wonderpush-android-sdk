@@ -213,4 +213,9 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
               notificationMetadata, title, body, imageData, actions == null ? Collections.emptyList() : actions, button, backgroundHexColor, data);
     }
   }
+
+  @Override
+  public ButtonType getButtonType(List<ActionModel> actions) {
+    return actionsEqual(actions, this.actions) ? ButtonType.PRIMARY : ButtonType.UNDEFINED;
+  }
 }

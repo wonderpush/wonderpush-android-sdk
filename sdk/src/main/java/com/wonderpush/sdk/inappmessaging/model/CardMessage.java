@@ -300,4 +300,11 @@ public class CardMessage extends InAppMessage {
           data);
     }
   }
+
+  @Override
+  public ButtonType getButtonType(List<ActionModel> actions) {
+    if (actionsEqual(actions, this.primaryActions)) return ButtonType.PRIMARY;
+    if (actionsEqual(actions, this.secondaryActions)) return ButtonType.SECONDARY;
+    return ButtonType.UNDEFINED;
+  }
 }

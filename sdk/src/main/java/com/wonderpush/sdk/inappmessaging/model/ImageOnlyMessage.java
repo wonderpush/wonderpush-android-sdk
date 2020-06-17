@@ -126,4 +126,9 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
       return new ImageOnlyMessage(notificationMetadata, imageData, actions == null ? Collections.emptyList() : actions, data);
     }
   }
+
+  @Override
+  public ButtonType getButtonType(List<ActionModel> actions) {
+    return actionsEqual(actions, this.actions) ? ButtonType.PRIMARY : ButtonType.UNDEFINED;
+  }
 }
