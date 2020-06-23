@@ -1,0 +1,143 @@
+apply plugin: 'com.android.library'
+
+project.group = 'com.wonderpush'
+project.archivesBaseName = 'wonderpush-android-sdk-fcm'
+project.version = "1.0.1-SNAPSHOT"
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 29
+        versionCode 1
+        versionName project.version
+
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly project(':sdk')
+    runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0,)"
+    implementation "com.google.firebase:firebase-messaging:17.3.4"
+}
+
+if (file('local.gradle').exists()) {
+    apply from: 'local.gradle'
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xdiags:verbose"
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            afterEvaluate {
+                from components.release // identical to artifact bundleReleaseAar
+                artifact androidSourcesJar
+                artifact androidJavadocsJar
+            }
+            groupId = project.group
+            artifactId = project.archivesBaseName
+            version = project.version
+            pom {
+                packaging = 'aar'
+                groupId = project.group
+                artifactId = 'wonderpush-android-sdk-fcm'
+
+                name = 'WonderPush Android SDK FCM'
+                description = 'WonderPush Android SDK FCM'
+                url = 'https://github.com/wonderpush/wonderpush-android-sdk'
+
+                scm {
+                    connection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                    developerConnection = 'scm:git@github.com:wonderpush/wonderpush-android-sdk.git'
+                    url = 'https://github.com/wonderpush/wonderpush-android-sdk'
+                }
+
+                licenses {
+                    license {
+                        name = 'Apache 2.0'
+                        url = 'https://github.com/wonderpush/wonderpush-android-sdk/blob/master/LICENSE.txt'
+                        distribution = 'repo'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'wonderpush'
+                        name = 'WonderPush'
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'wonderpush-android-sdk-fcm-repository'
+            url = 'https://api.bintray.com/maven/wonderpush/maven/wonderpush-android-sdk-fcm/'
+            credentials {
+                username = wonderpush_publishing_repositories_maven_credentials_username
+                password = wonderpush_publishing_repositories_maven_credentials_password
+            }
+        }
+    }
+}
+
+afterEvaluate {
+    signing {
+        useGpgCmd()
+        sign publishing.publications
+        sign configurations.archives
+    }
+}
+
+task androidJavadocs(type: Javadoc) {
+    title = 'WonderPush Android SDK FCM Reference'
+    source = [] //android.sourceSets.main.java.srcDirs
+    doFirst {
+        classpath = project.files(
+                project.android.libraryVariants.toList().first().javaCompileProvider.get().classpath.files,
+                project.android.getBootClasspath(),
+                "$projectDir/build/generated/ap_generated_sources/release/out",
+                "$projectDir/build/generated/ap_generated_sources/debug/out",
+                "$projectDir/build/intermediates/javac/release/compileReleaseJavaWithJavac/classes",
+                "$projectDir/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+                android.sourceSets.main.java.srcDirs
+        )
+    }
+    options.overview = project.rootDir.path + '/overview.html'
+    options.showFromPublic()
+    // JDK 1.8 is more strict then 1.7. Have JDK 1.8 behave like 1.7 for javadoc generation
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    archiveClassifier.set('javadoc')
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.sourceFiles
+}
+
+artifacts {
+    archives androidSourcesJar
+    archives androidJavadocsJar
+}

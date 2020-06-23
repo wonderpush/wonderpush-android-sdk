@@ -16,7 +16,6 @@ package com.wonderpush.sdk.inappmessaging;
 
 import android.support.annotation.NonNull;
 
-import com.google.android.gms.tasks.Task;
 import com.wonderpush.sdk.ActionModel;
 
 import java.util.List;

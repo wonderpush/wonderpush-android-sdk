@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.wonderpush.sdk">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Using these permissions ultimately is the choice of the developer, do not include them here
          or they'll get automatically merged into the final application. -->
     <!--<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
@@ -14,12 +16,6 @@
             android:exported="false"
             android:initOrder="90" />
 
-        <service
-            android:name="com.wonderpush.sdk.WonderPushFirebaseMessagingService">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
         <service
             android:name="com.wonderpush.sdk.WonderPushResourcesService"
             android:permission="android.permission.BIND_JOB_SERVICE"
@@ -36,6 +32,12 @@
                 <action android:name="android.intent.action.VIEW" />
                 <data android:scheme="wonderpush" />
             </intent-filter>
+        </service>
+
+        <!-- Required for modular support of push services -->
+        <service
+            android:name="com.wonderpush.sdk.push.DiscoveryService"
+            android:exported="false">
         </service>
 
         <provider

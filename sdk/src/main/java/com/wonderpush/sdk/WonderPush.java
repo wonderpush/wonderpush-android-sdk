@@ -6,8 +6,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.Resources;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -19,10 +17,10 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
+import com.wonderpush.sdk.push.PushServiceManager;
+import com.wonderpush.sdk.push.PushServiceResult;
 
 import com.wonderpush.sdk.remoteconfig.AsyncHttpClientRemoteConfigFetcher;
 import com.wonderpush.sdk.remoteconfig.RemoteConfig;
@@ -32,8 +30,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -73,9 +69,6 @@ public class WonderPush {
     protected static boolean SHOW_DEBUG = false;
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
-    static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
-    private static String sSenderId;
-    private static FirebaseApp sFirebaseApp;
     private static InAppMessaging sInAppMessaging;
     private static InAppMessagingDisplay sInAppMessagingDisplay;
     private static Context sApplicationContext;
@@ -150,7 +143,7 @@ public class WonderPush {
 
     static final int API_INT = 1;
     static final String API_VERSION = "v" + API_INT;
-    static final String SDK_SHORT_VERSION = "3.3.1-SNAPSHOT";
+    static final String SDK_SHORT_VERSION = BuildConfig.VERSION_NAME;
     static final String SDK_VERSION = "Android-" + SDK_SHORT_VERSION;
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
     protected static final String MEASUREMENTS_API_URL = "https://measurements-api.wonderpush.com/v1";
@@ -221,6 +214,11 @@ public class WonderPush {
     public static final String INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION = "wonderpushReceivedPushNotification";
 
     /**
+     * The extra key for the parsed notification in a {@link #INTENT_NOTIFICATION_OPENED} intent.
+     */
+    public static final String INTENT_NOTIFICATION_OPENED_EXTRA_NOTIFICATION_MODEL = "wonderpushNotificationModel";
+
+    /**
      * The extra key for whether the user clicked the notification or it was automatically opened by the SDK
      * in a {@link #INTENT_NOTIFICATION_OPENED} intent.
      */
@@ -270,6 +268,12 @@ public class WonderPush {
      */
     public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION =
             INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION;
+
+    /**
+     * The extra key for the parsed notification in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
+     */
+    public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL =
+            INTENT_NOTIFICATION_OPENED_EXTRA_NOTIFICATION_MODEL;
 
     /**
      * The extra key for whether the user clicked the notification or it was automatically opened by the SDK
@@ -323,22 +327,22 @@ public class WonderPush {
     protected static final String INTENT_RESOURCE_PRELOADED_EXTRA_PATH = "wonderpushResourcePreloadedPath";
 
     /**
-     * Intent scheme for FCM notification data when the user clicks the notification.
+     * Intent scheme for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_SCHEME = "wonderpush";
 
     /**
-     * Intent authority for FCM notification data when the user clicks the notification.
+     * Intent authority for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_AUTHORITY = "notification";
 
     /**
-     * Intent data type for FCM notification data when the user clicks the notification.
+     * Intent data type for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_TYPE = "application/vnd.wonderpush.notification";
 
     /**
-     * Intent query parameter key for FCM notification data when the user clicks the notification.
+     * Intent query parameter key for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER = "body";
 
@@ -415,6 +419,13 @@ public class WonderPush {
         if (!SHOW_DEBUG_OVERRIDDEN) {
             WonderPush.SHOW_DEBUG = enable;
         }
+    }
+
+    /**
+     * Whether debug logging is enabled.
+     */
+    public static boolean getLogging() {
+        return WonderPush.SHOW_DEBUG;
     }
 
     protected static void logDebug(String debug) {
@@ -1413,32 +1424,8 @@ public class WonderPush {
                 sClientId = clientId;
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
-                if (sSenderId == null) {
-                    sSenderId = WonderPushFirebaseMessagingService.getDefaultSenderId();
-                    if (WonderPushFirebaseMessagingService.WONDERPUSH_DEFAULT_SENDER_ID.equals(sSenderId)) {
-                        Log.w(TAG, "Using WonderPush own Firebase FCM Sender ID " + sSenderId + ". Your push tokens will not be portable. Please refer to the documentation.");
-                    } else {
-                        logDebug("Using senderId from Firebase: " + sSenderId);
-                    }
-                }
 
-                WonderPush.logDebug("Initializing FirebaseApp…");
-                try {
-                    sFirebaseApp = FirebaseApp.initializeApp(
-                            sApplicationContext,
-                            new FirebaseOptions.Builder()
-                                    .setApplicationId("NONE")
-                                    .setApiKey("NONE")
-                                    .setGcmSenderId(sSenderId)
-                                    .build(),
-                            FIREBASE_APP_NAME
-                    );
-                    WonderPush.logDebug("Initialized FirebaseApp");
-                } catch (IllegalStateException alreadyInitialized) {
-                    WonderPush.logError("FirebaseApp already initialized", alreadyInitialized);
-                    sFirebaseApp = FirebaseApp.getInstance(FIREBASE_APP_NAME);
-                }
-
+                PushServiceManager.initialize(getApplicationContext());
                 WonderPushConfiguration.initialize(getApplicationContext());
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
@@ -1550,9 +1537,13 @@ public class WonderPush {
         if (force) {
             // Avoid depending on the success of getting a new registration id when forcing the refresh
             WonderPushConfiguration.setGCMRegistrationId(null);
-            WonderPushFirebaseMessagingService.storeRegistrationId(WonderPush.getApplicationContext(), WonderPushConfiguration.getGCMRegistrationSenderIds(), oldRegistrationId);
+            PushServiceResult cachedPushServiceResult = new PushServiceResult();
+            cachedPushServiceResult.setData(oldRegistrationId);
+            cachedPushServiceResult.setService(WonderPushConfiguration.getGCMRegistrationService());
+            cachedPushServiceResult.setSenderIds(WonderPushConfiguration.getGCMRegistrationSenderIds());
+            PushServiceManager.onResult(cachedPushServiceResult);
         } else {
-            WonderPushFirebaseMessagingService.registerForPushNotification(WonderPush.getApplicationContext());
+            PushServiceManager.refreshSubscription();
         }
 
         // Refresh preferences
@@ -1619,218 +1610,18 @@ public class WonderPush {
             initialize(context, null, null);
         }
 
-        Bundle metaData = null;
-        try {
-            metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
-        } catch (NameNotFoundException e) {
-            Log.e(TAG, "Failed to read application meta-data", e);
-        }
-
-        boolean foundBuildConfig = false;
+        WonderPushSettings.initialize(context);
+        boolean foundBuildConfig = WonderPushSettings.getBuildConfigFound();
 
         // Collect all configuration here
-        boolean initProviderAllowed = true;
-        String clientId = null;
-        String clientSecret = null;
-        Boolean logging = null;
-        Boolean requiresUserConsent = null;
-        String senderId = null;
-        String integrator = null;
-        Boolean geolocation = null;
-
-        if (!isInitialized()) {
-            // Try to locate the BuildConfig class.
-            // The difficulty being that it's in the Java package configured as `defaultConfig.applicationId` in gradle,
-            // but does is not affected by `applicationIdSuffix` or flavors' `applicationId`, whereas Context.getPackageName() is.
-            // - In the easiest case where applicationId is only given in `defaultConfig` in the app's build.gradle
-            //   and there is no `applicationIdSuffix`, and we can use context.getPackageName();
-            // - Otherwise, the application class is probably from the Java package, although that's not mandatory;
-            // - Finally, we allow the developer to give us the value using a manifest metadata or a string resource.
-            String buildConfigPackageGiven = null;
-            {
-                // Try using resources
-                try {
-                    Resources resources = context.getResources();
-                    int res;
-                    String resString;
-                    res = resources.getIdentifier("wonderpush_buildConfigPackage", "string", context.getPackageName());
-                    resString = res == 0 ? null : resources.getString(res);
-                    if (!TextUtils.isEmpty(resString)) {
-                        buildConfigPackageGiven = resString;
-                        logDebug("wonderpush_buildConfigPackage resource: " + buildConfigPackageGiven);
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Could not get a WonderPush configuration resource", e);
-                }
-                // Try using the manifest <application><meta-data>
-                Object resValue = metaData.get("com.wonderpush.sdk.buildConfigPackage");
-                if (resValue instanceof String && ((String) resValue).length() > 0) {
-                    buildConfigPackageGiven = (String) resValue;
-                    logDebug("com.wonderpush.sdk.buildConfigPackage metadata: " + buildConfigPackageGiven);
-                }
-            }
-            List<String> buildConfigPackagesToTry = new ArrayList<>();
-            if (buildConfigPackageGiven != null) {
-                buildConfigPackagesToTry.add(buildConfigPackageGiven);
-            } else {
-                buildConfigPackagesToTry.add(context.getPackageName());
-                buildConfigPackagesToTry.add(context.getApplicationContext().getClass().getPackage().getName());
-            }
-
-            // Try loading configuration using the BuildConfig values for good security (using code-stored constants)
-            // BuildConfig is first because it's hard to view them (needs a decompiler)
-            for (String buildConfigPackage : buildConfigPackagesToTry) {
-                String className = buildConfigPackage + ".BuildConfig";
-                try {
-                    Class<?> classClass = context.getClassLoader().loadClass(className);
-                    logDebug("Reading configuration from " + className);
-                    for (Field f : classClass.getFields()) {
-                        if (!f.getName().startsWith("WONDERPUSH_")) continue;
-                        try {
-                            Object rtn = f.get(null);
-                            if (rtn instanceof String) {
-                                String strValue = (String) rtn;
-                                if (strValue.length() == 0) continue;
-                                switch (f.getName()) {
-                                    case "WONDERPUSH_CLIENT_ID":
-                                        clientId = strValue;
-                                        break;
-                                    case "WONDERPUSH_CLIENT_SECRET":
-                                        clientSecret = strValue;
-                                        break;
-                                    case "WONDERPUSH_SENDER_ID":
-                                        senderId = strValue;
-                                        break;
-                                    case "WONDERPUSH_INTEGRATOR":
-                                        integrator = strValue;
-                                        break;
-                                    default:
-                                        Log.w(TAG, "Unknown BuildConfig String field " + f.getName());
-                                        break;
-                                }
-                            } else if (rtn instanceof Boolean) {
-                                Boolean boolValue = (Boolean) rtn;
-                                switch (f.getName()) {
-                                    case "WONDERPUSH_AUTO_INIT":
-                                        initProviderAllowed = boolValue;
-                                        break;
-                                    case "WONDERPUSH_LOGGING":
-                                        logging = boolValue;
-                                        break;
-                                    case "WONDERPUSH_REQUIRES_USER_CONSENT":
-                                        requiresUserConsent = boolValue;
-                                        break;
-                                    case "WONDERPUSH_GEOLOCATION":
-                                        geolocation = boolValue;
-                                        break;
-                                    default:
-                                        Log.w(TAG, "Unknown BuildConfig Boolean field " + f.getName());
-                                        break;
-                                }
-                            } else {
-                                Log.w(TAG, "Unknown BuildConfig " + (rtn == null ? "null" : rtn.getClass().getCanonicalName()) + " field " + f.getName());
-                            }
-                        } catch (Exception e) { // IllegalAccessException on non public field
-                            Log.e(TAG, "Could not get BuildConfig field " + f.getName(), e);
-                        }
-                    }
-                    foundBuildConfig = true;
-                    break;
-                } catch (ClassNotFoundException e) {
-                    logDebug("No " + className + " class found. ProGuard may have removed it after finding no WONDERPUSH_* constants.");
-                }
-            }
-
-            // Try loading configuration using resources
-            // Resources are second because they are not easily viewable with tools like Dexplorer
-            try {
-                Resources resources = context.getResources();
-                int res;
-                String resString;
-                res = resources.getIdentifier("wonderpush_clientId", "string", context.getPackageName());
-                resString = res == 0 ? null : resources.getString(res);
-                if (!TextUtils.isEmpty(resString)) {
-                    clientId = resString;
-                }
-                res = resources.getIdentifier("wonderpush_clientSecret", "string", context.getPackageName());
-                resString = res == 0 ? null : resources.getString(res);
-                if (!TextUtils.isEmpty(resString)) {
-                    clientSecret = resString;
-                }
-                res = resources.getIdentifier("wonderpush_senderId", "string", context.getPackageName());
-                resString = res == 0 ? null : resources.getString(res);
-                if (!TextUtils.isEmpty(resString)) {
-                    senderId = resString;
-                }
-                res = resources.getIdentifier("wonderpush_integrator", "string", context.getPackageName());
-                resString = res == 0 ? null : resources.getString(res);
-                if (!TextUtils.isEmpty(resString)) {
-                    integrator = resString;
-                }
-                res = resources.getIdentifier("wonderpush_autoInit", "bool", context.getPackageName());
-                if (res != 0) {
-                    initProviderAllowed = resources.getBoolean(res);
-                }
-                res = resources.getIdentifier("wonderpush_logging", "bool", context.getPackageName());
-                if (res != 0) {
-                    logging = resources.getBoolean(res);
-                }
-                res = resources.getIdentifier("wonderpush_requiresUserConsent", "bool", context.getPackageName());
-                if (res != 0) {
-                    requiresUserConsent = resources.getBoolean(res);
-                }
-                res = resources.getIdentifier("wonderpush_geolocation", "bool", context.getPackageName());
-                if (res != 0) {
-                    geolocation = resources.getBoolean(res);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Could not get a WonderPush configuration resource", e);
-            }
-
-            // Try loading configuration using the manifest <application><meta-data>
-            // Metadata are last because they are easily viewable with tools like Dexplorer, hence it feels more natural that they override previous sources
-            Object resValue;
-            resValue = metaData.get("com.wonderpush.sdk.clientId");
-            if (resValue instanceof String && ((String)resValue).length() > 0) {
-                clientId = (String) resValue;
-            }
-            resValue = metaData.get("com.wonderpush.sdk.clientSecret");
-            if (resValue instanceof String && ((String)resValue).length() > 0) {
-                clientSecret = (String) resValue;
-            }
-            resValue = metaData.get("com.wonderpush.sdk.senderId");
-            if (resValue instanceof String && ((String)resValue).length() > 0) {
-                senderId = (String) resValue;
-            }
-            resValue = metaData.get("com.wonderpush.sdk.integrator");
-            if (resValue instanceof String && ((String)resValue).length() > 0) {
-                integrator = (String) resValue;
-            }
-            resValue = metaData.get("com.wonderpush.sdk.autoInit");
-            if (resValue instanceof Boolean) {
-                initProviderAllowed = (Boolean) resValue;
-            } else if ("true".equals(resValue) || "false".equals(resValue)) {
-                initProviderAllowed = "true".equals(resValue);
-            }
-            resValue = metaData.get("com.wonderpush.sdk.logging");
-            if (resValue instanceof Boolean) {
-                logging = (Boolean) resValue;
-            } else if ("true".equals(resValue) || "false".equals(resValue)) {
-                logging = "true".equals(resValue);
-            }
-            resValue = metaData.get("com.wonderpush.sdk.requiresUserConsent");
-            if (resValue instanceof Boolean) {
-                requiresUserConsent = (Boolean) resValue;
-            } else if ("true".equals(resValue) || "false".equals(resValue)) {
-                requiresUserConsent = "true".equals(resValue);
-            }
-            resValue = metaData.get("com.wonderpush.sdk.geolocation");
-            if (resValue instanceof Boolean) {
-                geolocation = (Boolean) resValue;
-            } else if ("true".equals(resValue) || "false".equals(resValue)) {
-                geolocation = "true".equals(resValue);
-            }
-        }
+        Boolean initProviderAllowed = WonderPushSettings.getBoolean("WONDERPUSH_AUTO_INIT", "wonderpush_autoInit", "com.wonderpush.sdk.autoInit");
+        if (initProviderAllowed == null) initProviderAllowed = true;
+        String clientId = WonderPushSettings.getString("WONDERPUSH_CLIENT_ID", "wonderpush_clientId", "com.wonderpush.sdk.clientId");
+        String clientSecret = WonderPushSettings.getString("WONDERPUSH_CLIENT_SECRET", "wonderpush_clientSecret", "com.wonderpush.sdk.clientSecret");
+        Boolean logging = WonderPushSettings.getBoolean("WONDERPUSH_LOGGING", "wonderpush_logging", "com.wonderpush.sdk.logging");
+        Boolean requiresUserConsent = WonderPushSettings.getBoolean("WONDERPUSH_REQUIRES_USER_CONSENT", "wonderpush_requiresUserConsent", "com.wonderpush.sdk.requiresUserConsent");
+        String integrator = WonderPushSettings.getString("WONDERPUSH_INTEGRATOR", "wonderpush_integrator", "com.wonderpush.sdk.integrator");
+        Boolean geolocation = WonderPushSettings.getBoolean("WONDERPUSH_GEOLOCATION", "wonderpush_geolocation", "com.wonderpush.sdk.geolocation");
 
         // Apply any found configuration prior to initializing the SDK
         if (logging != null) {
@@ -1849,10 +1640,6 @@ public class WonderPush {
         if (requiresUserConsent != null) {
             logDebug("Applying configuration: requiresUserConsent: " + requiresUserConsent);
             WonderPush.setRequiresUserConsent(requiresUserConsent);
-        }
-        if (senderId != null) {
-            logDebug("Applying configuration: senderId: " + senderId);
-            sSenderId = senderId;
         }
         if (integrator != null) {
             logDebug("Applying configuration: integrator: " + integrator);
@@ -1877,6 +1664,7 @@ public class WonderPush {
         if (!isInitialized()) {
             String initializerClassName = null;
             try {
+                Bundle metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
                 initializerClassName = metaData.getString(METADATA_INITIALIZER_CLASS);
                 if (initializerClassName != null) {
                     if (initializerClassName.startsWith(".")) {
@@ -1887,6 +1675,8 @@ public class WonderPush {
                     WonderPushInitializer initializer = initializerClass.newInstance();
                     initializer.initialize(context);
                 }
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.e(TAG, "Failed to read application meta-data", e);
             } catch (NullPointerException e) {
                 Log.e(TAG, "Failed to load initializer class", e);
             } catch (ClassNotFoundException e) {
@@ -2298,16 +2088,6 @@ public class WonderPush {
         if (null == sApplicationContext)
             Log.e(TAG, "Application context is null, did you call WonderPush.initialize()?");
         return sApplicationContext;
-    }
-
-    static String getSenderId() {
-        return sSenderId;
-    }
-
-    static FirebaseApp getFirebaseApp() {
-        if (sFirebaseApp == null)
-            Log.e(TAG, "FirebaseApp is null, did you call WonderPush.initialize()?");
-        return sFirebaseApp;
     }
 
     /**

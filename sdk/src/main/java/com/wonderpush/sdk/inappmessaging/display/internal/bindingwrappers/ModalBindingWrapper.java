@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.R;
+import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout;
@@ -204,7 +205,9 @@ public class ModalBindingWrapper extends BindingWrapper {
   public class ScrollViewAdjustableListener implements ViewTreeObserver.OnGlobalLayoutListener {
     @Override
     public void onGlobalLayout() {
-      imageView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+      WonderPushCompatibilityHelper.removeOnGlobalLayoutListener(
+          imageView.getViewTreeObserver(),
+          this);
     }
   }
 }

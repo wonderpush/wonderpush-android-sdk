@@ -30,6 +30,7 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationManager;
+import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
@@ -466,10 +467,12 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
           public void onError(Exception e) {
             Logging.loge("Image download failure ");
             if (layoutListener != null) {
-              bindingWrapper
-                  .getImageView()
-                  .getViewTreeObserver()
-                  .removeGlobalOnLayoutListener(layoutListener);
+              WonderPushCompatibilityHelper.removeOnGlobalLayoutListener(
+                  bindingWrapper
+                      .getImageView()
+                      .getViewTreeObserver(),
+                  layoutListener
+              );
             }
             cancelTimers(); // Not strictly necessary.
             inAppMessage = null;

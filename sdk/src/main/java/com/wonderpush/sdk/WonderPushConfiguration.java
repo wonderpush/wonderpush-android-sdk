@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-class WonderPushConfiguration {
+public class WonderPushConfiguration {
 
     private static final String PREF_FILE = "wonderpush";
 
@@ -51,6 +51,7 @@ class WonderPushConfiguration {
     private static final String CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME = "__wonderpush_gcm_registration_id_associated_to_user_id";
     private static final String CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME = "__wonderpush_gcm_registration_id_access_token";
     private static final String GCM_REGISTRATION_SENDER_IDS_PREF_NAME = "__wonderpush_gcm_registration_sender_ids";
+    private static final String GCM_REGISTRATION_SERVICE_PREF_NAME = "__wonderpush_gcm_registration_service";
 
     private static final String LAST_RECEIVED_NOTIFICATION_INFO_JSON_PREF_NAME = "__last_received_notification_info_json";
     private static final String LAST_OPENED_NOTIFICATION_INFO_JSON_PREF_NAME = "__last_opened_notification_info_json";
@@ -75,7 +76,7 @@ class WonderPushConfiguration {
 
     private static Context sContext;
 
-    static void initialize(Context context) {
+    public static void initialize(Context context) {
         sContext = context.getApplicationContext();
     }
 
@@ -408,7 +409,7 @@ class WonderPushConfiguration {
     /**
      * Get the user id stored in the user's shared preferences.
      */
-    static String getUserId() {
+    public static String getUserId() {
         return getString(USER_ID_PREF_NAME);
     }
 
@@ -468,7 +469,7 @@ class WonderPushConfiguration {
     /**
      * Get the access token stored in the user's shared preferences.
      */
-    static String getAccessToken() {
+    public static String getAccessToken() {
         return getString(ACCESS_TOKEN_PREF_NAME);
     }
 
@@ -795,7 +796,7 @@ class WonderPushConfiguration {
     /**
      * Get the registration id stored in the user's shared preferences.
      */
-    static String getGCMRegistrationId() {
+    public static String getGCMRegistrationId() {
         return getString(GCM_REGISTRATION_ID_PREF_NAME);
     }
 
@@ -805,7 +806,7 @@ class WonderPushConfiguration {
      * @param registrationId
      *            The registration id to be stored
      */
-    static void setGCMRegistrationId(String registrationId) {
+    public static void setGCMRegistrationId(String registrationId) {
         putString(GCM_REGISTRATION_ID_PREF_NAME, registrationId);
     }
 
@@ -822,14 +823,14 @@ class WonderPushConfiguration {
      * @param cachedGCMRegistrationIdDate
      *            The cached registration id date to be stored
      */
-    static void setCachedGCMRegistrationIdDate(long cachedGCMRegistrationIdDate) {
+    public static void setCachedGCMRegistrationIdDate(long cachedGCMRegistrationIdDate) {
         putLong(CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME, cachedGCMRegistrationIdDate);
     }
 
     /**
      * Get the user id the registration id was associated with in the user's shared preferences.
      */
-    static String getCachedGCMRegistrationIdAssociatedUserId() {
+    public static String getCachedGCMRegistrationIdAssociatedUserId() {
         return getString(CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME);
     }
 
@@ -839,14 +840,14 @@ class WonderPushConfiguration {
      * @param userId
      *            The associated user id to be stored
      */
-    static void setCachedGCMRegistrationIdAssociatedUserId(String userId) {
+    public static void setCachedGCMRegistrationIdAssociatedUserId(String userId) {
         putString(CACHED_GCM_REGISTRATION_ID_ASSOCIATED_TO_USER_ID_PREF_NAME, userId);
     }
 
     /**
      * Get the cached registration id access token stored in the user's shared preferences.
      */
-    static String getCachedGCMRegistrationIdAccessToken() {
+    public static String getCachedGCMRegistrationIdAccessToken() {
         return getString(CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME);
     }
 
@@ -856,14 +857,14 @@ class WonderPushConfiguration {
      * @param cachedGCMRegistrationIdAccessToken
      *            The cached registration id access token to be stored
      */
-    static void setCachedGCMRegistrationIdAccessToken(String cachedGCMRegistrationIdAccessToken) {
+    public static void setCachedGCMRegistrationIdAccessToken(String cachedGCMRegistrationIdAccessToken) {
         putString(CACHED_GCM_REGISTRATION_ID_PREF_ACCESS_TOKEN_NAME, cachedGCMRegistrationIdAccessToken);
     }
 
     /**
      * Get the registration sender ids stored in the user's shared preferences.
      */
-    static String getGCMRegistrationSenderIds() {
+    public static String getGCMRegistrationSenderIds() {
         return getString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME);
     }
 
@@ -873,8 +874,25 @@ class WonderPushConfiguration {
      * @param senderIds
      *            The registration sender ids to be stored
      */
-    static void setGCMRegistrationSenderIds(String senderIds) {
+    public static void setGCMRegistrationSenderIds(String senderIds) {
         putString(GCM_REGISTRATION_SENDER_IDS_PREF_NAME, senderIds);
+    }
+
+    /**
+     * Get the push service stored in the user's shared preferences.
+     */
+    static String getGCMRegistrationService() {
+        return getString(GCM_REGISTRATION_SERVICE_PREF_NAME);
+    }
+
+    /**
+     * Set the push service stored in the user's shared preferences.
+     *
+     * @param service
+     *            The push servuce to be stored
+     */
+    static void setGCMRegistrationService(String service) {
+        putString(GCM_REGISTRATION_SERVICE_PREF_NAME, service);
     }
 
     /**

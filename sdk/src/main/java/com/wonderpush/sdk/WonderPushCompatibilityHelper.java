@@ -9,9 +9,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Html;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 
-class WonderPushCompatibilityHelper {
+public class WonderPushCompatibilityHelper {
 
     @SuppressLint("NewApi")
     @SuppressWarnings("deprecation")
@@ -66,6 +67,15 @@ class WonderPushCompatibilityHelper {
             return group != null && group.isBlocked();
         }
         return false;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void removeOnGlobalLayoutListener(ViewTreeObserver vto, ViewTreeObserver.OnGlobalLayoutListener listener) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            vto.removeGlobalOnLayoutListener(listener);
+        } else {
+            vto.removeOnGlobalLayoutListener(listener);
+        }
     }
 
 }

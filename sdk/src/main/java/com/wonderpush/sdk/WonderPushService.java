@@ -132,6 +132,8 @@ public class WonderPushService extends Service {
                 activityIntent.setData(Uri.parse(targetUrl));
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
                         (Parcelable) intent.getParcelableExtra("receivedPushNotificationIntent"));
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
+                        notif);
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                         notif.getType().toString());
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
@@ -335,6 +337,8 @@ public class WonderPushService extends Service {
             } else {
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
                         (Parcelable) intent.getParcelableExtra("receivedPushNotificationIntent"));
+                activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
+                        notif);
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                         notif.getType().toString());
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,

@@ -7,8 +7,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
-import com.google.firebase.messaging.RemoteMessage;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,11 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-abstract class NotificationModel implements Parcelable {
+public abstract class NotificationModel implements Parcelable {
 
     private static final String TAG = WonderPush.TAG;
 
-    static class NotTargetedForThisInstallationException extends Exception {
+    public static class NotTargetedForThisInstallationException extends Exception {
         private static final long serialVersionUID = -1642569383307930845L;
         public NotTargetedForThisInstallationException(String detailMessage) {
             super(detailMessage);
@@ -107,7 +105,7 @@ abstract class NotificationModel implements Parcelable {
             String json = in.readString();
             try {
                 JSONObject parsed = new JSONObject(json);
-                return NotificationModel.fromGCMNotificationJSONObject(parsed, null);
+                return NotificationModel.fromNotificationJSONObject(parsed);
             } catch (NotTargetedForThisInstallationException e) {
                 Log.e(WonderPush.TAG, "Unexpected error: Cannot unparcel notification, not targeted at this installation", e);
             } catch (JSONException e) {
@@ -151,46 +149,6 @@ abstract class NotificationModel implements Parcelable {
     private final List<ButtonModel> buttons = new ArrayList<>(3);
     private String title;
 
-    public static NotificationModel fromRemoteMessage(RemoteMessage remoteMessage, Context context)
-            throws NotTargetedForThisInstallationException
-    {
-        return fromGCMBroadcastIntent(remoteMessage.toIntent(), context);
-    }
-
-    public static NotificationModel fromGCMBroadcastIntent(Intent intent, Context context)
-            throws NotTargetedForThisInstallationException
-    {
-        try {
-            Bundle extras = intent.getExtras();
-            if (extras == null || extras.isEmpty()) { // has effect of unparcelling Bundle
-                WonderPush.logDebug("Received broadcasted intent has no extra");
-                return null;
-            }
-            String wpDataJson = extras.getString(WonderPushFirebaseMessagingService.WONDERPUSH_NOTIFICATION_EXTRA_KEY);
-            if (wpDataJson == null) {
-                WonderPush.logDebug("Received broadcasted intent has no data for WonderPush");
-                return null;
-            }
-
-            WonderPush.logDebug("Received broadcasted intent: " + intent);
-            WonderPush.logDebug("Received broadcasted intent extras: " + extras.toString());
-            for (String key : extras.keySet()) {
-                WonderPush.logDebug("Received broadcasted intent extras " + key + ": " + extras.get(key));
-            }
-
-            try {
-                JSONObject wpData = new JSONObject(wpDataJson);
-                WonderPush.logDebug("Received broadcasted intent WonderPush data: " + wpDataJson);
-                return fromGCMNotificationJSONObject(wpData, extras);
-            } catch (JSONException e) {
-                WonderPush.logDebug("data is not a well-formed JSON object", e);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error while receiving a notification with intent " + intent, e);
-        }
-        return null;
-    }
-
     public static NotificationModel fromLocalIntent(Intent intent, Context context) {
         if (NotificationManager.containsExplicitNotification(intent)) {
 
@@ -200,7 +158,7 @@ abstract class NotificationModel implements Parcelable {
             }
             try {
                 JSONObject notifParsed = new JSONObject(notifString);
-                return NotificationModel.fromGCMNotificationJSONObject(notifParsed, null);
+                return NotificationModel.fromNotificationJSONObject(notifParsed);
             } catch (JSONException e) {
                 WonderPush.logDebug("data is not a well-formed JSON object", e);
             } catch (NotTargetedForThisInstallationException e) {
@@ -209,18 +167,14 @@ abstract class NotificationModel implements Parcelable {
 
         } else if (NotificationManager.containsWillOpenNotification(intent)) {
 
-            try {
-                Intent pushIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION);
-                return fromGCMBroadcastIntent(pushIntent, context);
-            } catch (NotTargetedForThisInstallationException e) {
-                WonderPush.logError("Notifications not targeted for this installation should have been filtered earlier", e);
-            }
+            NotificationModel notif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL);
+            return notif;
 
         }
         return null;
     }
 
-    public static NotificationModel fromGCMNotificationJSONObject(JSONObject wpData, Bundle extras)
+    public static NotificationModel fromNotificationJSONObject(JSONObject wpData)
             throws NotTargetedForThisInstallationException
     {
         try {
@@ -229,8 +183,6 @@ abstract class NotificationModel implements Parcelable {
             AlertModel alert = null;
             if (wpAlert != null) {
                 alert = AlertModel.fromJSON(wpAlert);
-            } else if (extras != null) {
-                alert = AlertModel.fromOldFormatStringExtra(extras.getString("alert")); // <= v1.1.0.0 format
             } else {
                 // We are probably parsing an opened notification and the extras was not given.
                 // We are not interested in showing a notification anyway, the in-app message is what's important now.

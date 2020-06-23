@@ -22,6 +22,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.wonderpush.sdk.push.PushServiceManager;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -44,7 +46,7 @@ public class NotificationManager {
 
     private static WeakReference<Intent> sLastHandledIntentRef;
 
-    protected static void onReceivedNotification(Context context, Intent intent, NotificationModel notif) {
+    public static void onReceivedNotification(Context context, Intent intent, NotificationModel notif) {
         String loggedInstallationId = WonderPushConfiguration.getInstallationId();
         if (notif.getTargetedInstallation() != null && !notif.getTargetedInstallation().equals(loggedInstallationId)) {
             WonderPush.logDebug("Received notification is not targeted at the current installation (" + notif.getTargetedInstallation() + " does not match current installation " + loggedInstallationId + ")");
@@ -138,7 +140,7 @@ public class NotificationManager {
             WonderPush.logDebug("Inserting resources inside the notification");
             try {
                 JSONObject json = new JSONObject(notif.getInputJSONString());
-                notif = NotificationModel.fromGCMNotificationJSONObject(json, null);
+                notif = NotificationModel.fromNotificationJSONObject(json);
                 if (notif == null) return;
             } catch (NotificationModel.NotTargetedForThisInstallationException | JSONException ex) {
                 Log.e(TAG, "Unexpected error while reparsing notification", ex);
@@ -266,6 +268,8 @@ public class NotificationManager {
                     + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST));
             activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
                     pushIntent);
+            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
+                    notif);
             activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                     notif.getType().toString());
             activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
@@ -397,8 +401,8 @@ public class NotificationManager {
             }
             alert.setTitle(ai != null ? pm.getApplicationLabel(ai) : null);
         }
-        int defaultIconResource = WonderPushFirebaseMessagingService.getNotificationIcon(context);
-        int defaultColor = WonderPushFirebaseMessagingService.getNotificationColor(context);
+        int defaultIconResource = PushServiceManager.getNotificationIcon();
+        int defaultColor = PushServiceManager.getNotificationColor();
 
         WonderPushChannel channel = WonderPushUserPreferences.channelToUseForNotification(alert.getChannel());
         boolean canVibrate = context.getPackageManager().checkPermission(android.Manifest.permission.VIBRATE, context.getPackageName()) == PackageManager.PERMISSION_GRANTED;
@@ -816,14 +820,14 @@ public class NotificationManager {
 
         WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
         trackOpenedNotification(intent, notif);
-        notifyNotificationOpened(intent);
+        notifyNotificationOpened(intent, notif);
         handleOpenedNotification(context, intent, notif);
     }
 
     public static void handleOpenedManuallyDisplayedDataNotification(Context context, Intent intent, NotificationModel notif) {
         WonderPush.logDebug("Handling opened manually displayed data notification: " + notif.getInputJSONString());
         trackOpenedNotification(intent, notif);
-        notifyNotificationOpened(intent);
+        notifyNotificationOpened(intent, notif);
         handleOpenedNotification(context, intent, notif);
     }
 
@@ -860,7 +864,7 @@ public class NotificationManager {
         return -1;
     }
 
-    private static void notifyNotificationOpened(Intent intent) {
+    private static void notifyNotificationOpened(Intent intent, NotificationModel notif) {
         boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
         Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
         int buttonIndex = getClickedButtonIndex(intent);
@@ -869,6 +873,7 @@ public class NotificationManager {
         Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
         notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_FROM_USER_INTERACTION, fromUserInteraction);
         notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, receivedPushNotificationIntent);
+        notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_NOTIFICATION_MODEL, notif);
         notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX, buttonIndex);
         LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
     }
