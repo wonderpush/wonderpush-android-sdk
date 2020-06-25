@@ -1,13 +1,38 @@
 package com.wonderpush.sdk.segmentation;
 
+import com.wonderpush.sdk.segmentation.criteria.AllCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.AndCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.AnyCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.ComparisonCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.EqualityCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.GeoCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.InsideCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.JoinCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.LastActivityDateCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.NotCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.OrCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.PrefixCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.PresenceCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.SubscriptionStatusCriterionNode;
+import com.wonderpush.sdk.segmentation.datasource.EventSource;
+import com.wonderpush.sdk.segmentation.datasource.FieldSource;
+import com.wonderpush.sdk.segmentation.datasource.GeoDateSource;
+import com.wonderpush.sdk.segmentation.datasource.GeoLocationSource;
+import com.wonderpush.sdk.segmentation.datasource.InstallationSource;
+import com.wonderpush.sdk.segmentation.datasource.LastActivityDateSource;
+import com.wonderpush.sdk.segmentation.datasource.PresenceElapsedTimeSource;
+import com.wonderpush.sdk.segmentation.datasource.PresenceSinceDateSource;
+import com.wonderpush.sdk.segmentation.datasource.UserSource;
+import com.wonderpush.sdk.segmentation.value.GeoAbstractAreaValueNode;
+import com.wonderpush.sdk.segmentation.value.StringValueNode;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser {
+public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser {
 
     public DefaultCriterionNodeParser() throws CriterionParserAlreadyExistsForKey {
         super();

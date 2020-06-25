@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class ConfigurableCriterionNodeParser implements ASTCriterionNodeParser {
+public class ConfigurableCriterionNodeParser implements ASTCriterionNodeParser {
 
     public final Map<String, ASTCriterionNodeParser> exactNameParsers = new HashMap<>();
     public final List<ASTCriterionNodeParser> dynamicNameParsers = new ArrayList<>();

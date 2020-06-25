@@ -1,6 +1,23 @@
 package com.wonderpush.sdk.segmentation;
 
-interface ASTCriterionVisitor<T> {
+import com.wonderpush.sdk.segmentation.criteria.ASTUnknownCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.AllCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.AndCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.AnyCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.ComparisonCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.EqualityCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.GeoCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.InsideCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.JoinCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.LastActivityDateCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.MatchAllCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.NotCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.OrCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.PrefixCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.PresenceCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.SubscriptionStatusCriterionNode;
+
+public interface ASTCriterionVisitor<T> {
 
     public T visitMatchAllCriterionNode(MatchAllCriterionNode node);
 

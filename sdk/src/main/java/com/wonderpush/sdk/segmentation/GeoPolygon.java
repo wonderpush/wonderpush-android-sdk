@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class GeoPolygon {
+public class GeoPolygon {
 
     public final List<GeoLocation> points;
 

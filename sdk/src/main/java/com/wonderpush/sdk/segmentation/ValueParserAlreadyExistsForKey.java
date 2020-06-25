@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation;
 
-class ValueParserAlreadyExistsForKey extends Exception {
+public class ValueParserAlreadyExistsForKey extends Exception {
 
     public final String key;
     public final ASTValueNodeParser<?> oldParser;

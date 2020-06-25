@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation;
 
-class ParserConfig {
+public class ParserConfig {
 
     public final ASTValueNodeParser<?> valueParser;
     public final ASTCriterionNodeParser criterionParser;

@@ -1,6 +1,16 @@
 package com.wonderpush.sdk.segmentation;
 
-interface DataSourceVisitor<T> {
+import com.wonderpush.sdk.segmentation.datasource.EventSource;
+import com.wonderpush.sdk.segmentation.datasource.FieldSource;
+import com.wonderpush.sdk.segmentation.datasource.GeoDateSource;
+import com.wonderpush.sdk.segmentation.datasource.GeoLocationSource;
+import com.wonderpush.sdk.segmentation.datasource.InstallationSource;
+import com.wonderpush.sdk.segmentation.datasource.LastActivityDateSource;
+import com.wonderpush.sdk.segmentation.datasource.PresenceElapsedTimeSource;
+import com.wonderpush.sdk.segmentation.datasource.PresenceSinceDateSource;
+import com.wonderpush.sdk.segmentation.datasource.UserSource;
+
+public interface DataSourceVisitor<T> {
 
     public T visitUserSource(UserSource dataSource);
 

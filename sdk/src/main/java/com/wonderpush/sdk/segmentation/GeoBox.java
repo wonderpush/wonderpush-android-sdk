@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation;
 
-class GeoBox {
+public class GeoBox {
 
     public final double top;
     public final double right;

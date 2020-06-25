@@ -2,7 +2,7 @@ package com.wonderpush.sdk.segmentation;
 
 import android.support.annotation.Nullable;
 
-class ParsingContext {
+public class ParsingContext {
 
     public final SegmentationDSLParser parser;
     @Nullable

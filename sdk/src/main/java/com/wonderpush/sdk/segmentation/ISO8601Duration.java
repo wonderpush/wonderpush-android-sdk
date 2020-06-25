@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class ISO8601Duration {
+public class ISO8601Duration {
 
     public final boolean positive;
     public final float years;

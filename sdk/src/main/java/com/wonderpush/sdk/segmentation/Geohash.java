@@ -2,7 +2,7 @@ package com.wonderpush.sdk.segmentation;
 
 import java.util.HashMap;
 
-class Geohash {
+public class Geohash {
 
     private static final char[] BASE32_CODES = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'b', 'c', 'd', 'e', 'f', 'g',

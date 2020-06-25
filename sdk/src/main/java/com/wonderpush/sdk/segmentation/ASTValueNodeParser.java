@@ -2,8 +2,9 @@ package com.wonderpush.sdk.segmentation;
 
 import android.support.annotation.Nullable;
 
-interface ASTValueNodeParser<T> {
+public interface ASTValueNodeParser<T> {
 
-    @Nullable ASTValueNode<T> parseValue(ParsingContext context, String key, Object input) throws BadInputError;
+    @Nullable
+    ASTValueNode<T> parseValue(ParsingContext context, String key, Object input) throws BadInputError;
 
 }

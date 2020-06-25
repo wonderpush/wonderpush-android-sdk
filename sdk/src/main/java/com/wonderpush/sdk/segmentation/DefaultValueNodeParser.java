@@ -1,5 +1,13 @@
 package com.wonderpush.sdk.segmentation;
 
+import com.wonderpush.sdk.segmentation.value.DateValueNode;
+import com.wonderpush.sdk.segmentation.value.DurationValueNode;
+import com.wonderpush.sdk.segmentation.value.GeoBoxValueNode;
+import com.wonderpush.sdk.segmentation.value.GeoCircleValueNode;
+import com.wonderpush.sdk.segmentation.value.GeoLocationValueNode;
+import com.wonderpush.sdk.segmentation.value.GeoPolygonValueNode;
+import com.wonderpush.sdk.segmentation.value.RelativeDateValueNode;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -12,7 +20,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class DefaultValueNodeParser extends ConfigurableValueNodeParser {
+public class DefaultValueNodeParser extends ConfigurableValueNodeParser {
 
     private static final Pattern RELATIVE_DATE_PATTERN = Pattern.compile("^[+-]?P");
     private static final Pattern ABSOLUTE_DATE_PATTERN = Pattern.compile("^(\\d\\d\\d\\d(?:-\\d\\d(?:-\\d\\d)?)?)(?:T(\\d\\d(?::\\d\\d(?::\\d\\d(?:.\\d\\d\\d)?)?)?))?(Z|[+-]\\d\\d(?::\\d\\d(?::\\d\\d(?:.\\d\\d\\d)?)?)?)?$");
@@ -182,14 +190,14 @@ class DefaultValueNodeParser extends ConfigurableValueNodeParser {
         JSONObject objectInput = (JSONObject) input;
         if (objectInput.has("topLeft") && objectInput.has("bottomRight")) {
             return new GeoBoxValueNode(context, GeoBox.fromTopLeftAndBottomRight(
-                    parseGeolocation(context, "geolocation", objectInput.opt("topLeft")).value,
-                    parseGeolocation(context, "geolocation", objectInput.opt("bottomRight")).value
+                    parseGeolocation(context, "geolocation", objectInput.opt("topLeft")).getValue(),
+                    parseGeolocation(context, "geolocation", objectInput.opt("bottomRight")).getValue()
             ));
         }
         if (objectInput.has("topRight") && objectInput.has("bottomLeft")) {
             return new GeoBoxValueNode(context, GeoBox.fromTopRightAndBottomLeft(
-                    parseGeolocation(context, "geolocation", objectInput.opt("topRight")).value,
-                    parseGeolocation(context, "geolocation", objectInput.opt("bottomLeft")).value
+                    parseGeolocation(context, "geolocation", objectInput.opt("topRight")).getValue(),
+                    parseGeolocation(context, "geolocation", objectInput.opt("bottomLeft")).getValue()
             ));
         }
         Object topObj = objectInput.opt("top");
@@ -220,7 +228,7 @@ class DefaultValueNodeParser extends ConfigurableValueNodeParser {
         if (center == null) {
             throw new BadInputError("\"" + key + "\" did not receive an object with a handled format");
         }
-        return new GeoCircleValueNode(context, new GeoCircle(parseGeolocation(context, "geolocation", center).value, radius.doubleValue()));
+        return new GeoCircleValueNode(context, new GeoCircle(parseGeolocation(context, "geolocation", center).getValue(), radius.doubleValue()));
     }
 
     public static GeoPolygonValueNode parseGeopolygon(ParsingContext context, String key, Object input) throws BadInputError {
@@ -231,7 +239,7 @@ class DefaultValueNodeParser extends ConfigurableValueNodeParser {
         int length = arrayInput.length();
         List<GeoLocation> points = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
-            points.add(parseGeolocation(context, "geolocation", arrayInput.opt(i)).value);
+            points.add(parseGeolocation(context, "geolocation", arrayInput.opt(i)).getValue());
         }
         return new GeoPolygonValueNode(context, new GeoPolygon(points));
     }

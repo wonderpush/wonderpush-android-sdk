@@ -2,6 +2,15 @@ package com.wonderpush.sdk.segmentation;
 
 import android.util.Log;
 
+import com.wonderpush.sdk.segmentation.criteria.ASTUnknownCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.AndCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.MatchAllCriterionNode;
+import com.wonderpush.sdk.segmentation.value.ASTUnknownValueNode;
+import com.wonderpush.sdk.segmentation.value.BooleanValueNode;
+import com.wonderpush.sdk.segmentation.value.NullValueNode;
+import com.wonderpush.sdk.segmentation.value.NumberValueNode;
+import com.wonderpush.sdk.segmentation.value.StringValueNode;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

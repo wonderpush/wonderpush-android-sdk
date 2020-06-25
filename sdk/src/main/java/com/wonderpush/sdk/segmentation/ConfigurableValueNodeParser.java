@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class ConfigurableValueNodeParser implements ASTValueNodeParser<Object> {
+public class ConfigurableValueNodeParser implements ASTValueNodeParser<Object> {
 
     public final Map<String, ASTValueNodeParser<?>> exactNameParsers = new HashMap<>();
     public final List<ASTValueNodeParser<?>> dynamicNameParsers = new ArrayList<>();

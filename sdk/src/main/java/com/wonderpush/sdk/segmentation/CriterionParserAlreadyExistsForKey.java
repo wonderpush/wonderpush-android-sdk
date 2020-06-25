@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation;
 
-class CriterionParserAlreadyExistsForKey extends Exception {
+public class CriterionParserAlreadyExistsForKey extends Exception {
 
     public final String key;
     public final ASTCriterionNodeParser oldParser;

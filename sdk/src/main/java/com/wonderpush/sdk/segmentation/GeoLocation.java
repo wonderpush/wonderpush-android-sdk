@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation;
 
-class GeoLocation {
+public class GeoLocation {
 
     public final double lat;
     public final double lon;

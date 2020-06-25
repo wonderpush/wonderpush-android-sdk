@@ -2,7 +2,7 @@ package com.wonderpush.sdk.segmentation;
 
 import android.support.annotation.Nullable;
 
-abstract class DataSource {
+public abstract class DataSource {
 
     @Nullable
     public final DataSource parent;

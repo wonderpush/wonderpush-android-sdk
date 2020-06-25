@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation;
 
-class FieldPath {
+public class FieldPath {
 
     public final String[] parts;
 

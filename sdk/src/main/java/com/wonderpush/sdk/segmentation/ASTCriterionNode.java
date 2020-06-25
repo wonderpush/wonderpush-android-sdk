@@ -1,6 +1,9 @@
 package com.wonderpush.sdk.segmentation;
 
-abstract class ASTCriterionNode {
+import com.wonderpush.sdk.segmentation.ASTCriterionVisitor;
+import com.wonderpush.sdk.segmentation.ParsingContext;
+
+public abstract class ASTCriterionNode {
 
     public final ParsingContext context;
 

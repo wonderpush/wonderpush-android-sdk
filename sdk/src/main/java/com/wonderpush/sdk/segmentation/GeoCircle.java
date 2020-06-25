@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation;
 
-class GeoCircle {
+public class GeoCircle {
 
     public final GeoLocation center;
     public final double radiusMeters;
