@@ -2,6 +2,8 @@ package com.wonderpush.sdk.segmentation;
 
 import android.support.annotation.Nullable;
 
+import com.wonderpush.sdk.segmentation.criteria.UnknownCriterionError;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +28,7 @@ public class ConfigurableCriterionNodeParser implements ASTCriterionNodeParser {
 
     @Nullable
     @Override
-    public ASTCriterionNode parseCriterion(ParsingContext context, String key, Object input) throws BadInputError {
+    public ASTCriterionNode parseCriterion(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         ASTCriterionNodeParser exactNameParser = this.exactNameParsers.get(key);
         if (exactNameParser != null) {
             return exactNameParser.parseCriterion(context, key, input);

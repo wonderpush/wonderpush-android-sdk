@@ -5,6 +5,7 @@ import android.util.Log;
 import com.wonderpush.sdk.segmentation.criteria.ASTUnknownCriterionNode;
 import com.wonderpush.sdk.segmentation.criteria.AndCriterionNode;
 import com.wonderpush.sdk.segmentation.criteria.MatchAllCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.UnknownCriterionError;
 import com.wonderpush.sdk.segmentation.value.ASTUnknownValueNode;
 import com.wonderpush.sdk.segmentation.value.BooleanValueNode;
 import com.wonderpush.sdk.segmentation.value.NullValueNode;
@@ -29,12 +30,12 @@ public class SegmentationDSLParser {
         this.parserConfig = parserConfig;
     }
 
-    public ASTCriterionNode parse(JSONObject input, DataSource dataSource) throws BadInputError {
+    public ASTCriterionNode parse(JSONObject input, DataSource dataSource) throws BadInputError, UnknownCriterionError, UnknownValueError {
         ParsingContext ctx = new ParsingContext(this, null, dataSource);
         return this.parseCriterion(ctx, input);
     }
 
-    public ASTCriterionNode parseCriterion(ParsingContext context, JSONObject input) throws BadInputError {
+    public ASTCriterionNode parseCriterion(ParsingContext context, JSONObject input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         if (input == null) {
             throw new BadInputError("Expects an object");
         }
@@ -69,12 +70,14 @@ public class SegmentationDSLParser {
         ASTCriterionNode parsed = this.parserConfig.criterionParser.parseCriterion(context, inputKey, inputValue);
         if (parsed == null) {
             parsed = new ASTUnknownCriterionNode(context, inputKey, inputValue);
-            // NOTE: I removed the possibility to optionally throw an UnknownCriterionError here
+            if (this.parserConfig.throwOnUnknownCriterion) {
+                throw new UnknownCriterionError((ASTUnknownCriterionNode) parsed);
+            }
         }
         return parsed;
     }
 
-    public ASTValueNode<Object> parseValue(ParsingContext context, Object input) throws BadInputError {
+    public ASTValueNode<Object> parseValue(ParsingContext context, Object input) throws BadInputError, UnknownValueError {
         if (input == null || input == JSONObject.NULL) {
             return new NullValueNode(context);
         }
@@ -105,6 +108,9 @@ public class SegmentationDSLParser {
         ASTValueNode<?> parsed = this.parserConfig.valueParser.parseValue(context, inputKey, inputValue);
         if (parsed == null) {
             parsed = new ASTUnknownValueNode(context, inputKey, inputValue);
+            if (this.parserConfig.throwOnUnknownValue) {
+                throw new UnknownValueError((ASTUnknownValueNode) parsed);
+            }
             // NOTE: I removed the possibility to optionally throw an UnknownValueError here
         }
         return ASTValueNode.castToObject(parsed);

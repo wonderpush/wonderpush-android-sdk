@@ -31,6 +31,28 @@ public class ISO8601Duration {
         this.seconds = seconds;
     }
 
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(positive ? '+' : '-');
+        sb.append('P');
+        sb.append(years);
+        sb.append('Y');
+        sb.append(months);
+        sb.append('M');
+        sb.append(weeks);
+        sb.append('W');
+        sb.append(days);
+        sb.append('D');
+        sb.append('T');
+        sb.append(hours);
+        sb.append('H');
+        sb.append(minutes);
+        sb.append('M');
+        sb.append(seconds);
+        sb.append('S');
+        return sb.toString();
+    }
+
     public static ISO8601Duration parse(String input) throws BadInputError {
         if (input == null) {
             throw new BadInputError("\"PT\" ISO 8601 duration expects a string");
@@ -55,6 +77,9 @@ public class ISO8601Duration {
         if (text == null) {
             return 0;
         }
+        // Remove unit
+        text = text.substring(0, text.length() - 1);
+        // Parse number
         try {
             return Float.parseFloat(text.replaceAll(",", "."));
         } catch (NumberFormatException ex) {
@@ -65,35 +90,33 @@ public class ISO8601Duration {
     public long applyTo(long date) {
         Calendar rtn = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
         rtn.setTimeInMillis(date);
-        int maxMonths = rtn.getActualMaximum(Calendar.MONTH);
-        int maxDays = rtn.getActualMaximum(Calendar.MONTH);
         float remainder = 0;
         int sign = this.positive ? 1 : -1;
-        int yearsInt = Math.round(this.years + remainder);
+        int yearsInt = (int) (this.years + remainder);
         rtn.add(Calendar.YEAR, sign * yearsInt);
         remainder = this.years + remainder - yearsInt;
         remainder *= 12;
-        int monthsInt = Math.round(this.months + remainder);
+        int monthsInt = (int) (this.months + remainder);
         rtn.add(Calendar.MONTH, sign * monthsInt);
         remainder = this.months + remainder - monthsInt;
         remainder *= rtn.getActualMaximum(Calendar.DAY_OF_MONTH);
-        int daysInt = Math.round(this.days + this.weeks * 7 + remainder);
+        int daysInt = (int) (this.days + this.weeks * 7 + remainder);
         rtn.add(Calendar.DAY_OF_MONTH, sign * daysInt);
         remainder = this.days + this.weeks * 7 + remainder - daysInt;
         remainder *= 24;
-        int hoursInt = Math.round(this.hours + remainder);
+        int hoursInt = (int) (this.hours + remainder);
         rtn.add(Calendar.HOUR_OF_DAY, sign * hoursInt);
         remainder = this.hours + remainder - hoursInt;
         remainder *= 60;
-        int minutesInt = Math.round(this.minutes + remainder);
+        int minutesInt = (int) (this.minutes + remainder);
         rtn.add(Calendar.MINUTE, sign * minutesInt);
         remainder = this.minutes + remainder - minutesInt;
         remainder *= 60;
-        int secondsInt = Math.round(this.seconds + remainder);
+        int secondsInt = (int) (this.seconds + remainder);
         rtn.add(Calendar.SECOND, sign * secondsInt);
         remainder = this.seconds + remainder - secondsInt;
         remainder *= 1000;
-        int milliSecondsInt = Math.round(0 + remainder);
+        int milliSecondsInt = (int) (0 + remainder);
         rtn.add(Calendar.MILLISECOND, sign * milliSecondsInt);
         return rtn.getTimeInMillis();
     }

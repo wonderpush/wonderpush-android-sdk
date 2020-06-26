@@ -14,6 +14,7 @@ import com.wonderpush.sdk.segmentation.criteria.OrCriterionNode;
 import com.wonderpush.sdk.segmentation.criteria.PrefixCriterionNode;
 import com.wonderpush.sdk.segmentation.criteria.PresenceCriterionNode;
 import com.wonderpush.sdk.segmentation.criteria.SubscriptionStatusCriterionNode;
+import com.wonderpush.sdk.segmentation.criteria.UnknownCriterionError;
 import com.wonderpush.sdk.segmentation.datasource.EventSource;
 import com.wonderpush.sdk.segmentation.datasource.FieldSource;
 import com.wonderpush.sdk.segmentation.datasource.GeoDateSource;
@@ -62,7 +63,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         this.registerExactNameParser("inside", DefaultCriterionNodeParser::parseInside);
     }
 
-    public static ASTCriterionNode parseDynamicDotField(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ASTCriterionNode parseDynamicDotField(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         if (key.charAt(0) == '.') {
             FieldSource fieldSource = new FieldSource(context.dataSource, FieldPath.parse(key.substring(1)));
             ParsingContext newContext = context.withDataSource(fieldSource);
@@ -71,7 +72,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return null;
     }
 
-    public static AndCriterionNode parseAnd(ParsingContext context, String key, Object input) throws BadInputError {
+    public static AndCriterionNode parseAnd(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         List<JSONObject> checkedInputValue = ensureArrayOfObjects(key, input);
         List<ASTCriterionNode> parsed = new ArrayList<>(checkedInputValue.size());
         for (JSONObject inputItem : checkedInputValue) {
@@ -80,7 +81,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new AndCriterionNode(context, parsed);
     }
 
-    public static OrCriterionNode parseOr(ParsingContext context, String key, Object input) throws BadInputError {
+    public static OrCriterionNode parseOr(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         List<JSONObject> checkedInputValue = ensureArrayOfObjects(key, input);
         List<ASTCriterionNode> parsed = new ArrayList<>(checkedInputValue.size());
         for (JSONObject inputItem : checkedInputValue) {
@@ -89,13 +90,13 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new OrCriterionNode(context, parsed);
     }
 
-    public static NotCriterionNode parseNot(ParsingContext context, String key, Object input) throws BadInputError {
+    public static NotCriterionNode parseNot(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         JSONObject checkedInputValue = ensureObject(key, input);
         return new NotCriterionNode(context, context.parser.parseCriterion(context, checkedInputValue));
     }
 
-    public static LastActivityDateCriterionNode parseLastActivityDate(ParsingContext context, String key, Object input) throws BadInputError {
-        if (!(context.dataSource.getRootDataSource() instanceof InstallationSource)) {
+    public static LastActivityDateCriterionNode parseLastActivityDate(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
+        if (!(context.dataSource instanceof InstallationSource)) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of \"installation\"");
         }
         InstallationSource contextDataSource = (InstallationSource) context.dataSource;
@@ -105,8 +106,8 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new LastActivityDateCriterionNode(context, dateCriterion);
     }
 
-    public static PresenceCriterionNode parsePresence(ParsingContext context, String key, Object input) throws BadInputError {
-        if (!(context.dataSource.getRootDataSource() instanceof InstallationSource)) {
+    public static PresenceCriterionNode parsePresence(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
+        if (!(context.dataSource instanceof InstallationSource)) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of \"installation\"");
         }
         InstallationSource contextDataSource = (InstallationSource) context.dataSource;
@@ -119,8 +120,8 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new PresenceCriterionNode(context, present, sinceDateCriterion, elapsedTimeCriterion);
     }
 
-    public static GeoCriterionNode parseGeo(ParsingContext context, String key, Object input) throws BadInputError {
-        if (!(context.dataSource.getRootDataSource() instanceof InstallationSource)) {
+    public static GeoCriterionNode parseGeo(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
+        if (!(context.dataSource instanceof InstallationSource)) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of \"installation\"");
         }
         InstallationSource contextDataSource = (InstallationSource) context.dataSource;
@@ -133,7 +134,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
     }
 
     public static SubscriptionStatusCriterionNode parseSubscriptionStatus(ParsingContext context, String key, Object input) throws BadInputError {
-        if (!(context.dataSource.getRootDataSource() instanceof InstallationSource)) {
+        if (!(context.dataSource instanceof InstallationSource)) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of \"installation\"");
         }
         InstallationSource contextDataSource = (InstallationSource) context.dataSource;
@@ -147,7 +148,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new SubscriptionStatusCriterionNode(context, subscriptionStatus);
     }
 
-    public static ASTCriterionNode parseUser(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ASTCriterionNode parseUser(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         DataSource rootDataSource = context.dataSource.getRootDataSource();
         JSONObject checkedInputValue = ensureObject(key, input);
         ParsingContext newContext = context.withDataSource(new UserSource());
@@ -163,7 +164,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         throw new BadInputError("\"" + key + "\" is not supported in this context");
     }
 
-    public static ASTCriterionNode parseInstallation(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ASTCriterionNode parseInstallation(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         DataSource rootDataSource = context.dataSource.getRootDataSource();
         JSONObject checkedInputValue = ensureObject(key, input);
         ParsingContext newContext = context.withDataSource(new InstallationSource());
@@ -175,7 +176,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         throw new BadInputError("\"" + key + "\" is not supported in this context");
     }
 
-    public static ASTCriterionNode parseEvent(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ASTCriterionNode parseEvent(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
         DataSource rootDataSource = context.dataSource.getRootDataSource();
         JSONObject checkedInputValue = ensureObject(key, input);
         ParsingContext newContext = context.withDataSource(new EventSource());
@@ -191,14 +192,14 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         throw new BadInputError("\"" + key + "\" is not supported in this context");
     }
 
-    public static EqualityCriterionNode parseEq(ParsingContext context, String key, Object input) throws BadInputError {
+    public static EqualityCriterionNode parseEq(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         if (context.dataSource.getRootDataSource() == context.dataSource) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of a field");
         }
         return new EqualityCriterionNode(context, context.parser.parseValue(context, input));
     }
 
-    public static AnyCriterionNode parseAny(ParsingContext context, String key, Object input) throws BadInputError {
+    public static AnyCriterionNode parseAny(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         if (context.dataSource.getRootDataSource() == context.dataSource) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of a field");
         }
@@ -211,7 +212,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new AnyCriterionNode(context, values);
     }
 
-    public static AllCriterionNode parseAll(ParsingContext context, String key, Object input) throws BadInputError {
+    public static AllCriterionNode parseAll(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         if (context.dataSource.getRootDataSource() == context.dataSource) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of a field");
         }
@@ -224,30 +225,30 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new AllCriterionNode(context, values);
     }
 
-    public static ComparisonCriterionNode parseGtGteLtLte(ParsingContext context, String key, Object input, ComparisonCriterionNode.Comparator comparator) throws BadInputError {
+    public static ComparisonCriterionNode parseGtGteLtLte(ParsingContext context, String key, Object input, ComparisonCriterionNode.Comparator comparator) throws BadInputError, UnknownValueError {
         if (context.dataSource.getRootDataSource() == context.dataSource) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of a field");
         }
         return new ComparisonCriterionNode(context, comparator, context.parser.parseValue(context, input));
     }
 
-    public static ComparisonCriterionNode parseGt(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ComparisonCriterionNode parseGt(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         return parseGtGteLtLte(context, key, input, ComparisonCriterionNode.Comparator.gt);
     }
 
-    public static ComparisonCriterionNode parseGte(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ComparisonCriterionNode parseGte(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         return parseGtGteLtLte(context, key, input, ComparisonCriterionNode.Comparator.gte);
     }
 
-    public static ComparisonCriterionNode parseLt(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ComparisonCriterionNode parseLt(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         return parseGtGteLtLte(context, key, input, ComparisonCriterionNode.Comparator.lt);
     }
 
-    public static ComparisonCriterionNode parseLte(ParsingContext context, String key, Object input) throws BadInputError {
+    public static ComparisonCriterionNode parseLte(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         return parseGtGteLtLte(context, key, input, ComparisonCriterionNode.Comparator.lte);
     }
 
-    public static PrefixCriterionNode parsePrefix(ParsingContext context, String key, Object input) throws BadInputError {
+    public static PrefixCriterionNode parsePrefix(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         if (context.dataSource.getRootDataSource() == context.dataSource) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of a field");
         }
@@ -258,7 +259,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         return new PrefixCriterionNode(context, (StringValueNode) value);
     }
 
-    public static InsideCriterionNode parseInside(ParsingContext context, String key, Object input) throws BadInputError {
+    public static InsideCriterionNode parseInside(ParsingContext context, String key, Object input) throws BadInputError, UnknownValueError {
         if (context.dataSource.getRootDataSource() == context.dataSource) {
             throw new BadInputError("\"" + key + "\" is only supported in the context of a field");
         }
