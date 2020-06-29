@@ -9,7 +9,7 @@ public class FieldPath {
     }
 
     public static FieldPath parse(String dottedPath) {
-        return new FieldPath(dottedPath.split("."));
+        return new FieldPath(dottedPath.split("\\.", -1));
     }
 
 }

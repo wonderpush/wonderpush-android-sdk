@@ -6,8 +6,6 @@ import com.wonderpush.sdk.segmentation.value.StringValueNode;
 
 import org.junit.Test;
 
-import java.util.ArrayList;
-
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;

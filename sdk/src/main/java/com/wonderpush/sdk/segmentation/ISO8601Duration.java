@@ -9,18 +9,18 @@ import java.util.regex.Pattern;
 public class ISO8601Duration {
 
     public final boolean positive;
-    public final float years;
-    public final float months;
-    public final float weeks;
-    public final float days;
-    public final float hours;
-    public final float minutes;
-    public final float seconds;
+    public final double years;
+    public final double months;
+    public final double weeks;
+    public final double days;
+    public final double hours;
+    public final double minutes;
+    public final double seconds;
 
-    // "\\d+(?:(?:[.,])\\d*)?" matches a float number
+    // "\\d+(?:(?:[.,])\\d*)?" matches a double number
     public static final Pattern PATTERN = Pattern.compile("^([+-])?P(\\d+(?:(?:[.,])\\d*)?Y)?(\\d+(?:(?:[.,])\\d*)?M)?(\\d+(?:(?:[.,])\\d*)?W)?(\\d+(?:(?:[.,])\\d*)?D)?(?:T(\\d+(?:(?:[.,])\\d*)?H)?(\\d+(?:(?:[.,])\\d*)?M)?(\\d+(?:(?:[.,])\\d*)?S)?)?$");
 
-    public ISO8601Duration(boolean positive, float years, float months, float weeks, float days, float hours, float minutes, float seconds) {
+    public ISO8601Duration(boolean positive, double years, double months, double weeks, double days, double hours, double minutes, double seconds) {
         this.positive = positive;
         this.years = years;
         this.months = months;
@@ -31,6 +31,7 @@ public class ISO8601Duration {
         this.seconds = seconds;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(positive ? '+' : '-');
@@ -53,6 +54,45 @@ public class ISO8601Duration {
         return sb.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ISO8601Duration duration = (ISO8601Duration) o;
+
+        if (positive != duration.positive) return false;
+        if (Double.compare(duration.years, years) != 0) return false;
+        if (Double.compare(duration.months, months) != 0) return false;
+        if (Double.compare(duration.weeks, weeks) != 0) return false;
+        if (Double.compare(duration.days, days) != 0) return false;
+        if (Double.compare(duration.hours, hours) != 0) return false;
+        if (Double.compare(duration.minutes, minutes) != 0) return false;
+        return Double.compare(duration.seconds, seconds) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        long temp;
+        result = (positive ? 1 : 0);
+        temp = Double.doubleToLongBits(years);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(months);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(weeks);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(days);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(hours);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(minutes);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        temp = Double.doubleToLongBits(seconds);
+        result = 31 * result + (int) (temp ^ (temp >>> 32));
+        return result;
+    }
+
     public static ISO8601Duration parse(String input) throws BadInputError {
         if (input == null) {
             throw new BadInputError("\"PT\" ISO 8601 duration expects a string");
@@ -62,17 +102,17 @@ public class ISO8601Duration {
             throw new BadInputError("invalid \"PT\" ISO 8601 duration given");
         }
         boolean positive = !"-".equals(matcher.group(1));
-        float years = getPart(matcher, 2);
-        float months = getPart(matcher, 3);
-        float weeks = getPart(matcher, 4);
-        float days = getPart(matcher, 5);
-        float hours = getPart(matcher, 6);
-        float minutes = getPart(matcher, 7);
-        float seconds = getPart(matcher, 8);
+        double years = getPart(matcher, 2);
+        double months = getPart(matcher, 3);
+        double weeks = getPart(matcher, 4);
+        double days = getPart(matcher, 5);
+        double hours = getPart(matcher, 6);
+        double minutes = getPart(matcher, 7);
+        double seconds = getPart(matcher, 8);
         return new ISO8601Duration(positive, years, months, weeks, days, hours, minutes, seconds);
     }
 
-    private static float getPart(Matcher matcher, int group) {
+    private static double getPart(Matcher matcher, int group) {
         String text = matcher.group(group);
         if (text == null) {
             return 0;
@@ -81,7 +121,7 @@ public class ISO8601Duration {
         text = text.substring(0, text.length() - 1);
         // Parse number
         try {
-            return Float.parseFloat(text.replaceAll(",", "."));
+            return Double.parseDouble(text.replaceAll(",", "."));
         } catch (NumberFormatException ex) {
             return 0;
         }
@@ -90,7 +130,7 @@ public class ISO8601Duration {
     public long applyTo(long date) {
         Calendar rtn = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
         rtn.setTimeInMillis(date);
-        float remainder = 0;
+        double remainder = 0;
         int sign = this.positive ? 1 : -1;
         int yearsInt = (int) (this.years + remainder);
         rtn.add(Calendar.YEAR, sign * yearsInt);
@@ -116,7 +156,7 @@ public class ISO8601Duration {
         rtn.add(Calendar.SECOND, sign * secondsInt);
         remainder = this.seconds + remainder - secondsInt;
         remainder *= 1000;
-        int milliSecondsInt = (int) (0 + remainder);
+        int milliSecondsInt = (int) Math.round(0 + remainder);
         rtn.add(Calendar.MILLISECOND, sign * milliSecondsInt);
         return rtn.getTimeInMillis();
     }

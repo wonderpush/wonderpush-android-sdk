@@ -100,7 +100,7 @@ public class DefaultValueNodeParser extends ConfigurableValueNodeParser {
         if (input instanceof String) {
             String stringValue = (String) input;
             // Detect relative date
-            if (RELATIVE_DATE_PATTERN.matcher(stringValue).matches()) {
+            if (RELATIVE_DATE_PATTERN.matcher(stringValue).lookingAt()) {
                 ISO8601Duration duration = ISO8601Duration.parse(stringValue);
                 return new RelativeDateValueNode(context, duration);
             }
@@ -114,14 +114,13 @@ public class DefaultValueNodeParser extends ConfigurableValueNodeParser {
                 if (offset == null) offset = "";
                 // Fill parts to default unspecified items
                 date = date + "1970-01-01".substring(date.length());
-                time = time + "00:00:00.000000".substring(time.length());
+                time = time + "00:00:00.000".substring(time.length());
                 if ("Z".equals(offset)) offset = "";
-                offset = offset + "+00:00".substring(offset.length());
-                offset = offset.substring(0, 6); // second.milliseconds are not supported by the parser
+                offset = offset + "+00:00.000".substring(offset.length());
                 // Create fully specified date
                 String str = date + "T" + time + offset;
                 // Parse the date
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ROOT);
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ROOT);
                 try {
                     Date parsed = sdf.parse(str);
                     return new DateValueNode(context, parsed.getTime());
@@ -141,7 +140,7 @@ public class DefaultValueNodeParser extends ConfigurableValueNodeParser {
         if (input instanceof String) {
             String stringValue = (String) input;
             // Detect an ISO8601 duration
-            if (RELATIVE_DATE_PATTERN.matcher(stringValue).matches()) {
+            if (RELATIVE_DATE_PATTERN.matcher(stringValue).lookingAt()) {
                 ISO8601Duration duration = ISO8601Duration.parse(stringValue);
                 return new DurationValueNode(context, duration);
             }

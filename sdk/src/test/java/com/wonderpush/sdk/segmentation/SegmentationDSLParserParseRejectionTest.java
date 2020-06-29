@@ -211,6 +211,11 @@ public class SegmentationDSLParserParseRejectionTest {
                         new JSONObject("{ \".field\": { \"not\": { \"geo\": { } } } }"),
                         BadInputError.class,
                 },
+                {
+                        // Missing `present`
+                        new JSONObject("{ \"presence\": {} }"),
+                        BadInputError.class,
+                },
         });
     }
 

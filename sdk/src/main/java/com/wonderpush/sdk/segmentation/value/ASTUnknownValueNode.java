@@ -9,12 +9,10 @@ import org.json.JSONObject;
 public class ASTUnknownValueNode extends ASTValueNode<Object> {
 
     public final String key;
-    public final Object value;
 
     public ASTUnknownValueNode(ParsingContext context, String key, Object value) {
-        super(context, JSONObject.NULL);
+        super(context, value);
         this.key = key;
-        this.value = value;
     }
 
     @Override

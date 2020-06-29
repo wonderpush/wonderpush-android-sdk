@@ -111,7 +111,6 @@ public class SegmentationDSLParser {
             if (this.parserConfig.throwOnUnknownValue) {
                 throw new UnknownValueError((ASTUnknownValueNode) parsed);
             }
-            // NOTE: I removed the possibility to optionally throw an UnknownValueError here
         }
         return ASTValueNode.castToObject(parsed);
     }

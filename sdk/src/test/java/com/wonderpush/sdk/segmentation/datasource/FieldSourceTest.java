@@ -4,9 +4,6 @@ import com.wonderpush.sdk.segmentation.FieldPath;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
