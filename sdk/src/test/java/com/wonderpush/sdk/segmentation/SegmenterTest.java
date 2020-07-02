@@ -1,6 +1,7 @@
 package com.wonderpush.sdk.segmentation;
 
 import com.wonderpush.sdk.JSONUtil;
+import com.wonderpush.sdk.TimeSync;
 import com.wonderpush.sdk.segmentation.parser.ASTCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.BadInputError;
 import com.wonderpush.sdk.segmentation.parser.UnknownValueError;
@@ -29,7 +30,7 @@ public class SegmenterTest {
             dataEmpty = new Segmenter.Data(
                     new JSONObject("{}"),
                     Collections.emptyList(),
-                    new Segmenter.PresenceInfo(0L, 0L, 0),
+                    null,
                     0L
             );
         } catch (JSONException ex) {
@@ -520,6 +521,197 @@ public class SegmenterTest {
         assertThat(new Segmenter(dataWithNewerEvent(dataEmpty, new JSONObject("{\"type\":\"@APP_OPEN\"}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithNewerEvent(dataEmpty, new JSONObject("{\"type\":\"test\"}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithNewerEvent(dataWithNewerEvent(dataEmpty, new JSONObject("{\"type\":\"@APP_OPEN\"}")), new JSONObject("{\"type\":\"test\"}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchInstallation() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".bar\":{\".sub\":{\"eq\":\"sub\"},\"installation\":{\".foo\":{\"eq\":\"foo\"}}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"bar\":{\"sub\":\"sub\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\",\"bar\":{\"sub\":\"sub\"}}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchEventInstallation() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"event\":{\".type\":{\"eq\":\"test\"},\"installation\":{\".foo\":{\"eq\":\"foo\"}}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithNewerEvent(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}")), new JSONObject("{\"type\":\"nope\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithNewerEvent(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}")), new JSONObject("{\"type\":\"test\"}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchAnd() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"eq\":\"foo\"},\".bar\":{\"eq\":\"bar\"}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\",\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"and\":[{\".foo\":{\"eq\":\"foo\"}},{\".bar\":{\"eq\":\"bar\"}}]}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\",\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchOr() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"or\":[{\".foo\":{\"eq\":\"foo\"}},{\".bar\":{\"eq\":\"bar\"}}]}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"to\":\"to\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\",\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchNot() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"not\":{\".foo\":{\"eq\":\"foo\"}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\",\"bar\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldNotMatchUnknownCriterion() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"unknown criterion\":{}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchSubscriptionStatus() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"subscriptionStatus\":\"optOut\"}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":null}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":null}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":null}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":\"optIn\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":\"optOut\"}}"))).matchesInstallation(parsedSegment), is(false));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"subscriptionStatus\":\"softOptOut\"}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":null}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":null}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":null}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":\"optIn\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":\"optOut\"}}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"subscriptionStatus\":\"optIn\"}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":null}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":null}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":null}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":\"optIn\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"pushToken\":{\"data\":\"FAKE\"},\"preferences\":{\"subscriptionStatus\":\"optOut\"}}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchLastActivityDate() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"lastActivityDate\":{\"gt\":1000000000000}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithLastAppOpenDate(dataEmpty, 999999999999L)).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithLastAppOpenDate(dataEmpty, 1000000000000L)).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithLastAppOpenDate(dataEmpty, 1000000000001L)).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"lastActivityDate\":{\"gt\":{\"date\":\"-PT1M\"}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithLastAppOpenDate(dataEmpty, TimeSync.getTime())).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchPresence() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        long now = TimeSync.getTime();
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":false}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 60000, 60000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(true)); // not present yet, so not present
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":true}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 60000, 60000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(false)); // not present yet, so not present
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":false,\"elapsedTime\":{\"gt\":1000}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 60000, 60000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(true)); // not present yet, so not present, and it will last 60s, so we pass
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":true,\"elapsedTime\":{\"gt\":1000}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 60000, 60000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(false)); // not present yet, so not present
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":false,\"elapsedTime\":{\"lt\":1000}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 60000, 60000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(false)); // not present yet, so not present
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":true,\"elapsedTime\":{\"lt\":1000}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 60000, 60000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(false)); // not present yet, so not present
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":false,\"sinceDate\":{\"lte\":{\"date\":\"-PT1M\"}}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 100000, 20000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now - 30000, 30000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(false)); // not present yet, but leave date is not lte -PT1M
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":true,\"sinceDate\":{\"lte\":{\"date\":\"-PT1M\"}}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 100000, 20000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now - 30000, 30000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 30000, now + 60000, 90000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now + 60000, 180000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(false)); // not present yet, so not present
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":false,\"sinceDate\":{\"gte\":{\"date\":\"-PT1M\"}}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 100000, 20000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now - 30000, 30000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now + 60000, 120000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 120000, now + 180000, 60000))).matchesInstallation(parsedSegment), is(true)); // not present yet, and leave date is gte -PT1M
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"presence\":{\"present\":true,\"sinceDate\":{\"gte\":{\"date\":\"-PT1M\"}}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true)); // no info is considered present since just about now
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now - 100000, 20000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 60000, now - 30000, 30000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 30000, now + 60000, 90000))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now - 120000, now + 60000, 180000))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithPresenceInfo(dataEmpty, new Segmenter.PresenceInfo(now + 60000, now + 120000, 60000))).matchesInstallation(parsedSegment), is(false)); // not present yet, but leave date is gte -PT1M
+    }
+
+    @Test
+    public void testItShouldMatchPrefix() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"prefix\":\"fo\"}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"fo\"}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"f\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"FOO\"}"))).matchesInstallation(parsedSegment), is(false));
     }
 
 }

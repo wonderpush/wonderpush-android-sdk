@@ -165,7 +165,7 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
     @Override
     public Boolean visitOrCriterionNode(OrCriterionNode node) {
         for (ASTCriterionNode child : node.children) {
-            if (!child.accept(this)) {
+            if (child.accept(this)) {
                 if (debug) Log.d(TAG, "[visitOrCriterionNode] return true because " + child + " is true.");
                 return true;
             }
@@ -176,7 +176,7 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
 
     @Override
     public Boolean visitNotCriterionNode(NotCriterionNode node) {
-        Boolean rtn = !node.accept(this);
+        Boolean rtn = !node.child.accept(this);
         if (debug) Log.d(TAG, "[visitNotCriterionNode] return " + rtn);
         return rtn;
     }
@@ -215,7 +215,7 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
     @Override
     public Boolean visitPresenceCriterionNode(PresenceCriterionNode node) {
         // Are we present right now?
-        boolean present = this.data.presenceInfo == null || this.data.presenceInfo.untilDate >= TimeSync.getTime();
+        boolean present = this.data.presenceInfo == null || (this.data.presenceInfo.untilDate >= TimeSync.getTime() && this.data.presenceInfo.fromDate <= TimeSync.getTime());
         if (present != node.present) {
             if (debug) Log.d(TAG, "[visitPresenceCriterionNode] return false because presence mismatch, expected " + node.present);
             return false;
@@ -372,7 +372,7 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
                 break;
             }
         }
-        if (debug) Log.d(TAG, "[visitComparisonCriterionNode] return " + result + " because " + dataSourceValues + " " + node.comparator.name() + " " + actualValue);
+        if (debug) Log.d(TAG, "[visitComparisonCriterionNode] return " + result + " because " + dataSourceValues + (result ? " is " : " is not ") + node.comparator.name() + " " + actualValue);
         return result;
     }
 
