@@ -131,7 +131,7 @@ public class InstallationManager {
             Log.e(WonderPush.TAG, "Unexpected exception in removeProperty", ex);
             return;
         }
-        Set<Object> set = new HashSet<>(JSONUtil.JSONArrayToList(inputs, Object.class));
+        Set<Object> set = new HashSet<>(JSONUtil.JSONArrayToList(inputs, Object.class, true));
         if (set.isEmpty()) return;
         JSONArray newValues = new JSONArray();
         for (Object item : values) {
@@ -160,7 +160,7 @@ public class InstallationManager {
         if (value == null || value == JSONObject.NULL) {
             return Collections.emptyList();
         } else if (value instanceof JSONArray) {
-            return JSONUtil.JSONArrayToList((JSONArray) value, Object.class);
+            return JSONUtil.JSONArrayToList((JSONArray) value, Object.class, true);
         } else {
             return Collections.singletonList(value);
         }

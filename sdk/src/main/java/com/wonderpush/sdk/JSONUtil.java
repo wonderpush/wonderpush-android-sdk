@@ -345,16 +345,16 @@ public class JSONUtil {
         return rtn;
     }
 
-    public static <T> List<T> JSONArrayToList(JSONArray array, Class<T> typecheck) {
+    public static <T> List<T> JSONArrayToList(JSONArray array, Class<T> typecheck, boolean removeNulls) {
         final int length = array == null ? 0 : array.length();
         ArrayList<T> rtn = new ArrayList<>(length);
         if (array != null) {
             for (int i = 0; i < length; ++i) {
                 try {
                     Object item = array.get(i);
-                    if (typecheck.isInstance(item)) {
-                        rtn.add(typecheck.cast(item));
-                    }
+                    if (!typecheck.isInstance(item)) continue;
+                    if (removeNulls && item == JSONObject.NULL) continue;
+                    rtn.add(typecheck.cast(item));
                 } catch (JSONException ex) {
                     Log.e(WonderPush.TAG, "Unexpected exception in JSONArrayToList", ex);
                 } catch (ClassCastException ex) {

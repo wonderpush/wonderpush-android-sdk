@@ -252,9 +252,21 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
     public Boolean visitEqualityCriterionNode(EqualityCriterionNode node) {
         List<Object> dataSourceValues = node.context.dataSource.accept(this);
         Object actualValue = node.value.accept(this);
+        if (actualValue == null || actualValue == JSONObject.NULL) {
+            return dataSourceValues.isEmpty();
+        }
         boolean result = false;
         for (Object dataSourceValue : dataSourceValues) {
-            result = actualValue == null ? dataSourceValue == null : actualValue.equals(dataSourceValue);
+            if (actualValue instanceof Number) {
+                if (!(dataSourceValue instanceof Number)) {
+                    result = false;
+                } else {
+                    result = ((Number) actualValue).longValue() == ((Number) dataSourceValue).longValue()
+                            || ((Number) actualValue).doubleValue() == ((Number) dataSourceValue).doubleValue();
+                }
+            } else {
+                result = actualValue.equals(dataSourceValue);
+            }
             if (result) break;
         }
         if (debug) Log.d(TAG, "[visitEqualityCriterionNode] return " + result + " because " + dataSourceValues + " " + (result ? "==" : "!=") + " " + actualValue);
@@ -429,9 +441,11 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
             }
         }
         if (curr instanceof JSONArray) {
-            JSONUtil.JSONArrayToList((JSONArray) curr, Object.class);
+            return JSONUtil.JSONArrayToList((JSONArray) curr, Object.class, true);
         }
-        if (curr == null || curr == JSONObject.NULL) return Collections.emptyList();
+        if (curr == null || curr == JSONObject.NULL) {
+            return Collections.emptyList();
+        }
         return Collections.singletonList(curr);
     }
 

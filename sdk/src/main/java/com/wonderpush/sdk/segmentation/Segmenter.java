@@ -47,9 +47,12 @@ public class Segmenter {
         this.data = data;
     }
 
-    public boolean matches(JSONObject segmentInput) throws BadInputError, UnknownValueError, UnknownCriterionError {
-        ASTCriterionNode segmentParsed = SegmentationFactory.getDefaultParser().parse(segmentInput, new InstallationSource());
-        return segmentParsed.accept(new InstallationVisitor(data));
+    public static ASTCriterionNode parseInstallationSegment(JSONObject segmentInput) throws BadInputError, UnknownValueError, UnknownCriterionError {
+        return SegmentationFactory.getDefaultParser().parse(segmentInput, new InstallationSource());
+    }
+
+    public boolean matchesInstallation(ASTCriterionNode parsedInstallationSegment) {
+        return parsedInstallationSegment.accept(new InstallationVisitor(data));
     }
 
 }
