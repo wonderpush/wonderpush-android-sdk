@@ -314,4 +314,18 @@ public class SegmenterTest {
 
     // TODO Test string dates inside event/installation
 
+    @Test
+    public void testItShouldMatchFieldFooComparisonLong() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"gt\":9223372036854775806}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775805}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775806}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775807}"))).matchesInstallation(parsedSegment), is(true));
+        // When comparing a long with a double, we loose some precision, it's OK
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9.223372036854775808e18}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9.223372036854777000e18}"))).matchesInstallation(parsedSegment), is(true));
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"lt\":9.223372036854775808e18}}"));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775805}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
 }

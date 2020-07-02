@@ -327,6 +327,10 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
         } else if (a instanceof Number) {
             if (b == null) b = 0;
             if (b instanceof Number) {
+                if ((a instanceof Byte || a instanceof Short || a instanceof Integer || a instanceof Long)
+                    && (b instanceof Byte || b instanceof Short || b instanceof Integer || b instanceof Long)) {
+                    return Long.compare(((Number) a).longValue(), ((Number) b).longValue());
+                }
                 return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
             }
         } else if (a instanceof String) {
