@@ -369,4 +369,13 @@ public class SegmenterTest {
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775805}"))).matchesInstallation(parsedSegment), is(false));
     }
 
+    @Test
+    public void testItShouldMatchEventTypeTest() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"event\":{\".type\":{\"eq\":\"test\"}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithNewerEvent(dataEmpty, new JSONObject("{\"type\":\"@APP_OPEN\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithNewerEvent(dataEmpty, new JSONObject("{\"type\":\"test\"}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithNewerEvent(dataWithNewerEvent(dataEmpty, new JSONObject("{\"type\":\"@APP_OPEN\"}")), new JSONObject("{\"type\":\"test\"}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
 }
