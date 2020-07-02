@@ -229,6 +229,64 @@ public class SegmenterTest {
     }
 
     @Test
+    public void testItShouldMatchFieldFooEqDecimal() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"eq\":1.5}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0.0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1.0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1.2}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1.5}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1.7}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":2.0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":2}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[1.5,\"bar\",true]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[0,\"bar\",true]}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchFieldFooEqLong() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"eq\":9223372036854775807}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775806}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775807}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9223372036854775808}"))).matchesInstallation(parsedSegment), is(false));
+        // When comparing a long with a double, we loose some precision, it's OK
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9.223372036854775806e18}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9.223372036854775807e18}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":9.223372036854775808e18}"))).matchesInstallation(parsedSegment), is(true));
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"eq\":7.000000000000000512e18}}"));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":6999999999999999487}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":6999999999999999488}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":7000000000000000001}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":7000000000000000512}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":7000000000000000513}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchFieldFooEqBigDecimal() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"eq\":1e300}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0.0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1.0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1e300}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1.0e300}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[1e300,\"bar\",true]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[0,\"bar\",true]}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
     public void testItShouldMatchFieldFooEqBar() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
         ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"eq\":\"bar\"}}"));
         assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
