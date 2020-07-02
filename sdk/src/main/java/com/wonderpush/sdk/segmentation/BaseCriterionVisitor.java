@@ -10,6 +10,7 @@ import com.wonderpush.sdk.segmentation.parser.ASTCriterionVisitor;
 import com.wonderpush.sdk.segmentation.parser.ASTValueNode;
 import com.wonderpush.sdk.segmentation.parser.ASTValueVisitor;
 import com.wonderpush.sdk.segmentation.parser.DataSourceVisitor;
+import com.wonderpush.sdk.segmentation.parser.DefaultValueNodeParser;
 import com.wonderpush.sdk.segmentation.parser.FieldPath;
 import com.wonderpush.sdk.segmentation.parser.criteria.ASTUnknownCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.criteria.AllCriterionNode;
@@ -52,7 +53,10 @@ import com.wonderpush.sdk.segmentation.parser.value.StringValueNode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCriterionVisitor<Boolean>, DataSourceVisitor<List<Object>> {
@@ -446,13 +450,31 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
                 curr = null;
             }
         }
+        List<Object> rtn;
         if (curr instanceof JSONArray) {
-            return JSONUtil.JSONArrayToList((JSONArray) curr, Object.class, true);
+            rtn = JSONUtil.JSONArrayToList((JSONArray) curr, Object.class, true);
+        } else if (curr == null || curr == JSONObject.NULL) {
+            rtn = Collections.emptyList();
+        } else {
+            rtn = Collections.singletonList(curr);
         }
-        if (curr == null || curr == JSONObject.NULL) {
-            return Collections.emptyList();
+        if (fieldPath.parts.length >= 2 && "custom".equals(fieldPath.parts[0]) && fieldPath.parts[fieldPath.parts.length-1].startsWith("date_")) {
+            List<Object> parsedDates = new ArrayList<>(rtn.size());
+            for (Object item : rtn) {
+                if (item instanceof String) {
+                    Date parsed = null;
+                    try {
+                        parsed = DefaultValueNodeParser.parseAbsoluteDate((String) item);
+                    } catch (ParseException ex) {}
+                    if (parsed != null) {
+                        item = parsed.getTime();
+                    }
+                }
+                parsedDates.add(item);
+            }
+            rtn = parsedDates;
         }
-        return Collections.singletonList(curr);
+        return rtn;
     }
 
     @Override

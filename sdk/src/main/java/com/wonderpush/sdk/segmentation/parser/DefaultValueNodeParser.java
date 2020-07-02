@@ -105,31 +105,43 @@ public class DefaultValueNodeParser extends ConfigurableValueNodeParser {
                 return new RelativeDateValueNode(context, duration);
             }
             // Detect absolute dates
-            Matcher matcher = ABSOLUTE_DATE_PATTERN.matcher(stringValue);
-            if (matcher.matches()) {
-                String date = matcher.group(1);
-                String time = matcher.group(2);
-                if (time == null) time = "";
-                String offset = matcher.group(3);
-                if (offset == null) offset = "";
-                // Fill parts to default unspecified items
-                date = date + "1970-01-01".substring(date.length());
-                time = time + "00:00:00.000".substring(time.length());
-                if ("Z".equals(offset)) offset = "";
-                offset = offset + "+00:00.000".substring(offset.length());
-                // Create fully specified date
-                String str = date + "T" + time + offset;
-                // Parse the date
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ROOT);
-                try {
-                    Date parsed = sdf.parse(str);
+            try {
+                Date parsed = parseAbsoluteDate(stringValue);
+                if (parsed != null) {
                     return new DateValueNode(context, parsed.getTime());
-                } catch (ParseException ex) {
-                    throw new BadInputError(key + " value \"" + input + "\" does not parse: " + ex.getMessage());
                 }
+            } catch (ParseException ex) {
+                throw new BadInputError(key + " value \"" + input + "\" does not parse: " + ex.getMessage());
             }
         }
         throw new BadInputError("\"" + key + "\" values expect a number or a string value");
+    }
+
+    /**
+     * Parses a YYYY-MM-DDTHH:MM:SS.SSSZ date.
+     * Returns null on input with the wrong format.
+     * Throw on input with the right format that fail to parse.
+     */
+    public static Date parseAbsoluteDate(String input) throws ParseException {
+        Matcher matcher = ABSOLUTE_DATE_PATTERN.matcher(input);
+        if (matcher.matches()) {
+            String date = matcher.group(1);
+            String time = matcher.group(2);
+            if (time == null) time = "";
+            String offset = matcher.group(3);
+            if (offset == null) offset = "";
+            // Fill parts to default unspecified items
+            date = date + "1970-01-01".substring(date.length());
+            time = time + "00:00:00.000".substring(time.length());
+            if ("Z".equals(offset)) offset = "";
+            offset = offset + "+00:00.000".substring(offset.length());
+            // Create fully specified date
+            String str = date + "T" + time + offset;
+            // Parse the date
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ROOT);
+            return sdf.parse(str);
+        }
+        return null;
     }
 
     public static DurationValueNode parseDuration(ParsingContext context, String key, Object input) throws BadInputError {

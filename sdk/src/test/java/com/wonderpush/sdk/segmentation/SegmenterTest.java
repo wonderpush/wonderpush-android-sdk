@@ -312,7 +312,48 @@ public class SegmenterTest {
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[0,\"\",true]}"))).matchesInstallation(parsedSegment), is(true));
     }
 
-    // TODO Test string dates inside event/installation
+    @Test
+    public void testItShouldMatchFieldCustomDateFooEqNumber() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        // 1577836800000 is 2020-01-01T00:00:00.000Z
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".custom.date_foo\":{\"eq\":1577836800000}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":null}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":1}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":false}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"foo\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":1577836800000}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T01:00:00.000+01:00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000Z\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020Z\"}}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchFieldCustomDateFooEqString() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".custom.date_foo\":{\"eq\":{\"date\":\"2020-01-01T00:00:00.000Z\"}}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":null}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":1}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":false}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"foo\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":1577836800000}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T01:00:00.000+01:00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000Z\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020Z\"}}"))).matchesInstallation(parsedSegment), is(true));
+    }
 
     @Test
     public void testItShouldMatchFieldFooComparisonLong() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
