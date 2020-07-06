@@ -383,7 +383,7 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
         boolean result = false;
         for (Object dataSourceValue : dataSourceValues) {
             if (!(dataSourceValue instanceof String)) {
-                Log.w(TAG, "[visitPrefixCriterionNode] value " + actualValue + " is not a string");
+                Log.w(TAG, "[visitPrefixCriterionNode] value " + dataSourceValue + " is not a string");
                 continue;
             }
             result = ((String) dataSourceValue).startsWith((String) actualValue);
