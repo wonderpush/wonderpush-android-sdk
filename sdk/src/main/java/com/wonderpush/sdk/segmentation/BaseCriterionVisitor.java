@@ -237,8 +237,8 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
     public Boolean visitJoinCriterionNode(JoinCriterionNode node) {
         if (node.context.dataSource instanceof EventSource) {
             for (JSONObject event : this.data.allEvents) {
-                EventsVisitor eventsVisitor = new EventsVisitor(data, event);
-                if (node.child.accept(eventsVisitor)) {
+                EventVisitor eventVisitor = new EventVisitor(data, event);
+                if (node.child.accept(eventVisitor)) {
                     return true;
                 }
             }

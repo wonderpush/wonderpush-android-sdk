@@ -6,11 +6,11 @@ import org.json.JSONObject;
 
 import java.util.List;
 
-class EventsVisitor extends BaseCriterionVisitor {
+class EventVisitor extends BaseCriterionVisitor {
 
     protected final JSONObject event;
 
-    public EventsVisitor(Segmenter.Data data, JSONObject event) {
+    public EventVisitor(Segmenter.Data data, JSONObject event) {
         super(data);
         this.event = event;
     }
