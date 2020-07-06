@@ -98,26 +98,22 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
 
     @Override
     public Object visitGeoLocationValueNode(GeoLocationValueNode node) {
-        Log.w(TAG, "Unsupported " + node.getClass().getSimpleName());
-        return null;
+        return node.getValue();
     }
 
     @Override
     public Object visitGeoBoxValueNode(GeoBoxValueNode node) {
-        Log.w(TAG, "Unsupported " + node.getClass().getSimpleName());
-        return null;
+        return node.getValue();
     }
 
     @Override
     public Object visitGeoCircleValueNode(GeoCircleValueNode node) {
-        Log.w(TAG, "Unsupported " + node.getClass().getSimpleName());
-        return null;
+        return node.getValue();
     }
 
     @Override
     public Object visitGeoPolygonValueNode(GeoPolygonValueNode node) {
-        Log.w(TAG, "Unsupported " + node.getClass().getSimpleName());
-        return null;
+        return node.getValue();
     }
 
     @Override
