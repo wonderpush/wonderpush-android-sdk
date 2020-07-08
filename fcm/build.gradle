@@ -30,7 +30,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly project(':sdk')
     runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0,)"
-    implementation "com.google.firebase:firebase-messaging:17.3.4"
+    implementation "com.google.firebase:firebase-messaging:20.2.2"
 }
 
 if (file('local.gradle').exists()) {

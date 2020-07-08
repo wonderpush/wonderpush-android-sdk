@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -26,6 +27,9 @@ public class FCMPushService implements PushService {
     private static final String TAG = "WonderPush.Push.FCM." + FCMPushService.class.getSimpleName();
 
     public static final String IDENTIFIER = "FCM"; // This key serves for ordering in case multiple push services are available
+    static final String FIREBASE_DEFAULT_PROJECT_ID = "wonderpush-shared-project";
+    static final String FIREBASE_DEFAULT_APPLICATION_ID = "1:416361470460:android:fc011131a2bdecf97eba79";
+    static final String FIREBASE_DEFAULT_API_KEY = "AIzaSyBzwZ5fRJbAohI154TVG1ouVIKkK83oOOU";
     static final String WONDERPUSH_DEFAULT_SENDER_ID = "1023997258979";
     static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
     static Context sContext;
@@ -49,11 +53,16 @@ public class FCMPushService implements PushService {
 
     @Override
     public void initialize(Context context) {
+        if (sContext != null) {
+            Log.w(TAG, "Skipping second initialization");
+            return;
+        }
         sContext = context;
         if (WonderPush.getLogging()) Log.d(TAG, "Initializing FirebaseApp…");
 
         sSenderId = WonderPushSettings.getString("WONDERPUSH_SENDER_ID", "wonderpush_senderId", "com.wonderpush.sdk.senderId");
-        if (sSenderId != null) {
+        boolean senderIdExplicitlySet = !TextUtils.isEmpty(sSenderId);
+        if (!TextUtils.isEmpty(sSenderId)) {
             if (WonderPush.getLogging()) Log.d(TAG, "Applying configuration: senderId: " + sSenderId);
         } else {
             sSenderId = getDefaultSenderId();
@@ -64,20 +73,122 @@ public class FCMPushService implements PushService {
             }
         }
 
-        try {
-            sFirebaseApp = FirebaseApp.initializeApp(
-                    sContext,
-                    new FirebaseOptions.Builder()
-                            .setApplicationId("NONE")
-                            .setApiKey("NONE")
-                            .setGcmSenderId(sSenderId)
-                            .build(),
-                    FIREBASE_APP_NAME
-            );
-            if (WonderPush.getLogging()) Log.d(TAG, "Initialized FirebaseApp");
-        } catch (IllegalStateException alreadyInitialized) {
-            if (WonderPush.getLogging()) Log.d(TAG, "FirebaseApp already initialized", alreadyInitialized);
-            sFirebaseApp = FirebaseApp.getInstance(FIREBASE_APP_NAME);
+        // Note about Firebase initialization:
+        //     Since Cloud Messaging version 20.1.1 Firebase uses the Firebase Installations SDK,
+        //     which requires a valid Application ID, Project ID and API key.
+        //     See https://firebase.google.com/support/privacy/init-options.
+        //     We can use this triplet independently of the Sender ID.
+        //     We can also reuse this triplet independently of the actual Android application.
+        //     We use this capacity to streamline the compatibility with these newer FCM library versions.
+
+        String firebaseApplicationId = WonderPushSettings.getString("WONDERPUSH_FIREBASE_APPLICATION_ID", "wonderpush_firebase_applicationId", "com.wonderpush.sdk.firebaseApplicationId");
+        String firebaseProjectId = WonderPushSettings.getString("WONDERPUSH_FIREBASE_PROJECT_ID", "wonderpush_firebase_projectId", "com.wonderpush.sdk.firebaseProjectId");
+        String firebaseApiKey = WonderPushSettings.getString("WONDERPUSH_FIREBASE_API_KEY", "wonderpush_firebase_apiKey", "com.wonderpush.sdk.firebaseApiKey");
+        if (!TextUtils.isEmpty(firebaseApplicationId) || !TextUtils.isEmpty(firebaseProjectId) || !TextUtils.isEmpty(firebaseApiKey)) {
+            if (TextUtils.isEmpty(firebaseApplicationId) || TextUtils.isEmpty(firebaseProjectId) || TextUtils.isEmpty(firebaseApiKey)) {
+                Log.e(TAG, "Some but not all FirebaseApp credentials were given. Ignoring them.");
+                if (TextUtils.isEmpty(firebaseApplicationId)) {
+                    Log.e(TAG, "Missing Application ID");
+                }
+                if (TextUtils.isEmpty(firebaseProjectId)) {
+                    Log.e(TAG, "Missing Project ID");
+                }
+                if (TextUtils.isEmpty(firebaseApiKey)) {
+                    Log.e(TAG, "Missing API key");
+                }
+                firebaseApplicationId = null;
+                firebaseProjectId = null;
+                firebaseApiKey = null;
+            }
+        }
+
+        // Use the provided credentials, if available
+        if (!TextUtils.isEmpty(firebaseApplicationId) && !TextUtils.isEmpty(firebaseProjectId) && !TextUtils.isEmpty(firebaseApiKey)) {
+            try {
+                if (WonderPush.getLogging()) Log.d(TAG, "Initializing FirebaseApp programmatically using applicationId=" + firebaseApplicationId + " projectId=" + firebaseProjectId + " senderId=" + sSenderId);
+                sFirebaseApp = FirebaseApp.initializeApp(
+                        sContext,
+                        new FirebaseOptions.Builder()
+                                .setApplicationId(firebaseApplicationId)
+                                .setProjectId(firebaseProjectId)
+                                .setApiKey(firebaseApiKey)
+                                .setGcmSenderId(sSenderId)
+                                .build(),
+                        FIREBASE_APP_NAME + "-1"
+                );
+                if (WonderPush.getLogging()) Log.d(TAG, "Initialized FirebaseApp");
+            } catch (IllegalStateException ex) {
+                Log.e(TAG, "Failed to initialize FirebaseApp programmatically using given credentials", ex);
+            }
+        }
+        // If ready, trigger further verification
+        if (sFirebaseApp != null) {
+            try {
+                if (WonderPush.getLogging()) Log.d(TAG, "Checking FirebaseApp initialization");
+                FirebaseInstanceId.getInstance(sFirebaseApp);
+            } catch (IllegalArgumentException ex) {
+                Log.e(TAG, "Failed to check FirebaseApp initialization", ex);
+                // We'll try to get the default instance
+                //sFirebaseApp.delete(); // do not delete or we'll get a FATAL EXCEPTION from an FCM background thread
+                sFirebaseApp = null;
+            }
+        }
+        // If still not ready, use shared credentials
+        if (sFirebaseApp == null) {
+            if (WonderPush.getLogging()) Log.d(TAG, "Using the default FirebaseApp");
+            try {
+                sFirebaseApp = FirebaseApp.getInstance();
+            } catch (IllegalStateException defaultFirebaseAppDoesNotExistEx) {
+                if (WonderPush.getLogging()) Log.d(TAG, "No default FirebaseApp");
+            }
+            if (sFirebaseApp != null && senderIdExplicitlySet && !sSenderId.equals(sFirebaseApp.getOptions().getGcmSenderId())) {
+                // Instead of using another Sender ID than explicitly configured, reuse the options of the default FirebaseApp with the desired SenderID
+                if (WonderPush.getLogging()) Log.d(TAG, "The default FirebaseApp uses Sender ID " + sFirebaseApp.getOptions().getGcmSenderId() + " whereas WonderPush SDK was instructed to use " + sSenderId + ".");
+                if (WonderPush.getLogging()) Log.d(TAG, "We will reconstruct a FirebaseApp with the same options except for the Sender ID");
+                FirebaseOptions options = sFirebaseApp.getOptions();
+                try {
+                    sFirebaseApp = FirebaseApp.initializeApp(
+                            sContext,
+                            new FirebaseOptions.Builder()
+                                    .setApplicationId(options.getApplicationId())
+                                    .setProjectId(options.getProjectId())
+                                    .setApiKey(options.getApiKey())
+                                    .setGcmSenderId(sSenderId)
+                                    .build(),
+                            FIREBASE_APP_NAME + "-2" // we must use another app name if the first attempt failed validation because we can't delete that FirebaseApp
+                    );
+                    if (WonderPush.getLogging()) Log.d(TAG, "Initialized FirebaseApp");
+                } catch (IllegalStateException ex) {
+                    Log.e(TAG, "Failed to reconfigure default FirebaseApp with another Sender ID", ex);
+                    Log.e(TAG, "WonderPush might not be able to send push notifications. Check your application configuration, then the FCM Server Key in your dashboard.");
+                }
+            }
+        }
+        // If still not ready, use shared credentials
+        if (sFirebaseApp == null) {
+            if (WonderPush.getLogging()) Log.d(TAG, "Using shared FirebaseApp credentials");
+            try {
+                if (WonderPush.getLogging()) Log.d(TAG, "Initializing FirebaseApp programmatically using shared credentials");
+                sFirebaseApp = FirebaseApp.initializeApp(
+                        sContext,
+                        new FirebaseOptions.Builder()
+                                .setApplicationId(FIREBASE_DEFAULT_APPLICATION_ID)
+                                .setProjectId(FIREBASE_DEFAULT_PROJECT_ID)
+                                .setApiKey(FIREBASE_DEFAULT_API_KEY)
+                                .setGcmSenderId(sSenderId)
+                                .build(),
+                        FIREBASE_APP_NAME + "-3"
+                );
+                if (WonderPush.getLogging()) Log.d(TAG, "Initialized FirebaseApp");
+            } catch (IllegalStateException ex) {
+                Log.e(TAG, "Failed to initialize FirebaseApp with shared credentials", ex);
+                Log.e(TAG, "Push notifications will not work");
+            }
+        }
+
+        // Make sure we get the right Sender ID
+        if (sFirebaseApp != null) {
+            sSenderId = sFirebaseApp.getOptions().getGcmSenderId();
         }
     }
 
@@ -142,6 +253,10 @@ public class FCMPushService implements PushService {
 
     public static void fetchInstanceId() {
         if (WonderPush.getLogging()) Log.d(TAG, "FirebaseInstanceId.getInstanceId() called…");
+        if (getFirebaseApp() == null) {
+            Log.w(TAG, "FirebaseInstanceId.getInstanceId() cannot proceed, FirebaseApp was not initialized.");
+            return;
+        }
         FirebaseInstanceId.getInstance(getFirebaseApp()).getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
                     @Override
@@ -170,12 +285,15 @@ public class FCMPushService implements PushService {
     }
 
     static String getDefaultSenderId() {
+        String rtn = null;
         int firebaseSenderIdRes = sContext.getResources().getIdentifier("gcm_defaultSenderId", "string", sContext.getPackageName());
-        if (firebaseSenderIdRes == 0) {
-            return WONDERPUSH_DEFAULT_SENDER_ID;
-        } else {
-            return sContext.getResources().getString(firebaseSenderIdRes);
+        if (firebaseSenderIdRes != 0) {
+            rtn = sContext.getResources().getString(firebaseSenderIdRes);
         }
+        if (TextUtils.isEmpty(rtn)) {
+            rtn = WONDERPUSH_DEFAULT_SENDER_ID;
+        }
+        return rtn;
     }
 
     static String getSenderId() {
