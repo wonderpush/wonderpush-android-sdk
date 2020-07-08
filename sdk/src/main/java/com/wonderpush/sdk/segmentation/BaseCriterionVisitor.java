@@ -279,10 +279,15 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
     public Boolean visitAnyCriterionNode(AnyCriterionNode node) {
         List<Object> dataSourceValues = node.context.dataSource.accept(this);
         for (ASTValueNode<Object> value : node.values) {
-            boolean found = false;
             Object actualValue = value.accept(this);
+            if (actualValue == null || actualValue == JSONObject.NULL) {
+                if (dataSourceValues.isEmpty()) {
+                    if (debug) Log.d(TAG, "[visitAnyCriterionNode] return true for " + dataSourceValues);
+                    return true;
+                }
+            }
             for (Object dataSourceValue : dataSourceValues) {
-                if (dataSourceValue == null ? actualValue == null : dataSourceValue.equals(actualValue)) {
+                if (actualValue.equals(dataSourceValue)) {
                     if (debug) Log.d(TAG, "[visitAnyCriterionNode] return true for " + dataSourceValues);
                     return true;
                 }
@@ -298,10 +303,16 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
         for (ASTValueNode<Object> value : node.values) {
             boolean found = false;
             Object actualValue = value.accept(this);
-            for (Object dataSourceValue : dataSourceValues) {
-                if (dataSourceValue == null ? actualValue == null : dataSourceValue.equals(actualValue)) {
+            if (actualValue == null || actualValue == JSONObject.NULL) {
+                if (dataSourceValues.isEmpty()) {
                     found = true;
-                    break;
+                }
+            } else {
+                for (Object dataSourceValue : dataSourceValues) {
+                    if (actualValue.equals(dataSourceValue)) {
+                        found = true;
+                        break;
+                    }
                 }
             }
             if (!found) {

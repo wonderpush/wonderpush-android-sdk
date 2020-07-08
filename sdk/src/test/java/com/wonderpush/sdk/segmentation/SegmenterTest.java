@@ -120,7 +120,7 @@ public class SegmenterTest {
     }
 
     @Test
-    public void testItShouldMatchAll() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+    public void testItShouldMatchMatchAll() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
         Segmenter s = new Segmenter(dataEmpty);
         ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{}"));
         assertThat(s.matchesInstallation(parsedSegment), is(true));
@@ -131,6 +131,7 @@ public class SegmenterTest {
         ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"eq\":null}}"));
         assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[]}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[null,null]}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
@@ -323,6 +324,7 @@ public class SegmenterTest {
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":false}}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"foo\"}}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":1577836800000}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2029-09-09T09:09:09.009+09:09\"}}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T01:00:00.000+01:00\"}}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000Z\"}}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000\"}}"))).matchesInstallation(parsedSegment), is(true));
@@ -336,7 +338,7 @@ public class SegmenterTest {
     }
 
     @Test
-    public void testItShouldMatchFieldCustomDateFooEqString() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+    public void testItShouldMatchFieldCustomDateFooEqDateString() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
         ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".custom.date_foo\":{\"eq\":{\"date\":\"2020-01-01T00:00:00.000Z\"}}}"));
         assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":null}}"))).matchesInstallation(parsedSegment), is(false));
@@ -344,6 +346,7 @@ public class SegmenterTest {
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":false}}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"foo\"}}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":1577836800000}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2029-09-09T09:09:09.009+09:09\"}}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T01:00:00.000+01:00\"}}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000Z\"}}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020-01-01T00:00:00.000\"}}"))).matchesInstallation(parsedSegment), is(true));
@@ -470,6 +473,23 @@ public class SegmenterTest {
     }
 
     @Test
+    public void testItShouldMatchFieldFooComparisonMixed() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"lt\":0}}"));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"lte\":0}}"));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"gt\":0}}"));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"gte\":0}}"));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
     public void testItShouldMatchFieldFooComparisonBooleans() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
         ASTCriterionNode parsedSegment;
 
@@ -539,6 +559,12 @@ public class SegmenterTest {
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithNewerEvent(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}")), new JSONObject("{\"type\":\"nope\"}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithNewerEvent(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}")), new JSONObject("{\"type\":\"test\"}"))).matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchUser() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"user\":{}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
     }
 
     @Test
@@ -705,13 +731,142 @@ public class SegmenterTest {
 
     @Test
     public void testItShouldMatchPrefix() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
-        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"prefix\":\"fo\"}}"));
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"prefix\":\"fo\"}}"));
         assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"fo\"}"))).matchesInstallation(parsedSegment), is(true));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"f\"}"))).matchesInstallation(parsedSegment), is(false));
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"FOO\"}"))).matchesInstallation(parsedSegment), is(false));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"prefix\":\"fo\"}}"));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchAny() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"any\":[]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"any\":[1]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,\"foo\"]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,\"foo\"]}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"any\":[1,\"foo\"]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,\"foo\"]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,\"foo\"]}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"any\":[1,null]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,null]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,null]}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"any\":[null]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,null]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,null]}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchAll() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment;
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"all\":[]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"all\":[1]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,\"foo\"]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,\"foo\"]}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"all\":[1,\"foo\"]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,\"foo\"]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,\"foo\"]}"))).matchesInstallation(parsedSegment), is(true));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"all\":[1,null]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,null]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,null]}"))).matchesInstallation(parsedSegment), is(false));
+
+        parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"all\":[null]}}"));
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"bar\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":\"foo\"}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":null}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":false}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":0}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":1}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[]}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,null]}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"foo\":[\"bar\",false,1,null]}"))).matchesInstallation(parsedSegment), is(false));
     }
 
 }
