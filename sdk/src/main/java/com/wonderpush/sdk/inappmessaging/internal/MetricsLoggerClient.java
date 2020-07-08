@@ -53,11 +53,11 @@ public class MetricsLoggerClient {
     this.inAppMessagingConfiguration = inAppMessagingConfiguration;
   }
 
-  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map data) {
+  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map<String, Object> data) {
     logInternalEvent(eventName, metadata, data, false);
   }
 
-  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map data, boolean useMeasurementsApi) {
+  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map<String, Object> data, boolean useMeasurementsApi) {
     JSONObject eventData = data != null ? new JSONObject(data) : new JSONObject();
     try {
       if (metadata.getCampaignId() != null) eventData.put("campaignId", metadata.getCampaignId());
@@ -83,7 +83,7 @@ public class MetricsLoggerClient {
 
   /** Log click */
   public void logMessageClick(InAppMessage message, List<ActionModel> actions) {
-    Map data = new HashMap();
+    Map<String, Object> data = new HashMap<>();
     InAppMessage.ButtonType buttonType = message.getButtonType(actions);
     if (buttonType == InAppMessage.ButtonType.PRIMARY) data.put("buttonLabel", "primary");
     if (buttonType == InAppMessage.ButtonType.SECONDARY) data.put("buttonLabel", "secondary");
