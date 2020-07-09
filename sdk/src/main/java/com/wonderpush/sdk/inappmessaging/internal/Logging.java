@@ -45,6 +45,9 @@ public class Logging {
     Log.e(TAG, message);
   }
 
+  public static void loge(String message, Throwable t) {
+    Log.e(TAG, message, t);
+  }
   /** Log warning messages normally but add a consistent TAG */
   public static void logw(String message) {
     Log.w(TAG, message);

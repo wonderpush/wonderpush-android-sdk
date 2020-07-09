@@ -1193,6 +1193,9 @@ public class WonderPush {
         RequestParams parameters = new RequestParams();
         parameters.put("body", event.toString());
 
+        // Remember
+        WonderPushConfiguration.rememberTrackedEvent(event);
+
         // Broadcast locally that an event was tracked
         Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
         eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);

@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-class JSONSyncInstallationCustom {
+public class JSONSyncInstallationCustom {
 
     private static final Map<String, JSONSyncInstallationCustom> sInstancePerUserId = new HashMap<>();
     private static boolean initialized = false;
@@ -88,7 +88,7 @@ class JSONSyncInstallationCustom {
         }
     }
 
-    static JSONSyncInstallationCustom forCurrentUser() {
+    public static JSONSyncInstallationCustom forCurrentUser() {
         return forUser(WonderPushConfiguration.getUserId());
     }
 

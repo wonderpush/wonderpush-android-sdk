@@ -15,6 +15,9 @@
 package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.google.android.gms.tasks.Task;
+import com.wonderpush.sdk.JSONSyncInstallationCustom;
+import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.WonderPushConfiguration;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -30,12 +33,17 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
+import com.wonderpush.sdk.segmentation.Segmenter;
+import com.wonderpush.sdk.segmentation.parser.*;
+import com.wonderpush.sdk.segmentation.parser.criteria.UnknownCriterionError;
+import com.wonderpush.sdk.segmentation.parser.datasource.InstallationSource;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Function;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -93,6 +101,31 @@ public class InAppMessageStreamManager {
       }
     }
     return false;
+  }
+
+  private static SegmentationDSLParser parser;
+  private static SegmentationDSLParser getParser() throws CriterionParserAlreadyExistsForKey, ValueParserAlreadyExistsForKey {
+      if (parser == null) {
+          DefaultCriterionNodeParser criterionNodeParser = new DefaultCriterionNodeParser();
+          DefaultValueNodeParser valueNodeParser = new DefaultValueNodeParser();
+          ParserConfig config = new ParserConfig(valueNodeParser, criterionNodeParser, false, false);
+          parser = new SegmentationDSLParser(config);
+      }
+      return parser;
+  }
+
+  private static boolean matchesSegment(Segmenter segmenter, ThickContent content) {
+      // No segment means match all
+      if (content.getSegment() == null) return true;
+      // No segmenter means we can't perform segmentation
+      if (segmenter == null) return false;
+      try {
+          ASTCriterionNode parsedInstallationSegment = getParser().parse(content.getSegment(), new InstallationSource());
+          return segmenter.matchesInstallation(parsedInstallationSegment);
+      } catch (Exception e) {
+          Logging.loge(String.format("Could not parse segment %s", content.getSegment().toString()), e);
+          return false;
+      }
   }
 
   private static long delayForEvent(String event, ThickContent content) {
@@ -287,9 +320,36 @@ public class InAppMessageStreamManager {
           Function<ThickContent, Maybe<ThickContent>> appForegroundRateLimitFilter,
           Function<ThickContent, Maybe<ThickContent>> filterDisplayable,
           List<Campaign.ThickContent> messages) {
+    Segmenter.Data segmenterData = null;
+    try {
+      // Get custom props
+      JSONObject customProperties = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+
+      // Extract tags
+      JSONArray tags = customProperties != null ? customProperties.optJSONArray("tags") : null;
+      if (customProperties != null) customProperties.remove("tags");
+
+      // Get core props
+      String installationCorePropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
+
+      // Build the installation JSONObject
+      JSONObject installation = installationCorePropertiesString == null ? new JSONObject() : new JSONObject(installationCorePropertiesString);
+      if (customProperties != null) installation.put("custom", customProperties);
+      if (tags != null) installation.put("tags", tags);
+
+      // Tracked events
+      List<JSONObject> trackedEvents = WonderPushConfiguration.getTrackedEvents();
+
+      // Build segmenter data
+      segmenterData = new Segmenter.Data(installation, trackedEvents,null, WonderPushConfiguration.getLastAppOpenDate());
+    } catch (JSONException e) {
+      Logging.loge("Could not create segmenter data", e);
+    }
+    final Segmenter segmenter = segmenterData == null ? null : new Segmenter(segmenterData);
     return Flowable.fromIterable(messages)
         .filter(content -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, content))
         .filter(content -> containsTriggeringCondition(event, content))
+        .filter(content -> matchesSegment(segmenter, content))
         .flatMapMaybe(filterAlreadyImpressed)
         .flatMapMaybe(appForegroundRateLimitFilter)
         .flatMapMaybe(filterDisplayable)

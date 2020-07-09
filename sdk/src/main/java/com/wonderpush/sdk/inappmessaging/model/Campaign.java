@@ -31,6 +31,7 @@ public final class Campaign {
     private MessagesProto.Content content_;
     private CommonTypesProto.Priority priority_;
     private boolean isTestCampaign_;
+    private JSONObject segment_;
     private List<CommonTypesProto.TriggeringCondition> triggeringConditions_ = new ArrayList<>();
 
     @Override
@@ -64,6 +65,12 @@ public final class Campaign {
       if (startDate != 0L) vanillaContent.setCampaignStartTimeMillis(startDate);
       Long endDate = schedulingJson.optLong("endDate");
       if (endDate != 0L) vanillaContent.setCampaignEndTimeMillis(endDate);
+
+      // Segmentation
+      JSONObject segmentJson = campaignJson.optJSONObject("segment");
+      if (segmentJson != null) {
+        setSegment(segmentJson);
+      }
 
       // Notifications
       JSONArray notificationsJson = campaignJson.optJSONArray("notifications");
@@ -353,6 +360,14 @@ public final class Campaign {
       content_ = value;
 
       }
+
+    public JSONObject getSegment() {
+      return segment_;
+    }
+
+    private void setSegment(JSONObject segment) {
+      segment_ = segment;
+    }
 
     /**
      * <pre>
