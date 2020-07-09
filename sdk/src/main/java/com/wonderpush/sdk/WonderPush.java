@@ -1564,6 +1564,7 @@ public class WonderPush {
             // No need to get clientId/clientSecret once again
             // we only need to re-run the Activity-related initialization
             initialize(context, null, null);
+            return true;
         }
 
         WonderPushSettings.initialize(context);
