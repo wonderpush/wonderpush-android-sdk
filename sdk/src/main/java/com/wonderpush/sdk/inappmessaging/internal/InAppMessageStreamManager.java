@@ -103,24 +103,13 @@ public class InAppMessageStreamManager {
     return false;
   }
 
-  private static SegmentationDSLParser parser;
-  private static SegmentationDSLParser getParser() throws CriterionParserAlreadyExistsForKey, ValueParserAlreadyExistsForKey {
-      if (parser == null) {
-          DefaultCriterionNodeParser criterionNodeParser = new DefaultCriterionNodeParser();
-          DefaultValueNodeParser valueNodeParser = new DefaultValueNodeParser();
-          ParserConfig config = new ParserConfig(valueNodeParser, criterionNodeParser, false, false);
-          parser = new SegmentationDSLParser(config);
-      }
-      return parser;
-  }
-
   private static boolean matchesSegment(Segmenter segmenter, ThickContent content) {
       // No segment means match all
       if (content.getSegment() == null) return true;
       // No segmenter means we can't perform segmentation
       if (segmenter == null) return false;
       try {
-          ASTCriterionNode parsedInstallationSegment = getParser().parse(content.getSegment(), new InstallationSource());
+          ASTCriterionNode parsedInstallationSegment = Segmenter.parseInstallationSegment(content.getSegment());
           return segmenter.matchesInstallation(parsedInstallationSegment);
       } catch (Exception e) {
           Logging.loge(String.format("Could not parse segment %s", content.getSegment().toString()), e);
