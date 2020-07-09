@@ -324,18 +324,12 @@ public class InAppMessageStreamManager {
     try {
       // Get custom props
       JSONObject customProperties = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
-
-      // Extract tags
-      JSONArray tags = customProperties != null ? customProperties.optJSONArray("tags") : null;
-      if (customProperties != null) customProperties.remove("tags");
-
       // Get core props
       String installationCorePropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
 
       // Build the installation JSONObject
       JSONObject installation = installationCorePropertiesString == null ? new JSONObject() : new JSONObject(installationCorePropertiesString);
       if (customProperties != null) installation.put("custom", customProperties);
-      if (tags != null) installation.put("tags", tags);
 
       // Tracked events
       List<JSONObject> trackedEvents = WonderPushConfiguration.getTrackedEvents();
