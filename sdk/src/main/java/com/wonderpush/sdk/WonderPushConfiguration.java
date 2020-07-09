@@ -1108,7 +1108,7 @@ public class WonderPushConfiguration {
     }
 
     static void rememberTrackedEvent(JSONObject eventData) {
-        String type = eventData.optString("type");
+        String type = JSONUtil.getString(eventData, "type");
         if (type == null) return;
         List<JSONObject> trackedEvents = getTrackedEvents();
         JSONArray storeTrackedEvents = new JSONArray();
