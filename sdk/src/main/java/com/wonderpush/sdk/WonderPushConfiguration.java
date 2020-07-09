@@ -135,6 +135,7 @@ public class WonderPushConfiguration {
             currentUserArchive.putOpt(CURRENCY_PREF_NAME, getCurrency());
             currentUserArchive.putOpt(LOCALE_PREF_NAME, getLocale());
             currentUserArchive.putOpt(TIME_ZONE_PREF_NAME, getTimeZone());
+            currentUserArchive.putOpt(STORED_TRACKED_EVENTS_PREF_NAME, getTrackedEvents());
             JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
             if (usersArchive == null) {
                 usersArchive = new JSONObject();
@@ -176,6 +177,11 @@ public class WonderPushConfiguration {
         setCurrency(JSONUtil.optString(newUserArchive, CURRENCY_PREF_NAME));
         setLocale(JSONUtil.optString(newUserArchive, LOCALE_PREF_NAME));
         setTimeZone(JSONUtil.optString(newUserArchive, TIME_ZONE_PREF_NAME));
+        try {
+            setTrackedEvents(new JSONArray(JSONUtil.optString(newUserArchive, STORED_TRACKED_EVENTS_PREF_NAME)));
+        } catch (JSONException e) {
+            setTrackedEvents(null);
+        }
     }
 
     static void clearForUserId(String userId) {
@@ -214,6 +220,7 @@ public class WonderPushConfiguration {
                 editor.remove(LAST_APPOPEN_DATE_PREF_NAME);
                 editor.remove(LAST_APPOPEN_INFO_PREF_NAME);
                 editor.remove(LAST_APPCLOSE_DATE_PREF_NAME);
+                editor.remove(STORED_TRACKED_EVENTS_PREF_NAME);
                 editor.apply();
             }
         }
@@ -1123,10 +1130,14 @@ public class WonderPushConfiguration {
             // FIXME: remove me when the server sends a different DSL to clients and the database
             copyOfEventData.put("collapsing", "last");
             storeTrackedEvents.put(copyOfEventData);
-            putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, storeTrackedEvents);
+            setTrackedEvents(storeTrackedEvents);
         } catch (JSONException e) {
             Log.e(WonderPush.TAG, "Could not store tracked event", e);
         }
+    }
+
+    static void setTrackedEvents(JSONArray trackedEvents) {
+        putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, trackedEvents);
     }
 
     public static List<JSONObject> getTrackedEvents() {
