@@ -28,6 +28,8 @@ public class WonderPushConfiguration {
     private static final String USER_ID_PREF_NAME = "__user_id";
     private static final String USER_CONSENT_PREF_NAME = "__user_consent";
 
+    private static final String STORED_TRACKED_EVENTS_PREF_NAME = "__wonderpush_stored_tracked_events";
+
     private static final String NOTIFICATION_ENABLED_PREF_NAME = "__wonderpush_notification_enabled";
     private static final String CACHED_OS_ARENOTIFICATIONSENABLED_NAME = "__cached_os_areNotificationsEnabled";
     private static final String CACHED_OS_ARENOTIFICATIONSENABLED_DATE_NAME = "__cached_os_areNotificationsEnabled_date";
@@ -133,6 +135,7 @@ public class WonderPushConfiguration {
             currentUserArchive.putOpt(CURRENCY_PREF_NAME, getCurrency());
             currentUserArchive.putOpt(LOCALE_PREF_NAME, getLocale());
             currentUserArchive.putOpt(TIME_ZONE_PREF_NAME, getTimeZone());
+            currentUserArchive.putOpt(STORED_TRACKED_EVENTS_PREF_NAME, getTrackedEvents());
             JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
             if (usersArchive == null) {
                 usersArchive = new JSONObject();
@@ -174,6 +177,11 @@ public class WonderPushConfiguration {
         setCurrency(JSONUtil.optString(newUserArchive, CURRENCY_PREF_NAME));
         setLocale(JSONUtil.optString(newUserArchive, LOCALE_PREF_NAME));
         setTimeZone(JSONUtil.optString(newUserArchive, TIME_ZONE_PREF_NAME));
+        try {
+            setTrackedEvents(new JSONArray(JSONUtil.optString(newUserArchive, STORED_TRACKED_EVENTS_PREF_NAME)));
+        } catch (JSONException e) {
+            setTrackedEvents(null);
+        }
     }
 
     static void clearForUserId(String userId) {
@@ -212,6 +220,7 @@ public class WonderPushConfiguration {
                 editor.remove(LAST_APPOPEN_DATE_PREF_NAME);
                 editor.remove(LAST_APPOPEN_INFO_PREF_NAME);
                 editor.remove(LAST_APPCLOSE_DATE_PREF_NAME);
+                editor.remove(STORED_TRACKED_EVENTS_PREF_NAME);
                 editor.apply();
             }
         }
@@ -641,7 +650,7 @@ public class WonderPushConfiguration {
     /**
      * Get the cached installation core properties stored in the user's shared preferences.
      */
-    static String getCachedInstallationCoreProperties() {
+    public static String getCachedInstallationCoreProperties() {
         return getString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME);
     }
 
@@ -948,7 +957,7 @@ public class WonderPushConfiguration {
     /**
      * Get the last app-open date timestamp in milliseconds stored in the user's shared preferences.
      */
-    static long getLastAppOpenDate() {
+    public static long getLastAppOpenDate() {
         return getLong(LAST_APPOPEN_DATE_PREF_NAME, 0);
     }
 
@@ -1103,6 +1112,42 @@ public class WonderPushConfiguration {
 
     static void setTimeZone(String value) {
         putString(TIME_ZONE_PREF_NAME, value);
+    }
+
+    static void rememberTrackedEvent(JSONObject eventData) {
+        String type = JSONUtil.getString(eventData, "type");
+        if (type == null) return;
+        List<JSONObject> trackedEvents = getTrackedEvents();
+        JSONArray storeTrackedEvents = new JSONArray();
+        for (JSONObject trackedEvent : trackedEvents) {
+            // Filter out events of the given type
+            // We only keep one copy per event type
+            if (type.equals(trackedEvent.optString("type"))) continue;
+            storeTrackedEvents.put(trackedEvent);
+        }
+        try {
+            JSONObject copyOfEventData = new JSONObject(eventData.toString());
+            // FIXME: remove me when the server sends a different DSL to clients and the database
+            copyOfEventData.put("collapsing", "last");
+            storeTrackedEvents.put(copyOfEventData);
+            setTrackedEvents(storeTrackedEvents);
+        } catch (JSONException e) {
+            Log.e(WonderPush.TAG, "Could not store tracked event", e);
+        }
+    }
+
+    static void setTrackedEvents(JSONArray trackedEvents) {
+        putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, trackedEvents);
+    }
+
+    public static List<JSONObject> getTrackedEvents() {
+        List<JSONObject> result = new ArrayList<>();
+        JSONArray storedTrackedEvents = getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME);
+        for (int i = 0; storedTrackedEvents != null && i < storedTrackedEvents.length(); i++) {
+            JSONObject event = storedTrackedEvents.optJSONObject(i);
+            if (event != null) result.add(event);
+        }
+        return result;
     }
 
 }

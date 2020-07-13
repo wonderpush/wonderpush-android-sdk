@@ -17,12 +17,14 @@ package com.wonderpush.sdk.inappmessaging.model;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.inappmessaging.internal.Logging;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.List;
 
 /**
  * Class to transform internal proto representation to externalized parcelable objects. See {@link
@@ -200,7 +202,13 @@ public class ProtoMarshallerClient {
         return new InAppMessage(
             new NotificationMetadata(campaignId, notificationId, viewId, isTestMessage),
             MessageType.UNSUPPORTED,
-            in.getDataBundle()) {};
+            in.getDataBundle()) {
+
+          @Override
+          public ButtonType getButtonType(List<ActionModel> actions) {
+            return ButtonType.UNDEFINED;
+          }
+        };
     }
   }
 }

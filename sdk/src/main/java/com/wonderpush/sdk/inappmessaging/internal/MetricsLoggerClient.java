@@ -18,6 +18,7 @@ import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.InternalEventTracker;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.TimeSync;
+import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
@@ -25,8 +26,11 @@ import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -38,28 +42,40 @@ public class MetricsLoggerClient {
 
   private final DeveloperListenerManager developerListenerManager;
   private final InternalEventTracker internalEventTracker;
+  private final InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration;
 
   @Inject
   public MetricsLoggerClient(DeveloperListenerManager developerListenerManager,
-                             InternalEventTracker internalEventTracker) {
+                             InternalEventTracker internalEventTracker,
+                             InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration) {
     this.developerListenerManager = developerListenerManager;
     this.internalEventTracker = internalEventTracker;
+    this.inAppMessagingConfiguration = inAppMessagingConfiguration;
   }
 
-  private void logInternalEvent(String eventName, NotificationMetadata metadata) {
-    JSONObject eventData = new JSONObject();
+  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map<String, Object> data) {
+    logInternalEvent(eventName, metadata, data, false);
+  }
+
+  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map<String, Object> data, boolean useMeasurementsApi) {
+    JSONObject eventData = data != null ? new JSONObject(data) : new JSONObject();
     try {
       if (metadata.getCampaignId() != null) eventData.put("campaignId", metadata.getCampaignId());
       if (metadata.getNotificationId() != null) eventData.put("notificationId", metadata.getNotificationId());
       if (metadata.getViewId() != null) eventData.put("viewId", metadata.getViewId());
       eventData.put("actionDate", TimeSync.getTime());
-      this.internalEventTracker.trackInternalEvent(eventName, eventData);
+      if (useMeasurementsApi) {
+        this.internalEventTracker.trackInternalEventWithMeasurementsApi(eventName, eventData);
+      } else {
+        this.internalEventTracker.trackInternalEvent(eventName, eventData);
+      }
     } catch (JSONException e) {}
   }
 
   /** Log impression */
   public void logImpression(InAppMessage message) {
-    this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata());
+    boolean useMeasurementsApi = !inAppMessagingConfiguration.inAppViewedReceipts();
+    this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata(), null, useMeasurementsApi);
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
@@ -67,7 +83,11 @@ public class MetricsLoggerClient {
 
   /** Log click */
   public void logMessageClick(InAppMessage message, List<ActionModel> actions) {
-    this.logInternalEvent("@INAPP_CLICKED", message.getNotificationMetadata());
+    Map<String, Object> data = new HashMap<>();
+    InAppMessage.ButtonType buttonType = message.getButtonType(actions);
+    if (buttonType == InAppMessage.ButtonType.PRIMARY) data.put("buttonLabel", "primary");
+    if (buttonType == InAppMessage.ButtonType.SECONDARY) data.put("buttonLabel", "secondary");
+    this.logInternalEvent("@INAPP_CLICKED", message.getNotificationMetadata(), data);
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.messageClicked(message, actions);

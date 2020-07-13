@@ -22,6 +22,10 @@ import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
 
+import com.wonderpush.sdk.remoteconfig.AsyncHttpClientRemoteConfigFetcher;
+import com.wonderpush.sdk.remoteconfig.RemoteConfig;
+import com.wonderpush.sdk.remoteconfig.RemoteConfigManager;
+import com.wonderpush.sdk.remoteconfig.SharedPreferencesRemoteConfigStorage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -73,6 +77,7 @@ public class WonderPush {
     private static Looper sLooper;
     private static Handler sDeferHandler;
     protected static final ScheduledExecutorService sScheduledExecutor;
+    static RemoteConfigManager remoteConfigManager;
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
         new Thread(new Runnable() {
@@ -141,6 +146,7 @@ public class WonderPush {
     static final String SDK_SHORT_VERSION = BuildConfig.VERSION_NAME;
     static final String SDK_VERSION = "Android-" + SDK_SHORT_VERSION;
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
+    protected static final String MEASUREMENTS_API_URL = "https://measurements-api.wonderpush.com/v1";
 
     /**
      * How long in ms should two interactions should be separated in time,
@@ -1121,6 +1127,17 @@ public class WonderPush {
         trackInternalEvent(type, eventData, null);
     }
 
+    static void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData) {
+        trackInternalEventWithMeasurementsApi(type, eventData, null);
+    }
+
+    static void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData, JSONObject customData) {
+        if (type.charAt(0) != '@') {
+            throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
+        }
+        sendEvent(type, eventData, customData, true);
+    }
+
     static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
         if (type.charAt(0) != '@') {
             throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
@@ -1129,6 +1146,10 @@ public class WonderPush {
     }
 
     private static void sendEvent(String type, JSONObject eventData, JSONObject customData) {
+        sendEvent(type, eventData, customData, false);
+    }
+
+    private static void sendEvent(String type, JSONObject eventData, JSONObject customData, boolean useMeasurementsApi) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
             return;
@@ -1172,6 +1193,9 @@ public class WonderPush {
         RequestParams parameters = new RequestParams();
         parameters.put("body", event.toString());
 
+        // Remember
+        WonderPushConfiguration.rememberTrackedEvent(event);
+
         // Broadcast locally that an event was tracked
         Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
         eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
@@ -1180,7 +1204,11 @@ public class WonderPush {
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
-        postEventually(eventEndpoint, parameters);
+        if (useMeasurementsApi) {
+            WonderPushMeasurementsApiClient.post("/events", event, null);
+        } else {
+            postEventually(eventEndpoint, parameters);
+        }
     }
 
     /**
@@ -1536,7 +1564,26 @@ public class WonderPush {
     static void initializeInAppMessaging(Context context) {
         Application application = (Application)context.getApplicationContext();
         if (sInAppMessaging == null) {
-            sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker());
+            sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker(), new InAppMessaging.InAppMessagingConfiguration() {
+                @Override
+                public boolean inAppViewedReceipts() {
+                    Boolean b = WonderPushConfiguration.getOverrideNotificationReceipt();
+                    if (b != null) return b;
+                    return false;
+                }
+
+                @Override
+                public void fetchInAppConfig(InAppMessaging.JSONObjectHandler handler) {
+                    if (remoteConfigManager == null) {
+                        handler.handle(null, null);
+                        return;
+                    }
+                    remoteConfigManager.read((RemoteConfig config, Throwable error) -> {
+                        handler.handle(config != null ? config.getData().optJSONObject("inAppConfig") : null, error);
+                    });
+                }
+
+            });
         }
         if (sInAppMessagingDisplay == null) {
             sInAppMessagingDisplay = InAppMessagingDisplay.getInstance(application, sInAppMessaging);
@@ -1656,6 +1703,14 @@ public class WonderPush {
         }
 
         if (isInitialized()) initializeInAppMessaging(context);
+
+        if (isInitialized() && remoteConfigManager == null) {
+            AsyncHttpClientRemoteConfigFetcher fetcher = new AsyncHttpClientRemoteConfigFetcher(clientId, (Runnable r, long defer) -> {
+                WonderPush.safeDefer(r, defer);
+            });
+            SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
+            remoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
+        }
 
         // Warn the user once if not initialization means has been found
         if (!isInitialized()) {

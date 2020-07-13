@@ -15,31 +15,36 @@
 package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.google.android.gms.tasks.Task;
+import com.wonderpush.sdk.JSONSyncInstallationCustom;
+import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.WonderPushConfiguration;
+import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
+import com.wonderpush.sdk.inappmessaging.model.*;
 import com.wonderpush.sdk.inappmessaging.model.Campaign.ThickContent;
-import com.wonderpush.sdk.inappmessaging.model.CampaignImpressionList;
 import com.wonderpush.sdk.inappmessaging.model.CommonTypesProto.TriggeringCondition;
-import com.wonderpush.sdk.inappmessaging.model.FetchEligibleCampaignsResponse;
-import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
-import com.wonderpush.sdk.inappmessaging.model.MessageType;
-import com.wonderpush.sdk.inappmessaging.model.ProtoMarshallerClient;
-import com.wonderpush.sdk.inappmessaging.model.RateLimit;
-import com.wonderpush.sdk.inappmessaging.model.TriggeredInAppMessage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import javax.inject.Inject;
 
-import io.reactivex.Completable;
+import com.wonderpush.sdk.segmentation.Segmenter;
+import com.wonderpush.sdk.segmentation.parser.*;
+import com.wonderpush.sdk.segmentation.parser.criteria.UnknownCriterionError;
+import com.wonderpush.sdk.segmentation.parser.datasource.InstallationSource;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import io.reactivex.flowables.ConnectableFlowable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Class to federate multiple clients and encapsulate the high level behavior of the iam headless
@@ -52,40 +57,37 @@ public class InAppMessageStreamManager {
   public static final String ON_FOREGROUND = "ON_FOREGROUND";
   private final ConnectableFlowable<String> appForegroundEventFlowable;
   private final ConnectableFlowable<String> programmaticTriggerEventFlowable;
-  private final CampaignCacheClient campaignCacheClient;
   private final Clock clock;
-  private final ApiClient apiClient;
   private final Schedulers schedulers;
   private final ImpressionStorageClient impressionStorageClient;
   private final RateLimiterClient rateLimiterClient;
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
+  private final InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration;
 
   @Inject
   public InAppMessageStreamManager(
-      @AppForeground ConnectableFlowable<String> appForegroundEventFlowable,
-      @ProgrammaticTrigger ConnectableFlowable<String> programmaticTriggerEventFlowable,
-      CampaignCacheClient campaignCacheClient,
-      Clock clock,
-      ApiClient apiClient,
-      AnalyticsEventsManager analyticsEventsManager,
-      Schedulers schedulers,
-      ImpressionStorageClient impressionStorageClient,
-      RateLimiterClient rateLimiterClient,
-      @AppForeground RateLimit appForegroundRateLimit,
-      TestDeviceHelper testDeviceHelper) {
+          @AppForeground ConnectableFlowable<String> appForegroundEventFlowable,
+          @ProgrammaticTrigger ConnectableFlowable<String> programmaticTriggerEventFlowable,
+          Clock clock,
+          AnalyticsEventsManager analyticsEventsManager,
+          Schedulers schedulers,
+          ImpressionStorageClient impressionStorageClient,
+          RateLimiterClient rateLimiterClient,
+          @AppForeground RateLimit appForegroundRateLimit,
+          TestDeviceHelper testDeviceHelper,
+          InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
-    this.campaignCacheClient = campaignCacheClient;
     this.clock = clock;
-    this.apiClient = apiClient;
     this.analyticsEventsManager = analyticsEventsManager;
     this.schedulers = schedulers;
     this.impressionStorageClient = impressionStorageClient;
     this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
+    this.inAppMessagingConfiguration = inAppMessagingConfiguration;
   }
 
   private static boolean containsTriggeringCondition(String event, ThickContent content) {
@@ -99,6 +101,20 @@ public class InAppMessageStreamManager {
       }
     }
     return false;
+  }
+
+  private static boolean matchesSegment(Segmenter segmenter, ThickContent content) {
+      // No segment means match all
+      if (content.getSegment() == null) return true;
+      // No segmenter means we can't perform segmentation
+      if (segmenter == null) return false;
+      try {
+          ASTCriterionNode parsedInstallationSegment = Segmenter.parseInstallationSegment(content.getSegment());
+          return segmenter.matchesInstallation(parsedInstallationSegment);
+      } catch (Exception e) {
+          Logging.loge(String.format("Could not parse segment %s", content.getSegment().toString()), e);
+          return false;
+      }
   }
 
   private static long delayForEvent(String event, ThickContent content) {
@@ -159,13 +175,6 @@ public class InAppMessageStreamManager {
     return event.equals(ON_FOREGROUND);
   }
 
-  private boolean shouldIgnoreCache(String event) {
-    if (testDeviceHelper.isAppInstallFresh()) {
-      return isAppForegroundEvent(event);
-    }
-    return testDeviceHelper.isDeviceInTestMode();
-  }
-
   public Flowable<TriggeredInAppMessage> createInAppMessageStream() {
     return Flowable.merge(
             appForegroundEventFlowable,
@@ -175,22 +184,6 @@ public class InAppMessageStreamManager {
         .observeOn(schedulers.io())
         .concatMap(
             event -> {
-              Maybe<FetchEligibleCampaignsResponse> cacheRead =
-                  campaignCacheClient
-                      .get()
-                      .doOnSuccess(r -> Logging.logd("Fetched from cache"))
-                      .doOnError(e -> Logging.logw("Cache read error: " + e.getMessage()))
-                      .onErrorResumeNext(Maybe.empty()); // Absorb cache read failures
-
-              Consumer<FetchEligibleCampaignsResponse> cacheWrite =
-                  response ->
-                      campaignCacheClient
-                          .put(response)
-                          .doOnComplete(() -> Logging.logd("Wrote to cache"))
-                          .doOnError(e -> Logging.logw("Cache write error: " + e.getMessage()))
-                          .onErrorResumeNext(
-                              ignored -> Completable.complete()) // Absorb cache write fails
-                          .subscribe();
 
               Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed =
                   content ->
@@ -224,7 +217,7 @@ public class InAppMessageStreamManager {
                     }
                   };
 
-              Function<FetchEligibleCampaignsResponse, Maybe<TriggeredInAppMessage>>
+              Function<List<ThickContent>, Maybe<TriggeredInAppMessage>>
                   selectThickContent =
                       response ->
                           getTriggeredInAppMessageMaybe(
@@ -242,40 +235,43 @@ public class InAppMessageStreamManager {
                       .defaultIfEmpty(new CampaignImpressionList())
                       .onErrorResumeNext(Maybe.just(new CampaignImpressionList()));
 
-              Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
+              Function<CampaignImpressionList, Maybe<List<Campaign.ThickContent>>> serviceFetch =
                   impressions ->
-                      taskToMaybe(apiClient.getIams(impressions))
+                          Maybe.<List<Campaign.ThickContent>>create(
+                                  emitter -> {
+                                      inAppMessagingConfiguration.fetchInAppConfig((JSONObject config, Throwable error) -> {
+                                          if (error != null) emitter.onError(error);
+                                          else {
+                                              JSONArray campaignsJson = config != null ? config.optJSONArray("campaigns") : null;
+                                              List<Campaign.ThickContent> messages = new ArrayList<>();
+                                              for (int i = 0; campaignsJson != null && i < campaignsJson.length(); i++) {
+                                                  JSONObject campaignJson = campaignsJson.optJSONObject(i);
+                                                  if (campaignJson == null) continue;
+                                                  Campaign.ThickContent thickContent = Campaign.ThickContent.fromJSON(campaignJson);
+                                                  if (thickContent != null) messages.add(thickContent);
+                                              }
+                                              emitter.onSuccess(messages);
+                                          }
+                                          emitter.onComplete();
+                                      });
+                                  })
                           .doOnSuccess(
                               resp ->
                                   Logging.logi(
                                       String.format(
                                           Locale.US,
                                           "Successfully fetched %d messages from backend",
-                                          resp.getMessagesList().size())))
+                                          resp.size())))
                           .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
                           //.doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
                           .doOnSuccess(testDeviceHelper::processCampaignFetch)
                           .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
                           .onErrorResumeNext(Maybe.empty()); // Absorb service failures
 
-              if (shouldIgnoreCache(event)) {
-                Logging.logi(
-                    String.format(
-                        "Forcing fetch from service rather than cache. "
-                            + "Test Device: %s | App Fresh Install: %s",
-                        testDeviceHelper.isDeviceInTestMode(),
-                        testDeviceHelper.isAppInstallFresh()));
-                return alreadySeenCampaigns
-                    .flatMap(serviceFetch)
-                    .flatMap(selectThickContent)
-                    .toFlowable();
-              }
-
-              Logging.logd("Attempting to fetch campaigns using cache");
-              return cacheRead
-                  .switchIfEmpty(alreadySeenCampaigns.flatMap(serviceFetch).doOnSuccess(cacheWrite))
-                  .flatMap(selectThickContent)
-                  .toFlowable();
+              return alreadySeenCampaigns
+                      .flatMap(serviceFetch)
+                      .flatMap(selectThickContent)
+                      .toFlowable();
             })
         .observeOn(schedulers.mainThread()); // Updates are delivered on the main thread
   }
@@ -308,14 +304,35 @@ public class InAppMessageStreamManager {
   }
 
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
-      String event,
-      Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed,
-      Function<ThickContent, Maybe<ThickContent>> appForegroundRateLimitFilter,
-      Function<ThickContent, Maybe<ThickContent>> filterDisplayable,
-      FetchEligibleCampaignsResponse response) {
-    return Flowable.fromIterable(response.getMessagesList())
+          String event,
+          Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed,
+          Function<ThickContent, Maybe<ThickContent>> appForegroundRateLimitFilter,
+          Function<ThickContent, Maybe<ThickContent>> filterDisplayable,
+          List<Campaign.ThickContent> messages) {
+    Segmenter.Data segmenterData = null;
+    try {
+      // Get custom props
+      JSONObject customProperties = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+      // Get core props
+      String installationCorePropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
+
+      // Build the installation JSONObject
+      JSONObject installation = installationCorePropertiesString == null ? new JSONObject() : new JSONObject(installationCorePropertiesString);
+      if (customProperties != null) installation.put("custom", customProperties);
+
+      // Tracked events
+      List<JSONObject> trackedEvents = WonderPushConfiguration.getTrackedEvents();
+
+      // Build segmenter data
+      segmenterData = new Segmenter.Data(installation, trackedEvents,null, WonderPushConfiguration.getLastAppOpenDate());
+    } catch (JSONException e) {
+      Logging.loge("Could not create segmenter data", e);
+    }
+    final Segmenter segmenter = segmenterData == null ? null : new Segmenter(segmenterData);
+    return Flowable.fromIterable(messages)
         .filter(content -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, content))
         .filter(content -> containsTriggeringCondition(event, content))
+        .filter(content -> matchesSegment(segmenter, content))
         .flatMapMaybe(filterAlreadyImpressed)
         .flatMapMaybe(appForegroundRateLimitFilter)
         .flatMapMaybe(filterDisplayable)

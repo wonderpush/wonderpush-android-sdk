@@ -320,6 +320,7 @@ class WonderPushRestClient {
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                         syncTime(response);
+                        declareConfigVersion(response);
                         WonderPush.setNetworkAvailable(true);
                         if (handler != null) {
                             handler.onSuccess(statusCode, new Response(response));
@@ -335,6 +336,7 @@ class WonderPushRestClient {
                     public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                         WonderPush.logError("Error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: " + errorResponse);
                         syncTime(errorResponse);
+                        declareConfigVersion(errorResponse);
                         WonderPush.logDebug("Request Error: " + errorResponse);
                         WonderPush.setNetworkAvailable(errorResponse != null);
                         if (handler != null) {
@@ -360,6 +362,14 @@ class WonderPushRestClient {
                     @Override
                     public void onSuccess(int statusCode, Header[] headers, String responseString) {
                         WonderPush.logError("Unexpected string answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + responseString.length() + ") \"" + responseString + "\"");
+                    }
+
+                    private void declareConfigVersion(JSONObject data) {
+                        if (data == null || !data.has("_configVersion") || data.isNull("_configVersion")) return;
+                        String version = data.optString("_configVersion", Long.toString(data.optLong("_configVersion", 0)));
+                        if (version != null && WonderPush.remoteConfigManager != null) {
+                            WonderPush.remoteConfigManager.declareVersion(version);
+                        }
                     }
 
                     private void syncTime(JSONObject data) {
@@ -667,19 +677,20 @@ class WonderPushRestClient {
          * @return The authorization header or null for GET requests
          */
         protected BasicHeader getAuthorizationHeader() {
+            return getAuthorizationHeader(mMethod, Uri.parse(String.format("%s%s", WonderPush.getBaseURL(), mResource)), mParams);
+        }
+
+        protected static BasicHeader getAuthorizationHeader(HttpMethod method, Uri uri, RequestParams params) {
             try {
                 StringBuilder sb = new StringBuilder();
 
                 // Step 1: add HTTP method uppercase
-                sb.append(mMethod.name().toUpperCase());
+                sb.append(method.name().toUpperCase());
                 sb.append('&');
 
                 // Step 2: add the URI
-                Uri uri = Uri.parse(mResource);
-
                 // Query string is stripped from resource
-                sb.append(encode(String.format("%s%s", WonderPush.getBaseURL(),
-                        uri.getEncodedPath())));
+                sb.append(encode(String.format("%s://%s%s", uri.getScheme(), uri.getHost(), uri.getEncodedPath())));
 
                 // Step 3: add URL encoded parameters
                 sb.append('&');
@@ -692,8 +703,8 @@ class WonderPushRestClient {
                 }
 
                 // Params from the request
-                if (mParams != null) {
-                    unencodedParams.addAll(mParams.getParamsList());
+                if (params != null) {
+                    unencodedParams.addAll(params.getParamsList());
                 }
 
                 // Encode and sort params
@@ -741,7 +752,7 @@ class WonderPushRestClient {
             }
         }
 
-        private static String encode(String s) throws UnsupportedEncodingException {
+        protected static String encode(String s) throws UnsupportedEncodingException {
             return URLEncoder.encode(s, "UTF-8").replace("+", "%20").replace("*", "%2A").replace("%7E", "~");
         }
 

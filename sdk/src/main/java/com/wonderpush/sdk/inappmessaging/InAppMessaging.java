@@ -19,7 +19,6 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 
 import com.wonderpush.sdk.InternalEventTracker;
-import com.wonderpush.sdk.inappmessaging.internal.CampaignCacheClient;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.DisplayCallbacksFactory;
 import com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManager;
@@ -29,13 +28,9 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.components.AppCompon
 import com.wonderpush.sdk.inappmessaging.internal.injection.components.DaggerAppComponent;
 import com.wonderpush.sdk.inappmessaging.internal.injection.components.DaggerUniversalComponent;
 import com.wonderpush.sdk.inappmessaging.internal.injection.components.UniversalComponent;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ApiClientModule;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ApplicationModule;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.InternalEventTrackerModule;
-import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
+import com.wonderpush.sdk.inappmessaging.internal.injection.modules.*;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
-import com.wonderpush.sdk.inappmessaging.internal.time.SystemClock;
 import com.wonderpush.sdk.inappmessaging.model.TriggeredInAppMessage;
 
 import java.util.concurrent.Executor;
@@ -44,6 +39,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import io.reactivex.disposables.Disposable;
+import org.json.JSONObject;
 
 /**
  * The entry point of the In App Messaging headless SDK.
@@ -58,7 +54,6 @@ public class InAppMessaging {
   private final DisplayCallbacksFactory displayCallbacksFactory;
   private final DeveloperListenerManager developerListenerManager;
   private final ProgramaticContextualTriggers programaticContextualTriggers;
-  private final CampaignCacheClient campaignCacheClient;
 
   private boolean areMessagesSuppressed;
   private InAppMessagingDisplay iamDisplay;
@@ -72,14 +67,12 @@ public class InAppMessaging {
       InAppMessageStreamManager inAppMessageStreamManager,
       @ProgrammaticTrigger ProgramaticContextualTriggers programaticContextualTriggers,
       DisplayCallbacksFactory displayCallbacksFactory,
-      DeveloperListenerManager developerListenerManager,
-      CampaignCacheClient campaignCacheClient) {
+      DeveloperListenerManager developerListenerManager) {
     this.inAppMessageStreamManager = inAppMessageStreamManager;
     this.programaticContextualTriggers = programaticContextualTriggers;
     this.areMessagesSuppressed = false;
     this.displayCallbacksFactory = displayCallbacksFactory;
     this.developerListenerManager = developerListenerManager;
-    this.campaignCacheClient = campaignCacheClient;
 
     Logging.logi("Starting InAppMessaging runtime");
 
@@ -103,11 +96,19 @@ public class InAppMessaging {
   private static AppComponent initializeAppComponent(Application application, InternalEventTracker internalEventTracker) {
     if (appComponent == null) {
       appComponent = DaggerAppComponent.builder()
-              .apiClientModule(new ApiClientModule(application, new SystemClock()))
               .universalComponent(initializeUniversalComponent(application, internalEventTracker))
               .build();
     }
     return appComponent;
+  }
+
+  public interface JSONObjectHandler {
+    void handle(@Nullable JSONObject jsonObject, @Nullable Throwable error);
+  }
+
+  public interface InAppMessagingConfiguration {
+    boolean inAppViewedReceipts();
+    void fetchInAppConfig(JSONObjectHandler handler);
   }
 
   /**
@@ -115,7 +116,10 @@ public class InAppMessaging {
    */
   @NonNull
   @Keep
-  public static InAppMessaging initialize(Application application, InternalEventTracker internalEventTracker) {
+  public static InAppMessaging initialize(Application application,
+                                          InternalEventTracker internalEventTracker,
+                                          InAppMessagingConfiguration configuration) {
+    if (ConfigurationModule.getInstance() == null) ConfigurationModule.setInstance(configuration);
     if (instance == null) {
       instance = initializeAppComponent(application, internalEventTracker).providesInAppMessaging();
     }
@@ -307,14 +311,5 @@ public class InAppMessaging {
               inAppMessage.getInAppMessage(), inAppMessage.getTriggeringEvent()),
           inAppMessage.getDelay());
     }
-  }
-
-  /**
-   * Internal method.
-   * @hide
-   */
-  // FIXME: this method is here for internal use only and will be deprecated as soon as we stop using background push to send in-app messages.
-  public CampaignCacheClient getCampaignCacheClient() {
-    return campaignCacheClient;
   }
 }

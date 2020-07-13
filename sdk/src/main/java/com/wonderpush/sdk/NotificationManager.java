@@ -61,11 +61,14 @@ public class NotificationManager {
             trackData.put("notificationId", notif.getNotificationId());
             trackData.put("actionDate", TimeSync.getTime());
             boolean notifReceipt = notif.getReceipt();
+            boolean receiptUsingMeasurements = notif.getReceiptUsingMeasurements();
             Boolean overrideNotificationReceipt = WonderPushConfiguration.getOverrideNotificationReceipt();
             if (overrideNotificationReceipt != null) {
                 notifReceipt = overrideNotificationReceipt;
             }
-            if (notifReceipt) {
+            if (receiptUsingMeasurements) {
+                WonderPush.trackInternalEventWithMeasurementsApi("@NOTIFICATION_RECEIVED", trackData);
+            } else if (notifReceipt) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
             }
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
@@ -939,11 +942,18 @@ public class NotificationManager {
                     break;
                 case RESYNC_INSTALLATION:
                     handleResyncInstallationAction(action);
+                    break;
                 case ADD_TAG:
                     handleAddTagAction(action);
                     break;
                 case REMOVE_TAG:
                     handleRemoveTagAction(action);
+                    break;
+                case SUBSCRIBE_TO_NOTIFICATIONS:
+                    handleSubscribeToNotifications(action);
+                    break;
+                case UNSUBSCRIBE_FROM_NOTIFICATIONS:
+                    handleUnsubscribeFromNotifications(action);
                     break;
                 case REMOVE_ALL_TAGS:
                     handleRemoveAllTagsAction(action);
@@ -1186,6 +1196,14 @@ public class NotificationManager {
             }
         }
         WonderPush.addTag(tags.toArray(new String[0]));
+    }
+
+    private static void handleSubscribeToNotifications(ActionModel action) {
+        WonderPush.subscribeToNotifications();
+    }
+
+    private static void handleUnsubscribeFromNotifications(ActionModel action) {
+        WonderPush.unsubscribeFromNotifications();
     }
 
     private static void handleRemoveTagAction(ActionModel action) {

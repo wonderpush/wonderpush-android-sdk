@@ -192,7 +192,7 @@ public class JSONUtil {
         return new JSONObject(from.toString());
     }
 
-    static Object parseAllJSONStrings(Object base) {
+    public static Object parseAllJSONStrings(Object base) {
         if (base instanceof JSONObject) {
             JSONObject rtn = new JSONObject();
             Iterator<String> it = ((JSONObject) base).keys();
@@ -230,7 +230,7 @@ public class JSONUtil {
         return base;
     }
 
-    static String optString(JSONObject object, String field) {
+    public static String optString(JSONObject object, String field) {
         if (object == null) return null;
         if (!object.has(field) || object.isNull(field)) return null;
         Object value = object.opt(field);
@@ -240,7 +240,7 @@ public class JSONUtil {
         return null;
     }
 
-    static Boolean optBoolean(JSONObject object, String field) {
+    public static Boolean optBoolean(JSONObject object, String field) {
         if (object == null) return null;
         if (!object.has(field) || object.isNull(field)) return null;
         Object value = object.opt(field);
@@ -250,7 +250,7 @@ public class JSONUtil {
         return null;
     }
 
-    static Integer optInteger(JSONObject object, String field) {
+    public static Integer optInteger(JSONObject object, String field) {
         if (object == null) return null;
         if (!object.has(field) || object.isNull(field)) return null;
         Object value = object.opt(field);
@@ -262,7 +262,7 @@ public class JSONUtil {
         return null;
     }
 
-    static long[] optLongArray(JSONObject object, String field) {
+    public static long[] optLongArray(JSONObject object, String field) {
         if (object == null) return null;
         if (!object.has(field) || object.isNull(field)) return null;
         JSONArray array = object.optJSONArray(field);
@@ -281,7 +281,7 @@ public class JSONUtil {
         return rtn;
     }
 
-    static Uri optUri(JSONObject object, String field) {
+    public static Uri optUri(JSONObject object, String field) {
         if (object == null) return null;
         if (!object.has(field) || object.isNull(field)) return null;
         String value = object.optString(field, null);
@@ -292,7 +292,7 @@ public class JSONUtil {
     /**
      * @see JSONObject#wrap(Object)
      */
-    static Object wrap(Object o) {
+    public static Object wrap(Object o) {
         if (o == null) {
             return JSONObject.NULL;
         }
@@ -333,7 +333,7 @@ public class JSONUtil {
     /**
      * @see JSONArray#JSONArray(Object)
      */
-    static JSONArray JSONArray(Object array) throws JSONException {
+    public static JSONArray JSONArray(Object array) throws JSONException {
         if (!array.getClass().isArray()) {
             throw new JSONException("Not a primitive array: " + array.getClass());
         }
@@ -345,16 +345,16 @@ public class JSONUtil {
         return rtn;
     }
 
-    static <T> List<T> JSONArrayToList(JSONArray array, Class<T> typecheck) {
+    public static <T> List<T> JSONArrayToList(JSONArray array, Class<T> typecheck, boolean removeNulls) {
         final int length = array == null ? 0 : array.length();
         ArrayList<T> rtn = new ArrayList<>(length);
         if (array != null) {
             for (int i = 0; i < length; ++i) {
                 try {
                     Object item = array.get(i);
-                    if (typecheck.isInstance(item)) {
-                        rtn.add(typecheck.cast(item));
-                    }
+                    if (!typecheck.isInstance(item)) continue;
+                    if (removeNulls && item == JSONObject.NULL) continue;
+                    rtn.add(typecheck.cast(item));
                 } catch (JSONException ex) {
                     Log.e(WonderPush.TAG, "Unexpected exception in JSONArrayToList", ex);
                 } catch (ClassCastException ex) {
@@ -365,7 +365,7 @@ public class JSONUtil {
         return rtn;
     }
 
-    static Bundle toBundle(JSONObject input) {
+    public static Bundle toBundle(JSONObject input) {
         if (input == null) {
             return null;
         }

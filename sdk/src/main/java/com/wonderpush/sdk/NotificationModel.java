@@ -7,11 +7,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
-import com.wonderpush.sdk.inappmessaging.InAppMessaging;
-import com.wonderpush.sdk.inappmessaging.internal.CampaignCacheClient;
-import com.wonderpush.sdk.inappmessaging.model.Campaign;
-import com.wonderpush.sdk.inappmessaging.model.FetchEligibleCampaignsResponse;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -147,6 +142,7 @@ public abstract class NotificationModel implements Parcelable {
     public List<ActionModel> receiveActions = new ArrayList<>();
     public List<ActionModel> actions = new ArrayList<>();
     private boolean receipt;
+    private boolean receiptUsingMeasurements;
 
     // Common in-app message data
     private final AtomicReference<ButtonModel> choice = new AtomicReference<>();
@@ -181,25 +177,6 @@ public abstract class NotificationModel implements Parcelable {
     public static NotificationModel fromNotificationJSONObject(JSONObject wpData)
             throws NotTargetedForThisInstallationException
     {
-        if (Type.DATA.equals(Type.fromString(wpData.optString("type", "")))
-                && wpData.optJSONObject("inApp") != null) {
-            // This is an in-app message
-            final Campaign.ThickContent campaign = Campaign.ThickContent.fromJSON(wpData.optJSONObject("inApp"));
-            if (null != campaign) {
-                InAppMessaging inAppMessaging = InAppMessaging.getInstance();
-                CampaignCacheClient campaignCacheClient = inAppMessaging != null ? inAppMessaging.getCampaignCacheClient() : null;
-                if (campaignCacheClient != null) {
-                    campaignCacheClient.get()
-                            .defaultIfEmpty(FetchEligibleCampaignsResponse.buildFromJSON(new JSONObject()))
-                            .doOnSuccess(response -> response.addMessage(campaign))
-                            .doOnSuccess(response -> campaignCacheClient.put(response)
-                                    .doOnError(e -> Log.w(WonderPush.TAG, "Cache write error: " + e.getMessage())).subscribe())
-                            .subscribe();
-                }
-            }
-            return null;
-        }
-
         try {
             // Read notification content
             JSONObject wpAlert = wpData.optJSONObject("alert");
@@ -239,7 +216,8 @@ public abstract class NotificationModel implements Parcelable {
             rtn.setNotificationId(JSONUtil.getString(wpData, "n"));
             rtn.setViewId(JSONUtil.getString(wpData, "v"));
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
-            rtn.setReceipt(wpData.optBoolean("receipt", true));
+            rtn.setReceipt(wpData.optBoolean("receipt", false));
+            rtn.setReceiptUsingMeasurements(wpData.optBoolean("receiptUsingMeasurements", false));
 
             // Read receive actions
             JSONArray receiveActions = wpData.optJSONArray("receiveActions");
@@ -379,6 +357,14 @@ public abstract class NotificationModel implements Parcelable {
 
     public void setReceipt(boolean receipt) {
         this.receipt = receipt;
+    }
+
+    public boolean getReceiptUsingMeasurements() {
+        return receiptUsingMeasurements;
+    }
+
+    public void setReceiptUsingMeasurements(boolean receiptUsingMeasurements) {
+        this.receiptUsingMeasurements = receiptUsingMeasurements;
     }
 
     public String getTitle() {

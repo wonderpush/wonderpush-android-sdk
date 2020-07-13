@@ -18,7 +18,6 @@ import android.app.Application;
 
 import com.wonderpush.sdk.InternalEventTracker;
 import com.wonderpush.sdk.inappmessaging.internal.AnalyticsEventsManager;
-import com.wonderpush.sdk.inappmessaging.internal.CampaignCacheClient;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.ImpressionStorageClient;
 import com.wonderpush.sdk.inappmessaging.internal.ProgramaticContextualTriggers;
@@ -84,8 +83,6 @@ public interface UniversalComponent {
   ConnectableFlowable<String> analyticsEventsFlowable();
 
   AnalyticsEventsManager analyticsEventsManager();
-
-  CampaignCacheClient campaignCacheClient();
 
   ImpressionStorageClient impressionStorageClient();
 
