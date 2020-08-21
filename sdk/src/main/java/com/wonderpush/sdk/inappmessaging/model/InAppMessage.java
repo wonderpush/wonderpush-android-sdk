@@ -31,6 +31,9 @@ public abstract class InAppMessage {
   public enum ButtonType {
     UNDEFINED, PRIMARY, SECONDARY,
   }
+  public enum CloseButtonPosition {
+    OUTSIDE, INSIDE, NONE,
+  }
   public interface InAppMessageWithImage {
     @Nullable
     ImageData getImageData();

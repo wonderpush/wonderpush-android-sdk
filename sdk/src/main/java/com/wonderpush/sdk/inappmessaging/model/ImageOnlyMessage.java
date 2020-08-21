@@ -35,11 +35,13 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
 
   @NonNull private List<ActionModel> actions;
 
+  @NonNull private CloseButtonPosition closeButtonPosition;
+
   /** @hide */
   @Override
   public int hashCode() {
     int actionHash = actions != null ? actions.hashCode() : 0;
-    return imageData.hashCode() + actionHash;
+    return imageData.hashCode() + actionHash + closeButtonPosition.hashCode();
   }
 
   /** @hide */
@@ -58,6 +60,9 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
     if ((actions == null && i.actions != null) || (actions != null && !actions.equals(i.actions))) {
       return false; // the actions don't match
     }
+
+    if (closeButtonPosition != i.closeButtonPosition) return false;
+
     if (imageData.equals(i.imageData)) {
       return true; // everything matches
     }
@@ -71,10 +76,12 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
       @NonNull NotificationMetadata notificationMetadata,
       @NonNull ImageData imageData,
       @NonNull List<ActionModel> actions,
+      @NonNull CloseButtonPosition closeButtonPosition,
       @NonNull JSONObject data) {
     super(notificationMetadata, MessageType.IMAGE_ONLY, data);
     this.imageData = imageData;
     this.actions = actions;
+    this.closeButtonPosition = closeButtonPosition;
   }
 
   /** Gets the {@link ImageData} associated with this message */
@@ -87,6 +94,11 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
   @NonNull
   public List<ActionModel> getActions() {
     return actions;
+  }
+
+  @NonNull
+  public CloseButtonPosition getCloseButtonPosition() {
+    return closeButtonPosition;
   }
 
   /**
@@ -107,6 +119,8 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
     @Nullable ImageData imageData;
     @Nullable
     List<ActionModel> actions;
+    @Nullable
+    CloseButtonPosition closeButtonPosition;
 
     public Builder setImageData(@Nullable ImageData imageData) {
       this.imageData = imageData;
@@ -118,12 +132,17 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
       return this;
     }
 
+    public Builder setCloseButtonPosition(@Nullable CloseButtonPosition closeButtonPosition) {
+      this.closeButtonPosition = closeButtonPosition;
+      return this;
+    }
+
     public ImageOnlyMessage build(
             NotificationMetadata notificationMetadata, @NonNull JSONObject data) {
       if (imageData == null) {
         throw new IllegalArgumentException("ImageOnly model must have image data");
       }
-      return new ImageOnlyMessage(notificationMetadata, imageData, actions == null ? Collections.emptyList() : actions, data);
+      return new ImageOnlyMessage(notificationMetadata, imageData, actions == null ? Collections.emptyList() : actions, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, data);
     }
   }
 

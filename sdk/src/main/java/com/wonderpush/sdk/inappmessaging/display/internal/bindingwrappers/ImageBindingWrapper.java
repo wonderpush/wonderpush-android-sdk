@@ -85,6 +85,27 @@ public class ImageBindingWrapper extends BindingWrapper {
     // Setup dismiss button.
     imageRoot.setDismissListener(dismissOnClickListener);
     collapseButton.setOnClickListener(dismissOnClickListener);
+    if (message instanceof ImageOnlyMessage
+      && collapseButton.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+      ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams)collapseButton.getLayoutParams();
+      float density = inflater.getContext().getResources().getDisplayMetrics().density;
+      switch (((ImageOnlyMessage)message).getCloseButtonPosition()) {
+        case NONE:
+          collapseButton.setVisibility(View.GONE);
+          break;
+        case INSIDE:
+          collapseButton.setVisibility(View.VISIBLE);
+          layoutParams.topMargin = (int)(density * 5);
+          layoutParams.rightMargin = (int)(density * 5);
+          break;
+        case OUTSIDE:
+          collapseButton.setVisibility(View.VISIBLE);
+          layoutParams.topMargin = (int)(density * -12);
+          layoutParams.rightMargin = (int)(density * -12);
+          break;
+      }
+      collapseButton.setLayoutParams(layoutParams);
+    }
     return null;
   }
 

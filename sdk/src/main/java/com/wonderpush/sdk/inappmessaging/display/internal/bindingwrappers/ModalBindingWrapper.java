@@ -91,6 +91,28 @@ public class ModalBindingWrapper extends BindingWrapper {
       setLayoutConfig(config);
       setDismissListener(dismissOnClickListener);
       setViewBgColorFromHex(modalContentRoot, modalMessage.getBackgroundHexColor());
+
+      if (collapseImage.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams)collapseImage.getLayoutParams();
+        float density = inflater.getContext().getResources().getDisplayMetrics().density;
+        switch (modalMessage.getCloseButtonPosition()) {
+          case NONE:
+            collapseImage.setVisibility(View.GONE);
+            break;
+          case INSIDE:
+            collapseImage.setVisibility(View.VISIBLE);
+            layoutParams.topMargin = (int)(density * 5);
+            layoutParams.rightMargin = (int)(density * 5);
+            break;
+          case OUTSIDE:
+            collapseImage.setVisibility(View.VISIBLE);
+            layoutParams.topMargin = (int)(density * -12);
+            layoutParams.rightMargin = (int)(density * -12);
+            break;
+        }
+        collapseImage.setLayoutParams(layoutParams);
+      }
+
     }
     return layoutListener;
   }

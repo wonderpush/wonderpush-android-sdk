@@ -553,6 +553,7 @@ public final class MessagesProto {
   public  static final class ImageOnlyMessage {
     private String imageUrl_;
     private List<ActionModel> actions_;
+    private InAppMessage.CloseButtonPosition closeButtonPosition_;
 
     public ImageOnlyMessage() {
     }
@@ -608,6 +609,14 @@ public final class MessagesProto {
      */
     public void setActions(List<ActionModel> value) {
       actions_ = value;
+    }
+
+    public void setCloseButtonPosition(InAppMessage.CloseButtonPosition closeButtonPosition) {
+      closeButtonPosition_ = closeButtonPosition;
+    }
+
+    public InAppMessage.CloseButtonPosition getCloseButtonPosition() {
+      return closeButtonPosition_;
     }
 
   }
@@ -779,6 +788,7 @@ public final class MessagesProto {
     private MessagesProto.Button actionButton_;
     private List<ActionModel> actions_;
     private String backgroundHexColor_;
+    private InAppMessage.CloseButtonPosition closeButtonPosition_;
 
     public ModalMessage() {
     }
@@ -969,6 +979,14 @@ public final class MessagesProto {
     public void setBackgroundHexColor(
         String value) {
       backgroundHexColor_ = value;
+    }
+
+    public void setCloseButtonPosition(InAppMessage.CloseButtonPosition closeButtonPosition) {
+      closeButtonPosition_ = closeButtonPosition;
+    }
+
+    public InAppMessage.CloseButtonPosition getCloseButtonPosition() {
+      return closeButtonPosition_;
     }
 
   }

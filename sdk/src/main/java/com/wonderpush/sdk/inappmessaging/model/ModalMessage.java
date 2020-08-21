@@ -39,6 +39,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
   @NonNull private final List<ActionModel> actions;
   @Nullable private final Button button;
   @NonNull private final String backgroundHexColor;
+  @NonNull private final CloseButtonPosition closeButtonPosition;
 
   /** @hide */
   @Override
@@ -48,7 +49,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     for(ActionModel action : actions) actionHash += action.hashCode();
     int imageHash = imageData != null ? imageData.hashCode() : 0;
     int buttonHash = button != null ? button.hashCode() : 0;
-    return title.hashCode() + bodyHash + backgroundHexColor.hashCode() + actionHash + imageHash + buttonHash;
+    return title.hashCode() + bodyHash + backgroundHexColor.hashCode() + actionHash + imageHash + buttonHash + closeButtonPosition.hashCode();
   }
 
   /** @hide */
@@ -64,6 +65,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     if (hashCode() != m.hashCode()) {
       return false; // the hashcodes don't match
     }
+    if (closeButtonPosition != m.closeButtonPosition) return false;
     if ((body == null && m.body != null) || (body != null && !body.equals(m.body))) {
       return false; // the bodies don't match
     }
@@ -97,6 +99,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
       @NonNull List<ActionModel> actions,
       @Nullable Button button,
       @NonNull String backgroundHexColor,
+      @NonNull CloseButtonPosition closeButtonPosition,
       @NonNull JSONObject data) {
     super(notificationMetadata, MessageType.MODAL, data);
     this.title = title;
@@ -105,6 +108,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     this.actions = actions;
     this.backgroundHexColor = backgroundHexColor;
     this.button = button;
+    this.closeButtonPosition = closeButtonPosition;
   }
 
   /** Gets the title {@link Text} associated with this message */
@@ -142,6 +146,10 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     return button;
   }
 
+  @NonNull
+  public CloseButtonPosition getCloseButtonPosition() {
+    return closeButtonPosition;
+  }
   /**
    * only used by headless sdk and tests
    *
@@ -165,6 +173,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     @Nullable List<ActionModel> actions;
     @Nullable String backgroundHexColor;
     @Nullable Button button;
+    @Nullable CloseButtonPosition closeButtonPosition;
 
     public Builder setTitle(@Nullable Text title) {
       this.title = title;
@@ -196,6 +205,10 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
       return this;
     }
 
+    public Builder setCloseButtonPosition(@Nullable CloseButtonPosition closeButtonPosition) {
+      this.closeButtonPosition = closeButtonPosition;
+      return this;
+    }
     public ModalMessage build(
             NotificationMetadata notificationMetadata, @NonNull JSONObject data) {
       if (title == null) {
@@ -210,7 +223,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
 
       // We know backgroundColor is not null here because isEmpty checks for null.
       return new ModalMessage(
-              notificationMetadata, title, body, imageData, actions == null ? Collections.emptyList() : actions, button, backgroundHexColor, data);
+              notificationMetadata, title, body, imageData, actions == null ? Collections.emptyList() : actions, button, backgroundHexColor, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, data);
     }
   }
 

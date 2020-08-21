@@ -64,6 +64,7 @@ public class ProtoMarshallerClient {
     if (in.hasTitle()) {
       builder.setTitle(decode(in.getTitle()));
     }
+    builder.setCloseButtonPosition(in.getCloseButtonPosition());
 
     return builder;
   }
@@ -79,6 +80,7 @@ public class ProtoMarshallerClient {
     if (in.hasActions()) {
       builder.setActions(in.getActions());
     }
+    builder.setCloseButtonPosition(in.getCloseButtonPosition());
 
     return builder;
   }

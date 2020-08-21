@@ -209,6 +209,13 @@ public final class Campaign {
         message.setActionButton(MessagesProto.Button.fromJSON(modalJson.optJSONObject("actionButton")));
         message.setActions(ActionModel.from(modalJson.optJSONArray("actions")));
 
+        String closeButtonPositionString = modalJson.optString("closeButtonPosition", "outside");
+        InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
+        if ("outside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
+        if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
+        if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
+        message.setCloseButtonPosition(closeButtonPosition);
+
       } else if (imageOnlyJson != null) {
         MessagesProto.ImageOnlyMessage message = new MessagesProto.ImageOnlyMessage();
         content.setImageOnly(message);
@@ -222,6 +229,13 @@ public final class Campaign {
 
         // Actions
         message.setActions(ActionModel.from(imageOnlyJson.optJSONArray("actions")));
+
+        String closeButtonPositionString = imageOnlyJson.optString("closeButtonPosition", "outside");
+        InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
+        if ("outside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
+        if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
+        if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
+        message.setCloseButtonPosition(closeButtonPosition);
 
       } else {
         throw new InvalidJsonException("Unknown message type in message node: " + contentJson.toString());
