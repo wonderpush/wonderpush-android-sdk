@@ -91,11 +91,14 @@ public abstract class BindingWrapper {
 
   public static void setButtonBgColorFromHex(Button button, String hexColor) {
     try {
-      if (hexColor == null) return;
-      Drawable drawable = button.getBackground();
-      Drawable compatDrawable = DrawableCompat.wrap(drawable);
-      if (!TextUtils.isEmpty(hexColor)) DrawableCompat.setTint(compatDrawable, Color.parseColor(hexColor));
-      button.setBackground(compatDrawable);
+      if (!TextUtils.isEmpty(hexColor)) {
+        Drawable drawable = button.getBackground();
+        Drawable compatDrawable = DrawableCompat.wrap(drawable);
+        DrawableCompat.setTint(compatDrawable, Color.parseColor(hexColor));
+        button.setBackground(compatDrawable);
+      } else {
+        button.setBackground(null);
+      }
     } catch (IllegalArgumentException e) {
       // If the color didnt parse correctly, fail 'open', with default background color
       Logging.loge("Error parsing background color: " + e.toString());
@@ -106,7 +109,7 @@ public abstract class BindingWrapper {
   public static void setupViewButtonFromModel(
       Button viewButton, com.wonderpush.sdk.inappmessaging.model.Button modelButton) {
     String buttonTextHexColor = modelButton.getText().getHexColor();
-    if (modelButton.getButtonHexColor() != null) setButtonBgColorFromHex(viewButton, modelButton.getButtonHexColor());
+    setButtonBgColorFromHex(viewButton, modelButton.getButtonHexColor());
     viewButton.setText(modelButton.getText().getText());
     if (!TextUtils.isEmpty(buttonTextHexColor)) viewButton.setTextColor(Color.parseColor(buttonTextHexColor));
   }

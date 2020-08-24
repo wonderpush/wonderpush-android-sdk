@@ -66,7 +66,7 @@
         <item name="android:padding">@dimen/paddingSmall</item>
     </style>
 
-    <style name="WPIamUI.Card.ActionBar.Button" parent="@style/Base.Widget.AppCompat.Button.Borderless">
+    <style name="WPIamUI.Card.ActionBar.Button" parent="@style/Base.Widget.AppCompat.Button.Colored">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textSize">16sp</item>
