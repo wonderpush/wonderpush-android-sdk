@@ -197,8 +197,7 @@ public class ModalBindingWrapper extends BindingWrapper {
     List<ActionModel> modalActions = modalMessage.getActions();
     com.wonderpush.sdk.inappmessaging.model.Button modalButton = modalMessage.getButton();
     // Right now we have to check for text not being empty but this should be fixed in the future
-    if (modalActions.size() > 0
-        && modalButton != null
+    if (modalButton != null
         && !TextUtils.isEmpty(modalButton.getText().getText())) {
       setupViewButtonFromModel(button, modalButton);
       if (actionListeners.size() > 0) setButtonActionListener(button, actionListeners.get(0));

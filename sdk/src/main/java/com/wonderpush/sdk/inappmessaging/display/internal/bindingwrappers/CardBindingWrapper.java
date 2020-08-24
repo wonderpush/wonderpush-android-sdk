@@ -178,7 +178,7 @@ public class CardBindingWrapper extends BindingWrapper {
     primaryButton.setVisibility(View.VISIBLE);
 
     // Secondary button is optional, eventually this null check will be at the model level.
-    if (secondaryActions.size() > 0 && secondaryActionButton != null) {
+    if (secondaryActionButton != null) {
       setupViewButtonFromModel(secondaryButton, secondaryActionButton);
       if (actionListeners.size() > 1) setButtonActionListener(secondaryButton, actionListeners.get(1));
       secondaryButton.setVisibility(View.VISIBLE);

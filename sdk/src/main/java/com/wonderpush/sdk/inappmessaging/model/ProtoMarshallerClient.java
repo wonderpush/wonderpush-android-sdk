@@ -52,7 +52,7 @@ public class ProtoMarshallerClient {
       builder.setImageData(ImageData.builder().setImageUrl(in.getImageUrl()).build());
     }
 
-    if (in.hasActions()) {
+    if (in.hasActionButton()) {
       builder.setActions(in.getActions());
       builder.setButton(decode(in.getActionButton()));
     }
