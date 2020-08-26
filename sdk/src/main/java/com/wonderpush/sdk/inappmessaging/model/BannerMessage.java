@@ -38,6 +38,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
   @Nullable private final ImageData imageData;
   @NonNull private final List<ActionModel> actions;
   @NonNull private final String backgroundHexColor;
+  @NonNull private final BannerPosition bannerPosition;
 
   /** @hide */
   @Override
@@ -45,7 +46,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     int bodyHash = body != null ? body.hashCode() : 0;
     int imageHash = imageData != null ? imageData.hashCode() : 0;
     int actionHash = actions != null ? actions.hashCode() : 0;
-    return title.hashCode() + bodyHash + imageHash + actionHash + backgroundHexColor.hashCode();
+    return title.hashCode() + bodyHash + imageHash + actionHash + backgroundHexColor.hashCode() + bannerPosition.hashCode();
   }
 
   /** @hide */
@@ -61,6 +62,8 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     if (hashCode() != b.hashCode()) {
       return false; // the hashcodes don't match
     }
+    if (bannerPosition != b.bannerPosition) return false;
+
     if ((body == null && b.body != null) || (body != null && !body.equals(b.body))) {
       return false; // the bodies don't match
     }
@@ -90,6 +93,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
       @Nullable ImageData imageData,
       List<ActionModel> actions,
       @NonNull String backgroundHexColor,
+      @Nullable BannerPosition bannerPosition,
       @NonNull JSONObject data) {
     super(notificationMetadata, MessageType.BANNER, data);
     this.title = title;
@@ -97,6 +101,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     this.imageData = imageData;
     this.actions = actions;
     this.backgroundHexColor = backgroundHexColor;
+    this.bannerPosition = bannerPosition == null ? BannerPosition.TOP : bannerPosition;
   }
 
   /** Gets the title {@link Text} associated with this message */
@@ -122,6 +127,10 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     return actions;
   }
 
+  /** Gets the {@link com.wonderpush.sdk.inappmessaging.model.InAppMessage.BannerPosition} associated with this message */
+  public BannerPosition getBannerPosition() {
+    return bannerPosition;
+  }
   /** Gets the background hex color associated with this message */
   @NonNull
   public String getBackgroundHexColor() {
@@ -156,6 +165,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     @Nullable
     List<ActionModel> actions;
     @Nullable String backgroundHexColor;
+    @Nullable private BannerPosition bannerPosition;
 
     public Builder setTitle(@Nullable Text title) {
       this.title = title;
@@ -192,7 +202,12 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
       }
       // We know backgroundColor is not null here because isEmpty checks for null.
       return new BannerMessage(
-              notificationMetadata, title, body, imageData, actions == null ? new ArrayList<>() : actions, backgroundHexColor, data);
+              notificationMetadata, title, body, imageData, actions == null ? new ArrayList<>() : actions, backgroundHexColor, bannerPosition, data);
+    }
+
+    public Builder setBannerPosition(@Nullable BannerPosition bannerPosition) {
+      this.bannerPosition = bannerPosition;
+      return this;
     }
   }
 }

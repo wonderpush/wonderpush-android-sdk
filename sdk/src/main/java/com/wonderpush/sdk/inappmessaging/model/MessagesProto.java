@@ -630,6 +630,8 @@ public final class MessagesProto {
     private String imageUrl_;
     private List<ActionModel> actions_;
     private String backgroundHexColor_;
+    private InAppMessage.BannerPosition bannerPosition_;
+
 
     public BannerMessage() {
     }
@@ -774,6 +776,14 @@ public final class MessagesProto {
     public void setBackgroundHexColor(
         String value) {
       backgroundHexColor_ = value;
+    }
+
+    public InAppMessage.BannerPosition getBannerPosition() {
+      return bannerPosition_;
+    }
+
+    public void setBannerPosition(InAppMessage.BannerPosition bannerPosition) {
+      bannerPosition_ = bannerPosition;
     }
 
   }

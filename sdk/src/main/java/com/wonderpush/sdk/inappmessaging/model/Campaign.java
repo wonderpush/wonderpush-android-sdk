@@ -176,6 +176,12 @@ public final class Campaign {
         // Background color
         message.setBackgroundHexColor(bannerJson.optString("backgroundHexColor", "#FFFFFF"));
 
+        String bannerPositionString = bannerJson.optString("bannerPosition", "top");
+        InAppMessage.BannerPosition bannerPosition = InAppMessage.BannerPosition.TOP;
+        if ("top".equals(bannerPositionString)) bannerPosition = InAppMessage.BannerPosition.TOP;
+        if ("bottom".equals(bannerPositionString)) bannerPosition = InAppMessage.BannerPosition.BOTTOM;
+        message.setBannerPosition(bannerPosition);
+
         // Action
         message.setActions(ActionModel.from(bannerJson.optJSONArray("actions")));
       } else if (modalJson != null) {

@@ -109,6 +109,8 @@ public class ProtoMarshallerClient {
       builder.setTitle(decode(in.getTitle()));
     }
 
+    builder.setBannerPosition(in.getBannerPosition());
+
     return builder;
   }
 

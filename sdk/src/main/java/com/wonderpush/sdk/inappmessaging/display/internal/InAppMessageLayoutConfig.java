@@ -22,7 +22,12 @@ import android.support.annotation.Nullable;
  *
  * @hide
  */
-public class InAppMessageLayoutConfig {
+public class InAppMessageLayoutConfig implements Cloneable {
+
+  @Override
+  protected Object clone() throws CloneNotSupportedException {
+    return super.clone();
+  }
 
   private Float maxImageHeightWeight;
   private Float maxImageWidthWeight;
@@ -119,6 +124,9 @@ public class InAppMessageLayoutConfig {
 
     public Builder() {
       config = new InAppMessageLayoutConfig();
+    }
+    public Builder(InAppMessageLayoutConfig orig) throws CloneNotSupportedException {
+      config = (InAppMessageLayoutConfig)orig.clone();
     }
 
     public Builder setMaxImageHeightWeight(Float maxImageHeightWeight) {

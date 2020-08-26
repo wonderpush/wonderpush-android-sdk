@@ -34,6 +34,9 @@ public abstract class InAppMessage {
   public enum CloseButtonPosition {
     OUTSIDE, INSIDE, NONE,
   }
+  public enum BannerPosition {
+    TOP, BOTTOM,
+  }
   public interface InAppMessageWithImage {
     @Nullable
     ImageData getImageData();

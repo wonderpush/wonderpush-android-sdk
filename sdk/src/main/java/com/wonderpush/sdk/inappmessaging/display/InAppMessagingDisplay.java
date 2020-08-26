@@ -23,6 +23,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
@@ -67,6 +68,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import static com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator.Position.BOTTOM;
 import static com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator.Position.TOP;
 
 /**
@@ -457,7 +459,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                     windowManager.show(bindingWrapper, activity);
                     if (bindingWrapper.getConfig().animate()) {
                       // Animate entry
-                      animator.slideIntoView(application, bindingWrapper.getRootView(), TOP);
+                      animator.slideIntoView(application, bindingWrapper.getRootView(), bindingWrapper.getConfig().viewWindowGravity().equals(Gravity.BOTTOM) ? BOTTOM : TOP);
                     }
                   }
                 });

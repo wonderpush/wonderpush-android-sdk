@@ -16,10 +16,12 @@ package com.wonderpush.sdk.inappmessaging.display.internal;
 
 import android.app.Application;
 
+import android.view.Gravity;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.components.DaggerInAppMessageComponent;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.components.InAppMessageComponent;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterModule;
+import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
 import javax.inject.Inject;
@@ -56,9 +58,16 @@ public class BindingWrapperFactory {
 
   public BindingWrapper createBannerBindingWrapper(
           InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+    InAppMessageLayoutConfig updatedConfig = config;
+    if (inAppMessage instanceof BannerMessage && ((BannerMessage)inAppMessage).getBannerPosition().equals(InAppMessage.BannerPosition.BOTTOM)) {
+      try {
+        updatedConfig = new InAppMessageLayoutConfig.Builder(config).setViewWindowGravity(Gravity.BOTTOM).build();
+      } catch (CloneNotSupportedException e) {
+      }
+    }
     InAppMessageComponent inAppMessageComponent =
         DaggerInAppMessageComponent.builder()
-            .inflaterModule(new InflaterModule(inAppMessage, config, application))
+            .inflaterModule(new InflaterModule(inAppMessage, updatedConfig, application))
             .build();
     return inAppMessageComponent.bannerBindingWrapper();
   }
