@@ -240,19 +240,23 @@ public class InAppMessageStreamManager {
                           Maybe.<List<Campaign.ThickContent>>create(
                                   emitter -> {
                                       inAppMessagingConfiguration.fetchInAppConfig((JSONObject config, Throwable error) -> {
-                                          if (error != null) emitter.onError(error);
-                                          else {
-                                              JSONArray campaignsJson = config != null ? config.optJSONArray("campaigns") : null;
-                                              List<Campaign.ThickContent> messages = new ArrayList<>();
-                                              for (int i = 0; campaignsJson != null && i < campaignsJson.length(); i++) {
-                                                  JSONObject campaignJson = campaignsJson.optJSONObject(i);
-                                                  if (campaignJson == null) continue;
-                                                  Campaign.ThickContent thickContent = Campaign.ThickContent.fromJSON(campaignJson);
-                                                  if (thickContent != null) messages.add(thickContent);
+                                          try {
+                                              if (error != null) emitter.onError(error);
+                                              else {
+                                                  JSONArray campaignsJson = config != null ? config.optJSONArray("campaigns") : null;
+                                                  List<Campaign.ThickContent> messages = new ArrayList<>();
+                                                  for (int i = 0; campaignsJson != null && i < campaignsJson.length(); i++) {
+                                                      JSONObject campaignJson = campaignsJson.optJSONObject(i);
+                                                      if (campaignJson == null) continue;
+                                                      Campaign.ThickContent thickContent = Campaign.ThickContent.fromJSON(campaignJson);
+                                                      if (thickContent != null) messages.add(thickContent);
+                                                  }
+                                                  emitter.onSuccess(messages);
                                               }
-                                              emitter.onSuccess(messages);
+                                              emitter.onComplete();
+                                          } catch (Throwable t) {
+                                              emitter.onError(t);
                                           }
-                                          emitter.onComplete();
                                       });
                                   })
                           .doOnSuccess(
@@ -265,7 +269,7 @@ public class InAppMessageStreamManager {
                           .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
                           //.doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
                           .doOnSuccess(testDeviceHelper::processCampaignFetch)
-                          .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
+                          .doOnError(e -> Logging.loge("Service fetch error: ", e))
                           .onErrorResumeNext(Maybe.empty()); // Absorb service failures
 
               return alreadySeenCampaigns
