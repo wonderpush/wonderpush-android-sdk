@@ -28,6 +28,7 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
@@ -79,6 +80,17 @@ public abstract class BindingWrapper {
     return config;
   }
 
+  @Nullable
+  public IamAnimator.EntryAnimation getEntryAnimation() {
+    return message.getEntryAnimation();
+  }
+
+  @Nullable
+  public IamAnimator.ExitAnimation getExitAnimation() {
+    return message.getExitAnimation();
+  }
+
+
   protected void setViewBgColorFromHex(@Nullable View view, @Nullable String hexColor) {
     if (view == null || TextUtils.isEmpty(hexColor)) return;
     try {
@@ -120,4 +132,5 @@ public abstract class BindingWrapper {
       button.setOnClickListener(actionListener);
     }
   }
+
 }

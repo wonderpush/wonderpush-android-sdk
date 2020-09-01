@@ -40,7 +40,6 @@ public class InAppMessageLayoutConfig implements Cloneable {
   private Integer windowWidth;
   private Integer windowHeight;
   private Boolean backgroundEnabled;
-  private Boolean animate;
   private Boolean autoDismiss;
 
   @NonNull
@@ -92,10 +91,6 @@ public class InAppMessageLayoutConfig implements Cloneable {
 
   public Boolean backgroundEnabled() {
     return backgroundEnabled;
-  }
-
-  public Boolean animate() {
-    return animate;
   }
 
   public Boolean autoDismiss() {
@@ -181,11 +176,6 @@ public class InAppMessageLayoutConfig implements Cloneable {
 
     public Builder setBackgroundEnabled(Boolean backgroundEnabled) {
       config.backgroundEnabled = backgroundEnabled;
-      return this;
-    }
-
-    public Builder setAnimate(Boolean animate) {
-      config.animate = animate;
       return this;
     }
 

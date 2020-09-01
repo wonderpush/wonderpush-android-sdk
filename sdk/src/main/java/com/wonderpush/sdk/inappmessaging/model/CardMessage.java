@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
 import java.util.Collections;
@@ -60,7 +61,8 @@ public class CardMessage extends InAppMessage {
         + portraitImageHash
         + landscapeImageHash
         + primaryButtonHash
-        + secondaryButtonHash;
+        + secondaryButtonHash
+        + entryAnimation.hashCode() + exitAnimation.hashCode();
   }
 
   /** @hide */
@@ -76,6 +78,8 @@ public class CardMessage extends InAppMessage {
     if (hashCode() != c.hashCode()) {
       return false; // the hashcodes don't match
     }
+    if (entryAnimation != c.entryAnimation) return false;
+    if (exitAnimation != c.exitAnimation) return false;
     if ((body == null && c.body != null) || (body != null && !body.equals(c.body))) {
       return false; // the bodies don't match
     }
@@ -125,8 +129,10 @@ public class CardMessage extends InAppMessage {
       @NonNull List<ActionModel> secondaryActions,
       @Nullable Button primaryButton,
       @Nullable Button secondaryButton,
+      @NonNull IamAnimator.EntryAnimation entryAnimation,
+      @NonNull IamAnimator.ExitAnimation exitAnimation,
       @NonNull JSONObject data) {
-    super(notificationMetadata, MessageType.CARD, data);
+    super(notificationMetadata, MessageType.CARD, data, entryAnimation, exitAnimation);
     this.title = title;
     this.body = body;
     this.portraitImageData = portraitImageData;
@@ -217,6 +223,18 @@ public class CardMessage extends InAppMessage {
     @Nullable List<ActionModel> secondaryActions;
     @Nullable Button primaryButton;
     @Nullable Button secondaryButton;
+    @NonNull IamAnimator.EntryAnimation entryAnimation;
+    @NonNull IamAnimator.ExitAnimation exitAnimation;
+
+    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
+      this.entryAnimation = entryAnimation;
+      return this;
+    }
+
+    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
+      this.exitAnimation = exitAnimation;
+      return this;
+    }
 
     public Builder setPortraitImageData(@Nullable ImageData portraitImageData) {
       this.portraitImageData = portraitImageData;
@@ -297,6 +315,8 @@ public class CardMessage extends InAppMessage {
           secondaryActions == null ? Collections.emptyList() : secondaryActions,
           primaryButton,
           secondaryButton,
+          entryAnimation,
+          exitAnimation,
           data);
     }
   }

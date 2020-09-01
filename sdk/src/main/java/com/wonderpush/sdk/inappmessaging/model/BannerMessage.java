@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     int bodyHash = body != null ? body.hashCode() : 0;
     int imageHash = imageData != null ? imageData.hashCode() : 0;
     int actionHash = actions != null ? actions.hashCode() : 0;
-    return title.hashCode() + bodyHash + imageHash + actionHash + backgroundHexColor.hashCode() + bannerPosition.hashCode();
+    return title.hashCode() + bodyHash + imageHash + actionHash + backgroundHexColor.hashCode() + bannerPosition.hashCode() + entryAnimation.hashCode() + exitAnimation.hashCode();
   }
 
   /** @hide */
@@ -63,6 +64,8 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
       return false; // the hashcodes don't match
     }
     if (bannerPosition != b.bannerPosition) return false;
+    if (entryAnimation != b.entryAnimation) return false;
+    if (exitAnimation != b.exitAnimation) return false;
 
     if ((body == null && b.body != null) || (body != null && !body.equals(b.body))) {
       return false; // the bodies don't match
@@ -94,8 +97,10 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
       List<ActionModel> actions,
       @NonNull String backgroundHexColor,
       @Nullable BannerPosition bannerPosition,
+      @NonNull IamAnimator.EntryAnimation entryAnimation,
+      @NonNull IamAnimator.ExitAnimation exitAnimation,
       @NonNull JSONObject data) {
-    super(notificationMetadata, MessageType.BANNER, data);
+    super(notificationMetadata, MessageType.BANNER, data, entryAnimation, exitAnimation);
     this.title = title;
     this.body = body;
     this.imageData = imageData;
@@ -166,6 +171,18 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     List<ActionModel> actions;
     @Nullable String backgroundHexColor;
     @Nullable private BannerPosition bannerPosition;
+    @NonNull IamAnimator.EntryAnimation entryAnimation;
+    @NonNull IamAnimator.ExitAnimation exitAnimation;
+
+    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
+      this.entryAnimation = entryAnimation;
+      return this;
+    }
+
+    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
+      this.exitAnimation = exitAnimation;
+      return this;
+    }
 
     public Builder setTitle(@Nullable Text title) {
       this.title = title;
@@ -202,7 +219,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
       }
       // We know backgroundColor is not null here because isEmpty checks for null.
       return new BannerMessage(
-              notificationMetadata, title, body, imageData, actions == null ? new ArrayList<>() : actions, backgroundHexColor, bannerPosition, data);
+              notificationMetadata, title, body, imageData, actions == null ? new ArrayList<>() : actions, backgroundHexColor, bannerPosition, entryAnimation, exitAnimation, data);
     }
 
     public Builder setBannerPosition(@Nullable BannerPosition bannerPosition) {

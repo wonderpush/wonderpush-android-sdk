@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
 import java.util.Collections;
@@ -49,7 +50,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     for(ActionModel action : actions) actionHash += action.hashCode();
     int imageHash = imageData != null ? imageData.hashCode() : 0;
     int buttonHash = button != null ? button.hashCode() : 0;
-    return title.hashCode() + bodyHash + backgroundHexColor.hashCode() + actionHash + imageHash + buttonHash + closeButtonPosition.hashCode();
+    return title.hashCode() + bodyHash + backgroundHexColor.hashCode() + actionHash + imageHash + buttonHash + closeButtonPosition.hashCode() + entryAnimation.hashCode() + exitAnimation.hashCode();
   }
 
   /** @hide */
@@ -66,6 +67,8 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
       return false; // the hashcodes don't match
     }
     if (closeButtonPosition != m.closeButtonPosition) return false;
+    if (entryAnimation != m.entryAnimation) return false;
+    if (exitAnimation != m.exitAnimation) return false;
     if ((body == null && m.body != null) || (body != null && !body.equals(m.body))) {
       return false; // the bodies don't match
     }
@@ -100,8 +103,10 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
       @Nullable Button button,
       @NonNull String backgroundHexColor,
       @NonNull CloseButtonPosition closeButtonPosition,
+      @NonNull IamAnimator.EntryAnimation entryAnimation,
+      @NonNull IamAnimator.ExitAnimation exitAnimation,
       @NonNull JSONObject data) {
-    super(notificationMetadata, MessageType.MODAL, data);
+    super(notificationMetadata, MessageType.MODAL, data, entryAnimation, exitAnimation);
     this.title = title;
     this.body = body;
     this.imageData = imageData;
@@ -174,6 +179,18 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     @Nullable String backgroundHexColor;
     @Nullable Button button;
     @Nullable CloseButtonPosition closeButtonPosition;
+    @NonNull IamAnimator.EntryAnimation entryAnimation;
+    @NonNull IamAnimator.ExitAnimation exitAnimation;
+
+    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
+      this.entryAnimation = entryAnimation;
+      return this;
+    }
+
+    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
+      this.exitAnimation = exitAnimation;
+      return this;
+    }
 
     public Builder setTitle(@Nullable Text title) {
       this.title = title;
@@ -223,7 +240,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
 
       // We know backgroundColor is not null here because isEmpty checks for null.
       return new ModalMessage(
-              notificationMetadata, title, body, imageData, actions == null ? Collections.emptyList() : actions, button, backgroundHexColor, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, data);
+              notificationMetadata, title, body, imageData, actions == null ? Collections.emptyList() : actions, button, backgroundHexColor, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, entryAnimation, exitAnimation, data);
     }
   }
 

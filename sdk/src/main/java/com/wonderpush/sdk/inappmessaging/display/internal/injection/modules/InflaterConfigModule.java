@@ -109,7 +109,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setBackgroundEnabled(false)
-        .setAnimate(false)
         .setAutoDismiss(false)
         .build();
   }
@@ -130,7 +129,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setBackgroundEnabled(false)
-        .setAnimate(false)
         .setAutoDismiss(false)
         .build();
   }
@@ -152,7 +150,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
         .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
         .setBackgroundEnabled(false)
-        .setAnimate(false)
         .setAutoDismiss(false)
         .build();
   }
@@ -174,7 +171,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setBackgroundEnabled(false)
-        .setAnimate(false)
         .setAutoDismiss(false)
         .build();
   }
@@ -194,7 +190,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setBackgroundEnabled(false)
-        .setAnimate(false)
         .setAutoDismiss(false)
         .build();
   }
@@ -216,7 +211,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setBackgroundEnabled(false)
-        .setAnimate(false)
         .setAutoDismiss(false)
         .build();
   }
@@ -237,7 +231,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setBackgroundEnabled(true)
-        .setAnimate(true)
         .setAutoDismiss(true)
         .build();
   }
@@ -258,7 +251,6 @@ public class InflaterConfigModule {
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setBackgroundEnabled(true)
-        .setAnimate(true)
         .setAutoDismiss(true)
         .build();
   }

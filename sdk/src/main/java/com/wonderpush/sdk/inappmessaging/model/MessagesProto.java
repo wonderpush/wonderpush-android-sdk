@@ -4,6 +4,7 @@ package com.wonderpush.sdk.inappmessaging.model;
 
 import com.wonderpush.sdk.ActionModel;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -248,10 +249,31 @@ public final class MessagesProto {
 
   }
 
+  public static class Message {
+    private IamAnimator.EntryAnimation entryAnimation_;
+    private IamAnimator.ExitAnimation exitAnimation_;
+
+    public IamAnimator.EntryAnimation getEntryAnimation() {
+      return entryAnimation_;
+    }
+
+    public void setEntryAnimation(IamAnimator.EntryAnimation entryAnimation_) {
+      this.entryAnimation_ = entryAnimation_;
+    }
+
+    public IamAnimator.ExitAnimation getExitAnimation() {
+      return exitAnimation_;
+    }
+
+    public void setExitAnimation(IamAnimator.ExitAnimation exitAnimation_) {
+      this.exitAnimation_ = exitAnimation_;
+    }
+  }
+
   /**
    * Protobuf type {@code .inappmessaging.CardMessage}
    */
-  public  static final class CardMessage {
+  public  static final class CardMessage extends Message {
     private MessagesProto.Text title_;
     private MessagesProto.Text body_;
     private String portraitImageUrl_;
@@ -550,7 +572,7 @@ public final class MessagesProto {
   /**
    * Protobuf type {@code .inappmessaging.ImageOnlyMessage}
    */
-  public  static final class ImageOnlyMessage {
+  public  static final class ImageOnlyMessage extends Message {
     private String imageUrl_;
     private List<ActionModel> actions_;
     private InAppMessage.CloseButtonPosition closeButtonPosition_;
@@ -624,7 +646,7 @@ public final class MessagesProto {
   /**
    * Protobuf type {@code .inappmessaging.BannerMessage}
    */
-  public  static final class BannerMessage {
+  public  static final class BannerMessage extends Message {
     private MessagesProto.Text title_;
     private MessagesProto.Text body_;
     private String imageUrl_;
@@ -791,7 +813,7 @@ public final class MessagesProto {
   /**
    * Protobuf type {@code .inappmessaging.ModalMessage}
    */
-  public  static final class ModalMessage {
+  public  static final class ModalMessage extends Message {
     private MessagesProto.Text title_;
     private MessagesProto.Text body_;
     private String imageUrl_;

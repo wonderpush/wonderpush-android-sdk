@@ -5,6 +5,7 @@ import android.text.TextUtils;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.JSONSerializable;
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import com.wonderpush.sdk.inappmessaging.internal.Logging;
 
 import org.json.JSONArray;
@@ -149,6 +150,10 @@ public final class Campaign {
         message.setSecondaryActionButton(MessagesProto.Button.fromJSON(cardJson.optJSONObject("secondaryActionButton")));
         message.setPrimaryActions(ActionModel.from(cardJson.optJSONArray("primaryActions")));
         message.setSecondaryActions(ActionModel.from(cardJson.optJSONArray("secondaryActions")));
+
+        // Animations
+        message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(cardJson.optString("entryAnimation", "fadeIn")));
+        message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(cardJson.optString("exitAnimation", "fadeOut")));
       } else if (bannerJson != null) {
         MessagesProto.BannerMessage message = new MessagesProto.BannerMessage();
         content.setBanner(message);
@@ -184,6 +189,10 @@ public final class Campaign {
 
         // Action
         message.setActions(ActionModel.from(bannerJson.optJSONArray("actions")));
+
+        // Animations
+        message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(bannerJson.optString("entryAnimation", "fadeIn")));
+        message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(bannerJson.optString("exitAnimation", "fadeOut")));
       } else if (modalJson != null) {
         MessagesProto.ModalMessage message = new MessagesProto.ModalMessage();
         content.setModal(message);
@@ -222,6 +231,10 @@ public final class Campaign {
         if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
         message.setCloseButtonPosition(closeButtonPosition);
 
+        // Animations
+        message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(modalJson.optString("entryAnimation", "fadeIn")));
+        message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(modalJson.optString("exitAnimation", "fadeOut")));
+
       } else if (imageOnlyJson != null) {
         MessagesProto.ImageOnlyMessage message = new MessagesProto.ImageOnlyMessage();
         content.setImageOnly(message);
@@ -242,6 +255,10 @@ public final class Campaign {
         if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
         if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
         message.setCloseButtonPosition(closeButtonPosition);
+
+        // Animations
+        message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(imageOnlyJson.optString("entryAnimation", "fadeIn")));
+        message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(imageOnlyJson.optString("exitAnimation", "fadeOut")));
 
       } else {
         throw new InvalidJsonException("Unknown message type in message node: " + contentJson.toString());

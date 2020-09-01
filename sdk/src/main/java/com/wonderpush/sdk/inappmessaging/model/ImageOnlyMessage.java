@@ -20,6 +20,7 @@ import android.support.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
 import java.util.Collections;
@@ -41,7 +42,7 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
   @Override
   public int hashCode() {
     int actionHash = actions != null ? actions.hashCode() : 0;
-    return imageData.hashCode() + actionHash + closeButtonPosition.hashCode();
+    return imageData.hashCode() + actionHash + closeButtonPosition.hashCode() + entryAnimation.hashCode() + exitAnimation.hashCode();
   }
 
   /** @hide */
@@ -54,6 +55,8 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
       return false; // not the correct instance type
     }
     ImageOnlyMessage i = (ImageOnlyMessage) o;
+    if (entryAnimation != i.entryAnimation) return false;
+    if (exitAnimation != i.exitAnimation) return false;
     if (hashCode() != i.hashCode()) {
       return false; // the hashcodes don't match
     }
@@ -77,8 +80,10 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
       @NonNull ImageData imageData,
       @NonNull List<ActionModel> actions,
       @NonNull CloseButtonPosition closeButtonPosition,
+      @NonNull IamAnimator.EntryAnimation entryAnimation,
+      @NonNull IamAnimator.ExitAnimation exitAnimation,
       @NonNull JSONObject data) {
-    super(notificationMetadata, MessageType.IMAGE_ONLY, data);
+    super(notificationMetadata, MessageType.IMAGE_ONLY, data, entryAnimation, exitAnimation);
     this.imageData = imageData;
     this.actions = actions;
     this.closeButtonPosition = closeButtonPosition;
@@ -121,6 +126,18 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
     List<ActionModel> actions;
     @Nullable
     CloseButtonPosition closeButtonPosition;
+    @NonNull IamAnimator.EntryAnimation entryAnimation;
+    @NonNull IamAnimator.ExitAnimation exitAnimation;
+
+    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
+      this.entryAnimation = entryAnimation;
+      return this;
+    }
+
+    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
+      this.exitAnimation = exitAnimation;
+      return this;
+    }
 
     public Builder setImageData(@Nullable ImageData imageData) {
       this.imageData = imageData;
@@ -142,7 +159,7 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
       if (imageData == null) {
         throw new IllegalArgumentException("ImageOnly model must have image data");
       }
-      return new ImageOnlyMessage(notificationMetadata, imageData, actions == null ? Collections.emptyList() : actions, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, data);
+      return new ImageOnlyMessage(notificationMetadata, imageData, actions == null ? Collections.emptyList() : actions, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, entryAnimation, exitAnimation, data);
     }
   }
 

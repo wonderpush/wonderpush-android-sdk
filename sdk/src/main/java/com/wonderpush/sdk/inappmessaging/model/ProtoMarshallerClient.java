@@ -19,6 +19,7 @@ import android.text.TextUtils;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import com.wonderpush.sdk.inappmessaging.internal.Logging;
 
 import javax.annotation.Nonnull;
@@ -65,6 +66,8 @@ public class ProtoMarshallerClient {
       builder.setTitle(decode(in.getTitle()));
     }
     builder.setCloseButtonPosition(in.getCloseButtonPosition());
+    builder.setEntryAnimation(in.getEntryAnimation());
+    builder.setExitAnimation(in.getExitAnimation());
 
     return builder;
   }
@@ -81,6 +84,8 @@ public class ProtoMarshallerClient {
       builder.setActions(in.getActions());
     }
     builder.setCloseButtonPosition(in.getCloseButtonPosition());
+    builder.setEntryAnimation(in.getEntryAnimation());
+    builder.setExitAnimation(in.getExitAnimation());
 
     return builder;
   }
@@ -110,6 +115,8 @@ public class ProtoMarshallerClient {
     }
 
     builder.setBannerPosition(in.getBannerPosition());
+    builder.setEntryAnimation(in.getEntryAnimation());
+    builder.setExitAnimation(in.getExitAnimation());
 
     return builder;
   }
@@ -149,6 +156,8 @@ public class ProtoMarshallerClient {
       builder.setLandscapeImageData(
           ImageData.builder().setImageUrl(in.getLandscapeImageUrl()).build());
     }
+    builder.setEntryAnimation(in.getEntryAnimation());
+    builder.setExitAnimation(in.getExitAnimation());
 
     return builder;
   }
@@ -206,7 +215,9 @@ public class ProtoMarshallerClient {
         return new InAppMessage(
             new NotificationMetadata(campaignId, notificationId, viewId, isTestMessage),
             MessageType.UNSUPPORTED,
-            in.getDataBundle()) {
+            in.getDataBundle(),
+            IamAnimator.EntryAnimation.FADE_IN,
+            IamAnimator.ExitAnimation.FADE_OUT) {
 
           @Override
           public ButtonType getButtonType(List<ActionModel> actions) {

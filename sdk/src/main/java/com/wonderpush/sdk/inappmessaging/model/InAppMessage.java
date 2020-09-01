@@ -21,6 +21,7 @@ import android.support.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
 import javax.annotation.Nonnull;
@@ -44,14 +45,22 @@ public abstract class InAppMessage {
 
   MessageType messageType;
   NotificationMetadata notificationMetadata;
+  IamAnimator.EntryAnimation entryAnimation;
+  IamAnimator.ExitAnimation exitAnimation;
   private JSONObject data;
 
   /** @hide */
   public InAppMessage(
-          NotificationMetadata notificationMetadata, MessageType messageType, JSONObject data) {
+          NotificationMetadata notificationMetadata,
+          MessageType messageType,
+          JSONObject data,
+          @NonNull IamAnimator.EntryAnimation entryAnimation,
+          @NonNull IamAnimator.ExitAnimation exitAnimation) {
     this.notificationMetadata = notificationMetadata;
     this.messageType = messageType;
     this.data = data;
+    this.entryAnimation = entryAnimation;
+    this.exitAnimation = exitAnimation;
   }
 
   /** Gets the {@link MessageType} of the message */
@@ -80,4 +89,13 @@ public abstract class InAppMessage {
     }
     return true;
   }
+
+  public IamAnimator.EntryAnimation getEntryAnimation() {
+    return entryAnimation;
+  }
+
+  public IamAnimator.ExitAnimation getExitAnimation() {
+    return exitAnimation;
+  }
+
 }

@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.wonderpush.sdk.R;
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.wonderpush.sdk.inappmessaging.display.internal.ResizableImageView;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
@@ -53,6 +54,8 @@ public class BannerBindingWrapper extends BindingWrapper {
 
   private View.OnClickListener mDismissListener;
 
+  private boolean dismissedOnSwipe;
+
   @Inject
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public BannerBindingWrapper(
@@ -77,7 +80,13 @@ public class BannerBindingWrapper extends BindingWrapper {
       BannerMessage bannerMessage = (BannerMessage) message;
       setMessage(bannerMessage);
       setLayoutConfig(config);
-      setSwipeDismissListener(dismissOnClickListener);
+      setSwipeDismissListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+          dismissedOnSwipe = true;
+          dismissOnClickListener.onClick(view);
+        }
+      });
       if (actionListeners.size() > 0) setActionListener(actionListeners.get(0));
     }
     return null;
@@ -174,5 +183,35 @@ public class BannerBindingWrapper extends BindingWrapper {
   @Override
   public boolean canSwipeToDismiss() {
     return true;
+  }
+
+  @Nullable
+  @Override
+  public IamAnimator.EntryAnimation getEntryAnimation() {
+    if (message instanceof BannerMessage) {
+      BannerMessage bannerMessage = (BannerMessage)message;
+      switch (bannerMessage.getBannerPosition()) {
+        case BOTTOM: return IamAnimator.EntryAnimation.SLIDE_IN_FROM_BOTTOM;
+        case TOP: return IamAnimator.EntryAnimation.SLIDE_IN_FROM_TOP;
+      }
+    }
+    return super.getEntryAnimation();
+  }
+
+  @NonNull
+
+  @Nullable
+  @Override
+  public IamAnimator.ExitAnimation getExitAnimation() {
+    // No animation when we swiped
+    if (dismissedOnSwipe) return null;
+    if (message instanceof BannerMessage) {
+      BannerMessage bannerMessage = (BannerMessage)message;
+      switch (bannerMessage.getBannerPosition()) {
+        case BOTTOM: return IamAnimator.ExitAnimation.SLIDE_OUT_DOWN;
+        case TOP: return IamAnimator.ExitAnimation.SLIDE_OUT_TOP;
+      }
+    }
+    return null;
   }
 }

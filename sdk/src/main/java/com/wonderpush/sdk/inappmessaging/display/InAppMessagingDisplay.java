@@ -101,6 +101,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
   private IamListener iamListener;
   private InAppMessage inAppMessage;
+  private BindingWrapper bindingWrapper;
   private InAppMessagingDisplayCallbacks callbacks;
   private com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay inAppMessagingDisplay;
 
@@ -299,8 +300,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                     inAppMessage.getMessageType(), getScreenOrientation(application)))
             .get();
 
-    final BindingWrapper bindingWrapper;
-
     switch (inAppMessage.getMessageType()) {
       case BANNER:
         bindingWrapper = bindingWrapperFactory.createBannerBindingWrapper(config, inAppMessage);
@@ -328,7 +327,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             new Runnable() {
               @Override
               public void run() {
-                inflateBinding(activity, bindingWrapper);
+                inflateBinding(activity);
               }
             });
   }
@@ -336,7 +335,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   // Since we handle only touch outside events and let the underlying views handle all other events,
   // it is safe to ignore this warning
   @SuppressLint("ClickableViewAccessibility")
-  private void inflateBinding(final Activity activity, final BindingWrapper bindingWrapper) {
+  private void inflateBinding(final Activity activity) {
+    if (bindingWrapper == null) return;
+
     // On click listener when X button or collapse button is clicked
     final View.OnClickListener dismissListener =
         new View.OnClickListener() {
@@ -371,9 +372,19 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                 notifyIamClick();
                 // Ensure that we remove the displayed IAM, and ensure that on re-load, the message
                 // isn't re-displayed
-                removeDisplayedIam(activity);
+                if (bindingWrapper != null && bindingWrapper.getExitAnimation() != null) {
+                  animator.executeExitAnimation(bindingWrapper.getExitAnimation(), application, bindingWrapper.getRootView(), new IamAnimator.AnimationCompleteListener() {
+                    @Override
+                    public void onComplete() {
+                      removeDisplayedIam(activity);
+                    }
+                  });
+                } else {
+                  removeDisplayedIam(activity);
+                }
                 inAppMessage = null;
                 callbacks = null;
+                bindingWrapper = null;
               }
             };
       } else {
@@ -457,9 +468,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                   @Override
                   public void run() {
                     windowManager.show(bindingWrapper, activity);
-                    if (bindingWrapper.getConfig().animate()) {
-                      // Animate entry
-                      animator.slideIntoView(application, bindingWrapper.getRootView(), bindingWrapper.getConfig().viewWindowGravity().equals(Gravity.BOTTOM) ? BOTTOM : TOP);
+                    if (bindingWrapper.getEntryAnimation() != null) {
+                      animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
                     }
                   }
                 });
@@ -479,6 +489,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             cancelTimers(); // Not strictly necessary.
             inAppMessage = null;
             callbacks = null;
+            bindingWrapper = null;
           }
         });
   }
@@ -554,9 +565,19 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   private void dismissIam(Activity activity) {
     Logging.logd("Dismissing iam");
     notifyIamDismiss();
-    removeDisplayedIam(activity);
+    if (bindingWrapper != null && bindingWrapper.getExitAnimation() != null) {
+      animator.executeExitAnimation(bindingWrapper.getExitAnimation(), application, bindingWrapper.getRootView(), new IamAnimator.AnimationCompleteListener() {
+        @Override
+        public void onComplete() {
+          removeDisplayedIam(activity);
+        }
+      });
+    } else {
+      removeDisplayedIam(activity);
+    }
     inAppMessage = null;
     callbacks = null;
+    bindingWrapper = null;
   }
 
   private void removeDisplayedIam(Activity activity) {
