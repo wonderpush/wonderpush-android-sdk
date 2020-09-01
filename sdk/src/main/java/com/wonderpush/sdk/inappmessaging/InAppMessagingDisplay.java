@@ -31,9 +31,10 @@ public interface InAppMessagingDisplay {
    * @param inAppMessage - The in-app message.
    * @param callbacks - The object used to report views, clicks and dismisses.
    * @param delay - A delay in milliseconds. The implementation should wait this amount of time before triggering the display.
+   * @return false when the message should be handled by the default, buit-in InAppMessagingDisplay instance. This instance will take care of reporting impressions and clicks to the display delegate. true if the message was handled
    */
   @Keep
-  void displayMessage(
+  boolean displayMessage(
           @NonNull InAppMessage inAppMessage,
           @NonNull InAppMessagingDisplayCallbacks callbacks,
           long delay);

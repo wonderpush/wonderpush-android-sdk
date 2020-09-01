@@ -305,11 +305,24 @@ public class InAppMessaging {
 
   private void triggerInAppMessage(TriggeredInAppMessage inAppMessage) {
     if (this.iamDisplay != null) {
-      iamDisplay.displayMessage(
+      InAppMessagingDisplayCallbacks displayCallbacks = displayCallbacksFactory.generateDisplayCallback(
+              inAppMessage.getInAppMessage(), inAppMessage.getTriggeringEvent());
+      boolean handled = iamDisplay.displayMessage(
           inAppMessage.getInAppMessage(),
-          displayCallbacksFactory.generateDisplayCallback(
-              inAppMessage.getInAppMessage(), inAppMessage.getTriggeringEvent()),
+          displayCallbacks,
           inAppMessage.getDelay());
+      if (!handled) {
+        com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay defaultImplementation = com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay.getInstance();
+        if (defaultImplementation != null) {
+          InAppMessagingDisplay defaultDisplay = defaultImplementation.getDefaultInAppMessagingDisplay();
+          if (defaultDisplay != null) {
+            defaultDisplay.displayMessage(
+                    inAppMessage.getInAppMessage(),
+                    displayCallbacks,
+                    inAppMessage.getDelay());
+          }
+        }
+      }
     }
   }
 }

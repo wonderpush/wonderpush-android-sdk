@@ -24,13 +24,9 @@ import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
 /** @hide */
 public class InAppMessagingDisplayImpl
-    implements InAppMessagingDisplay, Application.ActivityLifecycleCallbacks {
+    implements Application.ActivityLifecycleCallbacks {
 
   public InAppMessagingDisplayImpl() {}
-
-  @Override
-  public void displayMessage(
-          InAppMessage inAppMessage, InAppMessagingDisplayCallbacks callbacks, long delay) {}
 
   /** @hide */
   @Override

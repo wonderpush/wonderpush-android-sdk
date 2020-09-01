@@ -70,7 +70,6 @@ public class WonderPush {
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
     private static InAppMessaging sInAppMessaging;
-    private static InAppMessagingDisplay sInAppMessagingDisplay;
     private static Context sApplicationContext;
     protected static Application sApplication;
 
@@ -1585,9 +1584,7 @@ public class WonderPush {
 
             });
         }
-        if (sInAppMessagingDisplay == null) {
-            sInAppMessagingDisplay = InAppMessagingDisplay.getInstance(application, sInAppMessaging);
-        }
+        InAppMessagingDisplay.initialize(application, sInAppMessaging);
     }
     /**
      * @see #ensureInitialized(Context, boolean)

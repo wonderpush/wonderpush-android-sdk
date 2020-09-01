@@ -105,6 +105,10 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   private InAppMessagingDisplayCallbacks callbacks;
   private com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay inAppMessagingDisplay;
 
+  public @Nullable com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay getDefaultInAppMessagingDisplay() {
+    return inAppMessagingDisplay;
+  }
+
   @Inject
   InAppMessagingDisplay(
       InAppMessaging headlessInAppMessaging,
@@ -133,7 +137,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
    */
   @NonNull
   @Keep
-  public static InAppMessagingDisplay getInstance(Application application,
+  public static void initialize(Application application,
                                                   InAppMessaging inAppMessaging) {
     if (instance == null) {
       UniversalComponent universalComponent =
@@ -148,6 +152,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       instance = appComponent.providesInAppMessagingUI();
       application.registerActivityLifecycleCallbacks(instance);
     }
+  }
+
+  public static @Nullable InAppMessagingDisplay getInstance() {
     return instance;
   }
 
@@ -200,14 +207,13 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   public void onActivityStarted(final Activity activity) {
     super.onActivityStarted(activity);
 
-    if (headlessInAppMessaging.getMessageDisplayComponent() != null) return;
     // Register IAM listener with the headless sdk.
     this.inAppMessagingDisplay = (iam, cb, delay) -> {
       // When we are in the middle of showing a message, we ignore other notifications these
       // messages will be fired when the corresponding events happen the next time.
       if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
         Logging.logd("Active IAM exists. Skipping trigger");
-        return;
+        return true;
       }
       inAppMessage = iam;
       callbacks = cb;
@@ -223,8 +229,13 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       } else {
         showActiveIam(activity);
       }
+      return true;
     };
-    headlessInAppMessaging.setMessageDisplayComponent(this.inAppMessagingDisplay);
+
+    if (headlessInAppMessaging.getMessageDisplayComponent() == null) {
+      headlessInAppMessaging.setMessageDisplayComponent(this.inAppMessagingDisplay);
+    }
+
   }
 
   /**
