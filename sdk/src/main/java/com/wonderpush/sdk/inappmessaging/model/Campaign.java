@@ -27,8 +27,7 @@ public final class Campaign {
    */
   public  static final class ThickContent implements JSONSerializable {
     private JSONObject json;
-    private int payloadCase_ = 0;
-    private Object payload_;
+    private Payload payload_;
     private MessagesProto.Content content_;
     private CommonTypesProto.Priority priority_;
     private boolean isTestCampaign_;
@@ -52,8 +51,8 @@ public final class Campaign {
       CommonTypesProto.Priority priority = new CommonTypesProto.Priority();
       priority.setValue(1);
       this.setPriority(priority);
-      Campaign.VanillaCampaignPayload vanillaContent = new Campaign.VanillaCampaignPayload();
-      this.setVanillaPayload(vanillaContent);
+      Payload payload = new Payload();
+      this.setPayload(payload);
 
       JSONObject schedulingJson = campaignJson.optJSONObject("scheduling");
 
@@ -63,9 +62,9 @@ public final class Campaign {
       }
 
       Long startDate = schedulingJson.optLong("startDate");
-      if (startDate != 0L) vanillaContent.setCampaignStartTimeMillis(startDate);
+      if (startDate != 0L) payload.setCampaignStartTimeMillis(startDate);
       Long endDate = schedulingJson.optLong("endDate");
-      if (endDate != 0L) vanillaContent.setCampaignEndTimeMillis(endDate);
+      if (endDate != 0L) payload.setCampaignEndTimeMillis(endDate);
 
       // Segmentation
       JSONObject segmentJson = campaignJson.optJSONObject("segment");
@@ -108,9 +107,9 @@ public final class Campaign {
       if (notificationId == null) {
         throw new InvalidJsonException("Missing notificationId in reporting payload: " + reportingJson.toString());
       }
-      vanillaContent.setCampaignId(campaignId);
-      vanillaContent.setViewId(viewId);
-      vanillaContent.setNotificationId(notificationId);
+      payload.setCampaignId(campaignId);
+      payload.setViewId(viewId);
+      payload.setNotificationId(notificationId);
 
       JSONObject cardJson = contentJson.optJSONObject("card");
       JSONObject bannerJson = contentJson.optJSONObject("banner");
@@ -286,84 +285,20 @@ public final class Campaign {
       }
     }
 
-    public enum PayloadCase {
-      VANILLA_PAYLOAD(1),
-      EXPERIMENTAL_PAYLOAD(2),
-      PAYLOAD_NOT_SET(0);
-      private final int value;
-      private PayloadCase(int value) {
-        this.value = value;
-      }
-      /**
-       * @deprecated Use {@link #forNumber(int)} instead.
-       */
-      @Deprecated
-      public static PayloadCase valueOf(int value) {
-        return forNumber(value);
-      }
-
-      public static PayloadCase forNumber(int value) {
-        switch (value) {
-          case 1: return VANILLA_PAYLOAD;
-          case 2: return EXPERIMENTAL_PAYLOAD;
-          case 0: return PAYLOAD_NOT_SET;
-          default: return null;
-        }
-      }
-      public int getNumber() {
-        return this.value;
-      }
-    };
-
-    public PayloadCase
-    getPayloadCase() {
-      return PayloadCase.forNumber(
-          payloadCase_);
-    }
 
     public void clearPayload() {
-      payloadCase_ = 0;
       payload_ = null;
     }
 
-    /**
-     * <code>optional .inappmessaging.v1.VanillaCampaignPayload vanilla_payload = 1;</code>
-     */
-    public Campaign.VanillaCampaignPayload getVanillaPayload() {
-      if (payloadCase_ == 1) {
-         return (Campaign.VanillaCampaignPayload) payload_;
-      }
-      return null;
-    }
-    /**
-     * <code>optional .inappmessaging.v1.VanillaCampaignPayload vanilla_payload = 1;</code>
-     */
-    private void setVanillaPayload(Campaign.VanillaCampaignPayload value) {
-      if (value == null) {
-        throw new NullPointerException();
-      }
-      payload_ = value;
-      payloadCase_ = 1;
+    public Payload getPayload() {
+      return payload_;
     }
 
-    /**
-     * <code>optional .inappmessaging.v1.ExperimentalCampaignPayload experimental_payload = 2;</code>
-     */
-    public Campaign.ExperimentalCampaignPayload getExperimentalPayload() {
-      if (payloadCase_ == 2) {
-         return (Campaign.ExperimentalCampaignPayload) payload_;
-      }
-      return null;
-    }
-    /**
-     * <code>optional .inappmessaging.v1.ExperimentalCampaignPayload experimental_payload = 2;</code>
-     */
-    private void setExperimentalPayload(Campaign.ExperimentalCampaignPayload value) {
+    private void setPayload(Payload value) {
       if (value == null) {
         throw new NullPointerException();
       }
       payload_ = value;
-      payloadCase_ = 2;
     }
 
     /**
@@ -583,10 +518,7 @@ public final class Campaign {
 
   }
 
-  /**
-   * Protobuf type {@code google.internal.inappmessaging.v1.VanillaCampaignPayload}
-   */
-  public  static final class VanillaCampaignPayload {
+  public  static final class Payload {
     private String campaignId_;
     private String viewId_;
     private String notificationId_;
@@ -594,7 +526,7 @@ public final class Campaign {
     private long campaignStartTimeMillis_;
     private long campaignEndTimeMillis_;
 
-    private VanillaCampaignPayload() {
+    private Payload() {
     }
 
     /**

@@ -136,20 +136,8 @@ public class InAppMessageStreamManager {
   }
 
   private static boolean isActive(Clock clock, ThickContent content) {
-    long campaignStartTime;
-    long campaignEndTime;
-    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
-      // Handle the campaign case
-      campaignStartTime = content.getVanillaPayload().getCampaignStartTimeMillis();
-      campaignEndTime = content.getVanillaPayload().getCampaignEndTimeMillis();
-    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
-      // Handle the experiment case
-      campaignStartTime = content.getExperimentalPayload().getCampaignStartTimeMillis();
-      campaignEndTime = content.getExperimentalPayload().getCampaignEndTimeMillis();
-    } else {
-      // If we have no valid payload then don't display
-      return false;
-    }
+    long campaignStartTime = content.getPayload().getCampaignStartTimeMillis();
+    long campaignEndTime = content.getPayload().getCampaignEndTimeMillis();
     long currentTime = clock.now();
     return currentTime > campaignStartTime && (campaignEndTime == 0 || currentTime < campaignEndTime);
   }
@@ -294,17 +282,10 @@ public class InAppMessageStreamManager {
   }
 
   private static void logImpressionStatus(ThickContent content, Boolean isImpressed) {
-    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
       Logging.logi(
-          String.format(
-              "Already impressed campaign %s ? : %s",
-              content.getVanillaPayload().getCampaignId(), isImpressed));
-    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
-      Logging.logi(
-          String.format(
-              "Already impressed experiment %s ? : %s",
-              content.getExperimentalPayload().getCampaignId(), isImpressed));
-    }
+              String.format(
+                      "Already impressed campaign %s ? : %s",
+                      content.getPayload().getCampaignId(), isImpressed));
   }
 
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
@@ -346,17 +327,9 @@ public class InAppMessageStreamManager {
   }
 
   private Maybe<TriggeredInAppMessage> triggeredInAppMessage(ThickContent content, String event, long delay) {
-    String campaignId;
-    String notificationId;
-    String viewId;
-    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
-      // Handle vanilla campaign case
-      campaignId = content.getVanillaPayload().getCampaignId();
-      notificationId = content.getVanillaPayload().getNotificationId();
-      viewId = content.getVanillaPayload().getViewId();
-    } else {
-      return Maybe.empty();
-    }
+    String campaignId = content.getPayload().getCampaignId();
+    String notificationId = content.getPayload().getNotificationId();
+    String viewId = content.getPayload().getViewId();
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(
             content.getContent(),

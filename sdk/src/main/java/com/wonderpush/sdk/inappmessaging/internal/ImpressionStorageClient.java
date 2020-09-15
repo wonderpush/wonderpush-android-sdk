@@ -86,10 +86,7 @@ public class ImpressionStorageClient {
 
   /** Returns {@code Single.just(true)} if the campaign has been impressed */
   public Single<Boolean> isImpressed(Campaign.ThickContent content) {
-    String campaignId =
-        content.getPayloadCase().equals(Campaign.ThickContent.PayloadCase.VANILLA_PAYLOAD)
-            ? content.getVanillaPayload().getCampaignId()
-            : content.getExperimentalPayload().getCampaignId();
+    String campaignId = content.getPayload().getCampaignId();
     return getAllImpressions()
         .map(CampaignImpressionList::getAlreadySeenCampaignsList)
         .flatMapObservable(Observable::fromIterable)
