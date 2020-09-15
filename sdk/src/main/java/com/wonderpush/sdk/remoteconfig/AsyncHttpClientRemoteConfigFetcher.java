@@ -10,6 +10,7 @@ import org.json.JSONObject;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Date;
 
 public class AsyncHttpClientRemoteConfigFetcher implements RemoteConfigFetcher {
     @Nonnull
