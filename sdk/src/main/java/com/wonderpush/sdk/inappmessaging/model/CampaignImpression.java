@@ -16,6 +16,7 @@ import org.json.JSONObject;
 public  final class CampaignImpression implements JSONSerializable, JSONDeserializable {
   private String campaignId_;
   private long impressionTimestampMillis_;
+  private long impressionCount_;
 
   public CampaignImpression() {
   }
@@ -63,11 +64,20 @@ public  final class CampaignImpression implements JSONSerializable, JSONDeserial
     impressionTimestampMillis_ = value;
   }
 
+  public long getImpressionCount() {
+    return impressionCount_;
+  }
+
+  public void setImpressionCount(long impressionCount) {
+    this.impressionCount_ = impressionCount;
+  }
+
   @Override
   public JSONObject toJSON() throws JSONException {
     JSONObject result = new JSONObject();
     if (campaignId_ != null) result.put("campaignId", campaignId_);
     result.put("impressionTimestampMillis", impressionTimestampMillis_);
+    result.put("impressionCount", impressionCount_);
     return result;
   }
 
@@ -76,6 +86,7 @@ public  final class CampaignImpression implements JSONSerializable, JSONDeserial
     if (json == null) return;
     campaignId_ = json.optString("campaignId");
     impressionTimestampMillis_ = json.optLong("impressionTimestampMillis");
+    impressionCount_ = json.optLong("impressionCount", 0);
   }
 }
 

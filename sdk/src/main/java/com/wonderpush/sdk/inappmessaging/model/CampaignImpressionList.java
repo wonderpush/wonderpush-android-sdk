@@ -61,19 +61,7 @@ public  final class CampaignImpressionList implements JSONSerializable, JSONDese
    *
    * <code>repeated .inappmessaging.v1.sdkserving.CampaignImpression already_seen_campaigns = 1;</code>
    */
-  public java.util.List<CampaignImpression> getAlreadySeenCampaignsList() {
-    return alreadySeenCampaigns_;
-  }
-  /**
-   * <pre>
-   * a list of campaigns that have already been rendered by the client so that
-   * service can filter them out while doing search of applicable messages
-   * </pre>
-   *
-   * <code>repeated .inappmessaging.v1.sdkserving.CampaignImpression already_seen_campaigns = 1;</code>
-   */
-  public java.util.List<? extends CampaignImpression>
-      getAlreadySeenCampaignsOrBuilderList() {
+  public java.util.List<CampaignImpression> getCampaignImpressionList() {
     return alreadySeenCampaigns_;
   }
   /**
@@ -98,18 +86,6 @@ public  final class CampaignImpressionList implements JSONSerializable, JSONDese
   public CampaignImpression getAlreadySeenCampaigns(int index) {
     return alreadySeenCampaigns_.get(index);
   }
-  /**
-   * <pre>
-   * a list of campaigns that have already been rendered by the client so that
-   * service can filter them out while doing search of applicable messages
-   * </pre>
-   *
-   * <code>repeated .inappmessaging.v1.sdkserving.CampaignImpression already_seen_campaigns = 1;</code>
-   */
-  public CampaignImpression getAlreadySeenCampaignsOrBuilder(
-      int index) {
-    return alreadySeenCampaigns_.get(index);
-  }
 
   /**
    * <pre>
@@ -119,7 +95,7 @@ public  final class CampaignImpressionList implements JSONSerializable, JSONDese
    *
    * <code>repeated .inappmessaging.v1.sdkserving.CampaignImpression already_seen_campaigns = 1;</code>
    */
-  private void setAlreadySeenCampaigns(
+  public void setAlreadySeenCampaigns(
       int index, CampaignImpression value) {
     if (value == null) {
       throw new NullPointerException();

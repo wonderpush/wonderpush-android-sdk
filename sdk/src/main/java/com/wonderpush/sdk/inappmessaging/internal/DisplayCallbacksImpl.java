@@ -200,12 +200,9 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
     String campaignId = inAppMessage.getNotificationMetadata().getCampaignId();
     Logging.logd(
             "Attempting to record message impression in impression store for id: " + campaignId);
-    CampaignImpression newCampaignImpression = new CampaignImpression();
-    newCampaignImpression.setImpressionTimestampMillis(clock.now());
-    newCampaignImpression.setCampaignId(campaignId);
     Completable storeCampaignImpression =
             impressionStorageClient
-                    .storeImpression(newCampaignImpression)
+                    .storeImpression(campaignId)
                     .doOnError(e -> Logging.loge("Impression store write failure:" + e.getMessage()))
                     .doOnComplete(() -> Logging.logd("Impression store write success"));
     if (InAppMessageStreamManager.isAppForegroundEvent(triggeringEvent)) {

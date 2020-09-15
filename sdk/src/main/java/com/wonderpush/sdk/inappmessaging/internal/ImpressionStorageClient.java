@@ -24,8 +24,9 @@ import javax.inject.Singleton;
 
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
-import io.reactivex.Observable;
 import io.reactivex.Single;
+
+import java.util.Date;
 
 /**
  * Class to store and retrieve in app message impressions
@@ -45,12 +46,30 @@ public class ImpressionStorageClient {
   private static CampaignImpressionList appendImpression(
       CampaignImpressionList campaignImpressions, CampaignImpression impression) {
     CampaignImpressionList rtn = new CampaignImpressionList(campaignImpressions);
-    rtn.addAlreadySeenCampaigns(impression);
+    // Collapse impressions by campaign ID
+    boolean campaignIdFound = false;
+    String campaignId = impression.getCampaignId();
+    for (int i = 0; i < rtn.getAlreadySeenCampaignsCount(); i++) {
+      CampaignImpression currentImpression = rtn.getAlreadySeenCampaigns(i);
+      if (campaignId != null && campaignId.equals(currentImpression.getCampaignId())) {
+        campaignIdFound = true;
+        impression.setImpressionCount(1 + currentImpression.getImpressionCount());
+        rtn.setAlreadySeenCampaigns(i, impression);
+        break;
+      }
+    }
+    if (!campaignIdFound) {
+      rtn.addAlreadySeenCampaigns(impression);
+    }
     return rtn;
   }
 
   /** Stores the provided {@link CampaignImpression} to file storage */
-  public Completable storeImpression(CampaignImpression impression) {
+  public Completable storeImpression(String campaignId) {
+    CampaignImpression impression = new CampaignImpression();
+    impression.setImpressionCount(1);
+    impression.setCampaignId(campaignId);
+    impression.setImpressionTimestampMillis(System.currentTimeMillis());
     return getAllImpressions()
         .defaultIfEmpty(new CampaignImpressionList())
         .flatMapCompletable(
@@ -85,12 +104,25 @@ public class ImpressionStorageClient {
   }
 
   /** Returns {@code Single.just(true)} if the campaign has been impressed */
-  public Single<Boolean> isImpressed(Campaign.ThickContent content) {
+  public Single<Boolean> isCapped(Campaign.ThickContent content) {
     String campaignId = content.getPayload().getCampaignId();
-    return getAllImpressions()
-        .map(CampaignImpressionList::getAlreadySeenCampaignsList)
-        .flatMapObservable(Observable::fromIterable)
-        .map(CampaignImpression::getCampaignId)
-        .contains(campaignId);
+    CampaignImpressionList campaignImpressionList = getAllImpressions().blockingGet();
+    long now = System.currentTimeMillis();
+    if (campaignId != null && campaignImpressionList != null) {
+      for (CampaignImpression impression : campaignImpressionList.getCampaignImpressionList()) {
+        if (campaignId.equals(impression.getCampaignId())) {
+          // enforce maxImpressions
+          if (impression.getImpressionCount() >= content.getCapping().getMaxImpressions()) {
+            return Single.just(true);
+          }
+          // enforce snooze
+          if (now - impression.getImpressionTimestampMillis() <  content.getCapping().getSnoozeTime()) {
+            return Single.just(true);
+          }
+          break;
+        }
+      }
+    }
+    return Single.just(false);
   }
 }

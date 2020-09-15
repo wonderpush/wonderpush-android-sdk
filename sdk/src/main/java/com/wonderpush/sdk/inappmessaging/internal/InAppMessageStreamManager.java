@@ -16,7 +16,6 @@ package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.google.android.gms.tasks.Task;
 import com.wonderpush.sdk.JSONSyncInstallationCustom;
-import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushConfiguration;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
@@ -35,8 +34,6 @@ import javax.inject.Inject;
 
 import com.wonderpush.sdk.segmentation.Segmenter;
 import com.wonderpush.sdk.segmentation.parser.*;
-import com.wonderpush.sdk.segmentation.parser.criteria.UnknownCriterionError;
-import com.wonderpush.sdk.segmentation.parser.datasource.InstallationSource;
 import io.reactivex.Flowable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
@@ -173,20 +170,20 @@ public class InAppMessageStreamManager {
         .concatMap(
             event -> {
 
-              Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed =
+              Function<ThickContent, Maybe<ThickContent>> filterTooImpressed =
                   content ->
                       content.getIsTestCampaign()
                           ? Maybe.just(content)
                           : impressionStorageClient
-                              .isImpressed(content)
+                              .isCapped(content)
                               .doOnError(
                                   e ->
                                       Logging.logw("Impression store read fail: " + e.getMessage()))
                               .onErrorResumeNext(
                                   Single.just(false)) // Absorb impression read errors
-                              .doOnSuccess(isImpressed -> logImpressionStatus(content, isImpressed))
-                              .filter(isImpressed -> !isImpressed)
-                              .map(isImpressed -> content);
+                              .doOnSuccess(isCapped -> logCappedStatus(content, isCapped))
+                              .filter(isCapped -> !isCapped)
+                              .map(isCapped -> content);
 
               Function<ThickContent, Maybe<ThickContent>> appForegroundRateLimitFilter =
                   content -> getContentIfNotRateLimited(event, content);
@@ -210,58 +207,48 @@ public class InAppMessageStreamManager {
                       response ->
                           getTriggeredInAppMessageMaybe(
                               event,
-                              filterAlreadyImpressed,
+                              filterTooImpressed,
                               appForegroundRateLimitFilter,
                               filterDisplayable,
                               response);
 
-              Maybe<CampaignImpressionList> alreadySeenCampaigns =
-                  impressionStorageClient
-                      .getAllImpressions()
-                      .doOnError(
-                          e -> Logging.logw("Impressions store read fail: " + e.getMessage()))
-                      .defaultIfEmpty(new CampaignImpressionList())
-                      .onErrorResumeNext(Maybe.just(new CampaignImpressionList()));
-
-              Function<CampaignImpressionList, Maybe<List<Campaign.ThickContent>>> serviceFetch =
-                  impressions ->
-                          Maybe.<List<Campaign.ThickContent>>create(
-                                  emitter -> {
-                                      inAppMessagingConfiguration.fetchInAppConfig((JSONObject config, Throwable error) -> {
-                                          try {
-                                              if (error != null) emitter.onError(error);
-                                              else {
-                                                  JSONArray campaignsJson = config != null ? config.optJSONArray("campaigns") : null;
-                                                  List<Campaign.ThickContent> messages = new ArrayList<>();
-                                                  for (int i = 0; campaignsJson != null && i < campaignsJson.length(); i++) {
-                                                      JSONObject campaignJson = campaignsJson.optJSONObject(i);
-                                                      if (campaignJson == null) continue;
-                                                      Campaign.ThickContent thickContent = Campaign.ThickContent.fromJSON(campaignJson);
-                                                      if (thickContent != null) messages.add(thickContent);
-                                                  }
-                                                  emitter.onSuccess(messages);
+              Maybe<List<Campaign.ThickContent>> serviceFetch =
+                      Maybe.<List<Campaign.ThickContent>>create(
+                              emitter -> {
+                                  inAppMessagingConfiguration.fetchInAppConfig((JSONObject config, Throwable error) -> {
+                                      try {
+                                          if (error != null) emitter.onError(error);
+                                          else {
+                                              JSONArray campaignsJson = config != null ? config.optJSONArray("campaigns") : null;
+                                              List<Campaign.ThickContent> messages = new ArrayList<>();
+                                              for (int i = 0; campaignsJson != null && i < campaignsJson.length(); i++) {
+                                                  JSONObject campaignJson = campaignsJson.optJSONObject(i);
+                                                  if (campaignJson == null) continue;
+                                                  Campaign.ThickContent thickContent = Campaign.ThickContent.fromJSON(campaignJson);
+                                                  if (thickContent != null) messages.add(thickContent);
                                               }
-                                              emitter.onComplete();
-                                          } catch (Throwable t) {
-                                              emitter.onError(t);
+                                              emitter.onSuccess(messages);
                                           }
-                                      });
-                                  })
-                          .doOnSuccess(
-                              resp ->
-                                  Logging.logi(
-                                      String.format(
-                                          Locale.US,
-                                          "Successfully fetched %d messages from backend",
-                                          resp.size())))
-                          .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
-                          //.doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
-                          .doOnSuccess(testDeviceHelper::processCampaignFetch)
-                          .doOnError(e -> Logging.loge("Service fetch error: ", e))
-                          .onErrorResumeNext(Maybe.empty()); // Absorb service failures
+                                          emitter.onComplete();
+                                      } catch (Throwable t) {
+                                          emitter.onError(t);
+                                      }
+                                  });
+                              })
+                              .doOnSuccess(
+                                      resp ->
+                                              Logging.logi(
+                                                      String.format(
+                                                              Locale.US,
+                                                              "Successfully fetched %d messages from backend",
+                                                              resp.size())))
+                              .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
+                              //.doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
+                              .doOnSuccess(testDeviceHelper::processCampaignFetch)
+                              .doOnError(e -> Logging.loge("Service fetch error: ", e))
+                              .onErrorResumeNext(Maybe.empty()); // Absorb service failures
 
-              return alreadySeenCampaigns
-                      .flatMap(serviceFetch)
+              return serviceFetch
                       .flatMap(selectThickContent)
                       .toFlowable();
             })
@@ -281,11 +268,11 @@ public class InAppMessageStreamManager {
     return Maybe.just(content);
   }
 
-  private static void logImpressionStatus(ThickContent content, Boolean isImpressed) {
+  private static void logCappedStatus(ThickContent content, Boolean isCapped) {
       Logging.logi(
               String.format(
-                      "Already impressed campaign %s ? : %s",
-                      content.getPayload().getCampaignId(), isImpressed));
+                      "Campaign %s capped ? : %s",
+                      content.getPayload().getCampaignId(), isCapped));
   }
 
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(

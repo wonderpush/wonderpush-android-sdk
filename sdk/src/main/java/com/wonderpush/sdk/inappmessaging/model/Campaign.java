@@ -19,6 +19,24 @@ import java.util.List;
 public final class Campaign {
   private Campaign() {}
 
+  public static final class Capping {
+    private long snoozeTime;
+    private long maxImpressions;
+
+    public Capping(long maxImpressions, long snoozeTime) {
+      this.maxImpressions = maxImpressions;
+      this.snoozeTime = snoozeTime;
+    }
+
+    public long getSnoozeTime() {
+      return snoozeTime;
+    }
+
+    public long getMaxImpressions() {
+      return maxImpressions;
+    }
+
+  }
   /**
    * <pre>
    * The 'thick' message that gets sent to clients
@@ -32,6 +50,7 @@ public final class Campaign {
     private CommonTypesProto.Priority priority_;
     private boolean isTestCampaign_;
     private JSONObject segment_;
+    private Capping capping_;
     private List<CommonTypesProto.TriggeringCondition> triggeringConditions_ = new ArrayList<>();
 
     @Override
@@ -71,6 +90,12 @@ public final class Campaign {
       if (segmentJson != null) {
         setSegment(segmentJson);
       }
+
+      // Capping
+      JSONObject cappingJson = campaignJson.optJSONObject("capping");
+      long maxImpressions = cappingJson != null ? cappingJson.optLong("maxImpressions", 1) : 1;
+      long snoozeTime = cappingJson != null ? cappingJson.optLong("snoozeTime", 0) : 0;
+      setCapping(new Capping(maxImpressions, snoozeTime));
 
       // Notifications
       JSONArray notificationsJson = campaignJson.optJSONArray("notifications");
@@ -331,7 +356,7 @@ public final class Campaign {
     private void setContent(MessagesProto.Content value) {
       content_ = value;
 
-      }
+    }
 
     public JSONObject getSegment() {
       return segment_;
@@ -339,6 +364,14 @@ public final class Campaign {
 
     private void setSegment(JSONObject segment) {
       segment_ = segment;
+    }
+
+    public Capping getCapping() {
+      return capping_;
+    }
+
+    public void setCapping(Capping capping) {
+      this.capping_ = capping;
     }
 
     /**
