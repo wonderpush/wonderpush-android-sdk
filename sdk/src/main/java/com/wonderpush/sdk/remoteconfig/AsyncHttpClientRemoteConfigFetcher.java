@@ -29,7 +29,7 @@ public class AsyncHttpClientRemoteConfigFetcher implements RemoteConfigFetcher {
 
     @Override
     public void fetchRemoteConfig(@Nullable String version, @Nonnull RemoteConfigHandler handler) {
-        String url = String.format("%s%s%s",Constants.REMOTE_CONFIG_BASE_URL, clientId, Constants.REMOTE_CONFIG_SUFFIX);
+        String url = String.format("%s%s%s?_=%d",Constants.REMOTE_CONFIG_BASE_URL, clientId, Constants.REMOTE_CONFIG_SUFFIX, new Date().getTime());
         this.safeDeferProvider.safeDefer(() -> {
             client.get(url, new JsonHttpResponseHandler() {
                 @Override
