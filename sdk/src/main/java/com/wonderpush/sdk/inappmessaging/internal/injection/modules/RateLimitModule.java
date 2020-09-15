@@ -35,6 +35,6 @@ public class RateLimitModule {
   @Provides
   @AppForeground
   public RateLimit providesAppForegroundRateLimit() {
-    return new RateLimit(APP_FOREGROUND_ONE_PER_DAY_LIMITER_KEY, 1, TimeUnit.HOURS.toMillis(1));
+    return new RateLimit(APP_FOREGROUND_ONE_PER_DAY_LIMITER_KEY, 1, TimeUnit.MINUTES.toMillis(1));
   }
 }
