@@ -60,6 +60,7 @@ import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.MessageType;
 import com.wonderpush.sdk.inappmessaging.model.ModalMessage;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -498,9 +499,21 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
               );
             }
             cancelTimers(); // Not strictly necessary.
+
+            // Report the error to the developer
+            if (callbacks != null) {
+              if (e instanceof IOException && e.getLocalizedMessage().contains("Failed to decode")) {
+                callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
+              } else {
+                callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+              }
+            }
+
+            // Reset ourselves
             inAppMessage = null;
             callbacks = null;
             bindingWrapper = null;
+
           }
         });
   }
