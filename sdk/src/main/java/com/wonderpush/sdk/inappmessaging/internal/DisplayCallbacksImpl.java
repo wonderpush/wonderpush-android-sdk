@@ -28,6 +28,7 @@ import java.util.List;
 
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
 
@@ -78,7 +79,7 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
               logToImpressionStore()
                       .andThen(logImpressionToMetricsLogger)
                       .andThen(updateWasImpressed());
-      logImpressionCompletable.subscribe();
+      logImpressionCompletable.subscribeOn(Schedulers.io()).subscribe();
       return;
     }
 
