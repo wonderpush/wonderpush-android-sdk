@@ -152,7 +152,8 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
                       () -> metricsLoggerClient.logRenderError(inAppMessage, errorReason));
       logToImpressionStore()
               .andThen(completable)
-              .andThen(updateWasImpressed()).subscribe();
+              .andThen(updateWasImpressed())
+              .subscribeOn(Schedulers.io()).subscribe();
       return;
     }
 
