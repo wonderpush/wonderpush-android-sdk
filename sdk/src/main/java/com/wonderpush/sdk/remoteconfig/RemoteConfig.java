@@ -19,7 +19,7 @@ public class RemoteConfig {
     }
 
     public static RemoteConfig with(@Nonnull JSONObject data, @Nonnull String version) {
-        return new RemoteConfig(data, version, DateHelper.now(), Constants.REMOTE_CONFIG_DEFAULT_MAXIMUM_CONFIG_AGE);
+        return new RemoteConfig(data, version, DateHelper.now(), 0);
     }
 
     @Nonnull
@@ -61,7 +61,7 @@ public class RemoteConfig {
     }
 
     public boolean isExpired() {
-        return DateHelper.now().getTime() > (fetchDate.getTime() + maxAge);
+        return maxAge > 0 && DateHelper.now().getTime() > (fetchDate.getTime() + maxAge);
     }
 
     /**

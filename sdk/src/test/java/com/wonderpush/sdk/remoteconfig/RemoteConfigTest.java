@@ -159,6 +159,7 @@ public class RemoteConfigTest {
     public void testRateLimiting() throws ExecutionException, InterruptedException {
         manager.minimumConfigAge = 250;
         manager.minimumFetchInterval = 1000;
+        manager.maximumConfigAge = 10000;
 
         // A brand new config, just fetched
         storage.storedConfig = RemoteConfig.with(new JSONObject(), "1", DateHelper.now());
