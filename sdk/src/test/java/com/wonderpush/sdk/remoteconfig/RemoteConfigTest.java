@@ -1,6 +1,7 @@
 package com.wonderpush.sdk.remoteconfig;
 
 import com.wonderpush.sdk.SimpleVersion;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -661,5 +662,32 @@ public class RemoteConfigTest {
                 System.err.println(e);
             }
         }).start();
+    }
+
+    @Test
+    public void testWithJson() throws JSONException {
+        RemoteConfig config;
+
+        JSONObject json;
+
+        // missing version
+        json = new JSONObject();
+        config = RemoteConfig.with(json);
+
+        assertNull(config);
+
+        json = new JSONObject("{\"version\":\"1.0.1\"}");
+        config = RemoteConfig.with(json);
+        assertEquals(config.getVersion(), "1.0.1");
+
+        json = new JSONObject("{\"version\":\"1.0.1\", \"maxAge\":123456, \"fetchDate\":1600785789000}");
+        config = RemoteConfig.with(json);
+        assertEquals(config.getMaxAge(), 123456);
+        assertEquals(config.getFetchDate(), new Date(1600785789000l));
+
+        json = new JSONObject("{\"version\":\"1.0.1\", \"cacheTtl\":123456}");
+        config = RemoteConfig.with(json);
+        assertEquals(config.getMaxAge(), 123456);
+
     }
 }
