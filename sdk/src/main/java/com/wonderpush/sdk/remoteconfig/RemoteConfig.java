@@ -68,8 +68,9 @@ public class RemoteConfig {
             JSONObject data = json.optJSONObject("data");
             String version = json.getString("version");
             Long maxAge = json.optLong("maxAge", json.optLong("cacheTtl", 0));
+            Long minAge = json.optLong("minAge", 0);
             Long fetchTime = json.optLong("fetchDate", DateHelper.now().getTime());
-            return RemoteConfig.with(data == null ? new JSONObject() : data, version, new Date(fetchTime), maxAge);
+            return RemoteConfig.with(data == null ? new JSONObject() : data, version, new Date(fetchTime), maxAge, minAge);
         } catch (JSONException e) {
         }
         return null;
@@ -123,6 +124,7 @@ public class RemoteConfig {
             json.put("version", version);
             json.put("fetchDate", fetchDate.getTime());
             json.put("maxAge", maxAge);
+            json.put("minAge", minAge);
             return json.toString();
         } catch (JSONException e) {
             return null;
