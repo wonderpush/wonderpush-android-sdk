@@ -689,5 +689,64 @@ public class RemoteConfigTest {
         config = RemoteConfig.with(json);
         assertEquals(config.getMaxAge(), 123456);
 
+        json = new JSONObject("{\"version\":\"1.0.1\", \"minAge\":123456}");
+        config = RemoteConfig.with(json);
+        assertEquals(config.getMinAge(), 123456);
+    }
+
+    @Test
+    public void testConfigMinAge() throws ExecutionException, InterruptedException {
+        manager.minimumConfigAge = 0;
+        manager.minimumFetchInterval = 1000;
+        manager.maximumConfigAge = 10000;
+
+        // A brand new config, just fetched
+        storage.storedConfig = RemoteConfig.with(new JSONObject(), "1", DateHelper.now(), 0, 100);
+
+        // A fetcher ready to serve an even fresher config
+        fetcher.fetchedConfig = RemoteConfig.with(new JSONObject(), "1.0.1");
+
+        // Yet, we'll get 1.0.0 because we don't fetch before minimumConfigAge.
+        manager.read((RemoteConfig config, Throwable error) -> {
+            assertEquals(config.getVersion(), "1");
+        });
+        assertNull(fetcher.lastRequestedDate);
+
+        // Declare a later version
+        manager.declareVersion("1.0.1");
+        assertEquals(storage.storedHighestVersion, "1.0.1");
+
+        // We won't consider this version until minAge is reached.
+        assertNull(fetcher.lastRequestedDate);
+
+        // Try to get the config
+        manager.read((RemoteConfig confi, Throwable error) -> {
+            // Should still be 1.0.0 because we haven't reached minAge yet
+            assertEquals(confi.getVersion(), "1");
+            assertNull(fetcher.lastRequestedDate);
+        });
+
+        // Wait for the minimumConfigAge and try again, a fetch should happen,
+        // just because we declared a higher version.
+        long waitTime1 = 2 * storage.storedConfig.getMinAge();
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        setTimeout(() -> {
+            // Meanwhile, nothing should have happened
+            assertNull(fetcher.lastRequestedDate);
+
+            // Read
+            manager.read((RemoteConfig conf, Throwable error) -> {
+                // A fetch just happened
+                assertEquals(conf.getVersion(), "1.0.1");
+                assertNull(error);
+                assertNotNull(fetcher.lastRequestedDate);
+                future.complete(null);
+
+            });
+
+        }, waitTime1);
+
+        future.get();
     }
 }

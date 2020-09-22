@@ -10,16 +10,20 @@ import java.util.Date;
 
 public class RemoteConfig {
 
+    public static RemoteConfig with(@Nonnull JSONObject data, @Nonnull String version, @Nonnull Date fetchDate, long maxAge, long minAge) {
+        return new RemoteConfig(data, version, fetchDate, maxAge, minAge);
+    }
+
     public static RemoteConfig with(@Nonnull JSONObject data, @Nonnull String version, @Nonnull Date fetchDate, long maxAge) {
-        return new RemoteConfig(data, version, fetchDate, maxAge);
+        return new RemoteConfig(data, version, fetchDate, maxAge, 0);
     }
 
     public static RemoteConfig with(@Nonnull JSONObject data, @Nonnull String version, @Nonnull Date fetchDate) {
-        return new RemoteConfig(data, version, fetchDate, Constants.REMOTE_CONFIG_DEFAULT_MAXIMUM_CONFIG_AGE);
+        return new RemoteConfig(data, version, fetchDate, 0, 0);
     }
 
     public static RemoteConfig with(@Nonnull JSONObject data, @Nonnull String version) {
-        return new RemoteConfig(data, version, DateHelper.now(), 0);
+        return new RemoteConfig(data, version, DateHelper.now(), 0, 0);
     }
 
     @Nonnull
@@ -29,13 +33,15 @@ public class RemoteConfig {
     @Nonnull
     private Date fetchDate;
     private long maxAge;
+    private long minAge;
 
-    private RemoteConfig(@Nonnull JSONObject data, @Nonnull String version, @Nonnull Date fetchDate, long maxAge) {
+    private RemoteConfig(@Nonnull JSONObject data, @Nonnull String version, @Nonnull Date fetchDate, long maxAge, long minAge) {
         this.data = data;
         SimpleVersion simpleVersion = new SimpleVersion(version);
         this.version = simpleVersion.isValid() ? simpleVersion.toString() : version;
         this.fetchDate = fetchDate;
         this.maxAge = maxAge;
+        this.minAge = minAge;
     }
 
     /**
@@ -101,6 +107,10 @@ public class RemoteConfig {
         return maxAge;
     }
 
+    public long getMinAge() {
+        return minAge;
+    }
+
     public JSONObject getData() {
         return data;
     }
@@ -117,5 +127,11 @@ public class RemoteConfig {
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    public boolean hasReachedMinAge() {
+        long now = DateHelper.now().getTime();
+        long minAgeTime = (fetchDate.getTime() + minAge);
+        return minAgeTime <= now;
     }
 }

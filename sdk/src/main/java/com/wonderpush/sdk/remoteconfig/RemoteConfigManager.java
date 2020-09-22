@@ -70,7 +70,7 @@ public class RemoteConfigManager {
                 if (config != null) {
                     // Do not fetch too often
                     long configAge = now.getTime() - config.getFetchDate().getTime();
-                    if (configAge < minimumConfigAge) return;
+                    if (configAge < minimumConfigAge || !config.hasReachedMinAge()) return;
 
                     // If we're declaring the same version as the current config, update the current config's fetchDate
                     if (RemoteConfig.compareVersions(config.getVersion(), version) == 0) {
@@ -136,7 +136,7 @@ public class RemoteConfigManager {
 
             // Do not fetch too often
             long configAge = now.getTime() - config.getFetchDate().getTime();
-            if (shouldFetch && configAge < minimumConfigAge) shouldFetch = false;
+            if (shouldFetch && (configAge < minimumConfigAge || !config.hasReachedMinAge())) shouldFetch = false;
 
             // Force fetch if expired
             boolean isExpired = configAge > maximumConfigAge || config.isExpired();
