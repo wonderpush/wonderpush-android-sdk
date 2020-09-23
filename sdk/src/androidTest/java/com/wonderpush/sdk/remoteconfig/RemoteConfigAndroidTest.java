@@ -84,7 +84,7 @@ public class RemoteConfigAndroidTest {
                 String remoteConfigString = intent.getStringExtra(Constants.EXTRA_REMOTE_CONFIG);
                 assertNotNull(remoteConfigString);
 
-                RemoteConfig remoteConfig = RemoteConfig.with(remoteConfigString);
+                RemoteConfig remoteConfig = RemoteConfig.fromString(remoteConfigString);
                 assertNotNull(remoteConfig);
 
                 assertEquals(remoteConfig.getVersion(), "1");

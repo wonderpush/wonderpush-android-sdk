@@ -2,8 +2,6 @@ package com.wonderpush.sdk.remoteconfig;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
-import com.loopj.android.http.ResponseHandlerInterface;
-import com.wonderpush.sdk.WonderPush;
 import cz.msebera.android.httpclient.Header;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -40,8 +38,11 @@ public class AsyncHttpClientRemoteConfigFetcher implements RemoteConfigFetcher {
                         return;
                     }
 
-                    RemoteConfig config = RemoteConfig.with(response);
-                    if (config != null) {
+                    String version = response.optString("version", Long.toString(response.optLong("version", 0)));
+                    if (version != null) {
+                        Long maxAge = response.optLong("maxAge", response.optLong("cacheTtl", 0));
+                        Long minAge = response.optLong("minAge", response.optLong("cacheMinAge", 0));
+                        RemoteConfig config = RemoteConfig.with(response, version, DateHelper.now(), maxAge, minAge);
                         handler.handle(config, null);
                         return;
                     }

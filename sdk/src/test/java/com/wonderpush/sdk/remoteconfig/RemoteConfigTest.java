@@ -590,7 +590,7 @@ public class RemoteConfigTest {
 
         RemoteConfig remoteConfig = RemoteConfig.with(configJSON, version, fetchDate, maxAge);
         String encoded = remoteConfig.toString();
-        RemoteConfig decoded = RemoteConfig.with(encoded);
+        RemoteConfig decoded = RemoteConfig.fromString(encoded);
 
         assertNotNull(decoded);
         assertEquals(remoteConfig.getVersion(), decoded.getVersion());
@@ -665,32 +665,27 @@ public class RemoteConfigTest {
     }
 
     @Test
-    public void testWithJson() throws JSONException {
+    public void testFromString() throws JSONException {
         RemoteConfig config;
 
         JSONObject json;
 
         // missing version
         json = new JSONObject();
-        config = RemoteConfig.with(json);
+        config = RemoteConfig.fromString(json.toString());
 
         assertNull(config);
 
-        json = new JSONObject("{\"version\":\"1.0.1\"}");
-        config = RemoteConfig.with(json);
+        config = RemoteConfig.fromString("{\"version\":\"1.0.1\"}");
         assertEquals(config.getVersion(), "1.0.1");
+        assertNotNull(config.getData());
 
-        json = new JSONObject("{\"version\":\"1.0.1\", \"maxAge\":123456, \"fetchDate\":1600785789000}");
-        config = RemoteConfig.with(json);
+        config = RemoteConfig.fromString("{\"version\":\"1.0.1\", \"maxAge\":123456, \"fetchDate\":1600785789000}");
         assertEquals(config.getMaxAge(), 123456);
         assertEquals(config.getFetchDate(), new Date(1600785789000l));
+        assertNotNull(config.getData());
 
-        json = new JSONObject("{\"version\":\"1.0.1\", \"cacheTtl\":123456}");
-        config = RemoteConfig.with(json);
-        assertEquals(config.getMaxAge(), 123456);
-
-        json = new JSONObject("{\"version\":\"1.0.1\", \"minAge\":123456}");
-        config = RemoteConfig.with(json);
+        config = RemoteConfig.fromString("{\"version\":\"1.0.1\", \"minAge\":123456}");
         assertEquals(config.getMinAge(), 123456);
     }
 

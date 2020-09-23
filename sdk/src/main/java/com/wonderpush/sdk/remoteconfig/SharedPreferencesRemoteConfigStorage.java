@@ -33,7 +33,7 @@ public class SharedPreferencesRemoteConfigStorage implements RemoteConfigStorage
     public void loadRemoteConfigAndHighestDeclaredVersion(RemoteConfigVersionHandler handler) {
         SharedPreferences sharedPreferences = applicationContext.getSharedPreferences(sharedPreferencesFilename, Context.MODE_PRIVATE);
         String configString = sharedPreferences.getString("config", null);
-        RemoteConfig config = configString != null ? RemoteConfig.with(configString) : null;
+        RemoteConfig config = configString != null ? RemoteConfig.fromString(configString) : null;
 
         Set<String> versions = sharedPreferences.getStringSet("versions", new HashSet<>());
         String highestVersion = null;
