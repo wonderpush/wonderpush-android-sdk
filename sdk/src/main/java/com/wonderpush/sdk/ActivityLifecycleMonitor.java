@@ -3,6 +3,9 @@ package com.wonderpush.sdk;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.os.Handler;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
@@ -55,6 +58,34 @@ class ActivityLifecycleMonitor {
 
     static class Monitor implements Application.ActivityLifecycleCallbacks {
 
+        private Handler handler = new Handler(WonderPush.getLooper());
+        private Runnable stopPresenceRunnable = new Runnable() {
+            @Override
+            public void run() {
+                updatePresence(false);
+            }
+        };
+
+        private void updatePresence(boolean start) {
+            try {
+                PresenceManager manager = WonderPush.getPresenceManager();
+                if (start && manager.isCurrentlyPresent()) return;
+                PresenceManager.PresencePayload payload = start
+                        ? manager.presenceDidStart()
+                        : manager.presenceWillStop();
+                if (payload != null) {
+                    JSONObject data = new JSONObject();
+                    data.put("presence", payload.toJSONObject());
+                    WonderPush.trackInternalEvent("@PRESENCE", data);
+                }
+            } catch (JSONException e) {
+                WonderPush.logError("Could not serialize presence", e);
+            } catch (InterruptedException e) {
+                WonderPush.logError("Could not start presence", e);
+            }
+
+        }
+
         private int createCount;
         private int startCount;
         private int resumeCount;
@@ -79,6 +110,8 @@ class ActivityLifecycleMonitor {
             }
             ++createCount;
             WonderPush.showPotentialNotification(activity, activity.getIntent());
+            handler.removeCallbacks(stopPresenceRunnable);
+            updatePresence(true);
         }
 
         @Override
@@ -92,6 +125,8 @@ class ActivityLifecycleMonitor {
             }
             ++startCount;
             WonderPush.onInteraction(false);
+            handler.removeCallbacks(stopPresenceRunnable);
+            updatePresence(true);
         }
 
         @Override
@@ -102,6 +137,8 @@ class ActivityLifecycleMonitor {
             lastResumedActivityRef = new WeakReference<>(activity);
             ++resumeCount;
             WonderPush.onInteraction(false);
+            handler.removeCallbacks(stopPresenceRunnable);
+            updatePresence(true);
         }
 
         @Override
@@ -111,6 +148,7 @@ class ActivityLifecycleMonitor {
                 pausedLastDate = TimeSync.getTime();
             }
             WonderPush.onInteraction(true);
+            handler.postDelayed(stopPresenceRunnable, 1000);
         }
 
         @Override

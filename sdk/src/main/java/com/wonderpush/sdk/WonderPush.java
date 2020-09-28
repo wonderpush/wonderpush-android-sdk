@@ -30,16 +30,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Currency;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeMap;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -76,6 +67,7 @@ public class WonderPush {
     private static Looper sLooper;
     private static Handler sDeferHandler;
     protected static final ScheduledExecutorService sScheduledExecutor;
+    private static PresenceManager sPresenceManager;
     static RemoteConfigManager remoteConfigManager;
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
@@ -146,6 +138,18 @@ public class WonderPush {
     static final String SDK_VERSION = "Android-" + SDK_SHORT_VERSION;
     private static final String PRODUCTION_API_URL = "https://api.wonderpush.com/" + API_VERSION;
     protected static final String MEASUREMENTS_API_URL = "https://measurements-api.wonderpush.com/v1";
+
+    /**
+     * The amount of time in milliseconds a presence is expected to last at most.
+     * After this time, user is considered absent if presence hasn't been renewed.
+     */
+    private static final long PRESENCE_ANTICIPATED_TIME = 30 * 60 * 1000;
+
+    /**
+     * The amount of time in milliseconds it takes at most to reach our servers and renew a presence.
+     * We'll try to renew the presence this amount of time before the presence expires.
+     */
+    private static final long PRESENCE_UPDATE_SAFETY_MARGIN = 60 * 1000;
 
     /**
      * How long in ms should two interactions should be separated in time,
@@ -1339,6 +1343,15 @@ public class WonderPush {
                         logDebug("Failed to fill @APP_OPEN opened notification information", e);
                     }
                 }
+                // Presence
+                try {
+                    PresenceManager.PresencePayload presence = getPresenceManager().presenceDidStart();
+                    openInfo.put("presence", presence.toJSONObject());
+                } catch (InterruptedException e) {
+                    WonderPush.logError("Could not start presence", e);
+                } catch (JSONException e) {
+                    WonderPush.logError("Could not serialize presence", e);
+                }
                 trackInternalEvent("@APP_OPEN", openInfo);
                 WonderPushConfiguration.setLastAppOpenDate(now);
                 WonderPushConfiguration.setLastAppOpenInfoJson(openInfo);
@@ -2127,6 +2140,10 @@ public class WonderPush {
         }, defer);
     }
 
+    protected static Looper getLooper() {
+        return sLooper;
+    }
+
     /**
      * Returns the configured delegate, or {@code null} if none was set.
      * @see WonderPush#setDelegate(WonderPushDelegate)
@@ -2176,6 +2193,25 @@ public class WonderPush {
         }
 
         return url;
+    }
+
+    protected static PresenceManager getPresenceManager() {
+        if (sPresenceManager == null) {
+            sPresenceManager = new PresenceManager(new PresenceManager.PresenceManagerAutoRenewDelegate() {
+                @Override
+                public void autoRenewPresence(PresenceManager presenceManager, PresenceManager.PresencePayload presence) {
+                    if (presence == null) return;
+                    try {
+                        JSONObject data = new JSONObject();
+                        data.put("presence", presence.toJSONObject());
+                        trackInternalEvent("@PRESENCE", data);
+                    } catch (JSONException e) {
+                        WonderPush.logError("Could not serialize presence", e);
+                    }
+                }
+            }, PRESENCE_ANTICIPATED_TIME, PRESENCE_UPDATE_SAFETY_MARGIN);
+        }
+        return sPresenceManager;
     }
 
 }
