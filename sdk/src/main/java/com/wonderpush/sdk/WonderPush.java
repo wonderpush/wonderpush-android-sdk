@@ -525,9 +525,9 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void get(String resource, RequestParams params,
+    protected static void get(String resource, ApiClient.Params params,
             ResponseHandler responseHandler) {
-        WonderPushRestClient.get(resource, params, responseHandler);
+        ApiClient.get(resource, params, responseHandler);
     }
 
     /**
@@ -540,9 +540,9 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void post(String resource, RequestParams params,
+    protected static void post(String resource, ApiClient.Params params,
             ResponseHandler responseHandler) {
-        WonderPushRestClient.post(resource, params, responseHandler);
+        ApiClient.post(resource, params, responseHandler);
     }
 
     /**
@@ -557,8 +557,8 @@ public class WonderPush {
      *            guaranteed to survive a network error or device reboot.
      */
     protected static void postEventually(String resource,
-            RequestParams params) {
-        WonderPushRestClient.postEventually(resource, params);
+            ApiClient.Params params) {
+        ApiClient.postEventually(resource, params);
     }
 
     /**
@@ -571,9 +571,9 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void put(String resource, RequestParams params,
+    protected static void put(String resource, ApiClient.Params params,
             ResponseHandler responseHandler) {
-        WonderPushRestClient.put(resource, params, responseHandler);
+        ApiClient.put(resource, params, responseHandler);
     }
 
     /**
@@ -586,7 +586,7 @@ public class WonderPush {
      */
     protected static void delete(String resource,
             ResponseHandler responseHandler) {
-        WonderPushRestClient.delete(resource, responseHandler);
+        ApiClient.delete(resource, responseHandler);
     }
 
     /**
@@ -1193,7 +1193,7 @@ public class WonderPush {
             WonderPush.logError("Error building event object body", ex);
         }
 
-        RequestParams parameters = new RequestParams();
+        ApiClient.Params parameters = new ApiClient.Params();
         parameters.put("body", event.toString());
 
         // Remember
@@ -1498,7 +1498,7 @@ public class WonderPush {
                             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                         }
                     };
-                    boolean isFetchingToken = WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
+                    boolean isFetchingToken = ApiClient.fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
                         @Override
                         public void onFailure(Throwable e, Response errorResponse) {
                         }

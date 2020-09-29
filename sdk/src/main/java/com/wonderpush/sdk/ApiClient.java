@@ -1,41 +1,31 @@
 package com.wonderpush.sdk;
 
 import android.net.Uri;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import android.util.Base64;
 import android.util.Log;
 
-import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.JsonHttpResponseHandler;
-
-import org.json.JSONArray;
+import okhttp3.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import cz.msebera.android.httpclient.Header;
-import cz.msebera.android.httpclient.HttpEntity;
-import cz.msebera.android.httpclient.message.BasicHeader;
-import cz.msebera.android.httpclient.message.BasicNameValuePair;
-
 /**
  * A REST client that lets you hit the WonderPush REST server.
  */
-class WonderPushRestClient {
+class ApiClient {
 
-    private static final String TAG = WonderPushRestClient.class.getSimpleName();
+    private static final String TAG = ApiClient.class.getSimpleName();
 
     enum HttpMethod {
         GET,
@@ -54,7 +44,7 @@ class WonderPushRestClient {
     private static boolean sIsFetchingAnonymousAccessToken = false;
     private static final List<ResponseHandler> sPendingHandlers = new ArrayList<>();
 
-    private static final AsyncHttpClient sClient = new AsyncHttpClient(); // to allow any HTTPS certificate use: new AsyncHttpClient(true, 80, 443);
+    private static final OkHttpClient sClient = new OkHttpClient();
 
     /**
      * A request
@@ -66,11 +56,11 @@ class WonderPushRestClient {
      * @param resource
      *            The resource path, starting with /
      * @param params
-     *            AsyncHttpClient request parameters
+     *            Request parameters
      * @param responseHandler
-     *            An AsyncHttpClient response handler
+     *            Response handler
      */
-    protected static void requestForUser(String userId, HttpMethod method, String resource, RequestParams params, ResponseHandler responseHandler) {
+    protected static void requestForUser(String userId, HttpMethod method, String resource, Params params, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(userId, method, resource, params, responseHandler));
     }
 
@@ -80,11 +70,11 @@ class WonderPushRestClient {
      * @param resource
      *            The resource path, starting with /
      * @param params
-     *            AsyncHttpClient request parameters
+     *            Request parameters
      * @param responseHandler
-     *            An AsyncHttpClient response handler
+     *            Response handler
      */
-    protected static void get(String resource, RequestParams params, ResponseHandler responseHandler) {
+    protected static void get(String resource, Params params, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.GET, resource, params, responseHandler));
     }
 
@@ -94,11 +84,11 @@ class WonderPushRestClient {
      * @param resource
      *            The resource path, starting with /
      * @param params
-     *            AsyncHttpClient request parameters
+     *            Request parameters
      * @param responseHandler
-     *            An AsyncHttpClient response handler
+     *            Response handler
      */
-    protected static void post(String resource, RequestParams params, ResponseHandler responseHandler) {
+    protected static void post(String resource, Params params, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, responseHandler));
     }
 
@@ -110,9 +100,9 @@ class WonderPushRestClient {
      * @param resource
      *            The resource path, starting with /
      * @param params
-     *            AsyncHttpClient request parameters
+     *            Request parameters
      */
-    protected static void postEventually(String resource, RequestParams params) {
+    protected static void postEventually(String resource, Params params) {
         final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, null);
         WonderPushRequestVault.getDefaultVault().put(request, 0);
     }
@@ -123,11 +113,11 @@ class WonderPushRestClient {
      * @param resource
      *            The resource path, starting with /
      * @param params
-     *            AsyncHttpClient request parameters
+     *            Request parameters
      * @param responseHandler
-     *            An AsyncHttpClient response handler
+     *            Response handler
      */
-    protected static void put(String resource, RequestParams params, ResponseHandler responseHandler) {
+    protected static void put(String resource, Params params, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.PUT, resource, params, responseHandler));
     }
 
@@ -137,7 +127,7 @@ class WonderPushRestClient {
      * @param resource
      *            The resource path, starting with /
      * @param responseHandler
-     *            An AsyncHttpClient response handler
+     *            Response handler
      */
     protected static void delete(String resource, ResponseHandler responseHandler) {
         requestAuthenticated(new Request(WonderPushConfiguration.getUserId(), HttpMethod.DELETE, resource, null, responseHandler));
@@ -211,9 +201,9 @@ class WonderPushRestClient {
         }
 
         // Add the access token to the params
-        RequestParams params = request.getParams();
+        Params params = request.getParams();
         if (null == params) {
-            params = new RequestParams();
+            params = new Params();
             request.setParams(params);
         }
 
@@ -267,7 +257,7 @@ class WonderPushRestClient {
     }
 
     /**
-     * Thin wrapper to the {@link AsyncHttpClient} library.
+     * Thin wrapper to the network library.
      */
     private static void request(final Request request) {
         if (null == request) {
@@ -282,14 +272,7 @@ class WonderPushRestClient {
                 WonderPushRequestParamsDecorator.decorate(request.getResource(), request.getParams());
 
                 // Generate signature
-                BasicHeader authorizationHeader = request.getAuthorizationHeader();
-
-                // Headers
-                BasicHeader[] headers = null;
-                if (null != authorizationHeader) {
-                    headers = new BasicHeader[1];
-                    headers[0] = authorizationHeader;
-                }
+                BasicNameValuePair authorizationHeader = request.getAuthorizationHeader();
 
                 String url = WonderPushUriHelper.getAbsoluteUrl(request.getResource());
                 WonderPush.logDebug("requesting url: " + request.getMethod() + " " + url + "?" + request.getParams().getURLEncodedString());
@@ -298,70 +281,47 @@ class WonderPushRestClient {
 
                 // Handler
                 final ResponseHandler handler = request.getHandler();
-                HttpEntity entity = null;
-                if (request.getParams() != null) {
-                    try {
-                        entity = request.getParams() != null ? request.getParams().getEntity(null) : null;
-                    } catch (IOException ex) {
-                        WonderPush.logError("Failed to create HttpEntity from params " + request.getParams(), ex);
-                        if (handler != null) {
-                            handler.onFailure(ex, new Response(""));
-                        }
-                        return;
-                    }
-                }
                 final long sendDate = SystemClock.elapsedRealtime();
-                JsonHttpResponseHandler jsonHandler = new JsonHttpResponseHandler() {
-                    @Override
-                    public void onProgress(long bytesWritten, long totalSize) {
-                        // mute this
-                    }
+                Callback jsonHandler = new Callback() {
 
                     @Override
-                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                        syncTime(response);
-                        declareConfigVersion(response);
-                        WonderPush.setNetworkAvailable(true);
-                        if (handler != null) {
-                            handler.onSuccess(statusCode, new Response(response));
-                        }
-                    }
-
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
-                        WonderPush.logError("Unexpected JSONArray answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + response.length() + ") " + response.toString());
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                        WonderPush.logError("Error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: " + errorResponse);
-                        syncTime(errorResponse);
-                        declareConfigVersion(errorResponse);
-                        WonderPush.logDebug("Request Error: " + errorResponse);
-                        WonderPush.setNetworkAvailable(errorResponse != null);
-                        if (handler != null) {
-                            handler.onFailure(throwable, new Response(errorResponse));
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
-                        WonderPush.logError("Unexpected JSONArray error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + errorResponse.length() + ") " + errorResponse.toString());
-                        this.onFailure(statusCode, headers, errorResponse.toString(), throwable);
-                    }
-
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
-                        WonderPush.logError("Unexpected string error answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + responseString.length() + ") \"" + responseString + "\"");
+                    public void onFailure(Call call, IOException e) {
                         WonderPush.setNetworkAvailable(false);
                         if (handler != null) {
-                            handler.onFailure(throwable, new Response(responseString));
+                            handler.onFailure(e, new Response((JSONObject)null));
                         }
                     }
 
                     @Override
-                    public void onSuccess(int statusCode, Header[] headers, String responseString) {
-                        WonderPush.logError("Unexpected string answer: " + statusCode + " headers: " + Arrays.toString(headers) + " response: (" + responseString.length() + ") \"" + responseString + "\"");
+                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
+                        WonderPush.setNetworkAvailable(true);
+                        // Try parse JSON
+                        String responseString = response.body().string();
+                        JSONObject responseJson;
+                        try {
+                            responseJson = new JSONObject(responseString);
+                        } catch (JSONException e) {
+                            WonderPush.logError("Unexpected string error answer: " + response.code() + " headers: " + response.headers().toString() + " response: (" + responseString.length() + ") \"" + responseString + "\"");
+                            if (handler != null) {
+                                handler.onFailure(e, new Response(responseString));
+                            }
+                            return;
+                        }
+
+                        syncTime(responseJson);
+                        declareConfigVersion(responseJson);
+                        if (!response.isSuccessful()) {
+                            WonderPush.logError("Error answer: " + response.code() + " headers: " + response.headers().toString() + " response: " + responseString);
+                            WonderPush.logDebug("Request Error: " + responseString);
+                            if (handler != null) {
+                                handler.onFailure(null, new Response(responseJson));
+                            }
+                        } else {
+                            if (handler != null) {
+                                handler.onSuccess(response.code(), new Response(responseJson));
+                            }
+                        }
+
                     }
 
                     private void declareConfigVersion(JSONObject data) {
@@ -380,26 +340,67 @@ class WonderPushRestClient {
                         TimeSync.syncTimeWithServer(sendDate, recvDate, data.optLong("_serverTime"), data.optLong("_serverTook"));
                     }
                 };
+
+                HttpUrl.Builder httpUrlBuilder = HttpUrl.parse(url).newBuilder();
+                okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
+                        .addHeader("Content-Type", contentType);
+                if (authorizationHeader != null) {
+                    requestBuilder.addHeader(authorizationHeader.getName(),authorizationHeader.getValue());
+                }
+
                 // NO UNNECESSARY WORK HERE, because of timed request
                 switch (request.getMethod()) {
-                    case GET:
-                        sClient.get(null, url, headers, request.getParams(), jsonHandler);
+                    case GET: {
+                        if (request.getParams() != null) {
+                            for (BasicNameValuePair pair : request.getParams().getParamsList()) {
+                                httpUrlBuilder.addQueryParameter(pair.getName(), pair.getValue());
+                            }
+                        }
+                        requestBuilder.url(httpUrlBuilder.build());
+                        requestBuilder.get();
+                    }
                         break;
-                    case PUT:
-                        sClient.put(null, url, headers, entity, contentType, jsonHandler);
+                    case PUT: {
+                        requestBuilder.url(httpUrlBuilder.build());
+                        if (request.getParams() != null) {
+                            requestBuilder.put(request.getParams().getFormBody());
+                        }
+                    }
                         break;
                     case POST:
-                        sClient.post(null, url, headers, entity, contentType, jsonHandler);
+                        requestBuilder.url(httpUrlBuilder.build());
+                        if (request.getParams() != null) {
+                            requestBuilder.post(request.getParams().getFormBody());
+                        }
                         break;
                     case PATCH:
-                        sClient.patch(null, url, headers, entity, contentType, jsonHandler);
+                        requestBuilder.url(httpUrlBuilder.build());
+                        if (request.getParams() != null) {
+                            requestBuilder.patch(request.getParams().getFormBody());
+                        }
                         break;
-                    case DELETE:
-                        sClient.delete(null, url, headers, request.getParams(), jsonHandler);
+                    case DELETE: {
+                        if (request.getParams() != null) {
+                            for (BasicNameValuePair pair : request.getParams().getParamsList()) {
+                                httpUrlBuilder.addQueryParameter(pair.getName(), pair.getValue());
+                            }
+                        }
+                        requestBuilder.url(httpUrlBuilder.build());
+                        requestBuilder.delete();
+                    }
                         break;
                     default:
-                        jsonHandler.sendFailureMessage(0, null, null, new UnsupportedOperationException("Unhandled method " + request.getMethod()));
+                        requestBuilder = null;
+                        if (handler != null) {
+                            handler.onFailure(new UnsupportedOperationException("Unhandled method " + request.getMethod()), null);
+                        }
+                        break;
                 }
+
+                if (requestBuilder != null) {
+                    sClient.newCall(requestBuilder.build()).enqueue(jsonHandler);
+                }
+
             }
         }, 0);
     }
@@ -423,7 +424,7 @@ class WonderPushRestClient {
     }
 
     private static void fetchAnonymousAccessToken_inner(final String userId, final ResponseHandler handler, final int nbRetries) {
-        RequestParams authParams = new RequestParams();
+        Params authParams = new Params();
         authParams.put("clientId", WonderPush.getClientId());
         authParams.put("devicePlatform", "Android");
         authParams.put("deviceModel", InstallationManager.getDeviceModel());
@@ -580,11 +581,11 @@ class WonderPushRestClient {
 
         String mUserId;
         HttpMethod mMethod;
-        RequestParams mParams;
+        Params mParams;
         ResponseHandler mHandler;
         String mResource;
 
-        public Request(String userId, HttpMethod method, String resource, RequestParams params, ResponseHandler handler) {
+        public Request(String userId, HttpMethod method, String resource, Params params, ResponseHandler handler) {
             mUserId = userId;
             mMethod = method;
             mParams = params;
@@ -601,7 +602,7 @@ class WonderPushRestClient {
             }
             mResource = data.getString("resource");
             JSONObject paramsJson = data.getJSONObject("params");
-            mParams = new RequestParams();
+            mParams = new Params();
             @SuppressWarnings("unchecked")
             Iterator<String> keys = paramsJson.keys();
             while (keys.hasNext()) {
@@ -638,7 +639,7 @@ class WonderPushRestClient {
             return mMethod;
         }
 
-        public RequestParams getParams() {
+        public Params getParams() {
             return mParams;
         }
 
@@ -654,7 +655,7 @@ class WonderPushRestClient {
             this.mMethod = mMethod;
         }
 
-        public void setParams(RequestParams mParams) {
+        public void setParams(Params mParams) {
             this.mParams = mParams;
         }
 
@@ -676,11 +677,11 @@ class WonderPushRestClient {
          *
          * @return The authorization header or null for GET requests
          */
-        protected BasicHeader getAuthorizationHeader() {
+        protected BasicNameValuePair getAuthorizationHeader() {
             return getAuthorizationHeader(mMethod, Uri.parse(String.format("%s%s", WonderPush.getBaseURL(), mResource)), mParams);
         }
 
-        protected static BasicHeader getAuthorizationHeader(HttpMethod method, Uri uri, RequestParams params) {
+        protected static BasicNameValuePair getAuthorizationHeader(HttpMethod method, Uri uri, Params params) {
             try {
                 StringBuilder sb = new StringBuilder();
 
@@ -697,7 +698,7 @@ class WonderPushRestClient {
 
                 // Params from the URL
                 List<BasicNameValuePair> unencodedParams = new ArrayList<>();
-                RequestParams queryStringParams = QueryStringParser.getRequestParams(uri.getQuery());
+                Params queryStringParams = QueryStringParser.getRequestParams(uri.getQuery());
                 if (queryStringParams != null) {
                     unencodedParams.addAll(queryStringParams.getParamsList());
                 }
@@ -745,7 +746,7 @@ class WonderPushRestClient {
                 byte[] digest = mac.doFinal(sb.toString().getBytes());
                 String sig = Base64.encodeToString(digest, Base64.DEFAULT).trim();
                 String encodedSig = encode(sig.trim());
-                return new BasicHeader("X-WonderPush-Authorization", String.format("WonderPush sig=\"%s\", meth=\"0\"", encodedSig));
+                return new BasicNameValuePair("X-WonderPush-Authorization", String.format("WonderPush sig=\"%s\", meth=\"0\"", encodedSig));
             } catch (Exception e) {
                 Log.e(TAG, "Could not generate signature", e);
                 return null;
@@ -763,4 +764,260 @@ class WonderPushRestClient {
 
     }
 
+    public static class BasicNameValuePair {
+        private String name;
+        private String value;
+        public BasicNameValuePair(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    /**
+     * A class that handles the parameter to provide to either an api call or a view.
+     */
+    static class Params implements Parcelable {
+
+        public static final String TAG = "RequestParams";
+
+        public Params(Parcel in) throws JSONException {
+            JSONObject json = new JSONObject(in.readString());
+            Iterator<?> it = json.keys();
+            String key;
+            while (it.hasNext()) {
+                key = (String) it.next();
+                this.put(key, json.optString(key));
+            }
+        }
+
+        public String getURLEncodedString() {
+            Iterator<BasicNameValuePair> iter = getParamsList().iterator();
+            StringBuffer buffer = new StringBuffer();
+            while (iter.hasNext()) {
+                BasicNameValuePair pair = iter.next();
+                if (pair.getName() == null || pair.getValue() == null) continue;
+                try {
+                    buffer.append(URLEncoder.encode(pair.getName(), "utf-8"));
+                } catch (UnsupportedEncodingException e) {
+                }
+                buffer.append("=");
+                try {
+                    buffer.append(URLEncoder.encode(pair.getValue(), "utf-8"));
+                } catch (UnsupportedEncodingException e) {
+                }
+                if (iter.hasNext()) buffer.append("&");
+            }
+            return buffer.toString();
+        }
+
+        public JSONObject toJSONObject() {
+            JSONObject result = new JSONObject();
+            List<BasicNameValuePair> params = getParamsList();
+            for (BasicNameValuePair parameter : params) {
+                try {
+                    result.put(parameter.getName(), parameter.getValue());
+                } catch (JSONException e) {
+                    WonderPush.logError("Failed to add parameter " + parameter, e);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel destination, int flags) {
+            destination.writeString(toJSONObject().toString());
+        }
+
+        public static final Creator<Params> CREATOR = new Creator<Params>() {
+            public Params createFromParcel(Parcel in) {
+                try {
+                    return new Params(in);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error while unserializing JSON from a WonderPush.RequestParams", e);
+                    return null;
+                }
+            }
+
+            public Params[] newArray(int size) {
+                return new Params[size];
+            }
+        };
+
+        protected final ConcurrentSkipListMap<String, String> urlParams = new ConcurrentSkipListMap<String, String>();
+        protected final ConcurrentSkipListMap<String, Object> urlParamsWithObjects = new ConcurrentSkipListMap<String, Object>();
+
+        /**
+         * Constructs a new empty {@code RequestParams} instance.
+         */
+        public Params() {
+            this((Map<String, String>) null);
+        }
+
+        /**
+         * Constructs a new RequestParams instance containing the key/value string params from the
+         * specified map.
+         *
+         * @param source the source key/value string map to add.
+         */
+        public Params(Map<String, String> source) {
+            if (source != null) {
+                for (Map.Entry<String, String> entry : source.entrySet()) {
+                    put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+
+        /**
+         * Constructs a new RequestParams instance and populate it with a single initial key/value
+         * string param.
+         *
+         * @param key   the key name for the intial param.
+         * @param value the value string for the initial param.
+         */
+        public Params(final String key, final String value) {
+            this(new HashMap<String, String>() {{
+                put(key, value);
+            }});
+        }
+
+        /**
+         * Adds a key/value string pair to the request.
+         *
+         * @param key   the key name for the new param.
+         * @param value the value string for the new param.
+         */
+        public void put(String key, String value) {
+            if (key != null && value != null) {
+                urlParams.put(key, value);
+            }
+        }
+
+        /**
+         * Adds param with non-string value (e.g. Map, List, Set).
+         *
+         * @param key   the key name for the new param.
+         * @param value the non-string value object for the new param.
+         */
+        public void put(String key, Object value) {
+            if (key != null && value != null) {
+                urlParamsWithObjects.put(key, value);
+            }
+        }
+
+        /**
+         * Adds string value to param which can have more than one value.
+         *
+         * @param key   the key name for the param, either existing or new.
+         * @param value the value string for the new param.
+         */
+        public void add(String key, String value) {
+            if (key != null && value != null) {
+                Object params = urlParamsWithObjects.get(key);
+                if (params == null) {
+                    // Backward compatible, which will result in "k=v1&k=v2&k=v3"
+                    params = new HashSet<String>();
+                    this.put(key, params);
+                }
+                if (params instanceof List) {
+                    ((List<Object>) params).add(value);
+                } else if (params instanceof Set) {
+                    ((Set<Object>) params).add(value);
+                }
+            }
+        }
+
+        /**
+         * Removes a parameter from the request.
+         *
+         * @param key the key name for the parameter to remove.
+         */
+        public void remove(String key) {
+            urlParams.remove(key);
+            urlParamsWithObjects.remove(key);
+        }
+
+        /**
+         * Check if a parameter is defined.
+         *
+         * @param key the key name for the parameter to check existence.
+         * @return Boolean
+         */
+        public boolean has(String key) {
+            return urlParams.get(key) != null ||
+                    urlParamsWithObjects.get(key) != null;
+        }
+
+        protected List<BasicNameValuePair> getParamsList() {
+            List<BasicNameValuePair> lparams = new LinkedList<BasicNameValuePair>();
+
+            for (ConcurrentSkipListMap.Entry<String, String> entry : urlParams.entrySet()) {
+                lparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+            }
+
+            lparams.addAll(getParamsList(null, urlParamsWithObjects));
+
+            return lparams;
+        }
+
+        protected FormBody getFormBody() {
+            FormBody.Builder formBodyBuilder = new FormBody.Builder();
+            for (BasicNameValuePair pair : getParamsList()) {
+                formBodyBuilder.add(pair.getName(), pair.getValue());
+            }
+            return formBodyBuilder.build();
+        }
+
+        private List<BasicNameValuePair> getParamsList(String key, Object value) {
+            List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
+            if (value instanceof Map) {
+                Map map = (Map) value;
+                List list = new ArrayList<Object>(map.keySet());
+                // Ensure consistent ordering in query string
+                if (list.size() > 0 && list.get(0) instanceof Comparable) {
+                    Collections.sort(list);
+                }
+                for (Object nestedKey : list) {
+                    if (nestedKey instanceof String) {
+                        Object nestedValue = map.get(nestedKey);
+                        if (nestedValue != null) {
+                            params.addAll(getParamsList(key == null ? (String) nestedKey : String.format(Locale.US, "%s[%s]", key, nestedKey),
+                                    nestedValue));
+                        }
+                    }
+                }
+            } else if (value instanceof List) {
+                List list = (List) value;
+                int listSize = list.size();
+                for (int nestedValueIndex = 0; nestedValueIndex < listSize; nestedValueIndex++) {
+                    params.addAll(getParamsList(String.format(Locale.US, "%s[%d]", key, nestedValueIndex), list.get(nestedValueIndex)));
+                }
+            } else if (value instanceof Object[]) {
+                Object[] array = (Object[]) value;
+                int arrayLength = array.length;
+                for (int nestedValueIndex = 0; nestedValueIndex < arrayLength; nestedValueIndex++) {
+                    params.addAll(getParamsList(String.format(Locale.US, "%s[%d]", key, nestedValueIndex), array[nestedValueIndex]));
+                }
+            } else if (value instanceof Set) {
+                Set set = (Set) value;
+                for (Object nestedValue : set) {
+                    params.addAll(getParamsList(key, nestedValue));
+                }
+            } else {
+                params.add(new BasicNameValuePair(key, value.toString()));
+            }
+            return params;
+        }
+    }
 }

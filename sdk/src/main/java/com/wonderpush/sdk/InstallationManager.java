@@ -249,7 +249,7 @@ public class InstallationManager {
         }
 
         String propertyEndpoint = "/installation";
-        RequestParams parameters = new RequestParams();
+        ApiClient.Params parameters = new ApiClient.Params();
         parameters.put("body", properties.toString());
         parameters.put("overwrite", overwrite ? "true" : "false");
         WonderPush.postEventually(propertyEndpoint, parameters);

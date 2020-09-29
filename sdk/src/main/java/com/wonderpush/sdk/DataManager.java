@@ -65,7 +65,7 @@ class DataManager {
                 step1AccessToken.set(new Runnable() {
                     @Override
                     public void run() {
-                        WonderPushRestClient.requestForUser(currentUserId.get(), WonderPushRestClient.HttpMethod.GET, "/authentication/accessToken", null, new ResponseHandler() {
+                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/authentication/accessToken", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"accessToken\":");
@@ -92,7 +92,7 @@ class DataManager {
                             WonderPush.safeDefer(step3Installation.get(), 0);
                             return;
                         }
-                        WonderPushRestClient.requestForUser(currentUserId.get(), WonderPushRestClient.HttpMethod.GET, "/user", null, new ResponseHandler() {
+                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/user", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"user\":");
@@ -115,7 +115,7 @@ class DataManager {
                 step3Installation.set(new Runnable() {
                     @Override
                     public void run() {
-                        WonderPushRestClient.requestForUser(currentUserId.get(), WonderPushRestClient.HttpMethod.GET, "/installation", null, new ResponseHandler() {
+                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/installation", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"installation\":");
@@ -135,11 +135,11 @@ class DataManager {
                     }
                 });
                 // Step 4 - Events. Loops back to processNextUser
-                final AtomicReference<RequestParams> step4RequestParams = new AtomicReference<>(new RequestParams("limit", "1000"));
+                final AtomicReference<ApiClient.Params> step4RequestParams = new AtomicReference<>(new ApiClient.Params("limit", "1000"));
                 step4EventPage.set(new Runnable() {
                     @Override
                     public void run() {
-                        WonderPushRestClient.requestForUser(currentUserId.get(), WonderPushRestClient.HttpMethod.GET, "/events", step4RequestParams.get(), new ResponseHandler() {
+                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/events", step4RequestParams.get(), new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"eventsPage\":");
@@ -160,7 +160,7 @@ class DataManager {
                                     WonderPush.safeDefer(processNextUser.get(), 0);
                                     return;
                                 }
-                                RequestParams nextParams = new RequestParams();
+                                ApiClient.Params nextParams = new ApiClient.Params();
                                 for (String key : next.getQueryParameterNames()) {
                                     nextParams.put(key, next.getQueryParameter(key));
                                 }
@@ -242,7 +242,7 @@ class DataManager {
     }
 
     private static void clearEventsHistory(String userId) {
-        WonderPushRestClient.requestForUser(userId, WonderPushRestClient.HttpMethod.DELETE, "/events", null, null);
+        ApiClient.requestForUser(userId, ApiClient.HttpMethod.DELETE, "/events", null, null);
     }
 
     static void clearPreferences() {
@@ -266,12 +266,12 @@ class DataManager {
         }
 
         if (userId != null) {
-            WonderPushRestClient.requestForUser(userId, WonderPushRestClient.HttpMethod.PUT, "/user", new RequestParams("body", "{\"custom\":null}"), null);
+            ApiClient.requestForUser(userId, ApiClient.HttpMethod.PUT, "/user", new ApiClient.Params("body", "{\"custom\":null}"), null);
         }
     }
 
     private static void clearInstallation(String userId) {
-        WonderPushRestClient.requestForUser(userId, WonderPushRestClient.HttpMethod.DELETE, "/installation", null, null);
+        ApiClient.requestForUser(userId, ApiClient.HttpMethod.DELETE, "/installation", null, null);
         WonderPushConfiguration.clearForUserId(userId);
         try {
             JSONSyncInstallationCustom.forUser(userId).receiveState(null, true);

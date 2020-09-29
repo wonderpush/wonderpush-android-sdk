@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.concurrent.Semaphore;
 
 /**
- * This class will make sure important {@link WonderPushRestClient.Request} objects are run eventually, even if the user
+ * This class will make sure important {@link ApiClient.Request} objects are run eventually, even if the user
  * is currently offline and the app terminated.
  */
 class WonderPushRequestVault {
@@ -57,7 +57,7 @@ class WonderPushRequestVault {
     /**
      * Save a request in the vault for future retry
      */
-    protected void put(WonderPushRestClient.Request request, long delayMs) {
+    protected void put(ApiClient.Request request, long delayMs) {
         long notBeforeRealTimeElapsed = delayMs <= 0 ? delayMs : SystemClock.elapsedRealtime() + delayMs;
         long prevNotBeforeRealtimeElapsed = mJobQueue.peekNextJobNotBeforeRealtimeElapsed();
         mJobQueue.postJobWithDescription(request.toJSON(), notBeforeRealTimeElapsed);
@@ -102,9 +102,9 @@ class WonderPushRequestVault {
                         // and we're it's sole consumer (although not enforced by the current code design)
                         final WonderPushJobQueue.Job job = mJobQueue.nextJob();
 
-                        final WonderPushRestClient.Request request;
+                        final ApiClient.Request request;
                         try {
-                            request = new WonderPushRestClient.Request(job.getJobDescription());
+                            request = new ApiClient.Request(job.getJobDescription());
                         } catch (Exception e) {
                             Log.e(TAG, "Could not restore request", e);
                             continue;
@@ -135,7 +135,7 @@ class WonderPushRequestVault {
                             // This last resort check is not expected to catch any case but is here for strictness
                             request.getHandler().onFailure(new RuntimeException("Missing user consent"), new Response("Missing user consent"));
                         } else {
-                            WonderPushRestClient.requestAuthenticated(request);
+                            ApiClient.requestAuthenticated(request);
                         }
                     } catch (InterruptedException ignored) {
                         if (acquired) {

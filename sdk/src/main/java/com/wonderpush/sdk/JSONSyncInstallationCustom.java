@@ -213,9 +213,9 @@ public class JSONSyncInstallationCustom {
             WonderPush.logDebug("Sending installation custom diff " + diff + " for user " + userId);
             JSONObject body = new JSONObject();
             body.put("custom", diff);
-            RequestParams parameters = new RequestParams();
+            ApiClient.Params parameters = new ApiClient.Params();
             parameters.put("body", body.toString());
-            WonderPushRestClient.requestForUser(userId, WonderPushRestClient.HttpMethod.PATCH, "/installation", parameters, new ResponseHandler() {
+            ApiClient.requestForUser(userId, ApiClient.HttpMethod.PATCH, "/installation", parameters, new ResponseHandler() {
                 @Override
                 public void onFailure(Throwable ex, Response errorResponse) {
                     Log.e(WonderPush.TAG, "Failed to send installation custom diff, got " + errorResponse, ex);

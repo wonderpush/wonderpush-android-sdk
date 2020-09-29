@@ -64,7 +64,7 @@ class WonderPushView extends FrameLayout {
     UserInterfaceState mUserInterfaceState;
     ValueCallback<Uri> mUploadMessage;
     String mInitialResource;
-    RequestParams mInitialRequestParams;
+    ApiClient.Params mInitialParams;
     boolean mIsPreloading;
     protected boolean isLoginSource;
     private int mTextColor;
@@ -258,16 +258,16 @@ class WonderPushView extends FrameLayout {
     /**
      * Sets the resource for the web content displayed in this WonderPushView's WebView.
      */
-    public void setResource(String resource, RequestParams params) {
+    public void setResource(String resource, ApiClient.Params params) {
         if (null == resource) {
             WonderPush.logError("null resource provided to WonderPushView");
             return;
         }
         mInitialResource = resource;
-        mInitialRequestParams = params;
+        mInitialParams = params;
         mIsPreloading = false;
         if (null == params)
-            params = new RequestParams();
+            params = new ApiClient.Params();
 
         WonderPushRequestParamsDecorator.decorate(resource, params);
 
@@ -499,7 +499,7 @@ class WonderPushView extends FrameLayout {
             WonderPushConfiguration.invalidateCredentials();
 
             // Request a new anonymous access token
-            WonderPushRestClient.fetchAnonymousAccessTokenIfNeeded(WonderPushConfiguration.getUserId());
+            ApiClient.fetchAnonymousAccessTokenIfNeeded(WonderPushConfiguration.getUserId());
 
             return true;
         }
