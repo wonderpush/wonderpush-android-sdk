@@ -13,8 +13,8 @@ import org.json.JSONObject;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
-public class WonderPushMeasurementsApiClient {
-    private static final String TAG = WonderPushMeasurementsApiClient.class.getSimpleName();
+public class MeasurementsApiClient {
+    private static final String TAG = MeasurementsApiClient.class.getSimpleName();
     private static final OkHttpClient sClient = new OkHttpClient();
     public interface Handler {
         void onComplete(@Nullable Object result, int status, @Nullable Throwable error);

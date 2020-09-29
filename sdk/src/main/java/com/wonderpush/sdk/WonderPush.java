@@ -1208,7 +1208,7 @@ public class WonderPush {
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
         if (useMeasurementsApi) {
-            WonderPushMeasurementsApiClient.post("/events", event, null);
+            MeasurementsApiClient.post("/events", event, null);
         } else {
             postEventually(eventEndpoint, parameters);
         }
