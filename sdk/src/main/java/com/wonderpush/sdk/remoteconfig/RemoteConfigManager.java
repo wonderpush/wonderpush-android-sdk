@@ -55,9 +55,11 @@ public class RemoteConfigManager {
             if (declareVersionError != null) {
                 Log.e(TAG, "Error declaring version to storage", declareVersionError);
             } else {
-                if (storedHighestVersion == null
-                        || RemoteConfig.compareVersions(storedHighestVersion, version) < 0) {
-                    storedHighestVersion = version;
+                synchronized (this) {
+                    if (storedHighestVersion == null
+                            || RemoteConfig.compareVersions(storedHighestVersion, version) < 0) {
+                        storedHighestVersion = version;
+                    }
                 }
             }
             readConfigAndHighestDeclaredVersionFromStorage((RemoteConfig config, String highestVersion, Throwable readError) -> {
@@ -76,7 +78,9 @@ public class RemoteConfigManager {
                     if (RemoteConfig.compareVersions(config.getVersion(), version) == 0) {
                         RemoteConfig configWithUpdatedDate = RemoteConfig.with(config.getData(), config.getVersion(), now, config.getMaxAge());
                         remoteConfigStorage.storeRemoteConfig(configWithUpdatedDate, (Throwable storageError) -> {
-                            if (storageError == null) storedConfig = configWithUpdatedDate;
+                            synchronized (this) {
+                                if (storageError == null) storedConfig = configWithUpdatedDate;
+                            }
                         });
                         return;
                     }
@@ -165,8 +169,10 @@ public class RemoteConfigManager {
         } else {
             remoteConfigStorage.loadRemoteConfigAndHighestDeclaredVersion((RemoteConfig config, String highestVersion, Throwable error) -> {
                 if (error == null) {
-                    if (config != null) storedConfig = config;
-                    if (highestVersion != null) storedHighestVersion = highestVersion;
+                    synchronized (this) {
+                        if (config != null) storedConfig = config;
+                        if (highestVersion != null) storedHighestVersion = highestVersion;
+                    }
                 }
 
                 handler.handle(config, highestVersion, error);
@@ -185,8 +191,10 @@ public class RemoteConfigManager {
             return;
         }
 
-        lastFetchDate = DateHelper.now();
-        isFetching = true;
+        synchronized (this) {
+            lastFetchDate = DateHelper.now();
+            isFetching = true;
+        }
         remoteConfigFetcher.fetchRemoteConfig(version, (RemoteConfig newConfig, Throwable fetchError) -> {
 
             RemoteConfigHandler handler = (RemoteConfig config, Throwable error) -> {
@@ -196,7 +204,9 @@ public class RemoteConfigManager {
                     }
                     queuedHandlers.clear();
                 }
-                isFetching = false;
+                synchronized (this) {
+                    isFetching = false;
+                }
                 if (completion != null) completion.handle(config, error);
             };
 
@@ -211,7 +221,9 @@ public class RemoteConfigManager {
                         Log.e(TAG, "Could not store RemoteConfig in storage", storageError);
                         handler.handle(null, storageError);
                     } else {
-                        storedConfig = newConfig;
+                        synchronized (this) {
+                            storedConfig = newConfig;
+                        }
                         remoteConfigStorage.declareVersion(newConfig.getVersion(), (Throwable declareError) -> {
                             if (declareError != null) {
                                 Log.e(TAG, "Error declaring version to storage", declareError);

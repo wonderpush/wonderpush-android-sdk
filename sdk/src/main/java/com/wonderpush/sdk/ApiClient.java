@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
 
@@ -280,16 +281,33 @@ class ApiClient {
                 String contentType = "application/x-www-form-urlencoded";
 
                 // Handler
-                final ResponseHandler handler = request.getHandler();
+                final @NonNull ResponseHandler handler = new ResponseHandler() {
+                    @Override
+                    public void onFailure(Throwable e, Response errorResponse) {
+                        WonderPush.safeDefer(() -> {
+                            if (request.getHandler() != null) {
+                                request.getHandler().onFailure(e, errorResponse);
+                            }
+                        }, 0);
+                    }
+
+                    @Override
+                    public void onSuccess(Response response) {
+                        WonderPush.safeDefer(() -> {
+                            if (request.getHandler() != null) {
+                                request.getHandler().onSuccess(response);
+                            }
+                        }, 0);
+                    }
+                };
+
                 final long sendDate = SystemClock.elapsedRealtime();
                 Callback jsonHandler = new Callback() {
 
                     @Override
                     public void onFailure(Call call, IOException e) {
                         WonderPush.setNetworkAvailable(false);
-                        if (handler != null) {
-                            handler.onFailure(e, new Response((JSONObject)null));
-                        }
+                        handler.onFailure(e, new Response((JSONObject)null));
                     }
 
                     @Override
@@ -302,9 +320,7 @@ class ApiClient {
                             responseJson = new JSONObject(responseString);
                         } catch (JSONException e) {
                             WonderPush.logError("Unexpected string error answer: " + response.code() + " headers: " + response.headers().toString() + " response: (" + responseString.length() + ") \"" + responseString + "\"");
-                            if (handler != null) {
-                                handler.onFailure(e, new Response(responseString));
-                            }
+                            handler.onFailure(e, new Response(responseString));
                             return;
                         }
 
@@ -313,13 +329,9 @@ class ApiClient {
                         if (!response.isSuccessful()) {
                             WonderPush.logError("Error answer: " + response.code() + " headers: " + response.headers().toString() + " response: " + responseString);
                             WonderPush.logDebug("Request Error: " + responseString);
-                            if (handler != null) {
-                                handler.onFailure(null, new Response(responseJson));
-                            }
+                            handler.onFailure(null, new Response(responseJson));
                         } else {
-                            if (handler != null) {
-                                handler.onSuccess(response.code(), new Response(responseJson));
-                            }
+                            handler.onSuccess(response.code(), new Response(responseJson));
                         }
 
                     }
@@ -795,6 +807,10 @@ class ApiClient {
                 key = (String) it.next();
                 this.put(key, json.optString(key));
             }
+        }
+
+        public String toString() {
+            return getURLEncodedString();
         }
 
         public String getURLEncodedString() {

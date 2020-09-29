@@ -14,7 +14,7 @@ public class TimeSync {
      * Get the current timestamp in milliseconds, UTC.
      * @return A timestamp in milliseconds
      */
-    public static long getTime() {
+    public synchronized static long getTime() {
         // Initialization
         if (deviceDateToServerDateUncertainty == Long.MAX_VALUE) {
             deviceDateToServerDateUncertainty = WonderPushConfiguration.getDeviceDateSyncUncertainty();
@@ -56,7 +56,7 @@ public class TimeSync {
      * @param serverTook
      *            The time the server took to process the request, as read in the response.
      */
-    protected static void syncTimeWithServer(long elapsedRealtimeSend, long elapsedRealtimeReceive, long serverDate, long serverTook) {
+    protected synchronized static void syncTimeWithServer(long elapsedRealtimeSend, long elapsedRealtimeReceive, long serverDate, long serverTook) {
         if (serverDate == 0) {
             return;
         }
