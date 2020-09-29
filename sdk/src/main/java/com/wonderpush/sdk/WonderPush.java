@@ -22,7 +22,7 @@ import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
 
-import com.wonderpush.sdk.remoteconfig.AsyncHttpClientRemoteConfigFetcher;
+import com.wonderpush.sdk.remoteconfig.OkHttpRemoteConfigFetcher;
 import com.wonderpush.sdk.remoteconfig.RemoteConfig;
 import com.wonderpush.sdk.remoteconfig.RemoteConfigManager;
 import com.wonderpush.sdk.remoteconfig.SharedPreferencesRemoteConfigStorage;
@@ -1715,7 +1715,7 @@ public class WonderPush {
         if (isInitialized()) initializeInAppMessaging(context);
 
         if (isInitialized() && remoteConfigManager == null) {
-            AsyncHttpClientRemoteConfigFetcher fetcher = new AsyncHttpClientRemoteConfigFetcher(clientId, (Runnable r, long defer) -> {
+            OkHttpRemoteConfigFetcher fetcher = new OkHttpRemoteConfigFetcher(clientId, (Runnable r, long defer) -> {
                 WonderPush.safeDefer(r, defer);
             });
             SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
