@@ -689,6 +689,11 @@ public class RemoteConfigTest {
         assertEquals(config.getMinAge(), 123456);
     }
 
+    /**
+     * checks that minAge specified at config level is effective.
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @Test
     public void testConfigMinAge() throws ExecutionException, InterruptedException {
         manager.minimumConfigAge = 0;
@@ -745,6 +750,11 @@ public class RemoteConfigTest {
         future.get();
     }
 
+    /**
+     * Defines behavior when a 404 on the config occurs.
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @Test
     public void test404() throws ExecutionException, InterruptedException {
         fetcher.error = new Exception("404");
@@ -783,6 +793,9 @@ public class RemoteConfigTest {
         future.get();
     }
 
+    /**
+     * Verifies that when a fetch error occurs, we serve a previously fetched config.
+     */
     @Test
     public void testFetchError() {
         // Fetch as often as we like
