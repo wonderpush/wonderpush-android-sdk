@@ -108,7 +108,7 @@ public class RemoteConfigManager {
             return;
         }
 
-        readConfigAndHighestDeclaredVersionFromStorage((RemoteConfig config, String highestVersion, Throwable storageError) -> {
+        readConfigAndHighestDeclaredVersionFromStorage((RemoteConfig storedConfig, String highestVersion, Throwable storageError) -> {
             if (storageError != null) {
                 handler.handle(null, storageError);
                 return;
@@ -117,7 +117,7 @@ public class RemoteConfigManager {
             Date now = DateHelper.now();
             long lastFetchInterval = lastFetchDate != null ? now.getTime() - lastFetchDate.getTime() : Long.MAX_VALUE;
 
-            if (config == null) {
+            if (storedConfig == null) {
                 // Do not update too frequently
                 if (lastFetchDate != null && lastFetchInterval < minimumFetchInterval) {
                     handler.handle(null, null);
@@ -134,31 +134,31 @@ public class RemoteConfigManager {
                 return;
             }
 
-            boolean higherVersionExists = RemoteConfig.compareVersions(config.getVersion(), highestVersion) < 0;
+            boolean higherVersionExists = RemoteConfig.compareVersions(storedConfig.getVersion(), highestVersion) < 0;
             boolean shouldFetch = higherVersionExists;
             String versionToFetch = highestVersion;
 
             // Do not fetch too often
-            long configAge = now.getTime() - config.getFetchDate().getTime();
-            if (shouldFetch && (configAge < minimumConfigAge || !config.hasReachedMinAge())) shouldFetch = false;
+            long configAge = now.getTime() - storedConfig.getFetchDate().getTime();
+            if (shouldFetch && (configAge < minimumConfigAge || !storedConfig.hasReachedMinAge())) shouldFetch = false;
 
             // Force fetch if expired
-            boolean isExpired = configAge > maximumConfigAge || config.isExpired();
+            boolean isExpired = configAge > maximumConfigAge || storedConfig.isExpired();
             if (!shouldFetch && isExpired) {
                 shouldFetch = true;
-                if (!higherVersionExists) versionToFetch = config.getVersion();
+                if (!higherVersionExists) versionToFetch = storedConfig.getVersion();
             }
 
             // Do not fetch too often
             if (shouldFetch && lastFetchDate != null && lastFetchInterval < minimumFetchInterval) shouldFetch = false;
 
             if (!shouldFetch) {
-                handler.handle(config, null);
+                handler.handle(storedConfig, null);
                 return;
             }
 
-            fetchAndStoreConfig(versionToFetch, config, (RemoteConfig fetchedConfig, Throwable fetchError) -> {
-                handler.handle(fetchedConfig, fetchError);
+            fetchAndStoreConfig(versionToFetch, storedConfig, (RemoteConfig fetchedConfig, Throwable fetchError) -> {
+                handler.handle(fetchedConfig != null ? fetchedConfig : storedConfig, fetchError);
             });
         });
     }

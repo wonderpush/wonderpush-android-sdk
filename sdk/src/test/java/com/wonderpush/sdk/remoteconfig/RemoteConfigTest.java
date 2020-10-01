@@ -744,4 +744,66 @@ public class RemoteConfigTest {
 
         future.get();
     }
+
+    @Test
+    public void test404() throws ExecutionException, InterruptedException {
+        fetcher.error = new Exception("404");
+        fetcher.fetchedConfig = null;
+        manager.minimumFetchInterval = 100;
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        manager.read((RemoteConfig config1, Throwable error1) -> {
+            // no config, get an error, updated requested date
+            assertNull(config1);
+            assertEquals(error1.getMessage(), "404");
+            assertNotNull(fetcher.lastRequestedDate);
+
+            fetcher.lastRequestedDate = null;
+
+            // Read right away
+            manager.read((RemoteConfig config2, Throwable error2) -> {
+                assertNull(config2);
+                // We haven't made a fetch, so no error, and no requested date
+                assertNull(error2);
+                assertNull(fetcher.lastRequestedDate);
+
+                // Wait for minimumFetchInterval
+                setTimeout(() -> {
+                    manager.read((RemoteConfig config3, Throwable error3) -> {
+                        assertNull(config3);
+                        // We've made a fetch, so error and lastRequestedDate are not nil
+                        assertNotNull(error3);
+                        assertNotNull(fetcher.lastRequestedDate);
+                        future.complete(null);
+                    });
+                }, 100);
+            });
+        });
+        future.get();
+    }
+
+    @Test
+    public void testFetchError() {
+        // Fetch as often as we like
+        manager.minimumFetchInterval = 0;
+        manager.minimumConfigAge = 0;
+
+        // Configure a previously fetched config
+        final RemoteConfig storedConfig = RemoteConfig.with(new JSONObject(), "1.0");
+        storage.storedConfig = storedConfig;
+        // Configure fetch error
+        fetcher.error = new Exception("fetch error");
+
+        // Declare higher version
+        manager.declareVersion("1.1");
+
+        // read
+        manager.read((RemoteConfig config, Throwable error) -> {
+            // We're serving the previous config
+            assertSame(storedConfig, config);
+            // We're also reporting the error
+            assertEquals("fetch error", error.getMessage());
+        });
+    }
 }
