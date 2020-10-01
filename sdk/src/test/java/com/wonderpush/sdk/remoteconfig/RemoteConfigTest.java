@@ -819,4 +819,35 @@ public class RemoteConfigTest {
             assertEquals("fetch error", error.getMessage());
         });
     }
+
+    /**
+     * Checks that when a particular config entry is present, no new configuration will ever be fetched
+     */
+    @Test
+    public void testDisableFetch() throws JSONException {
+
+        // Fetch as often as we like
+        manager.minimumConfigAge = 0;
+        manager.minimumFetchInterval = 0;
+
+        // A config has already been fetched, that forbids further fetching via the DISABLE_FETCH_KEY
+        JSONObject data = new JSONObject();
+        data.put(Constants.DISABLE_FETCH_KEY, true);
+        final RemoteConfig storedConfig = RemoteConfig.with(data, "1");
+        storage.storedConfig = storedConfig;
+
+        manager.read((RemoteConfig config, Throwable error) -> {
+            assertSame(storedConfig, config);
+            assertNull(fetcher.lastRequestedDate);
+        });
+
+        // Declare new version
+        manager.declareVersion("2");
+
+        // No fetch should have happened
+        manager.read((RemoteConfig config, Throwable error) -> {
+            assertSame(storedConfig, config);
+            assertNull(fetcher.lastRequestedDate);
+        });
+    }
 }

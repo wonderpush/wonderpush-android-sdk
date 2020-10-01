@@ -191,6 +191,12 @@ public class RemoteConfigManager {
             return;
         }
 
+        // Is fetch disabled?
+        if (currentConfig != null && currentConfig.getData() != null && currentConfig.getData().optBoolean(Constants.DISABLE_FETCH_KEY, false)) {
+            if (completion != null) completion.handle(currentConfig, null);
+            return;
+        }
+
         synchronized (this) {
             lastFetchDate = DateHelper.now();
             isFetching = true;
