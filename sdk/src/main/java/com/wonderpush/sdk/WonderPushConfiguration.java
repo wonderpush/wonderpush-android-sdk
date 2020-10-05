@@ -119,9 +119,6 @@ public class WonderPushConfiguration {
             currentUserArchive.putOpt(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME, new JSONArray(getCachedDisabledNotificationChannelIds()));
             currentUserArchive.putOpt(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME, getCachedDisabledNotificationChannelIdsDate());
             currentUserArchive.putOpt(CHANNEL_PREFERENCES_PREF_NAME, getChannelPreferences());
-            currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, getCachedInstallationCoreProperties());
-            currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, getCachedInstallationCorePropertiesDate());
-            currentUserArchive.putOpt(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, getCachedInstallationCorePropertiesAccessToken());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME, getCachedInstallationCustomPropertiesWritten());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME, getCachedInstallationCustomPropertiesWrittenDate());
             currentUserArchive.putOpt(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME, getCachedInstallationCustomPropertiesUpdated());
@@ -161,9 +158,6 @@ public class WonderPushConfiguration {
         setCachedDisabledNotificationChannelIds(JSONArrayToSetString(newUserArchive.optJSONArray(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_NAME)));
         setCachedDisabledNotificationChannelIdsDate(newUserArchive.optLong(CACHED_DISABLED_NOTIFICATION_CHANNEL_IDS_DATE_NAME));
         setChannelPreferences(newUserArchive.optJSONObject(CHANNEL_PREFERENCES_PREF_NAME));
-        setCachedInstallationCoreProperties(JSONUtil.optString(newUserArchive, CACHED_INSTALLATION_CORE_PROPERTIES_NAME));
-        setCachedInstallationCorePropertiesDate(newUserArchive.optLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME));
-        setCachedInstallationCorePropertiesAccessToken(JSONUtil.optString(newUserArchive, CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME));
         setCachedInstallationCustomPropertiesWritten(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_PREF_NAME));
         setCachedInstallationCustomPropertiesWrittenDate(newUserArchive.optLong(CACHED_INSTALLATION_CUSTOM_PROPERTIES_WRITTEN_DATE_PREF_NAME));
         setCachedInstallationCustomPropertiesUpdated(newUserArchive.optJSONObject(CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_PREF_NAME));
@@ -645,57 +639,6 @@ public class WonderPushConfiguration {
      */
     static void setChannelPreferences(JSONObject value) {
         putJSONObject(CHANNEL_PREFERENCES_PREF_NAME, value);
-    }
-
-    /**
-     * Get the cached installation core properties stored in the user's shared preferences.
-     */
-    public static String getCachedInstallationCoreProperties() {
-        return getString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME);
-    }
-
-    /**
-     * Set the cached installation core properties stored in the user's shared preferences.
-     *
-     * @param cachedInstallationCoreProperties
-     *            The cached installation core properties to be stored
-     */
-    static void setCachedInstallationCoreProperties(String cachedInstallationCoreProperties) {
-        putString(CACHED_INSTALLATION_CORE_PROPERTIES_NAME, cachedInstallationCoreProperties);
-    }
-
-    /**
-     * Get the cached installation core properties date stored in the user's shared preferences.
-     */
-    static long getCachedInstallationCorePropertiesDate() {
-        return getLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, 0);
-    }
-
-    /**
-     * Set the cached installation core properties date stored in the user's shared preferences.
-     *
-     * @param cachedInstallationCorePropertiesDate
-     *            The cached installation core properties date to be stored
-     */
-    static void setCachedInstallationCorePropertiesDate(long cachedInstallationCorePropertiesDate) {
-        putLong(CACHED_INSTALLATION_CORE_PROPERTIES_DATE_NAME, cachedInstallationCorePropertiesDate);
-    }
-
-    /**
-     * Get the cached installation core properties stored in the user's shared preferences.
-     */
-    static String getCachedInstallationCorePropertiesAccessToken() {
-        return getString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME);
-    }
-
-    /**
-     * Set the cached installation core properties access token stored in the user's shared preferences.
-     *
-     * @param cachedInstallationCorePropertiesAccessToken
-     *            The cached installation core properties access token to be stored
-     */
-    static void setCachedInstallationCorePropertiesAccessToken(String cachedInstallationCorePropertiesAccessToken) {
-        putString(CACHED_INSTALLATION_CORE_PROPERTIES_ACCESS_TOKEN_NAME, cachedInstallationCorePropertiesAccessToken);
     }
 
     /**

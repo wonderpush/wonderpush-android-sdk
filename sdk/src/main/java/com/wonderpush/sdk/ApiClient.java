@@ -509,8 +509,7 @@ class ApiClient {
 
                                     JSONObject installation = json.optJSONObject("_installation");
                                     if (installation != null) {
-                                        JSONObject custom = installation.optJSONObject("custom");
-                                        WonderPush.receivedFullInstallationCustomPropertiesFromServer(custom);
+                                        WonderPush.receivedFullInstallationFromServer(installation);
                                     }
                                 } finally {
                                     // Make sure to switch back to the current user now

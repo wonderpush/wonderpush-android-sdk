@@ -1044,24 +1044,21 @@ public class NotificationManager {
         WonderPush.trackEvent(JSONUtil.getString(event, "type"), trackingData, event.optJSONObject("custom"));
     }
 
-    protected static void handleUpdateInstallationAction(ActionModel action) {
+    protected static void handleUpdateInstallationAction(ActionModel action) throws JSONException {
         JSONObject installation = action.getInstallation();
         JSONObject custom = installation != null ? installation.optJSONObject("custom") : action.getCustom();
-        if (custom == null) {
-            Log.e(TAG, "Got no installation custom properties to update for a " + ActionModel.Type.UPDATE_INSTALLATION + " action");
-            return;
+        if (installation == null && custom != null) {
+            installation = new JSONObject();
+            installation.put("custom", custom);
         }
-        if (custom.length() == 0) {
-            WonderPush.logDebug("Empty installation custom properties for an update, for a " + ActionModel.Type.UPDATE_INSTALLATION + " action");
-            return;
-        }
+        if (installation == null) return;
         try {
             if (action.getAppliedServerSide(false)) {
                 WonderPush.logDebug("Received server custom properties diff: " + custom);
-                JSONSyncInstallationCustom.forCurrentUser().receiveDiff(custom);
+                JSONSyncInstallation.forCurrentUser().receiveDiff(installation);
             } else {
                 WonderPush.logDebug("Putting custom properties diff: " + custom);
-                JSONSyncInstallationCustom.forCurrentUser().put(custom);
+                JSONSyncInstallation.forCurrentUser().put(installation);
             }
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to handle action " + ActionModel.Type.UPDATE_INSTALLATION, ex);
@@ -1156,23 +1153,14 @@ public class NotificationManager {
 
     private static void handleResyncInstallationAction_inner(ActionModel action) {
         JSONObject installation = action.getInstallation();
-        JSONObject custom = installation == null ? null : installation.optJSONObject("custom");
-        if (custom == null) {
-            if (installation != null) {
-                // If an installation has no custom, use {}
-                custom = new JSONObject();
-            } else { // we still have no installation
-                Log.e(TAG, "Got no installation custom properties to resync with for a " + ActionModel.Type.RESYNC_INSTALLATION + " action");
-                return;
-            }
-        }
+        if (installation == null) installation = new JSONObject();
 
         // Take or reset custom
         try {
             if (action.getReset(false)) {
-                JSONSyncInstallationCustom.forCurrentUser().receiveState(custom, action.getForce(false));
+                JSONSyncInstallation.forCurrentUser().receiveState(installation, action.getForce(false));
             } else {
-                JSONSyncInstallationCustom.forCurrentUser().receiveServerState(custom);
+                JSONSyncInstallation.forCurrentUser().receiveServerState(installation);
             }
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to resync installation", ex);

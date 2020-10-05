@@ -6,6 +6,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.wonderpush.sdk.InstallationManager;
+import com.wonderpush.sdk.JSONSyncInstallation;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushConfiguration;
 
@@ -89,7 +90,7 @@ public class PushServiceManager {
                 || WonderPushConfiguration.getAccessToken() == null && WonderPushConfiguration.getCachedGCMRegistrationIdAccessToken() != null
                 || WonderPushConfiguration.getAccessToken() != null && !WonderPushConfiguration.getAccessToken().equals(WonderPushConfiguration.getCachedGCMRegistrationIdAccessToken())
             ) {
-                JSONObject properties = new JSONObject();
+                JSONObject diff = new JSONObject();
                 JSONObject pushToken = new JSONObject();
                 pushToken.put("data", registrationId);
                 pushToken.put("service", service);
@@ -105,10 +106,10 @@ public class PushServiceManager {
                     }
                     pushToken.put("senderIds", senderIdsArray);
                 }
-                properties.put("pushToken", pushToken);
+                diff.put("pushToken", pushToken);
 
                 WonderPush.initialize(sContext);
-                InstallationManager.updateInstallation(properties, false);
+                JSONSyncInstallation.forCurrentUser().put(diff);
                 WonderPushConfiguration.setCachedGCMRegistrationIdDate(System.currentTimeMillis());
                 WonderPushConfiguration.setCachedGCMRegistrationIdAssociatedUserId(WonderPushConfiguration.getUserId());
                 WonderPushConfiguration.setCachedGCMRegistrationIdAccessToken(WonderPushConfiguration.getAccessToken());

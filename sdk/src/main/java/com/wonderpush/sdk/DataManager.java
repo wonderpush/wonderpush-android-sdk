@@ -253,14 +253,12 @@ class DataManager {
 
     private static void clearPreferences(String userId) {
         try {
-            JSONSyncInstallationCustom custom = JSONSyncInstallationCustom.forUser(userId);
-            JSONObject diff = new JSONObject();
-            Iterator<String> it = custom.getSdkState().keys();
-            while (it.hasNext()) {
-                diff.put(it.next(), JSONObject.NULL);
-            }
-            custom.put(diff);
-            custom.flush();
+            JSONSyncInstallation sync = JSONSyncInstallation.forUser(userId);
+            // Nullify first
+            sync.put(new JSONObject("{\"custom\":null}"));
+            // Set empty object
+            sync.put(new JSONObject("{\"custom\":{}}}"));
+            sync.flush();
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId, ex);
         }
@@ -274,7 +272,7 @@ class DataManager {
         ApiClient.requestForUser(userId, ApiClient.HttpMethod.DELETE, "/installation", null, null);
         WonderPushConfiguration.clearForUserId(userId);
         try {
-            JSONSyncInstallationCustom.forUser(userId).receiveState(null, true);
+            JSONSyncInstallation.forUser(userId).receiveState(null, true);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId, ex);
         }

@@ -1079,11 +1079,11 @@ public class WonderPush {
         sApiImpl.putInstallationCustomProperties(customProperties);
     }
 
-    static synchronized void receivedFullInstallationCustomPropertiesFromServer(JSONObject custom) {
+    static synchronized void receivedFullInstallationFromServer(JSONObject installation) {
         WonderPush.logDebug("Synchronizing installation custom fields");
-        WonderPush.logDebug("Received custom: " + custom);
+        WonderPush.logDebug("Received installation: " + installation);
         try {
-            JSONSyncInstallationCustom.forCurrentUser().receiveState(custom, false);
+            JSONSyncInstallation.forCurrentUser().receiveState(installation, false);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to receive custom from server", ex);
         }
@@ -1444,7 +1444,7 @@ public class WonderPush {
                 WonderPushConfiguration.initialize(getApplicationContext());
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
-                JSONSyncInstallationCustom.initialize();
+                JSONSyncInstallation.initialize();
                 WonderPushRequestVault.initialize();
 
                 initForNewUser(sBeforeInitializationUserIdSet
@@ -1542,9 +1542,6 @@ public class WonderPush {
 
     protected static void refreshPreferencesAndConfiguration(boolean force) {
         // Refresh core properties
-        if (force) {
-            WonderPushConfiguration.setCachedInstallationCoreProperties(null);
-        }
         InstallationManager.updateInstallationCoreProperties(WonderPush.getApplicationContext());
 
         // Refresh push token
@@ -1785,7 +1782,7 @@ public class WonderPush {
     public static void setUserConsent(boolean value) {
         boolean hadUserConsent = hasUserConsent();
         if (hadUserConsent && !value) {
-            JSONSyncInstallationCustom.flushAll();
+            JSONSyncInstallation.flushAll();
         }
         WonderPushConfiguration.setUserConsent(value);
         boolean nowHasUserConsent = hasUserConsent();

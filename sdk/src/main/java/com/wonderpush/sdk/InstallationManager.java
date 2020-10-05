@@ -42,7 +42,9 @@ public class InstallationManager {
 
     public static JSONObject getInstallationCustomProperties() {
         try {
-            JSONObject custom = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+            JSONObject sync = JSONSyncInstallation.forCurrentUser().getSdkState();
+            JSONObject custom = sync == null ? null : sync.optJSONObject("custom");
+            if (custom == null) return new JSONObject();
             Iterator<String> it = custom.keys();
             while (it.hasNext()) {
                 String key = it.next();
@@ -68,7 +70,9 @@ public class InstallationManager {
                     it.remove();
                 }
             }
-            JSONSyncInstallationCustom.forCurrentUser().put(customProperties);
+            JSONObject diff = new JSONObject();
+            diff.put("custom", customProperties);
+            JSONSyncInstallation.forCurrentUser().put(diff);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to put installation custom properties " + customProperties, ex);
         }
@@ -177,8 +181,10 @@ public class InstallationManager {
         }
         try {
             JSONObject diff = new JSONObject();
-            diff.putOpt("tags", new JSONArray(tags));
-            JSONSyncInstallationCustom.forCurrentUser().put(diff);
+            JSONObject custom = new JSONObject();
+            diff.put("custom", custom);
+            custom.putOpt("tags", new JSONArray(tags));
+            JSONSyncInstallation.forCurrentUser().put(diff);
         } catch (JSONException ex) {
             Log.e(TAG, "Failed to addTag", ex);
         }
@@ -189,8 +195,10 @@ public class InstallationManager {
         tags.removeAll(Arrays.asList(tag));
         try {
             JSONObject diff = new JSONObject();
-            diff.putOpt("tags", new JSONArray(tags));
-            JSONSyncInstallationCustom.forCurrentUser().put(diff);
+            JSONObject custom = new JSONObject();
+            diff.put("custom", custom);
+            custom.putOpt("tags", new JSONArray(tags));
+            JSONSyncInstallation.forCurrentUser().put(diff);
         } catch (JSONException ex) {
             Log.e(TAG, "Failed to addTag", ex);
         }
@@ -199,8 +207,10 @@ public class InstallationManager {
     public static synchronized void removeAllTags() {
         try {
             JSONObject diff = new JSONObject();
-            diff.putOpt("tags", JSONObject.NULL);
-            JSONSyncInstallationCustom.forCurrentUser().put(diff);
+            JSONObject custom = new JSONObject();
+            diff.put("custom", custom);
+            custom.putOpt("tags", JSONObject.NULL);
+            JSONSyncInstallation.forCurrentUser().put(diff);
         } catch (JSONException ex) {
             Log.e(TAG, "Failed to removeAllTags", ex);
         }
@@ -209,7 +219,9 @@ public class InstallationManager {
     public static synchronized Set<String> getTags() {
         JSONObject custom;
         try {
-            custom = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
+            JSONObject sync = JSONSyncInstallation.forCurrentUser().getSdkState();
+            custom = sync != null ? sync.optJSONObject("custom") : null;
+            if (custom == null) custom = new JSONObject();
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Failed to read installation custom properties", ex);
             custom = new JSONObject();
@@ -242,30 +254,17 @@ public class InstallationManager {
         return getTags().contains(tag);
     }
 
-    public static void updateInstallation(JSONObject properties, boolean overwrite) {
-        if (!WonderPush.hasUserConsent()) {
-            WonderPush.logError("Not tracking updating installation without user consent. properties=" + properties + ", overwrite=" + overwrite);
-            return;
-        }
-
-        String propertyEndpoint = "/installation";
-        ApiClient.Params parameters = new ApiClient.Params();
-        parameters.put("body", properties.toString());
-        parameters.put("overwrite", overwrite ? "true" : "false");
-        WonderPush.postEventually(propertyEndpoint, parameters);
-    }
-
     protected static void updateInstallationCoreProperties(final Context context) {
         WonderPush.safeDefer(new Runnable() {
             @Override
             public void run() {
-                JSONObject properties = new JSONObject();
+                JSONObject diff = new JSONObject();
                 try {
                     JSONObject application = new JSONObject();
                     application.put("version", getApplicationVersion());
                     application.put("sdkVersion", getSDKVersion());
                     application.put("integrator", WonderPush.getIntegrator() == null ? JSONObject.NULL : WonderPush.getIntegrator());
-                    properties.put("application", application);
+                    diff.put("application", application);
 
                     JSONObject device = new JSONObject();
                     device.put("id", WonderPush.getDeviceId());
@@ -286,28 +285,9 @@ public class InstallationManager {
                     configuration.put("currency", getLocaleCurrency());
                     device.put("configuration", configuration);
 
-                    properties.put("device", device);
+                    diff.put("device", device);
+                    JSONSyncInstallation.forCurrentUser().put(diff);
 
-                    String cachedPropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
-                    JSONObject cachedProperties = null;
-                    if (cachedPropertiesString != null) {
-                        try {
-                            cachedProperties = new JSONObject(cachedPropertiesString);
-                        } catch (JSONException ex) {
-                            Log.e(TAG, "Unexpected error while parsing cached core properties", ex);
-                            Log.e(TAG, "Input was: " + cachedPropertiesString);
-                        }
-                    }
-                    String cachedPropertiesAccessToken = WonderPushConfiguration.getCachedInstallationCorePropertiesAccessToken();
-                    if (!JSONUtil.equals(properties, cachedProperties)
-                            || cachedPropertiesAccessToken == null && WonderPushConfiguration.getAccessToken() != null
-                            || cachedPropertiesAccessToken != null && !cachedPropertiesAccessToken.equals(WonderPushConfiguration.getAccessToken())
-                            ) {
-                        WonderPushConfiguration.setCachedInstallationCorePropertiesDate(System.currentTimeMillis());
-                        WonderPushConfiguration.setCachedInstallationCoreProperties(properties.toString());
-                        WonderPushConfiguration.setCachedInstallationCorePropertiesAccessToken(WonderPushConfiguration.getAccessToken());
-                        updateInstallation(properties, false);
-                    }
                 } catch (JSONException ex) {
                     Log.e(TAG, "Unexpected error while updating installation core properties", ex);
                 } catch (Exception ex) {

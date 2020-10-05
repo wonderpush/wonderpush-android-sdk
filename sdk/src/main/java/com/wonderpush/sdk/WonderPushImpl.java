@@ -133,14 +133,15 @@ class WonderPushImpl implements IWonderPush {
                 return;
             }
 
-            JSONObject properties = new JSONObject();
+            JSONObject diff = new JSONObject();
             JSONObject preferences = new JSONObject();
-            properties.put("preferences", preferences);
+            diff.put("preferences", preferences);
             preferences.put("subscriptionStatus", value);
             preferences.put("subscribedToNotifications", status);
             preferences.put("osNotificationsVisible", osAreNotificationsEnabled);
             preferences.put("disabledAndroidChannels", new JSONArray(disabledChannels));
-            InstallationManager.updateInstallation(properties, false);
+            JSONSyncInstallation.forCurrentUser().put(diff);
+
             WonderPushConfiguration.setNotificationEnabled(status);
             WonderPushConfiguration.setCachedOsAreNotificationsEnabled(osAreNotificationsEnabled);
             WonderPushConfiguration.setCachedOsAreNotificationsEnabledDate(TimeSync.getTime());

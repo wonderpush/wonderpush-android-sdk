@@ -3,6 +3,8 @@ package com.wonderpush.sdk;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Map;
+
 class JSONSync {
 
     interface ResponseHandler {
@@ -14,10 +16,10 @@ class JSONSync {
         void save(JSONObject state);
         void schedulePatchCall();
         void serverPatchInstallation(JSONObject diff, ResponseHandler handler);
+        void upgrade(JSONObject upgradeMeta, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator);
     }
 
-    private static final String SAVED_STATE_FIELD__SYNC_STATE_VERSION = "_syncStateVersion";
-    private static final int SAVED_STATE_STATE_VERSION_1 = 1;
+    private static final String SAVED_STATE_FIELD_UPGRADE_META = "upgradeMeta";
     private static final String SAVED_STATE_FIELD_SDK_STATE = "sdkState";
     private static final String SAVED_STATE_FIELD_SERVER_STATE = "serverState";
     private static final String SAVED_STATE_FIELD_PUT_ACCUMULATOR = "putAccumulator";
@@ -32,11 +34,12 @@ class JSONSync {
     private JSONObject putAccumulator;
     private JSONObject inflightDiff;
     private JSONObject inflightPutAccumulator;
+    private JSONObject upgradeMeta;
     private boolean scheduledPatchCall;
     private boolean inflightPatchCall;
 
     JSONSync(Callbacks callbacks) {
-        this(callbacks, null, null, null, null, null, false, false);
+        this(callbacks, null, null, null, null, null, null, false, false);
     }
 
     private static JSONObject _initDiffServerAndSdkState(JSONObject serverState, JSONObject sdkState) {
@@ -58,12 +61,11 @@ class JSONSync {
     }
 
     static JSONSync fromSdkStateAndServerState(Callbacks callbacks, JSONObject sdkState, JSONObject serverState) {
-        return new JSONSync(callbacks, sdkState, serverState, _initDiffServerAndSdkState(serverState, sdkState), null, null, true /*schedule a patch call*/, false);
+        return new JSONSync(callbacks, sdkState, serverState, _initDiffServerAndSdkState(serverState, sdkState), null, null, null, true /*schedule a patch call*/, false);
     }
 
     static JSONSync fromSavedState(Callbacks callbacks, JSONObject savedState) throws JSONException {
         if (savedState == null) savedState = new JSONObject();
-        int version = savedState.has(SAVED_STATE_FIELD_SDK_STATE) ? savedState.getInt(SAVED_STATE_FIELD__SYNC_STATE_VERSION) : SAVED_STATE_STATE_VERSION_1;
         return new JSONSync(
                 callbacks,
                 savedState.has(SAVED_STATE_FIELD_SDK_STATE)                ? savedState.getJSONObject(SAVED_STATE_FIELD_SDK_STATE)                : null,
@@ -71,17 +73,19 @@ class JSONSync {
                 savedState.has(SAVED_STATE_FIELD_PUT_ACCUMULATOR)          ? savedState.getJSONObject(SAVED_STATE_FIELD_PUT_ACCUMULATOR)          : null,
                 savedState.has(SAVED_STATE_FIELD_INFLIGHT_DIFF)            ? savedState.getJSONObject(SAVED_STATE_FIELD_INFLIGHT_DIFF)            : null,
                 savedState.has(SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR) ? savedState.getJSONObject(SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR) : null,
+                savedState.has(SAVED_STATE_FIELD_UPGRADE_META)             ? savedState.getJSONObject(SAVED_STATE_FIELD_UPGRADE_META)             : null,
                 savedState.has(SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL)     ? savedState.getBoolean(SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL)        : true,
                 savedState.has(SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL)      ? savedState.getBoolean(SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL)         : false
         );
     }
 
-    JSONSync(Callbacks callbacks, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator, boolean scheduledPatchCall, boolean inflightPatchCall) {
+    JSONSync(Callbacks callbacks, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator, JSONObject upgradeMeta, boolean scheduledPatchCall, boolean inflightPatchCall) {
         if (callbacks == null) throw new NullPointerException("callbacks cannot be null");
         if (sdkState == null) sdkState = new JSONObject();
         if (serverState == null) serverState = new JSONObject();
         if (putAccumulator == null) putAccumulator = new JSONObject();
         if (inflightDiff == null) inflightDiff = new JSONObject();
+        if (upgradeMeta == null) upgradeMeta = new JSONObject();
         if (inflightPutAccumulator == null) inflightPutAccumulator = new JSONObject();
 
         try {
@@ -101,8 +105,11 @@ class JSONSync {
         this.putAccumulator = putAccumulator;
         this.inflightDiff = inflightDiff;
         this.inflightPutAccumulator = inflightPutAccumulator;
+        this.upgradeMeta = upgradeMeta;
         this.scheduledPatchCall = scheduledPatchCall;
         this.inflightPatchCall = inflightPatchCall;
+
+        applyUpgrade();
 
         if (this.inflightPatchCall) {
             callPatch_onFailure();
@@ -116,7 +123,7 @@ class JSONSync {
     private synchronized void save() {
         try {
             JSONObject state = new JSONObject();
-            state.put(SAVED_STATE_FIELD__SYNC_STATE_VERSION,      SAVED_STATE_STATE_VERSION_1);
+            state.put(SAVED_STATE_FIELD_UPGRADE_META,             upgradeMeta);
             state.put(SAVED_STATE_FIELD_SDK_STATE,                sdkState);
             state.put(SAVED_STATE_FIELD_SERVER_STATE,             serverState);
             state.put(SAVED_STATE_FIELD_PUT_ACCUMULATOR,          putAccumulator);
@@ -128,6 +135,11 @@ class JSONSync {
         } catch (JSONException ex) {
             WonderPush.logError("Failed to build state object for saving installation custom for " + this, ex);
         }
+    }
+
+    private synchronized void applyUpgrade() {
+        if (callbacks == null) return;
+        callbacks.upgrade(upgradeMeta, sdkState, serverState,putAccumulator, inflightDiff, inflightPutAccumulator);
     }
 
     public synchronized void put(JSONObject diff) throws JSONException {
@@ -266,6 +278,7 @@ class JSONSync {
                 + ",putAccumulator:" + putAccumulator
                 + ",inflightDiff:" + inflightDiff
                 + ",inflightPutAccumulator:" + inflightPutAccumulator
+                + ",upgradeMeta:" + upgradeMeta
                 + ",scheduledPatchCall:" + scheduledPatchCall
                 + ",inflightPatchCall:" + inflightPatchCall
                 + "}";

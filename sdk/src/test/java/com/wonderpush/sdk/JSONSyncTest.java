@@ -28,6 +28,11 @@ public class JSONSyncTest {
         public void serverPatchInstallation(JSONObject diff, JSONSync.ResponseHandler handler) {
             server.serverPatchInstallation(diff, handler);
         }
+
+        @Override
+        public void upgrade(JSONObject upgradeMeta, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator) {
+
+        }
     }
 
     private static abstract class MockServer {

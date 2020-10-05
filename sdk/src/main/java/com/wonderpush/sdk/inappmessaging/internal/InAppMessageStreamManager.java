@@ -15,7 +15,7 @@
 package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.google.android.gms.tasks.Task;
-import com.wonderpush.sdk.JSONSyncInstallationCustom;
+import com.wonderpush.sdk.JSONSyncInstallation;
 import com.wonderpush.sdk.WonderPushConfiguration;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
@@ -283,14 +283,7 @@ public class InAppMessageStreamManager {
           List<Campaign.ThickContent> messages) {
     Segmenter.Data segmenterData = null;
     try {
-      // Get custom props
-      JSONObject customProperties = JSONSyncInstallationCustom.forCurrentUser().getSdkState();
-      // Get core props
-      String installationCorePropertiesString = WonderPushConfiguration.getCachedInstallationCoreProperties();
-
-      // Build the installation JSONObject
-      JSONObject installation = installationCorePropertiesString == null ? new JSONObject() : new JSONObject(installationCorePropertiesString);
-      if (customProperties != null) installation.put("custom", customProperties);
+      JSONObject installation = JSONSyncInstallation.forCurrentUser().getSdkState();
 
       // Tracked events
       List<JSONObject> trackedEvents = WonderPushConfiguration.getTrackedEvents();
