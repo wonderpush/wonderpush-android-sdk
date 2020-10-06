@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * A serializable object that represents a request to the WonderPush API.
  */
 class Request {
+    static class ClientDisabledException extends Exception {}
+
     private static final String TAG = ApiClient.class.getSimpleName();
 
     String mUserId;

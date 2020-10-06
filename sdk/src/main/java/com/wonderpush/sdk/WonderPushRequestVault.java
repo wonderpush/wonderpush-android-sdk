@@ -124,10 +124,19 @@ class WonderPushRequestVault {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 WonderPush.logDebug("RequestVault: failure", e);
-                                // Post back to job queue if this is a network error
+
+                                // Post back to job queue if this is handled
+                                boolean handle = false;
+                                // handle network errors
                                 if (e instanceof IOException) { // NoHttpResponseException, UnknownHostException, SocketException) {
-                                    WonderPush.logDebug("RequestVault: reposting job", e);
                                     backoff();
+                                    handle = true;
+                                }
+                                if (e instanceof Request.ClientDisabledException) {
+                                    handle = true;
+                                }
+                                if (handle) {
+                                    WonderPush.logDebug("RequestVault: reposting job", e);
                                     put(request, sWait);
                                 } else {
                                     WonderPush.logDebug("RequestVault: discarding job", e);

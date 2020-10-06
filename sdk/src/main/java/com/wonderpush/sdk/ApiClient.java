@@ -36,6 +36,7 @@ class ApiClient {
     private static final List<ResponseHandler> sPendingHandlers = new ArrayList<>();
 
     private static final OkHttpClient sClient = new OkHttpClient();
+    private static boolean sDisabled = false;
 
     /**
      * A request
@@ -399,6 +400,10 @@ class ApiClient {
                         break;
                 }
 
+                if (isDisabled()) {
+                    handler.onFailure(new Request.ClientDisabledException(), new Response("Client disabled"));
+                    return;
+                }
                 if (requestBuilder != null) {
                     sClient.newCall(requestBuilder.build()).enqueue(jsonHandler);
                 }
@@ -575,4 +580,11 @@ class ApiClient {
         return handler;
     }
 
+    static void setDisabled(boolean disabled) {
+        sDisabled = disabled;
+    }
+
+    static boolean isDisabled() {
+        return sDisabled;
+    }
 }

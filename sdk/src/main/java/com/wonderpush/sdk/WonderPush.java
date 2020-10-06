@@ -1475,6 +1475,7 @@ public class WonderPush {
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallation.setDisabled(true);
+                ApiClient.setDisabled(true);
                 JSONSyncInstallation.initialize();
                 WonderPushRequestVault.initialize();
                 initializeInAppMessaging(context);
@@ -1487,6 +1488,7 @@ public class WonderPush {
                         if (config == null) return;
                         JSONSyncInstallation.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_JSON_SYNC_KEY, false));
                         if (!JSONSyncInstallation.isDisabled()) JSONSyncInstallation.flushAll();
+                        ApiClient.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
                     }
                 };
                 // Read the config right away
