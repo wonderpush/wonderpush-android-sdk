@@ -1451,6 +1451,7 @@ public class WonderPush {
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallation.initialize();
                 WonderPushRequestVault.initialize();
+                initializeInAppMessaging(context);
 
                 initForNewUser(sBeforeInitializationUserIdSet
                         ? sBeforeInitializationUserId
@@ -1713,8 +1714,6 @@ public class WonderPush {
                 WonderPush.initialize(context, clientId, clientSecret);
             }
         }
-
-        if (isInitialized()) initializeInAppMessaging(context);
 
         // Warn the user once if not initialization means has been found
         if (!isInitialized()) {
