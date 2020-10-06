@@ -63,6 +63,7 @@ public class WonderPush {
     private static Context sApplicationContext;
     protected static Application sApplication;
 
+    private static WonderPushRequestVault sMeasurementsApiRequestVault;
     private static Looper sLooper;
     private static Handler sDeferHandler;
     protected static final ScheduledExecutorService sScheduledExecutor;
@@ -558,6 +559,31 @@ public class WonderPush {
     protected static void postEventually(String resource,
             Request.Params params) {
         ApiClient.postEventually(resource, params);
+    }
+
+    private static WonderPushRequestVault getMeasurementsApiRequestVault() {
+        if (null == sMeasurementsApiRequestVault) {
+            sMeasurementsApiRequestVault = new WonderPushRequestVault(WonderPushJobQueue.getMeasurementsApiQueue(), new WonderPushRequestVault.RequestExecutor() {
+                @Override
+                public void execute(Request request) {
+                    MeasurementsApiClient.execute(request);
+                }
+            });
+        }
+        return sMeasurementsApiRequestVault;
+    }
+
+    /**
+     * A POST request that is guaranteed to be executed when a network
+     * connection is present, surviving application reboot. The responseHandler
+     * will be called only if the network is present when the request is first run.
+     *
+     * @param resource
+     * @param params
+     */
+    protected static void postEventuallyWithMeasurementsApiClient(String resource, Request.Params params) {
+        final Request request = new Request(WonderPushConfiguration.getUserId(), ApiClient.HttpMethod.POST, resource, params, null);
+        getMeasurementsApiRequestVault().put(request, 0);
     }
 
     /**
@@ -1207,7 +1233,7 @@ public class WonderPush {
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
         if (useMeasurementsApi) {
-            MeasurementsApiClient.post("/events", event, null);
+            postEventuallyWithMeasurementsApiClient("/events", parameters);
         } else {
             postEventually(eventEndpoint, parameters);
         }

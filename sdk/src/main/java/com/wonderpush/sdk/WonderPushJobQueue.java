@@ -36,6 +36,7 @@ class WonderPushJobQueue {
     }
 
     private static final WonderPushJobQueue sDefaultQueue = new WonderPushJobQueue("DefaultWonderPushJobQueue", DEFAULT_CAPACITY);
+    private static final WonderPushJobQueue sMeasurementsApiQueue = new WonderPushJobQueue("WonderPushMeasurementsApiJobQueue", DEFAULT_CAPACITY);
 
     /**
      * Returns the default job queue.
@@ -44,6 +45,9 @@ class WonderPushJobQueue {
         return sDefaultQueue;
     }
 
+    protected static WonderPushJobQueue getMeasurementsApiQueue() {
+        return sMeasurementsApiQueue;
+    }
     private final String mQueueName;
     private final PriorityBlockingQueue<Job> mQueue;
 

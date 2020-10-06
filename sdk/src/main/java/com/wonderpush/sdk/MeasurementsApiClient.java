@@ -11,25 +11,20 @@ import java.io.IOException;
 public class MeasurementsApiClient {
     private static final String TAG = MeasurementsApiClient.class.getSimpleName();
     private static final okhttp3.OkHttpClient sClient = new okhttp3.OkHttpClient();
-    public interface Handler {
-        void onComplete(@Nullable Object result, int status, @Nullable Throwable error);
-    }
+    public static void execute(Request request) {
 
-    public static void post(String path, JSONObject bodyParam, Handler handler) {
-
-        ApiClient.HttpMethod method = ApiClient.HttpMethod.POST;
-        String resource = path.startsWith("/") ? path : "/" + path;
+        ApiClient.HttpMethod method = request.getMethod();
+        String resource = request.getResource();
         String url = String.format("%s%s", WonderPush.MEASUREMENTS_API_URL, resource);
         String contentType = "application/x-www-form-urlencoded";
-        com.wonderpush.sdk.Request.Params params = new com.wonderpush.sdk.Request.Params();
-        params.add("body", bodyParam.toString());
+        final Request.Params params = request.getParams() != null ? request.getParams() : new Request.Params();
         params.add("clientId", WonderPush.getClientId());
         params.add("devicePlatform", "Android");
         if (WonderPushConfiguration.getUserId() != null) {
             params.add("userId", WonderPushConfiguration.getUserId());
         }
         params.add("deviceId", WonderPushConfiguration.getDeviceId());
-        Request.BasicNameValuePair authorizationHeader = com.wonderpush.sdk.Request.getAuthorizationHeader(method, Uri.parse(url), params);
+        Request.BasicNameValuePair authorizationHeader = Request.getAuthorizationHeader(method, Uri.parse(url), params);
         WonderPush.safeDefer(() -> {
             okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
                     .url(url)
@@ -42,8 +37,10 @@ public class MeasurementsApiClient {
                     .enqueue(new okhttp3.Callback() {
                         @Override
                         public void onFailure(okhttp3.Call call, IOException e) {
-                            Log.w(TAG, String.format("Request the measurements API %s failed", path), e);
-                            if (handler != null) handler.onComplete(null, Integer.MAX_VALUE, e);
+                            Log.w(TAG, String.format("Request the measurements API %s failed", resource), e);
+                            if (request.getHandler() != null) {
+                                request.getHandler().onFailure(e, null);
+                            }
                         }
 
                         @Override
@@ -55,11 +52,15 @@ public class MeasurementsApiClient {
                                     responseJson = new JSONObject(responseString);
                                 }
                             } catch (JSONException e) {
-                                if (handler != null) handler.onComplete(null, response.code(), e);
+                                if (request.getHandler() != null) {
+                                    request.getHandler().onFailure(e, null);
+                                }
                                 return;
                             }
-                            Log.d(TAG, String.format("Request the measurements API %s complete. Payload: %s", path, bodyParam.toString()));
-                            if (handler != null) handler.onComplete(responseJson, response.code(), null);
+                            Log.d(TAG, String.format("Request the measurements API %s complete. Payload: %s", resource, params.toString()));
+                            if (request.getHandler() != null) {
+                                request.getHandler().onSuccess(response.code(), new Response(responseJson));
+                            }
                         }
                     });
 

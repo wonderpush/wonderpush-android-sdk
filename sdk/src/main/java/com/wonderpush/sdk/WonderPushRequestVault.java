@@ -11,6 +11,9 @@ import java.util.concurrent.Semaphore;
  * is currently offline and the app terminated.
  */
 class WonderPushRequestVault {
+    interface RequestExecutor {
+        void execute(Request request);
+    }
 
     private static final String TAG = WonderPush.TAG;
 
@@ -32,15 +35,22 @@ class WonderPushRequestVault {
      */
     protected static void initialize() {
         if (null == sDefaultVault) {
-            sDefaultVault = new WonderPushRequestVault(WonderPushJobQueue.getDefaultQueue());
+            sDefaultVault = new WonderPushRequestVault(WonderPushJobQueue.getDefaultQueue(), new RequestExecutor() {
+                @Override
+                public void execute(Request request) {
+                    ApiClient.requestAuthenticated(request);
+                }
+            });
         }
     }
 
     private final WonderPushJobQueue mJobQueue;
     private final Thread mThread;
+    private final RequestExecutor mRequestExecutor;
 
-    WonderPushRequestVault(WonderPushJobQueue jobQueue) {
+    WonderPushRequestVault(WonderPushJobQueue jobQueue, RequestExecutor requestExecutor) {
         mJobQueue = jobQueue;
+        mRequestExecutor = requestExecutor;
         mThread = new Thread(getRunnable());
         mThread.start();
         WonderPush.addUserConsentListener(new WonderPush.UserConsentListener() {
@@ -135,7 +145,7 @@ class WonderPushRequestVault {
                             // This last resort check is not expected to catch any case but is here for strictness
                             request.getHandler().onFailure(new RuntimeException("Missing user consent"), new Response("Missing user consent"));
                         } else {
-                            ApiClient.requestAuthenticated(request);
+                            mRequestExecutor.execute(request);
                         }
                     } catch (InterruptedException ignored) {
                         if (acquired) {
