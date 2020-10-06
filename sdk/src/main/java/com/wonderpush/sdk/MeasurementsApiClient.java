@@ -5,14 +5,17 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 public class MeasurementsApiClient {
     private static final String TAG = MeasurementsApiClient.class.getSimpleName();
     private static final okhttp3.OkHttpClient sClient = new okhttp3.OkHttpClient();
+    private static boolean disabled;
     public static void execute(Request request) {
-
+        if (isDisabled()) {
+            if (request.getHandler() != null) request.getHandler().onFailure(new Request.ClientDisabledException(), new Response("Client disabled"));
+            return;
+        }
         ApiClient.HttpMethod method = request.getMethod();
         String resource = request.getResource();
         String url = String.format("%s%s", WonderPush.MEASUREMENTS_API_URL, resource);
@@ -65,5 +68,13 @@ public class MeasurementsApiClient {
                     });
 
         }, 1);
+    }
+
+    public static boolean isDisabled() {
+        return disabled;
+    }
+
+    public static void setDisabled(boolean disabled) {
+        MeasurementsApiClient.disabled = disabled;
     }
 }
