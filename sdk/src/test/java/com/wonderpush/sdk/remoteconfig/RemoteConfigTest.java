@@ -821,10 +821,10 @@ public class RemoteConfigTest {
     }
 
     /**
-     * Checks that when a particular config entry is present, no new configuration will ever be fetched
+     * Checks that when a particular config entry is present, no new configuration will be fetched if we declare a new version
      */
     @Test
-    public void testDisableFetch() throws JSONException {
+    public void testDisableFetchNewVersion() throws JSONException {
 
         // Fetch as often as we like
         manager.minimumConfigAge = 0;
@@ -849,5 +849,42 @@ public class RemoteConfigTest {
             assertSame(storedConfig, config);
             assertNull(fetcher.lastRequestedDate);
         });
+    }
+
+    /**
+     * Checks that when a particular config entry is present, no new configuration will be fetched even after it expires
+     */
+    @Test
+    public void testDisableFetchExpired() throws JSONException, ExecutionException, InterruptedException {
+
+        // Fetch as often as we like
+        manager.minimumConfigAge = 0;
+        manager.minimumFetchInterval = 0;
+        manager.maximumConfigAge = 100;
+
+        // A config has already been fetched, that forbids further fetching via the DISABLE_FETCH_KEY
+        JSONObject data = new JSONObject();
+        data.put(Constants.DISABLE_FETCH_KEY, true);
+        final RemoteConfig storedConfig = RemoteConfig.with(data, "1", new Date(), 100);
+        storage.storedConfig = storedConfig;
+
+        manager.read((RemoteConfig config, Throwable error) -> {
+            assertSame(storedConfig, config);
+            assertNull(fetcher.lastRequestedDate);
+        });
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        setTimeout(() -> {
+            // No fetch should have happened
+            manager.read((RemoteConfig config, Throwable error) -> {
+                assertSame(storedConfig, config);
+                assertNull(fetcher.lastRequestedDate);
+                future.complete(null);
+            });
+
+        }, 150);
+
+        future.get();
     }
 }
