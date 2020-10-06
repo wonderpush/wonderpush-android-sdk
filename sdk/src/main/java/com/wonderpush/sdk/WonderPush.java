@@ -1490,7 +1490,7 @@ public class WonderPush {
                     }
                 };
                 // Read the config right away
-                sRemoteConfigManager.read(remoteConfigHandler);
+                ensureConfigurationFetched(remoteConfigHandler, 10000);
                 // Call the handler when the config changes
                 LocalBroadcastManager.getInstance(context).registerReceiver(new BroadcastReceiver() {
                     @Override
@@ -1536,6 +1536,21 @@ public class WonderPush {
         }
     }
 
+    private static void ensureConfigurationFetched(final RemoteConfigHandler handler, long delay) {
+        if (sRemoteConfigManager == null) return;
+        sRemoteConfigManager.read(new RemoteConfigHandler() {
+            @Override
+            public void handle(@javax.annotation.Nullable RemoteConfig config, @javax.annotation.Nullable Throwable error) {
+                if (config == null) {
+                    safeDefer(() -> {
+                        ensureConfigurationFetched(handler, delay);
+                    }, delay);
+                    return;
+                }
+                handler.handle(config, error);
+            }
+        });
+    }
     private static void initForNewUser(final String userId) {
         WonderPush.logDebug("initForNewUser(" + userId + ")");
         sIsReady = false;
