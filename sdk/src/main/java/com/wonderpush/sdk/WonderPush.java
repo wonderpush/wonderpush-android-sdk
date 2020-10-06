@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
@@ -33,6 +34,8 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.wonderpush.sdk.remoteconfig.Constants.REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY;
 
 /**
  * Main class of the WonderPush SDK.
@@ -69,6 +72,9 @@ public class WonderPush {
     protected static final ScheduledExecutorService sScheduledExecutor;
     private static PresenceManager sPresenceManager;
     private static RemoteConfigManager sRemoteConfigManager;
+    @Nullable
+    private static BlackWhiteList sEventsBlackWhiteList = null;
+
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
         new Thread(new Runnable() {
@@ -1183,6 +1189,11 @@ public class WonderPush {
             return;
         }
 
+        if (sEventsBlackWhiteList != null && !sEventsBlackWhiteList.allow(type)) {
+            logError("Not tracking event forbidden by config. type=" + type + ", data=" + eventData + " custom=" + customData);
+            return;
+        }
+
         String eventEndpoint = "/events/";
 
         JSONObject event = new JSONObject();
@@ -1491,6 +1502,7 @@ public class WonderPush {
                         if (!JSONSyncInstallation.isDisabled()) JSONSyncInstallation.flushAll();
                         ApiClient.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
                         MeasurementsApiClient.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY, false));
+                        updateEventsBlackWhiteList(config);
                     }
                 };
                 // Read the config right away
@@ -2283,5 +2295,18 @@ public class WonderPush {
 
     static RemoteConfigManager getRemoteConfigManager() {
         return sRemoteConfigManager;
+    }
+
+    private static void updateEventsBlackWhiteList(@NonNull RemoteConfig config) {
+        sEventsBlackWhiteList = null;
+        JSONArray blackWhiteListRules = config.getData().optJSONArray(REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY);
+        if (blackWhiteListRules != null) {
+            List<String> rules = new ArrayList<>();
+            for (int i = 0; i < blackWhiteListRules.length(); i++) {
+                String rule = blackWhiteListRules.optString(i);
+                if (rule != null) rules.add(rule);
+            }
+            sEventsBlackWhiteList = new BlackWhiteList(rules);
+        }
     }
 }
