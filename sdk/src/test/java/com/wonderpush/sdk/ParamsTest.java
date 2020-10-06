@@ -7,7 +7,7 @@ public class ParamsTest {
 
     @Test
     public void testRequestParams() {
-        ApiClient.Params params = new ApiClient.Params();
+        Request.Params params = new Request.Params();
 
         // Does putting twice overrides previous value?
         params.put("foo", "bar");
@@ -19,7 +19,7 @@ public class ParamsTest {
         assertEquals("", params.getURLEncodedString());
 
         // Does adding twice overrides previous values?
-        params = new ApiClient.Params();
+        params = new Request.Params();
         params.add("b", "a");
         params.add("b", "b");
         params.add("a", "a");
@@ -45,14 +45,14 @@ public class ParamsTest {
 
 
         // URL encoding
-        params = new ApiClient.Params();
+        params = new Request.Params();
         params.put("foo bar", "baz toto");
         assertEquals("foo+bar=baz+toto", params.getURLEncodedString());
         assertEquals("foo bar", params.getParamsList().get(0).getName());
         assertEquals("baz toto", params.getParamsList().get(0).getValue());
 
         // Ordering
-        params = new ApiClient.Params();
+        params = new Request.Params();
         params.put("b", "b");
         params.put("c", "c");
         params.put("a", "a");
@@ -63,20 +63,20 @@ public class ParamsTest {
         assertEquals("a", params.getParamsList().get(0).getName());
 
         // Null value
-        params = new ApiClient.Params();
+        params = new Request.Params();
         params.put("a", "a");
         params.put("a", (String)null); // ignored
         assertEquals("a=a", params.getURLEncodedString());
         assertEquals(1, params.getParamsList().size());
 
         // Null key
-        params = new ApiClient.Params();
+        params = new Request.Params();
         params.put(null, "a");
         assertEquals("", params.getURLEncodedString());
         assertEquals(0, params.getParamsList().size());
 
         // Single value constructor
-        params = new ApiClient.Params("b", "b");
+        params = new Request.Params("b", "b");
         params.put("b", "a");
         assertEquals("b=a", params.getURLEncodedString());
 

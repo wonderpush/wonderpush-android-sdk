@@ -129,12 +129,12 @@ class QueryStringParser {
     /**
      * Create a WonderPush.RequestParams from this query string
      */
-    public static ApiClient.Params getRequestParams(String queryString) {
+    public static Request.Params getRequestParams(String queryString) {
         if (null == queryString)
             return null;
 
         QueryStringParser parser = new QueryStringParser(queryString);
-        ApiClient.Params result = new ApiClient.Params();
+        Request.Params result = new Request.Params();
         while (parser.next()) {
             result.put(parser.getName(), parser.getValue());
         }

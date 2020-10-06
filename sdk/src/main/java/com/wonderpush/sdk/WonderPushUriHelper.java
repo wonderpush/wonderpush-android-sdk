@@ -76,10 +76,10 @@ class WonderPushUriHelper {
     }
 
     /**
-     * Extracts the query parameters as {@link ApiClient.Params}
+     * Extracts the query parameters as {@link Request.Params}
      */
-    protected static ApiClient.Params getParams(Uri uri) {
-        ApiClient.Params params = new ApiClient.Params();
+    protected static Request.Params getParams(Uri uri) {
+        Request.Params params = new Request.Params();
         Set<String> keys = getQueryParameterNames(uri);
         for (String key : keys) {
             String value = uri.getQueryParameter(key);

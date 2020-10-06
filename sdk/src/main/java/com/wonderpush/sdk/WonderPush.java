@@ -524,7 +524,7 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void get(String resource, ApiClient.Params params,
+    protected static void get(String resource, Request.Params params,
             ResponseHandler responseHandler) {
         ApiClient.get(resource, params, responseHandler);
     }
@@ -539,7 +539,7 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void post(String resource, ApiClient.Params params,
+    protected static void post(String resource, Request.Params params,
             ResponseHandler responseHandler) {
         ApiClient.post(resource, params, responseHandler);
     }
@@ -556,7 +556,7 @@ public class WonderPush {
      *            guaranteed to survive a network error or device reboot.
      */
     protected static void postEventually(String resource,
-            ApiClient.Params params) {
+            Request.Params params) {
         ApiClient.postEventually(resource, params);
     }
 
@@ -570,7 +570,7 @@ public class WonderPush {
      * @param responseHandler
      *            An AsyncHttpClient response handler.
      */
-    protected static void put(String resource, ApiClient.Params params,
+    protected static void put(String resource, Request.Params params,
             ResponseHandler responseHandler) {
         ApiClient.put(resource, params, responseHandler);
     }
@@ -1192,7 +1192,7 @@ public class WonderPush {
             WonderPush.logError("Error building event object body", ex);
         }
 
-        ApiClient.Params parameters = new ApiClient.Params();
+        Request.Params parameters = new Request.Params();
         parameters.put("body", event.toString());
 
         // Remember

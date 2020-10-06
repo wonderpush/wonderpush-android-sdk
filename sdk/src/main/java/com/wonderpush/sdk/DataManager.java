@@ -14,7 +14,6 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -135,7 +134,7 @@ class DataManager {
                     }
                 });
                 // Step 4 - Events. Loops back to processNextUser
-                final AtomicReference<ApiClient.Params> step4RequestParams = new AtomicReference<>(new ApiClient.Params("limit", "1000"));
+                final AtomicReference<Request.Params> step4RequestParams = new AtomicReference<>(new Request.Params("limit", "1000"));
                 step4EventPage.set(new Runnable() {
                     @Override
                     public void run() {
@@ -160,7 +159,7 @@ class DataManager {
                                     WonderPush.safeDefer(processNextUser.get(), 0);
                                     return;
                                 }
-                                ApiClient.Params nextParams = new ApiClient.Params();
+                                Request.Params nextParams = new Request.Params();
                                 for (String key : next.getQueryParameterNames()) {
                                     nextParams.put(key, next.getQueryParameter(key));
                                 }
@@ -264,7 +263,7 @@ class DataManager {
         }
 
         if (userId != null) {
-            ApiClient.requestForUser(userId, ApiClient.HttpMethod.PUT, "/user", new ApiClient.Params("body", "{\"custom\":null}"), null);
+            ApiClient.requestForUser(userId, ApiClient.HttpMethod.PUT, "/user", new Request.Params("body", "{\"custom\":null}"), null);
         }
     }
 

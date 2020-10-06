@@ -265,7 +265,7 @@ public class JSONSyncInstallation {
             return;
         }
         WonderPush.logDebug("Sending installation custom diff " + diff + " for user " + userId);
-        ApiClient.Params parameters = new ApiClient.Params();
+        Request.Params parameters = new Request.Params();
         parameters.put("body", diff.toString());
         ApiClient.requestForUser(userId, ApiClient.HttpMethod.PATCH, "/installation", parameters, new ResponseHandler() {
             @Override
