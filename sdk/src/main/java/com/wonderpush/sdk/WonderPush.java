@@ -68,7 +68,7 @@ public class WonderPush {
     private static Handler sDeferHandler;
     protected static final ScheduledExecutorService sScheduledExecutor;
     private static PresenceManager sPresenceManager;
-    static RemoteConfigManager sRemoteConfigManager;
+    private static RemoteConfigManager sRemoteConfigManager;
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
         new Thread(new Runnable() {
@@ -2281,4 +2281,7 @@ public class WonderPush {
         return sPresenceManager;
     }
 
+    static RemoteConfigManager getRemoteConfigManager() {
+        return sRemoteConfigManager;
+    }
 }
