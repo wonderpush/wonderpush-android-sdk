@@ -1989,6 +1989,11 @@ public class WonderPush {
                     || userId != null && userId.equals(oldUserId)) {
                 // User id is the same as before, nothing needs to be done
             } else {
+                // Note the server will remove the push token from the current installation
+                // once we set it to the new installation
+                JSONObject diff = new JSONObject("{\"pushToken\": {\"data\": null}}");
+                JSONSyncInstallation.forCurrentUser().receiveDiff(diff);
+
                 // The user id changed, we must reset the access token
                 initForNewUser(userId);
             }
