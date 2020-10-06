@@ -24,6 +24,7 @@ public class JSONSyncInstallation {
     private final String userId;
     private final JSONSync sync;
     private long firstDelayedWriteDate;
+    private static boolean disabled = false;
 
     private static ScheduledFuture<Void> scheduledPatchCallDelayedTask;
 
@@ -154,6 +155,14 @@ public class JSONSyncInstallation {
         }
     }
 
+    public static void setDisabled(boolean disabled) {
+        JSONSyncInstallation.disabled = disabled;
+    }
+
+    public static boolean isDisabled() {
+        return disabled;
+    }
+
     private JSONSyncInstallation(String userId, JSONObject sdkState, JSONObject serverState) {
         if (userId != null && userId.length() == 0) userId = null;
         this.userId = userId;
@@ -247,6 +256,11 @@ public class JSONSyncInstallation {
     private synchronized void _serverPatchInstallation(final JSONObject diff, final JSONSync.ResponseHandler handler) {
         if (!WonderPush.hasUserConsent()) {
             WonderPush.logDebug("Need consent, not sending installation custom diff " + diff + " for user " + userId);
+            handler.onFailure();
+            return;
+        }
+        if (disabled) {
+            WonderPush.logDebug("JsonSync PATCH calls disabled");
             handler.onFailure();
             return;
         }
