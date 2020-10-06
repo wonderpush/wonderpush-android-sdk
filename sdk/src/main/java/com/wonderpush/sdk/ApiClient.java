@@ -339,8 +339,8 @@ class ApiClient {
                     private void declareConfigVersion(JSONObject data) {
                         if (data == null || !data.has("_configVersion") || data.isNull("_configVersion")) return;
                         String version = data.optString("_configVersion", Long.toString(data.optLong("_configVersion", 0)));
-                        if (version != null && WonderPush.remoteConfigManager != null) {
-                            WonderPush.remoteConfigManager.declareVersion(version);
+                        if (version != null && WonderPush.sRemoteConfigManager != null) {
+                            WonderPush.sRemoteConfigManager.declareVersion(version);
                         }
                     }
 

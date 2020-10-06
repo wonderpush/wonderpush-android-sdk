@@ -68,7 +68,7 @@ public class WonderPush {
     private static Handler sDeferHandler;
     protected static final ScheduledExecutorService sScheduledExecutor;
     private static PresenceManager sPresenceManager;
-    static RemoteConfigManager remoteConfigManager;
+    static RemoteConfigManager sRemoteConfigManager;
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
         new Thread(new Runnable() {
@@ -1439,6 +1439,11 @@ public class WonderPush {
                 sClientId = clientId;
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
+                OkHttpRemoteConfigFetcher fetcher = new OkHttpRemoteConfigFetcher(clientId, (Runnable r, long defer) -> {
+                    WonderPush.safeDefer(r, defer);
+                });
+                SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
+                sRemoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
 
                 PushServiceManager.initialize(getApplicationContext());
                 WonderPushConfiguration.initialize(getApplicationContext());
@@ -1583,11 +1588,11 @@ public class WonderPush {
 
                 @Override
                 public void fetchInAppConfig(InAppMessaging.JSONObjectHandler handler) {
-                    if (remoteConfigManager == null) {
+                    if (sRemoteConfigManager == null) {
                         handler.handle(null, null);
                         return;
                     }
-                    remoteConfigManager.read((RemoteConfig config, Throwable error) -> {
+                    sRemoteConfigManager.read((RemoteConfig config, Throwable error) -> {
                         handler.handle(config != null ? config.getData().optJSONObject("inAppConfig") : null, error);
                     });
                 }
@@ -1710,14 +1715,6 @@ public class WonderPush {
         }
 
         if (isInitialized()) initializeInAppMessaging(context);
-
-        if (isInitialized() && remoteConfigManager == null) {
-            OkHttpRemoteConfigFetcher fetcher = new OkHttpRemoteConfigFetcher(clientId, (Runnable r, long defer) -> {
-                WonderPush.safeDefer(r, defer);
-            });
-            SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
-            remoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
-        }
 
         // Warn the user once if not initialization means has been found
         if (!isInitialized()) {
