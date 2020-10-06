@@ -8,4 +8,10 @@ public class Constants {
     public static final String EXTRA_REMOTE_CONFIG = "EXTRA_REMOTE_CONFIG";
     public static final String REMOTE_CONFIG_BASE_URL = "https://cdn.by.wonderpush.com/config/clientids/";
     public static final String REMOTE_CONFIG_SUFFIX = "-Android";
+    public static final String REMOTE_CONFIG_DISABLE_FETCH_KEY = "disableConfigFetch";
+    public static final String REMOTE_CONFIG_DISABLE_JSON_SYNC_KEY = "disableJsonSync";
+    public static final String REMOTE_CONFIG_DISABLE_API_CLIENT_KEY = "disableApiClient";
+    public static final String REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY = "disableMeasurementsApiClient";
+    public static final String REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY = "eventsBlackWhiteList";
+
 }
