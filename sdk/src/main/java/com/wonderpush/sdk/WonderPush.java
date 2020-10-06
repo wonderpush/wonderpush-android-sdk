@@ -3,8 +3,10 @@ package com.wonderpush.sdk;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -22,10 +24,7 @@ import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
 
-import com.wonderpush.sdk.remoteconfig.OkHttpRemoteConfigFetcher;
-import com.wonderpush.sdk.remoteconfig.RemoteConfig;
-import com.wonderpush.sdk.remoteconfig.RemoteConfigManager;
-import com.wonderpush.sdk.remoteconfig.SharedPreferencesRemoteConfigStorage;
+import com.wonderpush.sdk.remoteconfig.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -1449,9 +1448,34 @@ public class WonderPush {
                 WonderPushConfiguration.initialize(getApplicationContext());
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
+                JSONSyncInstallation.setDisabled(true);
                 JSONSyncInstallation.initialize();
                 WonderPushRequestVault.initialize();
                 initializeInAppMessaging(context);
+
+                // Setup a remote config handler to execute as soon as we get the config
+                // and everytime the config changes.
+                final RemoteConfigHandler remoteConfigHandler = new RemoteConfigHandler() {
+                    @Override
+                    public void handle(@javax.annotation.Nullable RemoteConfig config, @javax.annotation.Nullable Throwable error) {
+                        if (config == null) return;
+                        JSONSyncInstallation.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_JSON_SYNC_KEY, false));
+                        if (!JSONSyncInstallation.isDisabled()) JSONSyncInstallation.flushAll();
+                    }
+                };
+                // Read the config right away
+                sRemoteConfigManager.read(remoteConfigHandler);
+                // Call the handler when the config changes
+                LocalBroadcastManager.getInstance(context).registerReceiver(new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String configString = intent.getStringExtra(Constants.EXTRA_REMOTE_CONFIG);
+                        if (configString != null) {
+                            RemoteConfig config = RemoteConfig.fromString(configString);
+                            remoteConfigHandler.handle(config, null);
+                        }
+                    }
+                }, new IntentFilter(Constants.INTENT_REMOTE_CONFIG_UPDATED));
 
                 initForNewUser(sBeforeInitializationUserIdSet
                         ? sBeforeInitializationUserId
