@@ -83,10 +83,7 @@ class WonderPushRequestVault {
             @Override
             public void run() {
                 while (true) {
-                    boolean acquired = false;
                     try {
-                        sParallelCalls.acquire();
-                        acquired = true;
                         long nextJobNotBeforeRealtimeElapsed = mJobQueue.peekNextJobNotBeforeRealtimeElapsed();
                         if (!WonderPush.hasUserConsent()) {
                             // Wait indefinitely if we must wait for consent
@@ -106,19 +103,23 @@ class WonderPushRequestVault {
                             Thread.sleep(sleep);
                             continue;
                         }
+                    } catch (InterruptedException ignored) {
+                        continue;
+                    }
 
+                    try {
+                        sParallelCalls.acquire();
+                    } catch (InterruptedException ignored) {
+                        continue;
+                    }
+
+                    // If we reach this line, we've acquired the semaphore.
+                    try {
                         // This blocking call won't block because we check for a job's presence first
                         // using mJobQueue.peekNextJobNotBeforeRealtimeElapsed()
                         // and we're it's sole consumer (although not enforced by the current code design)
                         final WonderPushJobQueue.Job job = mJobQueue.nextJob();
-
-                        final Request request;
-                        try {
-                            request = new Request(job.getJobDescription());
-                        } catch (Exception e) {
-                            Log.e(TAG, "Could not restore request", e);
-                            continue;
-                        }
+                        final Request request = new Request(job.getJobDescription());
                         request.setHandler(new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
@@ -148,9 +149,10 @@ class WonderPushRequestVault {
                             mRequestExecutor.execute(request);
                         }
                     } catch (InterruptedException ignored) {
-                        if (acquired) {
-                            sParallelCalls.release();
-                        }
+                        sParallelCalls.release();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to execute job", e);
+                        sParallelCalls.release();
                     }
                 }
             }
