@@ -390,18 +390,6 @@ public class WonderPush {
      */
     public static final String INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG = "com.wonderpush.action.method.extra_arg";
 
-    static {
-        // Ensure we get an @APP_OPEN with deferred initialization
-        addUserConsentListener(new UserConsentListener() {
-            @Override
-            public void onUserConsentChanged(boolean hasUserConsent) {
-                if (hasUserConsent) {
-                    onInteraction(false);
-                }
-            }
-        });
-    }
-
     protected WonderPush() {
         throw new IllegalAccessError("You should not instantiate this class!");
     }
@@ -1525,6 +1513,17 @@ public class WonderPush {
 
                 sIsInitialized = true;
                 hasUserConsentChanged(hasUserConsent()); // make sure to set sIsInitialized=true before
+                // Ensure we get an @APP_OPEN with deferred initialization
+                if (!hasUserConsent()) {
+                    addUserConsentListener(new UserConsentListener() {
+                        @Override
+                        public void onUserConsentChanged(boolean hasUserConsent) {
+                            if (hasUserConsent) {
+                                onInteraction(false);
+                            }
+                        }
+                    });
+                }
 
                 // Permission checks
                 if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
