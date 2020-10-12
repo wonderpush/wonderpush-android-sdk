@@ -1879,7 +1879,11 @@ public class WonderPush {
                 sApiImpl = new WonderPushNoConsentImpl();
             }
             sApiImpl._activate();
-            for (UserConsentListener listener : sUserConsentListeners) {
+
+            // Iterate on a copy to let listeners de-register themselves
+            // during iteration without triggering a java.util.ConcurrentModificationException
+            Set<UserConsentListener> iterationSet = new HashSet<>(sUserConsentListeners);
+            for (UserConsentListener listener : iterationSet) {
                 try {
                     listener.onUserConsentChanged(hasUserConsent);
                 } catch (Exception ex) {
