@@ -636,7 +636,11 @@ public class WonderPush {
      *                 Using {@code null} has the same effect as calling {@link #disableGeolocation()}.
      */
     public static void setGeolocation(Location location) {
-        sLocationOverride = new AtomicReference<>(location == null ? null : new Location(location));
+        try {
+            sLocationOverride = new AtomicReference<>(location == null ? null : new Location(location));
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting geolocation", e);
+        }
     }
 
     /**
@@ -719,29 +723,33 @@ public class WonderPush {
      *               Use {@code null} to disable the override.
      */
     public static void setLocale(String locale) {
-        if (locale != null) {
-            // Validate locale against simple expected values,
-            // but accept any input as is
-            String localeUC = locale.toUpperCase();
-            if (locale.length() != 2 && locale.length() != 5) {
-                Log.w(TAG, "The given locale \"" + locale + "\" is not of the form xx-XX of RFC 1766");
-            } else if (!(
-                    localeUC.charAt(0) >= 'A' && localeUC.charAt(0) <= 'Z'
-                    && localeUC.charAt(1) >= 'A' && localeUC.charAt(1) <= 'Z'
-                    && (locale.length() == 2 || locale.length() == 5
-                        && (localeUC.charAt(2) == '-' || localeUC.charAt(2) == '_')
-                        && localeUC.charAt(3) >= 'A' && localeUC.charAt(3) <= 'Z'
-                        && localeUC.charAt(4) >= 'A' && localeUC.charAt(4) <= 'Z'
-                    )
-            )) {
-                Log.w(TAG, "The given locale \"" + locale + "\" is not of the form xx-XX of RFC 1766");
-            } else {
-                // Normalize simple expected values into xx_XX
-                locale = locale.substring(0, 2).toLowerCase() + (locale.length() == 5 ? "_" + locale.substring(3, 5).toUpperCase() : "");
+        try {
+            if (locale != null) {
+                // Validate locale against simple expected values,
+                // but accept any input as is
+                String localeUC = locale.toUpperCase();
+                if (locale.length() != 2 && locale.length() != 5) {
+                    Log.w(TAG, "The given locale \"" + locale + "\" is not of the form xx-XX of RFC 1766");
+                } else if (!(
+                        localeUC.charAt(0) >= 'A' && localeUC.charAt(0) <= 'Z'
+                                && localeUC.charAt(1) >= 'A' && localeUC.charAt(1) <= 'Z'
+                                && (locale.length() == 2 || locale.length() == 5
+                                && (localeUC.charAt(2) == '-' || localeUC.charAt(2) == '_')
+                                && localeUC.charAt(3) >= 'A' && localeUC.charAt(3) <= 'Z'
+                                && localeUC.charAt(4) >= 'A' && localeUC.charAt(4) <= 'Z'
+                        )
+                )) {
+                    Log.w(TAG, "The given locale \"" + locale + "\" is not of the form xx-XX of RFC 1766");
+                } else {
+                    // Normalize simple expected values into xx_XX
+                    locale = locale.substring(0, 2).toLowerCase() + (locale.length() == 5 ? "_" + locale.substring(3, 5).toUpperCase() : "");
+                }
             }
+            WonderPushConfiguration.setLocale(locale);
+            refreshPreferencesAndConfiguration(false);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting locale", e);
         }
-        WonderPushConfiguration.setLocale(locale);
-        refreshPreferencesAndConfiguration(false);
     }
 
     /**
@@ -751,25 +759,30 @@ public class WonderPush {
      * @see WonderPush#setLocale(String)
      */
     public static String getLocale() {
-        String rtn = WonderPushConfiguration.getLocale();
-        if (rtn == null) {
-            Locale locale = Locale.getDefault();
-            if (locale != null) {
-                String language = locale.getLanguage();
-                if (!TextUtils.isEmpty(language)) {
-                    language = language.toLowerCase(Locale.ENGLISH);
+        try {
+            String rtn = WonderPushConfiguration.getLocale();
+            if (rtn == null) {
+                Locale locale = Locale.getDefault();
+                if (locale != null) {
+                    String language = locale.getLanguage();
+                    if (!TextUtils.isEmpty(language)) {
+                        language = language.toLowerCase(Locale.ENGLISH);
 
-                    String country = locale.getCountry();
-                    if (TextUtils.isEmpty(country)) {
-                        rtn = language;
-                    } else {
-                        country = country.toUpperCase(Locale.ENGLISH);
-                        rtn = language + "_" + country;
+                        String country = locale.getCountry();
+                        if (TextUtils.isEmpty(country)) {
+                            rtn = language;
+                        } else {
+                            country = country.toUpperCase(Locale.ENGLISH);
+                            rtn = language + "_" + country;
+                        }
                     }
                 }
             }
+            return rtn;
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting locale", e);
+            return null;
         }
-        return rtn;
     }
 
     /**
@@ -783,24 +796,28 @@ public class WonderPush {
      *                Use {@code null} to disable the override.
      */
     public static void setCountry(String country) {
-        if (country != null) {
-            // Validate against simple expected values,
-            // but accept any input as is
-            String countryUC = country.toUpperCase();
-            if (country.length() != 2) {
-                Log.w(TAG, "The given country \"" + country + "\" is not of the form XX of ISO 3166-1 alpha-2");
-            } else if (!(
-                    countryUC.charAt(0) >= 'A' && countryUC.charAt(0) <= 'Z'
-                    && countryUC.charAt(1) >= 'A' && countryUC.charAt(1) <= 'Z'
-            )) {
-                Log.w(TAG, "The given country \"" + country + "\" is not of the form XX of ISO 3166-1 alpha-2");
-            } else {
-                // Normalize simple expected value into XX
-                country = countryUC;
+        try {
+            if (country != null) {
+                // Validate against simple expected values,
+                // but accept any input as is
+                String countryUC = country.toUpperCase();
+                if (country.length() != 2) {
+                    Log.w(TAG, "The given country \"" + country + "\" is not of the form XX of ISO 3166-1 alpha-2");
+                } else if (!(
+                        countryUC.charAt(0) >= 'A' && countryUC.charAt(0) <= 'Z'
+                                && countryUC.charAt(1) >= 'A' && countryUC.charAt(1) <= 'Z'
+                )) {
+                    Log.w(TAG, "The given country \"" + country + "\" is not of the form XX of ISO 3166-1 alpha-2");
+                } else {
+                    // Normalize simple expected value into XX
+                    country = countryUC;
+                }
             }
+            WonderPushConfiguration.setCountry(country);
+            refreshPreferencesAndConfiguration(false);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting country", e);
         }
-        WonderPushConfiguration.setCountry(country);
-        refreshPreferencesAndConfiguration(false);
     }
 
     /**
@@ -810,16 +827,21 @@ public class WonderPush {
      * @see WonderPush#setCountry(String)
      */
     public static String getCountry() {
-        String rtn = WonderPushConfiguration.getCountry();
-        if (rtn == null) {
-            rtn = Locale.getDefault().getCountry();
-            if (TextUtils.isEmpty(rtn)) {
-                rtn = null;
-            } else {
-                rtn = rtn.toUpperCase();
+        try {
+            String rtn = WonderPushConfiguration.getCountry();
+            if (rtn == null) {
+                rtn = Locale.getDefault().getCountry();
+                if (TextUtils.isEmpty(rtn)) {
+                    rtn = null;
+                } else {
+                    rtn = rtn.toUpperCase();
+                }
             }
+            return rtn;
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting country", e);
+            return null;
         }
-        return rtn;
     }
 
     /**
@@ -833,25 +855,30 @@ public class WonderPush {
      *                 Use {@code null} to disable the override.
      */
     public static void setCurrency(String currency) {
-        if (currency != null) {
-            // Validate against simple expected values,
-            // but accept any input as is
-            String currencyUC = currency.toUpperCase();
-            if (currency.length() != 3) {
-                Log.w(TAG, "The given currency \"" + currency + "\" is not of the form XXX of ISO 4217");
-            } else if (!(
-                    currencyUC.charAt(0) >= 'A' && currencyUC.charAt(0) <= 'Z'
-                    && currencyUC.charAt(1) >= 'A' && currencyUC.charAt(1) <= 'Z'
-                    && currencyUC.charAt(2) >= 'A' && currencyUC.charAt(2) <= 'Z'
-            )) {
-                Log.w(TAG, "The given currency \"" + currency + "\" is not of the form XXX of ISO 4217");
-            } else {
-                // Normalize simple expected value into XXX
-                currency = currencyUC;
+        try {
+            if (currency != null) {
+                // Validate against simple expected values,
+                // but accept any input as is
+                String currencyUC = currency.toUpperCase();
+                if (currency.length() != 3) {
+                    Log.w(TAG, "The given currency \"" + currency + "\" is not of the form XXX of ISO 4217");
+                } else if (!(
+                        currencyUC.charAt(0) >= 'A' && currencyUC.charAt(0) <= 'Z'
+                                && currencyUC.charAt(1) >= 'A' && currencyUC.charAt(1) <= 'Z'
+                                && currencyUC.charAt(2) >= 'A' && currencyUC.charAt(2) <= 'Z'
+                )) {
+                    Log.w(TAG, "The given currency \"" + currency + "\" is not of the form XXX of ISO 4217");
+                } else {
+                    // Normalize simple expected value into XXX
+                    currency = currencyUC;
+                }
             }
+            WonderPushConfiguration.setCurrency(currency);
+            refreshPreferencesAndConfiguration(false);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting currency", e);
+
         }
-        WonderPushConfiguration.setCurrency(currency);
-        refreshPreferencesAndConfiguration(false);
     }
 
     /**
@@ -861,21 +888,26 @@ public class WonderPush {
      * @see WonderPush#setCurrency(String)
      */
     public static String getCurrency() {
-        String rtn = WonderPushConfiguration.getCurrency();
-        if (rtn == null) {
-            try {
-                Currency currency = Currency.getInstance(Locale.getDefault());
-                if (currency == null) return null;
-                rtn = currency.getCurrencyCode();
-                if (TextUtils.isEmpty(rtn)) {
-                    rtn = null;
-                } else {
-                    rtn = rtn.toUpperCase();
+        try {
+            String rtn = WonderPushConfiguration.getCurrency();
+            if (rtn == null) {
+                try {
+                    Currency currency = Currency.getInstance(Locale.getDefault());
+                    if (currency == null) return null;
+                    rtn = currency.getCurrencyCode();
+                    if (TextUtils.isEmpty(rtn)) {
+                        rtn = null;
+                    } else {
+                        rtn = rtn.toUpperCase();
+                    }
+                } catch (Exception e) { // mostly for IllegalArgumentException
                 }
-            } catch (Exception e) { // mostly for IllegalArgumentException
             }
+            return rtn;
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting currency", e);
+            return null;
         }
-        return rtn;
     }
 
     /**
@@ -890,51 +922,55 @@ public class WonderPush {
      *                Use {@code null} to disable the override.
      */
     public static void setTimeZone(String timeZone) {
-        if (timeZone != null) {
-            // Validate against simple expected values,
-            // but accept any input as is
-            String timeZoneUC = timeZone.toUpperCase();
-            if (timeZone.indexOf('/') >= 0) {
-                if (!(timeZone.startsWith("Africa/")
-                        || timeZone.startsWith("America/")
-                        || timeZone.startsWith("Antarctica/")
-                        || timeZone.startsWith("Asia/")
-                        || timeZone.startsWith("Atlantic/")
-                        || timeZone.startsWith("Australia/")
-                        || timeZone.startsWith("Etc/")
-                        || timeZone.startsWith("Europe/")
-                        || timeZone.startsWith("Indian/")
-                        || timeZone.startsWith("Pacific/")
-                ) || timeZone.endsWith("/")) {
-                    Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
-                }
-            } else {
-                boolean allLetters = true;
-                for (int i = 0; i < timeZoneUC.length(); ++i) {
-                    if (timeZoneUC.charAt(i) < 'A' || timeZoneUC.charAt(i) > 'Z') {
-                        allLetters = false;
-                        break;
+        try {
+            if (timeZone != null) {
+                // Validate against simple expected values,
+                // but accept any input as is
+                String timeZoneUC = timeZone.toUpperCase();
+                if (timeZone.indexOf('/') >= 0) {
+                    if (!(timeZone.startsWith("Africa/")
+                            || timeZone.startsWith("America/")
+                            || timeZone.startsWith("Antarctica/")
+                            || timeZone.startsWith("Asia/")
+                            || timeZone.startsWith("Atlantic/")
+                            || timeZone.startsWith("Australia/")
+                            || timeZone.startsWith("Etc/")
+                            || timeZone.startsWith("Europe/")
+                            || timeZone.startsWith("Indian/")
+                            || timeZone.startsWith("Pacific/")
+                    ) || timeZone.endsWith("/")) {
+                        Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
+                    }
+                } else {
+                    boolean allLetters = true;
+                    for (int i = 0; i < timeZoneUC.length(); ++i) {
+                        if (timeZoneUC.charAt(i) < 'A' || timeZoneUC.charAt(i) > 'Z') {
+                            allLetters = false;
+                            break;
+                        }
+                    }
+                    if (!allLetters) {
+                        Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
+                    } else if (!(timeZone.length() == 1
+                            || timeZoneUC.endsWith("T")
+                            || timeZoneUC.equals("UTC")
+                            || timeZoneUC.equals("AOE")
+                            || timeZoneUC.equals("MSD")
+                            || timeZoneUC.equals("MSK")
+                            || timeZoneUC.equals("WIB")
+                            || timeZoneUC.equals("WITA"))) {
+                        Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
+                    } else {
+                        // Normalize abbreviations in uppercase
+                        timeZone = timeZoneUC;
                     }
                 }
-                if (!allLetters) {
-                    Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
-                } else if (!(timeZone.length() == 1
-                        || timeZoneUC.endsWith("T")
-                        || timeZoneUC.equals("UTC")
-                        || timeZoneUC.equals("AOE")
-                        || timeZoneUC.equals("MSD")
-                        || timeZoneUC.equals("MSK")
-                        || timeZoneUC.equals("WIB")
-                        || timeZoneUC.equals("WITA"))) {
-                    Log.w(TAG, "The given time zone \"" + timeZone + "\" is not of the form Continent/Country or ABBR of IANA time zone database codes");
-                } else {
-                    // Normalize abbreviations in uppercase
-                    timeZone = timeZoneUC;
-                }
             }
+            WonderPushConfiguration.setTimeZone(timeZone);
+            refreshPreferencesAndConfiguration(false);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting timezone", e);
         }
-        WonderPushConfiguration.setTimeZone(timeZone);
-        refreshPreferencesAndConfiguration(false);
     }
 
     /**
@@ -944,11 +980,16 @@ public class WonderPush {
      * @see WonderPush#setTimeZone(String)
      */
     public static String getTimeZone() {
-        String rtn = WonderPushConfiguration.getTimeZone();
-        if (rtn == null) {
-            rtn = TimeZone.getDefault().getID();
+        try {
+            String rtn = WonderPushConfiguration.getTimeZone();
+            if (rtn == null) {
+                rtn = TimeZone.getDefault().getID();
+            }
+            return rtn;
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting timezone", e);
+            return null;
         }
-        return rtn;
     }
 
     /**
@@ -957,7 +998,12 @@ public class WonderPush {
      * <p>Returns an empty {@code JSONObject} if called without required user consent.</p>
      */
     public static JSONObject getProperties() {
-        return sApiImpl.getProperties();
+        try {
+            return sApiImpl.getProperties();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting properties", e);
+            return new JSONObject();
+        }
     }
 
     /**
@@ -975,7 +1021,11 @@ public class WonderPush {
      *            The partial object containing only the properties to update.
      */
     public static void putProperties(JSONObject properties) {
-        sApiImpl.putProperties(properties);
+        try {
+            sApiImpl.putProperties(properties);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting properties", e);
+        }
     }
 
     /**
@@ -989,7 +1039,11 @@ public class WonderPush {
      * @param value The value to be set, can be an array or Collection
      */
     public static void setProperty(String field, Object value) {
-        sApiImpl.setProperty(field, value);
+        try {
+            sApiImpl.setProperty(field, value);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting property", e);
+        }
     }
 
     /**
@@ -1001,7 +1055,11 @@ public class WonderPush {
      * @param field The name of the property to set
      */
     public static void unsetProperty(String field) {
-        sApiImpl.unsetProperty(field);
+        try {
+            sApiImpl.unsetProperty(field);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while unsetting property", e);
+        }
     }
 
     /**
@@ -1016,7 +1074,11 @@ public class WonderPush {
      * @param value The value(s) to be added, can be an array
      */
     public static void addProperty(String field, Object value) {
-        sApiImpl.addProperty(field, value);
+        try {
+            sApiImpl.addProperty(field, value);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while adding property", e);
+        }
     }
 
     /**
@@ -1029,7 +1091,11 @@ public class WonderPush {
      * @param value The value(s) to be removed, can be an array
      */
     public static void removeProperty(String field, Object value) {
-        sApiImpl.removeProperty(field, value);
+        try {
+            sApiImpl.removeProperty(field, value);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while removing property", e);
+        }
     }
 
     /**
@@ -1042,7 +1108,12 @@ public class WonderPush {
      * @return {@link JSONObject#NULL} or a single value stored in the property, never a {@link JSONArray} or {@code null}
      */
     public static Object getPropertyValue(String field) {
-        return sApiImpl.getPropertyValue(field);
+        try {
+            return sApiImpl.getPropertyValue(field);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting property value", e);
+            return null;
+        }
     }
 
     /**
@@ -1058,7 +1129,12 @@ public class WonderPush {
      * @return A possibly empty {@link org.json.JSONArray} of the values stored in the property, but never {@link JSONObject#NULL} nor {@code null}
      */
     public static List<Object> getPropertyValues(String field) {
-        return sApiImpl.getPropertyValues(field);
+        try {
+            return sApiImpl.getPropertyValues(field);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting property values", e);
+            return new ArrayList<>();
+        }
     }
 
     /**
@@ -1072,7 +1148,12 @@ public class WonderPush {
     @SuppressWarnings("unused")
     @Deprecated
     public static synchronized JSONObject getInstallationCustomProperties() {
-        return sApiImpl.getInstallationCustomProperties();
+        try {
+            return sApiImpl.getInstallationCustomProperties();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting installation custom properties", e);
+            return new JSONObject();
+        }
     }
 
     /**
@@ -1095,7 +1176,11 @@ public class WonderPush {
     @SuppressWarnings("unused")
     @Deprecated
     public static synchronized void putInstallationCustomProperties(JSONObject customProperties) {
-        sApiImpl.putInstallationCustomProperties(customProperties);
+        try {
+            sApiImpl.putInstallationCustomProperties(customProperties);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while putting installation custom properties", e);
+        }
     }
 
     static synchronized void receivedFullInstallationFromServer(JSONObject installation) {
@@ -1119,7 +1204,11 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static void trackEvent(String type) {
-        sApiImpl.trackEvent(type);
+        try {
+            sApiImpl.trackEvent(type);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while tracking event", e);
+        }
     }
 
     /**
@@ -1135,7 +1224,11 @@ public class WonderPush {
      *            Prefer using a few attributes over a plethora of event type variants.
      */
     public static void trackEvent(String type, JSONObject attributes) {
-        sApiImpl.trackEvent(type, attributes);
+        try {
+            sApiImpl.trackEvent(type, attributes);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while tracking event with attributes", e);
+        }
     }
 
     static void trackEvent(String type, JSONObject eventData, JSONObject attributes) {
@@ -1247,7 +1340,11 @@ public class WonderPush {
      *      The tags to add to the installation.
      */
     public static void addTag(String... tag) {
-        sApiImpl.addTag(tag);
+        try {
+            sApiImpl.addTag(tag);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while adding tag", e);
+        }
     }
 
     /**
@@ -1259,7 +1356,11 @@ public class WonderPush {
      *      The tags to remove from the installation.
      */
     public static void removeTag(String... tag) {
-        sApiImpl.removeTag(tag);
+        try {
+            sApiImpl.removeTag(tag);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while removing tag", e);
+        }
     }
 
     /**
@@ -1268,7 +1369,11 @@ public class WonderPush {
      * <p>Does nothing if called without required user consent.</p>
      */
     public static void removeAllTags() {
-        sApiImpl.removeAllTags();
+        try {
+            sApiImpl.removeAllTags();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while removing all tags", e);
+        }
     }
 
     /**
@@ -1279,7 +1384,12 @@ public class WonderPush {
      *      Never returns {@code null}.
      */
     public static Set<String> getTags() {
-        return sApiImpl.getTags();
+        try {
+            return sApiImpl.getTags();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting tags", e);
+            return new HashSet<>();
+        }
     }
 
     /**
@@ -1290,7 +1400,12 @@ public class WonderPush {
      *      {@code true} if the given tag is attached to the installation, {@code false} otherwise.
      */
     public static boolean hasTag(String tag) {
-        return sApiImpl.hasTag(tag);
+        try {
+            return sApiImpl.hasTag(tag);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while testing tag", e);
+            return false;
+        }
     }
 
     protected static void onInteraction(boolean leaving) {
@@ -1815,18 +1930,22 @@ public class WonderPush {
      * @see #setUserConsent(boolean)
      */
     public static void setRequiresUserConsent(boolean value) {
-        if (!sIsInitialized) {
-            // We can't read hasUserConsent() before we're initialized
-            sRequiresUserConsent = value;
-        } else {
-            boolean hadUserConsent = hasUserConsent();
-            sRequiresUserConsent = value;
-            Log.w(TAG, "WonderPush.setRequiresUserConsent(" + value + ") called after WonderPush.initialize(). Although supported, a proper implementation typically only calls it before.");
-            // Refresh user consent
-            boolean nowHasUserConsent = hasUserConsent();
-            if (hadUserConsent != nowHasUserConsent) {
-                hasUserConsentChanged(nowHasUserConsent);
+        try {
+            if (!sIsInitialized) {
+                // We can't read hasUserConsent() before we're initialized
+                sRequiresUserConsent = value;
+            } else {
+                boolean hadUserConsent = hasUserConsent();
+                sRequiresUserConsent = value;
+                Log.w(TAG, "WonderPush.setRequiresUserConsent(" + value + ") called after WonderPush.initialize(). Although supported, a proper implementation typically only calls it before.");
+                // Refresh user consent
+                boolean nowHasUserConsent = hasUserConsent();
+                if (hadUserConsent != nowHasUserConsent) {
+                    hasUserConsentChanged(nowHasUserConsent);
+                }
             }
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting requires-user-consent", e);
         }
     }
 
@@ -1836,7 +1955,12 @@ public class WonderPush {
      * <p>Call this method after {@link #initialize(Context)}.</p>
      */
     public static boolean getUserConsent() {
-        return WonderPushConfiguration.getUserConsent();
+        try {
+            return WonderPushConfiguration.getUserConsent();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting user consent", e);
+            return false;
+        }
     }
 
     /**
@@ -1844,7 +1968,12 @@ public class WonderPush {
      * true if user consent is not required or if it was provided.
      */
     static boolean hasUserConsent() {
-        return !sRequiresUserConsent || WonderPushConfiguration.getUserConsent();
+        try {
+            return !sRequiresUserConsent || WonderPushConfiguration.getUserConsent();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while testing user consent", e);
+            return false;
+        }
     }
 
     /**
@@ -1856,14 +1985,18 @@ public class WonderPush {
      * @see #setRequiresUserConsent(boolean)
      */
     public static void setUserConsent(boolean value) {
-        boolean hadUserConsent = hasUserConsent();
-        if (hadUserConsent && !value) {
-            JSONSyncInstallation.flushAll();
-        }
-        WonderPushConfiguration.setUserConsent(value);
-        boolean nowHasUserConsent = hasUserConsent();
-        if (sIsInitialized && hadUserConsent != nowHasUserConsent) {
-            hasUserConsentChanged(nowHasUserConsent);
+        try {
+            boolean hadUserConsent = hasUserConsent();
+            if (hadUserConsent && !value) {
+                JSONSyncInstallation.flushAll();
+            }
+            WonderPushConfiguration.setUserConsent(value);
+            boolean nowHasUserConsent = hasUserConsent();
+            if (sIsInitialized && hadUserConsent != nowHasUserConsent) {
+                hasUserConsentChanged(nowHasUserConsent);
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting user consent", e);
         }
     }
 
@@ -1936,28 +2069,44 @@ public class WonderPush {
      * </p>
      */
     public static void downloadAllData() {
-        DataManager.downloadAllData();
+        try {
+            DataManager.downloadAllData();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while downloading all data", e);
+        }
     }
 
     /**
      * Ask the WonderPush servers to delete any event associated with the all local installations.
      */
     public static void clearEventsHistory() {
-        DataManager.clearEventsHistory();
+        try {
+            DataManager.clearEventsHistory();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while clearing events history", e);
+        }
     }
 
     /**
      * Ask the WonderPush servers to delete any custom data associated with the all local installations and related users.
      */
     public static void clearPreferences() {
-        DataManager.clearPreferences();
+        try {
+            DataManager.clearPreferences();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while clearing preferences", e);
+        }
     }
 
     /**
      * Remove any local storage and ask the WonderPush servers to delete any data associated with the all local installations and related users.
      */
     public static void clearAllData() {
-        DataManager.clearAllData();
+        try {
+            DataManager.clearAllData();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while clearing all data", e);
+        }
     }
 
     /**
@@ -1966,7 +2115,11 @@ public class WonderPush {
      * @see WonderPush#clearAllData()
      */
     public static void clearAll() {
-        clearAllData();
+        try {
+            clearAllData();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while clearing all", e);
+        }
     }
 
     /**
@@ -2056,7 +2209,12 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static String getDeviceId() {
-        return sApiImpl.getDeviceId();
+        try {
+            return sApiImpl.getDeviceId();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting device identifier", e);
+            return null;
+        }
     }
 
     /**
@@ -2072,7 +2230,12 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static String getInstallationId() {
-        return sApiImpl.getInstallationId();
+        try {
+            return sApiImpl.getInstallationId();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting installation identifier", e);
+            return null;
+        }
     }
 
     /**
@@ -2088,7 +2251,12 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static String getPushToken() {
-        return sApiImpl.getPushToken();
+        try {
+            return sApiImpl.getPushToken();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting push token", e);
+            return null;
+        }
     }
 
     /**
@@ -2109,7 +2277,12 @@ public class WonderPush {
      */
     @SuppressWarnings("unused")
     public static String getAccessToken() {
-        return sApiImpl.getAccessToken();
+        try {
+            return sApiImpl.getAccessToken();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while getting access token", e);
+            return null;
+        }
     }
 
     /**
@@ -2118,7 +2291,11 @@ public class WonderPush {
      * <p>Does nothing if called without required user consent.</p>
      */
     public static void subscribeToNotifications() {
-        sApiImpl.subscribeToNotifications();
+        try {
+            sApiImpl.subscribeToNotifications();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while subscribing to notifications", e);
+        }
     }
 
     /**
@@ -2127,7 +2304,11 @@ public class WonderPush {
      * <p>Does nothing if called without required user consent.</p>
      */
     public static void unsubscribeFromNotifications() {
-        sApiImpl.unsubscribeFromNotifications();
+        try {
+            sApiImpl.unsubscribeFromNotifications();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error unsubscribing from notifications", e);
+        }
     }
 
     /**
@@ -2139,7 +2320,12 @@ public class WonderPush {
      * unless required user consent is lacking.
      */
     public static boolean isSubscribedToNotifications() {
-        return sApiImpl.isSubscribedToNotifications();
+        try {
+            return sApiImpl.isSubscribedToNotifications();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while testing subscription to notifications", e);
+            return false;
+        }
     }
 
     /**
@@ -2156,7 +2342,12 @@ public class WonderPush {
     @SuppressWarnings("unused")
     @Deprecated
     public static boolean getNotificationEnabled() {
-        return sApiImpl.getNotificationEnabled();
+        try {
+            return sApiImpl.getNotificationEnabled();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while testing notifications enabled", e);
+            return false;
+        }
     }
 
     /**
@@ -2173,7 +2364,11 @@ public class WonderPush {
     @SuppressWarnings("unused")
     @Deprecated
     public static void setNotificationEnabled(boolean status) {
-        sApiImpl.setNotificationEnabled(status);
+        try {
+            sApiImpl.setNotificationEnabled(status);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while setting notifications enabled", e);
+        }
     }
 
     /**

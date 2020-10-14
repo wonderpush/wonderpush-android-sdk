@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -62,7 +63,11 @@ class ActivityLifecycleMonitor {
         private Runnable stopPresenceRunnable = new Runnable() {
             @Override
             public void run() {
-                updatePresence(false);
+                try {
+                    updatePresence(false);
+                } catch (Exception e) {
+                    Log.d(WonderPush.TAG, "Unexpected error while updating presence", e);
+                }
             }
         };
 

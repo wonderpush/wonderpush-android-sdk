@@ -5,6 +5,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -59,11 +60,15 @@ public class PresenceManager {
     private Runnable autoRenewRunnable = new Runnable() {
         @Override
         public void run() {
-            extendPresence();
-            synchronized (PresenceManager.this) {
-                if (handler != null) {
-                    handler.postDelayed(autoRenewRunnable, getAutoRenewTimeInterval());
+            try {
+                extendPresence();
+                synchronized (PresenceManager.this) {
+                    if (handler != null) {
+                        handler.postDelayed(autoRenewRunnable, getAutoRenewTimeInterval());
+                    }
                 }
+            } catch (Exception e) {
+                Log.d(WonderPush.TAG, "Unexpected error while renewing presence", e);
             }
         }
     };

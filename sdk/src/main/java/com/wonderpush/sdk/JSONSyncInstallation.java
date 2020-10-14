@@ -219,9 +219,13 @@ public class JSONSyncInstallation {
                 @Override
                 public void onUserConsentChanged(boolean hasUserConsent) {
                     if (hasUserConsent) {
-                        WonderPush.removeUserConsentListener(this);
-                        WonderPush.logDebug("Now scheduling user consent delayed patch call for installation custom state for userId " + userId);
-                        _schedulePatchCall(); // NOTE: imposes this function to be somewhat reentrant
+                        try {
+                            WonderPush.removeUserConsentListener(this);
+                            WonderPush.logDebug("Now scheduling user consent delayed patch call for installation custom state for userId " + userId);
+                            _schedulePatchCall(); // NOTE: imposes this function to be somewhat reentrant
+                        } catch (Exception ex) {
+                            Log.e(WonderPush.TAG, "Unexpected error on user consent changed.", ex);
+                        }
                     }
                 }
             });
