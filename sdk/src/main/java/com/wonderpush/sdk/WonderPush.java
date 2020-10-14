@@ -1578,9 +1578,7 @@ public class WonderPush {
                 sClientId = clientId;
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
-                OkHttpRemoteConfigFetcher fetcher = new OkHttpRemoteConfigFetcher(clientId, (Runnable r, long defer) -> {
-                    WonderPush.safeDefer(r, defer);
-                });
+                OkHttpRemoteConfigFetcher fetcher = new OkHttpRemoteConfigFetcher(clientId, WonderPush::safeDefer);
                 SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
                 sRemoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
 
