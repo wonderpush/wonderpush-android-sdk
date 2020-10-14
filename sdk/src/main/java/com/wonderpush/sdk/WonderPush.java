@@ -1605,8 +1605,12 @@ public class WonderPush {
                         updateEventsBlackWhiteList(config);
                     }
                 };
+
                 // Read the config right away
-                ensureConfigurationFetched(remoteConfigHandler, 10000);
+                safeDeferWithConsent(() -> {
+                    ensureConfigurationFetched(remoteConfigHandler, 10000);
+                }, null);
+
                 // Call the handler when the config changes
                 LocalBroadcastManager.getInstance(context).registerReceiver(new BroadcastReceiver() {
                     @Override
@@ -1678,6 +1682,7 @@ public class WonderPush {
             }
         });
     }
+
     private static void initForNewUser(final String userId) {
         WonderPush.logDebug("initForNewUser(" + userId + ")");
         sIsReady = false;
