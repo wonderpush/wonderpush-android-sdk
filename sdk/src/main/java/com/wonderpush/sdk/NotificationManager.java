@@ -30,12 +30,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,6 +40,9 @@ public class NotificationManager {
     static final String TAG = WonderPush.TAG;
 
     private static WeakReference<Intent> sLastHandledIntentRef;
+    static final long DEFAULT_LAST_RECEIVED_NOTIFICATION_CHECK_DELAY = 7 * 86400 * 1000;
+
+    static final String LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY = "lastReceivedNotificationCheckDate";
 
     public static void onReceivedNotification(Context context, Intent intent, NotificationModel notif) {
         String loggedInstallationId = WonderPushConfiguration.getInstallationId();
@@ -74,6 +72,30 @@ public class NotificationManager {
             WonderPushConfiguration.setLastReceivedNotificationInfoJson(trackData);
         } catch (JSONException ex) {
             Log.e(WonderPush.TAG, "Unexpected error while tracking notification received", ex);
+        }
+
+        // Track lastReceivedNotificationCheckDate
+        String wpDataString = intent.getExtras() != null ? intent.getExtras().getString("_wp") : null;
+        try {
+            JSONObject wpData = wpDataString != null ? new JSONObject(wpDataString) : new JSONObject();
+            long lastReceivedNotificationCheckDelay = wpData.optLong("lastReceivedNotificationCheckDelay", DEFAULT_LAST_RECEIVED_NOTIFICATION_CHECK_DELAY);
+            JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
+            if (installation != null) {
+                long lastReceivedNotificationCheckDateMs = installation.getSdkState().optLong(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, -1);
+                Date lastReceivedNotificationCheckDate = lastReceivedNotificationCheckDateMs == -1 ? null : new Date(lastReceivedNotificationCheckDateMs);
+                Date now = new Date();
+                boolean reportLastReceivedNotificationCheckDate =
+                        lastReceivedNotificationCheckDate == null
+                        || ((now.getTime() - lastReceivedNotificationCheckDate.getTime()) > lastReceivedNotificationCheckDelay);
+
+                if (reportLastReceivedNotificationCheckDate) {
+                    JSONObject diff = new JSONObject();
+                    diff.put(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, now.getTime());
+                    installation.put(diff);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error getting _wp data from notification", e);
         }
 
         boolean automaticallyHandled = false;
