@@ -24,6 +24,7 @@ class WonderPushImpl implements IWonderPush {
 
     @Override
     public void _activate() {
+        WonderPush.initializeInAppMessaging(WonderPush.getApplicationContext());
     }
 
     @Override

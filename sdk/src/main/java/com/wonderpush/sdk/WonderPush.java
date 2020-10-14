@@ -1591,7 +1591,6 @@ public class WonderPush {
                 MeasurementsApiClient.setDisabled(true);
                 JSONSyncInstallation.initialize();
                 WonderPushRequestVault.initialize();
-                initializeInAppMessaging(context);
 
                 // Setup a remote config handler to execute as soon as we get the config
                 // and everytime the config changes.
