@@ -44,6 +44,15 @@ public class NotificationManager {
 
     static final String LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY = "lastReceivedNotificationCheckDate";
 
+    private static NotificationMetadata sLastClickedNotificationMetadata;
+
+    static NotificationMetadata getLastClickedNotificationMetadata() {
+        return sLastClickedNotificationMetadata;
+    }
+    static void setLastClickedNotificationMetadata(NotificationMetadata metadata) {
+        sLastClickedNotificationMetadata = metadata;
+    }
+
     public static void onReceivedNotification(Context context, Intent intent, NotificationModel notif) {
         String loggedInstallationId = WonderPushConfiguration.getInstallationId();
         if (notif.getTargetedInstallation() != null && !notif.getTargetedInstallation().equals(loggedInstallationId)) {
@@ -864,6 +873,8 @@ public class NotificationManager {
                 NotificationButtonModel button = notif.getAlert().getButtons().get(clickedButtonIndex);
                 trackData.put("buttonLabel", button.label);
             }
+            NotificationMetadata metadata = new NotificationMetadata(notif);
+            sLastClickedNotificationMetadata = metadata;
             WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
 
             WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);

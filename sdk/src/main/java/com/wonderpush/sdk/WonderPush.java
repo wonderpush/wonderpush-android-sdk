@@ -1306,6 +1306,13 @@ public class WonderPush {
             if (!event.has("actionDate")) {
                 event.put("actionDate", TimeSync.getTime());
             }
+            // Notification metadata
+            NotificationMetadata metadata = NotificationManager.getLastClickedNotificationMetadata();
+            if (metadata != null) {
+                if (metadata.getCampaignId() != null && !event.has("campaignId")) event.put("campaignId", metadata.getCampaignId());
+                if (metadata.getNotificationId() != null && !event.has("notificationId")) event.put("notificationId", metadata.getNotificationId());
+                if (metadata.getViewId() != null && !event.has("viewId")) event.put("viewId", metadata.getViewId());
+            }
         } catch (JSONException ex) {
             WonderPush.logError("Error building event object body", ex);
         }
@@ -1473,13 +1480,21 @@ public class WonderPush {
                         logDebug("Failed to fill @APP_OPEN previous notification information", e);
                     }
                 }
+                NotificationManager.setLastClickedNotificationMetadata(null);
                 // Add the information of the clicked notification
                 if (now - lastOpenedNotificationDate < 10 * 1000) { // allow a few seconds between click on the notification and the call to this method
+                    String notificationId = lastOpenedNotificationInfo.optString("notificationId");
+                    String campaignId = lastOpenedNotificationInfo.optString("campaignId");
+                    String viewId = lastOpenedNotificationInfo.optString("viewId");
                     try {
-                        openInfo.putOpt("notificationId", lastOpenedNotificationInfo.opt("notificationId"));
-                        openInfo.putOpt("campaignId", lastOpenedNotificationInfo.opt("campaignId"));
+                        openInfo.putOpt("notificationId", notificationId);
+                        openInfo.putOpt("campaignId", campaignId);
+
                     } catch (JSONException e) {
                         logDebug("Failed to fill @APP_OPEN opened notification information", e);
+                    }
+                    if (campaignId != null || notificationId != null || viewId != null) {
+                        NotificationManager.setLastClickedNotificationMetadata(new NotificationMetadata(campaignId, notificationId, viewId, false));
                     }
                 }
                 // Presence
