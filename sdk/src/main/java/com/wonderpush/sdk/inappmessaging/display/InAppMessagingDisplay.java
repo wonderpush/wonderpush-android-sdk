@@ -23,7 +23,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
@@ -54,7 +53,6 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.Infl
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
-import com.wonderpush.sdk.inappmessaging.model.ImageData;
 import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.MessageType;
@@ -68,9 +66,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-
-import static com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator.Position.BOTTOM;
-import static com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator.Position.TOP;
 
 /**
  * The entry point of the In App Messaging display SDK.
@@ -416,7 +411,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     loadNullableImage(
         activity,
         bindingWrapper,
-        extractImageData(inAppMessage),
+        extractImageUrl(inAppMessage),
         new Callback() {
           @Override
           public void onSuccess() {
@@ -547,36 +542,38 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   }
 
   // TODO: Factor this into the InAppMessage API.
-  private ImageData extractImageData(InAppMessage message) {
+  private String extractImageUrl(InAppMessage message) {
     // Handle getting image data for card type
     if (message.getMessageType() == MessageType.CARD) {
-      ImageData portraitImageData = ((CardMessage) message).getPortraitImageData();
-      ImageData landscapeImageData = ((CardMessage) message).getLandscapeImageData();
+      // Portrait image
+      String portraitImageUrl = ((CardMessage) message).getPortraitImageUrl();
+      if (TextUtils.isEmpty(portraitImageUrl)) portraitImageUrl = null;
+
+      // Landscape image
+      String landscapeImageUrl = ((CardMessage) message).getLandscapeImageUrl();
+      if (TextUtils.isEmpty(landscapeImageUrl)) landscapeImageUrl = null;
 
       // If we're in portrait try to use portrait image data, fallback to landscape
       if (getScreenOrientation(application) == Configuration.ORIENTATION_PORTRAIT) {
-        return isValidImageData(portraitImageData) ? portraitImageData : landscapeImageData;
+        return portraitImageUrl != null ? portraitImageUrl : landscapeImageUrl;
       }
       // If we're in landscape try to use landscape image data, fallback to portrait
-      return isValidImageData(landscapeImageData) ? landscapeImageData : portraitImageData;
+      return landscapeImageUrl != null ? landscapeImageUrl : portraitImageUrl;
     }
     // For now this is how we get all other iam types image data.
     if (message instanceof InAppMessage.InAppMessageWithImage) {
-      return ((InAppMessage.InAppMessageWithImage)message).getImageData();
+      String imageUrl = ((InAppMessage.InAppMessageWithImage)message).getImageUrl();
+      if (TextUtils.isEmpty(imageUrl)) return null;
+      return imageUrl;
     }
     return null;
   }
 
-  // TODO: Factor this into the InAppMessage API
-  private boolean isValidImageData(@Nullable ImageData imageData) {
-    return imageData != null && !TextUtils.isEmpty(imageData.getImageUrl());
-  }
-
   private void loadNullableImage(
-          Activity activity, BindingWrapper iam, ImageData imageData, Callback callback) {
-    if (isValidImageData(imageData)) {
+          Activity activity, BindingWrapper iam, String imageUrl, Callback callback) {
+    if (imageUrl != null) {
       imageLoader
-          .load(imageData.getImageUrl())
+          .load(imageUrl)
           .tag(activity.getClass())
           .into(iam.getImageView(), callback);
     } else {

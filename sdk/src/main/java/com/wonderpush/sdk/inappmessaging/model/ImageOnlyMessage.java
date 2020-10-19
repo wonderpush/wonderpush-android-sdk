@@ -17,6 +17,7 @@ package com.wonderpush.sdk.inappmessaging.model;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import android.text.TextUtils;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
 
@@ -32,17 +33,38 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
    * !!!!!WARNING!!!!! We are overriding equality in this class. Please add equality checks for all
    * new private class members.
    */
-  @NonNull private ImageData imageData;
+  @NonNull private String imageUrl;
 
   @NonNull private List<ActionModel> actions;
 
   @NonNull private CloseButtonPosition closeButtonPosition;
 
+  public static ImageOnlyMessage create(NotificationMetadata notificationMetadata, JSONObject payloadJson, JSONObject imageOnlyJson) throws Campaign.InvalidJsonException {
+    // Image
+    String imageUrlString = imageOnlyJson.optString("imageUrl", null);
+    if (TextUtils.isEmpty(imageUrlString)) {
+      throw new Campaign.InvalidJsonException("Missing image in imageOnly payload:" + imageOnlyJson.toString());
+    }
+
+    // Actions
+    List <ActionModel> actions = ActionModel.from(imageOnlyJson.optJSONArray("actions"));
+
+    String closeButtonPositionString = imageOnlyJson.optString("closeButtonPosition", "outside");
+    InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
+    if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
+    if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
+
+    // Animations
+    IamAnimator.EntryAnimation entryAnimation = IamAnimator.EntryAnimation.fromSlug(imageOnlyJson.optString("entryAnimation", "fadeIn"));
+    IamAnimator.ExitAnimation exitAnimation = IamAnimator.ExitAnimation.fromSlug(imageOnlyJson.optString("exitAnimation", "fadeOut"));
+    return new ImageOnlyMessage(notificationMetadata, imageUrlString, actions, closeButtonPosition, entryAnimation, exitAnimation, payloadJson);
+  }
+
   /** @hide */
   @Override
   public int hashCode() {
     int actionHash = actions != null ? actions.hashCode() : 0;
-    return imageData.hashCode() + actionHash + closeButtonPosition.hashCode() + entryAnimation.hashCode() + exitAnimation.hashCode();
+    return imageUrl.hashCode() + actionHash + closeButtonPosition.hashCode() + entryAnimation.hashCode() + exitAnimation.hashCode();
   }
 
   /** @hide */
@@ -66,7 +88,7 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
 
     if (closeButtonPosition != i.closeButtonPosition) return false;
 
-    if (imageData.equals(i.imageData)) {
+    if (imageUrl.equals(i.imageUrl)) {
       return true; // everything matches
     }
     return false;
@@ -77,22 +99,22 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
    */
   private ImageOnlyMessage(
       @NonNull NotificationMetadata notificationMetadata,
-      @NonNull ImageData imageData,
+      @NonNull String imageUrl,
       @NonNull List<ActionModel> actions,
       @NonNull CloseButtonPosition closeButtonPosition,
       @NonNull IamAnimator.EntryAnimation entryAnimation,
       @NonNull IamAnimator.ExitAnimation exitAnimation,
       @NonNull JSONObject data) {
     super(notificationMetadata, MessageType.IMAGE_ONLY, data, entryAnimation, exitAnimation);
-    this.imageData = imageData;
+    this.imageUrl = imageUrl;
     this.actions = actions;
     this.closeButtonPosition = closeButtonPosition;
   }
 
-  /** Gets the {@link ImageData} associated with this message */
+  /** Gets the image associated with this message */
   @NonNull
-  public ImageData getImageData() {
-    return imageData;
+  public String getImageUrl() {
+    return imageUrl;
   }
 
   /** Gets the {@link ActionModel}s associated with this message */
@@ -104,63 +126,6 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
   @NonNull
   public CloseButtonPosition getCloseButtonPosition() {
     return closeButtonPosition;
-  }
-
-  /**
-   * only used by headless sdk and tests
-   *
-   * @hide
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  /**
-   * Builder for {@link ImageOnlyMessage}
-   *
-   * @hide
-   */
-  public static class Builder {
-    @Nullable ImageData imageData;
-    @Nullable
-    List<ActionModel> actions;
-    @Nullable
-    CloseButtonPosition closeButtonPosition;
-    @NonNull IamAnimator.EntryAnimation entryAnimation;
-    @NonNull IamAnimator.ExitAnimation exitAnimation;
-
-    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
-      this.entryAnimation = entryAnimation;
-      return this;
-    }
-
-    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
-      this.exitAnimation = exitAnimation;
-      return this;
-    }
-
-    public Builder setImageData(@Nullable ImageData imageData) {
-      this.imageData = imageData;
-      return this;
-    }
-
-    public Builder setActions(@Nullable List<ActionModel> actions) {
-      this.actions = actions;
-      return this;
-    }
-
-    public Builder setCloseButtonPosition(@Nullable CloseButtonPosition closeButtonPosition) {
-      this.closeButtonPosition = closeButtonPosition;
-      return this;
-    }
-
-    public ImageOnlyMessage build(
-            NotificationMetadata notificationMetadata, @NonNull JSONObject data) {
-      if (imageData == null) {
-        throw new IllegalArgumentException("ImageOnly model must have image data");
-      }
-      return new ImageOnlyMessage(notificationMetadata, imageData, actions == null ? Collections.emptyList() : actions, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, entryAnimation, exitAnimation, data);
-    }
   }
 
   @Override

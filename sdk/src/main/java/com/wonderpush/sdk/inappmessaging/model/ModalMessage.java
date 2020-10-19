@@ -16,7 +16,6 @@ package com.wonderpush.sdk.inappmessaging.model;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
@@ -24,7 +23,6 @@ import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
-import java.util.Collections;
 import java.util.List;
 
 /** Encapsulates an In App Modal Message. */
@@ -36,11 +34,42 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
   @NonNull private final Text title;
 
   @Nullable private final Text body;
-  @Nullable private final ImageData imageData;
+  @Nullable private final String imageUrl;
   @NonNull private final List<ActionModel> actions;
   @Nullable private final Button button;
   @NonNull private final String backgroundHexColor;
   @NonNull private final CloseButtonPosition closeButtonPosition;
+
+  public static ModalMessage create(NotificationMetadata notificationMetadata, JSONObject payloadJson, JSONObject modalJson) throws Campaign.InvalidJsonException {
+
+    // Title
+    Text titleText = Text.fromJSON(modalJson.optJSONObject("title"));
+    if (titleText == null) throw new Campaign.InvalidJsonException("Missing title text");
+
+    // Body
+    Text bodyText = Text.fromJSON(modalJson.optJSONObject("body"));
+
+    // Image
+    String imageUrl = modalJson.optString("imageUrl", null);
+
+    // Background color
+    String backgroundHexColor = modalJson.optString("backgroundHexColor", "#FFFFFF");
+
+    // Action & button
+    Button actionButton = Button.fromJSON(modalJson.optJSONObject("actionButton"));
+
+    List<ActionModel> actions = ActionModel.from(modalJson.optJSONArray("actions"));
+
+    String closeButtonPositionString = modalJson.optString("closeButtonPosition", "outside");
+    InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
+    if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
+    if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
+
+    // Animations
+    IamAnimator.EntryAnimation entryAnimation = IamAnimator.EntryAnimation.fromSlug(modalJson.optString("entryAnimation", "fadeIn"));
+    IamAnimator.ExitAnimation exitAnimation = IamAnimator.ExitAnimation.fromSlug(modalJson.optString("exitAnimation", "fadeOut"));
+    return new ModalMessage(notificationMetadata, titleText, bodyText, imageUrl, actions, actionButton, backgroundHexColor, closeButtonPosition, entryAnimation, exitAnimation, payloadJson);
+  }
 
   /** @hide */
   @Override
@@ -48,7 +77,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     int bodyHash = body != null ? body.hashCode() : 0;
     int actionHash = 0;
     for(ActionModel action : actions) actionHash += action.hashCode();
-    int imageHash = imageData != null ? imageData.hashCode() : 0;
+    int imageHash = imageUrl != null ? imageUrl.hashCode() : 0;
     int buttonHash = button != null ? button.hashCode() : 0;
     return title.hashCode() + bodyHash + backgroundHexColor.hashCode() + actionHash + imageHash + buttonHash + closeButtonPosition.hashCode() + entryAnimation.hashCode() + exitAnimation.hashCode();
   }
@@ -75,8 +104,8 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     if ((actions == null && m.actions != null) || (actions != null && !actions.equals(m.actions))) {
       return false; // the actions don't match
     }
-    if ((imageData == null && m.imageData != null)
-        || (imageData != null && !imageData.equals(m.imageData))) {
+    if ((imageUrl == null && m.imageUrl != null)
+        || (imageUrl != null && !imageUrl.equals(m.imageUrl))) {
       return false; // the image data don't match
     }
     if (!title.equals(m.title)) {
@@ -98,7 +127,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
       @NonNull NotificationMetadata notificationMetadata,
       @NonNull Text title,
       @Nullable Text body,
-      @Nullable ImageData imageData,
+      @Nullable String imageUrl,
       @NonNull List<ActionModel> actions,
       @Nullable Button button,
       @NonNull String backgroundHexColor,
@@ -109,7 +138,7 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     super(notificationMetadata, MessageType.MODAL, data, entryAnimation, exitAnimation);
     this.title = title;
     this.body = body;
-    this.imageData = imageData;
+    this.imageUrl = imageUrl;
     this.actions = actions;
     this.backgroundHexColor = backgroundHexColor;
     this.button = button;
@@ -128,10 +157,10 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     return body;
   }
 
-  /** Gets the {@link ImageData} associated with this message */
+  /** Gets the image associated with this message */
   @Nullable
-  public ImageData getImageData() {
-    return imageData;
+  public String getImageUrl() {
+    return imageUrl;
   }
 
   /** Gets the background hex color associated with this message */
@@ -154,94 +183,6 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
   @NonNull
   public CloseButtonPosition getCloseButtonPosition() {
     return closeButtonPosition;
-  }
-  /**
-   * only used by headless sdk and tests
-   *
-   * @hide
-   */
-  public static Builder builder() {
-    return new ModalMessage.Builder();
-  }
-
-  /**
-   * Builder for {@link ModalMessage}
-   *
-   * @hide
-   */
-  public static class Builder {
-    @Nullable
-    Text title;
-    @Nullable
-    Text body;
-    @Nullable ImageData imageData;
-    @Nullable List<ActionModel> actions;
-    @Nullable String backgroundHexColor;
-    @Nullable Button button;
-    @Nullable CloseButtonPosition closeButtonPosition;
-    @NonNull IamAnimator.EntryAnimation entryAnimation;
-    @NonNull IamAnimator.ExitAnimation exitAnimation;
-
-    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
-      this.entryAnimation = entryAnimation;
-      return this;
-    }
-
-    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
-      this.exitAnimation = exitAnimation;
-      return this;
-    }
-
-    public Builder setTitle(@Nullable Text title) {
-      this.title = title;
-      return this;
-    }
-
-    public Builder setBody(@Nullable Text body) {
-      this.body = body;
-      return this;
-    }
-
-    public Builder setImageData(@Nullable ImageData imageData) {
-      this.imageData = imageData;
-      return this;
-    }
-
-    public Builder setActions(@Nullable List<ActionModel> actions) {
-      this.actions = actions;
-      return this;
-    }
-
-    public Builder setButton(@Nullable Button button) {
-      this.button = button;
-      return this;
-    }
-
-    public Builder setBackgroundHexColor(@Nullable String backgroundHexColor) {
-      this.backgroundHexColor = backgroundHexColor;
-      return this;
-    }
-
-    public Builder setCloseButtonPosition(@Nullable CloseButtonPosition closeButtonPosition) {
-      this.closeButtonPosition = closeButtonPosition;
-      return this;
-    }
-    public ModalMessage build(
-            NotificationMetadata notificationMetadata, @NonNull JSONObject data) {
-      if (title == null) {
-        throw new IllegalArgumentException("Modal model must have a title");
-      }
-      if (actions != null && actions.size() > 0 && button == null) {
-        throw new IllegalArgumentException("Modal model action must be null or have a button");
-      }
-      if (TextUtils.isEmpty(backgroundHexColor)) {
-        throw new IllegalArgumentException("Modal model must have a background color");
-      }
-
-      // We know backgroundColor is not null here because isEmpty checks for null.
-      return new ModalMessage(
-              notificationMetadata, title, body, imageData, actions == null ? Collections.emptyList() : actions, button, backgroundHexColor, closeButtonPosition == null ? CloseButtonPosition.OUTSIDE : closeButtonPosition, entryAnimation, exitAnimation, data);
-    }
   }
 
   @Override

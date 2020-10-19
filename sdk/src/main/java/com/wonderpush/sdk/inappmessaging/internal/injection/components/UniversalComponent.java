@@ -38,7 +38,6 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForegr
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
-import com.wonderpush.sdk.inappmessaging.model.ProtoMarshallerClient;
 import com.wonderpush.sdk.inappmessaging.model.RateLimit;
 
 import javax.inject.Singleton;
@@ -87,8 +86,6 @@ public interface UniversalComponent {
   ImpressionStorageClient impressionStorageClient();
 
   Clock clock();
-
-  ProtoMarshallerClient protoMarshallerClient();
 
   RateLimiterClient rateLimiterClient();
 

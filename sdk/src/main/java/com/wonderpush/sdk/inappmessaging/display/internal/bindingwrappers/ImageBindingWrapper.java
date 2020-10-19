@@ -76,7 +76,7 @@ public class ImageBindingWrapper extends BindingWrapper {
     if (message.getMessageType().equals(MessageType.IMAGE_ONLY)) {
       ImageOnlyMessage msg = (ImageOnlyMessage) message;
       imageView.setVisibility(
-          (msg.getImageData() == null || TextUtils.isEmpty(msg.getImageData().getImageUrl()))
+          (msg.getImageUrl() == null || TextUtils.isEmpty(msg.getImageUrl()))
               ? View.GONE
               : View.VISIBLE);
       if (actionListeners.size() > 0)imageView.setOnClickListener(actionListeners.get(0));

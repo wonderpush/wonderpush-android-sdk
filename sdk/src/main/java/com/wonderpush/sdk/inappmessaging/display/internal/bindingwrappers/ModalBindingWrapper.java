@@ -162,7 +162,7 @@ public class ModalBindingWrapper extends BindingWrapper {
   }
 
   private void setMessage(ModalMessage message) {
-    if (message.getImageData() == null || TextUtils.isEmpty(message.getImageData().getImageUrl())) {
+    if (message.getImageUrl() == null || TextUtils.isEmpty(message.getImageUrl())) {
       imageView.setVisibility(View.GONE);
     } else {
       imageView.setVisibility(View.VISIBLE);

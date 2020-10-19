@@ -39,18 +39,53 @@ public class CardMessage extends InAppMessage {
   @NonNull private final String backgroundHexColor;
   @NonNull private final List<ActionModel> primaryActions;
   @NonNull private final List<ActionModel> secondaryActions;
-  @Nullable private final ImageData portraitImageData;
-  @Nullable private final ImageData landscapeImageData;
+  @Nullable private final String portraitImageUrl;
+  @Nullable private final String landscapeImageUrl;
   @Nullable private final Button primaryButton;
   @Nullable private final Button secondaryButton;
+
+  public static CardMessage create(
+          @NonNull NotificationMetadata notificationMetadata,
+          JSONObject data,
+          JSONObject content
+  ) throws Campaign.InvalidJsonException {
+
+
+    // Title
+    JSONObject titleJson = content.optJSONObject("title");
+    Text titleText = Text.fromJSON(titleJson);
+    if (titleText == null) throw new Campaign.InvalidJsonException("Missing title text");
+    // Body & Buttons
+    Text bodyText = Text.fromJSON(content.optJSONObject("body"));
+
+    // Images
+    String portraitImageUrl =content.optString("portraitImageUrl", null);
+    String landscapeImageUrl = content.optString("landscapeImageUrl", null);
+
+    // Background (mandatory)
+    String backgroundHexColor = content.optString("backgroundHexColor", "#FFFFFF");
+
+    // Actions & buttons
+    Button primaryActionButton = Button.fromJSON(content.optJSONObject("primaryActionButton"));
+    Button secondaryActionButton = Button.fromJSON(content.optJSONObject("secondaryActionButton"));
+
+    List<ActionModel> primaryActions = ActionModel.from(content.optJSONArray("primaryActions"));
+    List<ActionModel> secondaryActions = ActionModel.from(content.optJSONArray("secondaryActions"));
+
+    // Animations
+    IamAnimator.EntryAnimation entryAnimation = IamAnimator.EntryAnimation.fromSlug(content.optString("entryAnimation", "fadeIn"));
+    IamAnimator.ExitAnimation exitAnimation = IamAnimator.ExitAnimation.fromSlug(content.optString("exitAnimation", "fadeOut"));
+
+    return new CardMessage(notificationMetadata, titleText, bodyText, portraitImageUrl, landscapeImageUrl, backgroundHexColor, primaryActions, secondaryActions, primaryActionButton, secondaryActionButton, entryAnimation, exitAnimation, data);
+  }
 
   /** @hide */
   @Override
   public int hashCode() {
     int bodyHash = body != null ? body.hashCode() : 0;
     int secondaryActionHash = secondaryActions != null ? secondaryActions.hashCode() : 0;
-    int portraitImageHash = portraitImageData != null ? portraitImageData.hashCode() : 0;
-    int landscapeImageHash = landscapeImageData != null ? landscapeImageData.hashCode() : 0;
+    int portraitImageHash = portraitImageUrl != null ? portraitImageUrl.hashCode() : 0;
+    int landscapeImageHash = landscapeImageUrl != null ? landscapeImageUrl.hashCode() : 0;
     int primaryButtonHash = primaryButton != null ? primaryButton.hashCode() : 0;
     int secondaryButtonHash = secondaryButton != null ? secondaryButton.hashCode() : 0;
     return title.hashCode()
@@ -91,12 +126,12 @@ public class CardMessage extends InAppMessage {
             || (secondaryButton != null && !secondaryButton.equals(c.secondaryButton))) {
       return false; // the secondary buttons don't match
     }
-    if ((portraitImageData == null && c.portraitImageData != null)
-        || (portraitImageData != null && !portraitImageData.equals(c.portraitImageData))) {
+    if ((portraitImageUrl == null && c.portraitImageUrl != null)
+        || (portraitImageUrl != null && !portraitImageUrl.equals(c.portraitImageUrl))) {
       return false; // the portrait image data don't match
     }
-    if ((landscapeImageData == null && c.landscapeImageData != null)
-        || (landscapeImageData != null && !landscapeImageData.equals(c.landscapeImageData))) {
+    if ((landscapeImageUrl == null && c.landscapeImageUrl != null)
+        || (landscapeImageUrl != null && !landscapeImageUrl.equals(c.landscapeImageUrl))) {
       return false; // the landscape image data don't match
     }
     if (!title.equals(c.title)) {
@@ -122,8 +157,8 @@ public class CardMessage extends InAppMessage {
       @NonNull NotificationMetadata notificationMetadata,
       @NonNull Text title,
       @Nullable Text body,
-      @Nullable ImageData portraitImageData,
-      @Nullable ImageData landscapeImageData,
+      @Nullable String portraitImageUrl,
+      @Nullable String landscapeImageUrl,
       @NonNull String backgroundHexColor,
       @NonNull List<ActionModel> primaryActions,
       @NonNull List<ActionModel> secondaryActions,
@@ -135,8 +170,8 @@ public class CardMessage extends InAppMessage {
     super(notificationMetadata, MessageType.CARD, data, entryAnimation, exitAnimation);
     this.title = title;
     this.body = body;
-    this.portraitImageData = portraitImageData;
-    this.landscapeImageData = landscapeImageData;
+    this.portraitImageUrl = portraitImageUrl;
+    this.landscapeImageUrl = landscapeImageUrl;
     this.backgroundHexColor = backgroundHexColor;
     this.primaryActions = primaryActions;
     this.secondaryActions = secondaryActions;
@@ -144,16 +179,16 @@ public class CardMessage extends InAppMessage {
     this.secondaryButton = secondaryButton;
   }
 
-  /** Gets the {@link ImageData} displayed when the phone is in a portrait orientation */
+  /** Gets the image displayed when the phone is in a portrait orientation */
   @Nullable
-  public ImageData getPortraitImageData() {
-    return portraitImageData;
+  public String getPortraitImageUrl() {
+    return portraitImageUrl;
   }
 
-  /** Gets the {@link ImageData} displayed when the phone is in a landcscape orientation */
+  /** Gets the image displayed when the phone is in a landcscape orientation */
   @Nullable
-  public ImageData getLandscapeImageData() {
-    return landscapeImageData;
+  public String getLandscapeImageUrl() {
+    return landscapeImageUrl;
   }
 
   /** Gets the background hex color associated with this message */
@@ -197,128 +232,6 @@ public class CardMessage extends InAppMessage {
   @Nullable
   public Button getSecondaryButton() {
     return secondaryButton;
-  }
-
-  /**
-   * only used by headless sdk and tests
-   *
-   * @hide
-   */
-  public static Builder builder() {
-    return new CardMessage.Builder();
-  }
-
-  /**
-   * Builder for {@link CardMessage}
-   *
-   * @hide
-   */
-  public static class Builder {
-    @Nullable ImageData portraitImageData;
-    @Nullable ImageData landscapeImageData;
-    @Nullable String backgroundHexColor;
-    @Nullable List<ActionModel> primaryActions;
-    @Nullable Text title;
-    @Nullable Text body;
-    @Nullable List<ActionModel> secondaryActions;
-    @Nullable Button primaryButton;
-    @Nullable Button secondaryButton;
-    @NonNull IamAnimator.EntryAnimation entryAnimation;
-    @NonNull IamAnimator.ExitAnimation exitAnimation;
-
-    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
-      this.entryAnimation = entryAnimation;
-      return this;
-    }
-
-    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
-      this.exitAnimation = exitAnimation;
-      return this;
-    }
-
-    public Builder setPortraitImageData(@Nullable ImageData portraitImageData) {
-      this.portraitImageData = portraitImageData;
-      return this;
-    }
-
-    public Builder setLandscapeImageData(@Nullable ImageData landscapeImageData) {
-      this.landscapeImageData = landscapeImageData;
-      return this;
-    }
-
-    public Builder setBackgroundHexColor(@Nullable String backgroundHexColor) {
-      this.backgroundHexColor = backgroundHexColor;
-      return this;
-    }
-
-    public Builder setPrimaryActions(@Nullable List<ActionModel> primaryActions) {
-      this.primaryActions = primaryActions;
-      return this;
-    }
-
-    public Builder setSecondaryActions(@Nullable List<ActionModel> secondaryActions) {
-      this.secondaryActions = secondaryActions;
-      return this;
-    }
-
-    public Builder setTitle(@Nullable Text title) {
-      this.title = title;
-      return this;
-    }
-
-    public Builder setBody(@Nullable Text body) {
-      this.body = body;
-      return this;
-    }
-
-    public Builder setPrimaryButton(@Nullable Button primaryButton) {
-      this.primaryButton = primaryButton;
-      return this;
-    }
-
-    public Builder setSecondaryButton(@Nullable Button secondaryButton) {
-      this.secondaryButton = secondaryButton;
-      return this;
-    }
-
-    public CardMessage build(
-            NotificationMetadata notificationMetadata, @NonNull JSONObject data) {
-      if (primaryActions == null && primaryActions.size() > 0) {
-        throw new IllegalArgumentException("Card model must have a primary action");
-      }
-      if (primaryButton == null) {
-        throw new IllegalArgumentException("Card model must have a primary action button");
-      }
-      if (secondaryActions != null && secondaryActions.size() > 0 && secondaryButton == null) {
-        throw new IllegalArgumentException(
-            "Card model secondary action must be null or have a button");
-      }
-      if (title == null) {
-        throw new IllegalArgumentException("Card model must have a title");
-      }
-      if (portraitImageData == null && landscapeImageData == null) {
-        throw new IllegalArgumentException("Card model must have at least one image");
-      }
-      if (TextUtils.isEmpty(backgroundHexColor)) {
-        throw new IllegalArgumentException("Card model must have a background color");
-      }
-
-      // We know backgroundColor is not null here because isEmpty checks for null.
-      return new CardMessage(
-              notificationMetadata,
-          title,
-          body,
-          portraitImageData,
-          landscapeImageData,
-          backgroundHexColor,
-          primaryActions == null ? Collections.emptyList() : primaryActions,
-          secondaryActions == null ? Collections.emptyList() : secondaryActions,
-          primaryButton,
-          secondaryButton,
-          entryAnimation,
-          exitAnimation,
-          data);
-    }
   }
 
   @Override

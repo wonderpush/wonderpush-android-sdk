@@ -186,16 +186,9 @@ public class InAppMessageStreamManager {
 
               Function<Campaign, Maybe<Campaign>> filterDisplayable =
                   campaign -> {
-                    switch (campaign.getContent().getMessageDetailsCase()) {
-                      case BANNER:
-                      case IMAGE_ONLY:
-                      case MODAL:
-                      case CARD:
-                        return Maybe.just(campaign);
-                      default:
-                        Logging.logd("Filtering non-displayable message");
-                        return Maybe.empty();
-                    }
+                    if (campaign.getContent() != null) return Maybe.just(campaign);
+                      Logging.logd("Filtering non-displayable message");
+                      return Maybe.empty();
                   };
 
               Function<List<Campaign>, Maybe<TriggeredInAppMessage>>
@@ -303,16 +296,7 @@ public class InAppMessageStreamManager {
   }
 
   private Maybe<TriggeredInAppMessage> triggeredInAppMessage(Campaign campaign, String event, long delay) {
-    String campaignId = campaign.getNotificationMetadata().getCampaignId();
-    String notificationId = campaign.getNotificationMetadata().getNotificationId();
-    String viewId = campaign.getNotificationMetadata().getViewId();
-    InAppMessage inAppMessage =
-        ProtoMarshallerClient.decode(
-            campaign.getContent(),
-            campaignId,
-            notificationId,
-            viewId,
-            campaign.isTestCampaign());
+    InAppMessage inAppMessage = campaign.getContent();
     if (inAppMessage.getMessageType() == null || inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
     }

@@ -68,6 +68,14 @@ public class Button {
     this.buttonHexColor = buttonHexColor;
   }
 
+  public static Button fromJSON(JSONObject data) {
+    if (data == null) return null;
+    Text text = Text.fromJSON(data.optJSONObject("text"));
+    String buttonHexColor = data.optString("buttonHexColor");
+    if (text == null) return null;
+    return new Button(text, buttonHexColor);
+  }
+
   /** Gets the {@link Text} associated with this button */
   public Text getText() {
     return text;

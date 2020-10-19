@@ -1,10 +1,7 @@
 package com.wonderpush.sdk.inappmessaging.model;
 
-import android.text.TextUtils;
-import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.JSONSerializable;
 import com.wonderpush.sdk.NotificationMetadata;
-import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import com.wonderpush.sdk.inappmessaging.internal.Logging;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -16,7 +13,7 @@ import java.util.List;
 public final class Campaign implements JSONSerializable {
   final private JSONObject json;
   final private NotificationMetadata notificationMetadata;
-  final private MessagesProto.Content content;
+  final private InAppMessage content;
   final private long startTimeMs;
   final private long endTimeMs;
   final private JSONObject segment;
@@ -73,13 +70,13 @@ public final class Campaign implements JSONSerializable {
       throw new InvalidJsonException("Missing notification entry in campaign payload: " + campaignJson.toString());
     }
 
-    content = new MessagesProto.Content();
-    content.setDataBundle(notificationJson.optJSONObject("payload"));
+    JSONObject payloadJson = notificationJson.optJSONObject("payload");
 
     JSONObject reportingJson = notificationJson.optJSONObject("reporting");
     if (reportingJson == null) {
       throw new InvalidJsonException("Missing reporting in notification payload: " + notificationJson.toString());
     }
+
     JSONObject contentJson = notificationJson.optJSONObject("content");
     if (contentJson == null) {
       throw new InvalidJsonException("Missing content in notification payload: " + notificationJson.toString());
@@ -106,145 +103,13 @@ public final class Campaign implements JSONSerializable {
     JSONObject imageOnlyJson = contentJson.optJSONObject("imageOnly");
 
     if (cardJson != null) {
-      MessagesProto.CardMessage message = new MessagesProto.CardMessage();
-      content.setCard(message);
-
-      // Title
-      JSONObject titleJson = cardJson.optJSONObject("title");
-      if (null != titleJson) {
-        MessagesProto.Text titleText = MessagesProto.Text.fromJSON(titleJson);
-        if (titleText == null) {
-          throw new InvalidJsonException("Missing title in card payload:" + cardJson.toString());
-        }
-        message.setTitle(titleText);
-      }
-
-      // Body
-      JSONObject bodyJson = cardJson.optJSONObject("body");
-      if (null != bodyJson) {
-        MessagesProto.Text bodyText = MessagesProto.Text.fromJSON(bodyJson);
-        message.setBody(bodyText);
-      }
-
-      // Images
-      message.setPortraitImageUrl(cardJson.optString("portraitImageUrl"));
-      message.setLandscapeImageUrl(cardJson.optString("landscapeImageUrl"));
-
-      // Background (mandatory)
-      message.setBackgroundHexColor(cardJson.optString("backgroundHexColor", "#FFFFFF"));
-
-      // Actions & buttons
-      message.setPrimaryActionButton(MessagesProto.Button.fromJSON(cardJson.optJSONObject("primaryActionButton")));
-      message.setSecondaryActionButton(MessagesProto.Button.fromJSON(cardJson.optJSONObject("secondaryActionButton")));
-      message.setPrimaryActions(ActionModel.from(cardJson.optJSONArray("primaryActions")));
-      message.setSecondaryActions(ActionModel.from(cardJson.optJSONArray("secondaryActions")));
-
-      // Animations
-      message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(cardJson.optString("entryAnimation", "fadeIn")));
-      message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(cardJson.optString("exitAnimation", "fadeOut")));
+      content = CardMessage.create(notificationMetadata, payloadJson, cardJson);
     } else if (bannerJson != null) {
-      MessagesProto.BannerMessage message = new MessagesProto.BannerMessage();
-      content.setBanner(message);
-
-      // Title
-      JSONObject titleJson = bannerJson.optJSONObject("title");
-      if (null != titleJson) {
-        MessagesProto.Text titleText = MessagesProto.Text.fromJSON(titleJson);
-        if (titleText == null) {
-          throw new InvalidJsonException("Missing title in banner payload:" + bannerJson.toString());
-        }
-        message.setTitle(titleText);
-      }
-
-      // Body
-      JSONObject bodyJson = bannerJson.optJSONObject("body");
-      if (null != bodyJson) {
-        MessagesProto.Text bodyText = MessagesProto.Text.fromJSON(bodyJson);
-        message.setBody(bodyText);
-      }
-
-      // Image
-      message.setImageUrl(bannerJson.optString("imageUrl"));
-
-      // Background color
-      message.setBackgroundHexColor(bannerJson.optString("backgroundHexColor", "#FFFFFF"));
-
-      String bannerPositionString = bannerJson.optString("bannerPosition", "top");
-      InAppMessage.BannerPosition bannerPosition = InAppMessage.BannerPosition.TOP;
-      if ("bottom".equals(bannerPositionString)) bannerPosition = InAppMessage.BannerPosition.BOTTOM;
-      message.setBannerPosition(bannerPosition);
-
-      // Action
-      message.setActions(ActionModel.from(bannerJson.optJSONArray("actions")));
-
-      // Animations
-      message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(bannerJson.optString("entryAnimation", "fadeIn")));
-      message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(bannerJson.optString("exitAnimation", "fadeOut")));
+      content = BannerMessage.create(notificationMetadata, payloadJson, bannerJson);
     } else if (modalJson != null) {
-      MessagesProto.ModalMessage message = new MessagesProto.ModalMessage();
-      content.setModal(message);
-
-      // Title
-      JSONObject titleJson = modalJson.optJSONObject("title");
-      if (null != titleJson) {
-        MessagesProto.Text titleText = MessagesProto.Text.fromJSON(titleJson);
-        if (titleText == null) {
-          throw new InvalidJsonException("Missing title in modal payload:" + modalJson.toString());
-        }
-        message.setTitle(titleText);
-      }
-
-      // Body
-      JSONObject bodyJson = modalJson.optJSONObject("body");
-      if (null != bodyJson) {
-        MessagesProto.Text bodyText = MessagesProto.Text.fromJSON(bodyJson);
-        message.setBody(bodyText);
-      }
-
-      // Image
-      message.setImageUrl(modalJson.optString("imageUrl"));
-
-      // Background color
-      message.setBackgroundHexColor(modalJson.optString("backgroundHexColor", "#FFFFFF"));
-
-      // Action & button
-      message.setActionButton(MessagesProto.Button.fromJSON(modalJson.optJSONObject("actionButton")));
-      message.setActions(ActionModel.from(modalJson.optJSONArray("actions")));
-
-      String closeButtonPositionString = modalJson.optString("closeButtonPosition", "outside");
-      InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
-      if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
-      if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
-      message.setCloseButtonPosition(closeButtonPosition);
-
-      // Animations
-      message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(modalJson.optString("entryAnimation", "fadeIn")));
-      message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(modalJson.optString("exitAnimation", "fadeOut")));
-
+      content = ModalMessage.create(notificationMetadata, payloadJson, modalJson);
     } else if (imageOnlyJson != null) {
-      MessagesProto.ImageOnlyMessage message = new MessagesProto.ImageOnlyMessage();
-      content.setImageOnly(message);
-
-      // Image
-      String imageUrlString = imageOnlyJson.optString("imageUrl");
-      if (TextUtils.isEmpty(imageUrlString)) {
-        throw new InvalidJsonException("Missing image in imageOnly payload:" + imageOnlyJson.toString());
-      }
-      message.setImageUrl(imageUrlString);
-
-      // Actions
-      message.setActions(ActionModel.from(imageOnlyJson.optJSONArray("actions")));
-
-      String closeButtonPositionString = imageOnlyJson.optString("closeButtonPosition", "outside");
-      InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
-      if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
-      if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
-      message.setCloseButtonPosition(closeButtonPosition);
-
-      // Animations
-      message.setEntryAnimation(IamAnimator.EntryAnimation.fromSlug(imageOnlyJson.optString("entryAnimation", "fadeIn")));
-      message.setExitAnimation(IamAnimator.ExitAnimation.fromSlug(imageOnlyJson.optString("exitAnimation", "fadeOut")));
-
+      content = ImageOnlyMessage.create(notificationMetadata, payloadJson, imageOnlyJson);
     } else {
       throw new InvalidJsonException("Unknown message type in message node: " + contentJson.toString());
     }
@@ -294,7 +159,7 @@ public final class Campaign implements JSONSerializable {
     return notificationMetadata;
   }
 
-  public MessagesProto.Content getContent() {
+  public InAppMessage getContent() {
     return content;
   }
 
@@ -329,7 +194,7 @@ public final class Campaign implements JSONSerializable {
 
   }
 
-  private static class InvalidJsonException extends Exception {
+  static class InvalidJsonException extends Exception {
     InvalidJsonException(String msg) {
       super(msg);
     }

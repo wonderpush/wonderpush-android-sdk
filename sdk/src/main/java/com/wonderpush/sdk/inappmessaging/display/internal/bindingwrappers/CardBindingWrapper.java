@@ -188,8 +188,8 @@ public class CardBindingWrapper extends BindingWrapper {
   }
 
   private void setImage(CardMessage message) {
-    // Right now we need to check for null, eventually we will make an API change hasImageData()
-    if (message.getPortraitImageData() != null || message.getLandscapeImageData() != null) {
+    // Right now we need to check for null, eventually we will make an API change hasImageUrl()
+    if (message.getPortraitImageUrl() != null || message.getLandscapeImageUrl() != null) {
       imageView.setVisibility(View.VISIBLE);
     } else {
       imageView.setVisibility(View.GONE);

@@ -68,6 +68,14 @@ public class Text {
     this.hexColor = hexColor;
   }
 
+  public static Text fromJSON(JSONObject data) {
+    if (data == null) return null;
+    String text = data.optString("text");
+    String hexColor = data.optString("hexColor");
+    if (text == null) return null;
+    return new Text(text, hexColor);
+  }
+
   /** Gets the text */
   public String getText() {
     return text;

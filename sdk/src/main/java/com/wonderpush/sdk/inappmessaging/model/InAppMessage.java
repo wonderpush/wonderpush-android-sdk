@@ -40,7 +40,7 @@ public abstract class InAppMessage {
   }
   public interface InAppMessageWithImage {
     @Nullable
-    ImageData getImageData();
+    String getImageUrl();
   }
 
   MessageType messageType;

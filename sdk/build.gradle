@@ -175,7 +175,6 @@ task androidJavadocs(type: Javadoc) {
             'src/main/java/com/wonderpush/sdk/inappmessaging/model/Text.java',
             'src/main/java/com/wonderpush/sdk/inappmessaging/model/ModalMessage.java',
             'src/main/java/com/wonderpush/sdk/inappmessaging/model/Button.java',
-            'src/main/java/com/wonderpush/sdk/inappmessaging/model/ImageData.java',
             'src/main/java/com/wonderpush/sdk/inappmessaging/model/BannerMessage.java',
             'src/main/java/com/wonderpush/sdk/inappmessaging/model/CardMessage.java',
             'src/main/java/com/wonderpush/sdk/inappmessaging/model/InAppMessage.java',

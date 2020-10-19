@@ -98,7 +98,7 @@ public class BannerBindingWrapper extends BindingWrapper {
     }
 
     bannerImage.setVisibility(
-        (message.getImageData() == null || TextUtils.isEmpty(message.getImageData().getImageUrl()))
+        (message.getImageUrl() == null)
             ? View.GONE
             : View.VISIBLE);
 

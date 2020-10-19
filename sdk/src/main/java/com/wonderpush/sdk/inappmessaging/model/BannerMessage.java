@@ -36,16 +36,45 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
   @NonNull private final Text title;
 
   @Nullable private final Text body;
-  @Nullable private final ImageData imageData;
+  @Nullable private final String imageUrl;
   @NonNull private final List<ActionModel> actions;
   @NonNull private final String backgroundHexColor;
   @NonNull private final BannerPosition bannerPosition;
+
+  public static BannerMessage create(NotificationMetadata notificationMetadata, JSONObject payloadJson, JSONObject bannerJson) throws Campaign.InvalidJsonException {
+
+    // Title
+    Text titleText = Text.fromJSON(bannerJson.optJSONObject("title"));
+    if (titleText == null) throw new Campaign.InvalidJsonException("Missing title text");
+
+    // Body
+    Text bodyText = Text.fromJSON(bannerJson.optJSONObject("body"));
+
+    // Image
+    String imageUrl = bannerJson.optString("imageUrl", null);
+
+    // Background color
+    String backgroundHexColor = bannerJson.optString("backgroundHexColor", "#FFFFFF");
+
+    String bannerPositionString = bannerJson.optString("bannerPosition", "top");
+    InAppMessage.BannerPosition bannerPosition = InAppMessage.BannerPosition.TOP;
+    if ("bottom".equals(bannerPositionString)) bannerPosition = InAppMessage.BannerPosition.BOTTOM;
+
+    // Action
+    List<ActionModel> actions = ActionModel.from(bannerJson.optJSONArray("actions"));
+
+    // Animations
+    IamAnimator.EntryAnimation entryAnimation = IamAnimator.EntryAnimation.fromSlug(bannerJson.optString("entryAnimation", "fadeIn"));
+    IamAnimator.ExitAnimation exitAnimation = IamAnimator.ExitAnimation.fromSlug(bannerJson.optString("exitAnimation", "fadeOut"));
+
+    return new BannerMessage(notificationMetadata, titleText, bodyText, imageUrl, actions, backgroundHexColor, bannerPosition, entryAnimation, exitAnimation, payloadJson);
+  }
 
   /** @hide */
   @Override
   public int hashCode() {
     int bodyHash = body != null ? body.hashCode() : 0;
-    int imageHash = imageData != null ? imageData.hashCode() : 0;
+    int imageHash = imageUrl != null ? imageUrl.hashCode() : 0;
     int actionHash = actions != null ? actions.hashCode() : 0;
     return title.hashCode() + bodyHash + imageHash + actionHash + backgroundHexColor.hashCode() + bannerPosition.hashCode() + entryAnimation.hashCode() + exitAnimation.hashCode();
   }
@@ -70,8 +99,8 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     if ((body == null && b.body != null) || (body != null && !body.equals(b.body))) {
       return false; // the bodies don't match
     }
-    if ((imageData == null && b.imageData != null)
-        || (imageData != null && !imageData.equals(b.imageData))) {
+    if ((imageUrl == null && b.imageUrl != null)
+        || (imageUrl != null && !imageUrl.equals(b.imageUrl))) {
       return false; // the images don't match
     }
     if ((actions == null && b.actions != null) || (actions != null && !actions.equals(b.actions))) {
@@ -93,7 +122,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
       @NonNull NotificationMetadata notificationMetadata,
       @NonNull Text title,
       @Nullable Text body,
-      @Nullable ImageData imageData,
+      @Nullable String imageUrl,
       List<ActionModel> actions,
       @NonNull String backgroundHexColor,
       @Nullable BannerPosition bannerPosition,
@@ -103,7 +132,7 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     super(notificationMetadata, MessageType.BANNER, data, entryAnimation, exitAnimation);
     this.title = title;
     this.body = body;
-    this.imageData = imageData;
+    this.imageUrl = imageUrl;
     this.actions = actions;
     this.backgroundHexColor = backgroundHexColor;
     this.bannerPosition = bannerPosition == null ? BannerPosition.TOP : bannerPosition;
@@ -121,10 +150,10 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     return body;
   }
 
-  /** Gets the {@link ImageData} associated with this message */
+  /** Gets the URL of the image associated with this message */
   @Nullable
-  public ImageData getImageData() {
-    return imageData;
+  public String getImageUrl() {
+    return imageUrl;
   }
 
   /** Gets the {@link ActionModel}s associated with this message */
@@ -142,89 +171,8 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     return backgroundHexColor;
   }
 
-  /**
-   * only used by headless sdk and tests
-   *
-   * @hide
-   */
-  public static Builder builder() {
-    return new BannerMessage.Builder();
-  }
-
   @Override
   public ButtonType getButtonType(List<ActionModel> actions) {
     return actionsEqual(actions, this.actions) ? ButtonType.PRIMARY : ButtonType.UNDEFINED;
-  }
-
-  /**
-   * Builder for {@link BannerMessage}
-   *
-   * @hide
-   */
-  public static class Builder {
-    @Nullable
-    Text title;
-    @Nullable
-    Text body;
-    @Nullable ImageData imageData;
-    @Nullable
-    List<ActionModel> actions;
-    @Nullable String backgroundHexColor;
-    @Nullable private BannerPosition bannerPosition;
-    @NonNull IamAnimator.EntryAnimation entryAnimation;
-    @NonNull IamAnimator.ExitAnimation exitAnimation;
-
-    public Builder setEntryAnimation(@Nullable IamAnimator.EntryAnimation entryAnimation) {
-      this.entryAnimation = entryAnimation;
-      return this;
-    }
-
-    public Builder setExitAnimation(@Nullable IamAnimator.ExitAnimation exitAnimation) {
-      this.exitAnimation = exitAnimation;
-      return this;
-    }
-
-    public Builder setTitle(@Nullable Text title) {
-      this.title = title;
-      return this;
-    }
-
-    public Builder setBody(@Nullable Text body) {
-      this.body = body;
-      return this;
-    }
-
-    public Builder setImageData(@Nullable ImageData imageData) {
-      this.imageData = imageData;
-      return this;
-    }
-
-    public Builder setActions(@Nullable List<ActionModel> actions) {
-      this.actions = actions;
-      return this;
-    }
-
-    public Builder setBackgroundHexColor(@Nullable String backgroundHexColor) {
-      this.backgroundHexColor = backgroundHexColor;
-      return this;
-    }
-
-    public BannerMessage build(
-            NotificationMetadata notificationMetadata, @NonNull JSONObject data) {
-      if (title == null) {
-        throw new IllegalArgumentException("Banner model must have a title");
-      }
-      if (TextUtils.isEmpty(backgroundHexColor)) {
-        throw new IllegalArgumentException("Banner model must have a background color");
-      }
-      // We know backgroundColor is not null here because isEmpty checks for null.
-      return new BannerMessage(
-              notificationMetadata, title, body, imageData, actions == null ? new ArrayList<>() : actions, backgroundHexColor, bannerPosition, entryAnimation, exitAnimation, data);
-    }
-
-    public Builder setBannerPosition(@Nullable BannerPosition bannerPosition) {
-      this.bannerPosition = bannerPosition;
-      return this;
-    }
   }
 }
