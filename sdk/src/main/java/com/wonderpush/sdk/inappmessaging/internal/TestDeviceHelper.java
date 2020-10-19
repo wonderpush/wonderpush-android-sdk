@@ -66,14 +66,14 @@ public class TestDeviceHelper {
   /**
    * Updates test device status based on a response from the IAM server.
    *
-   * @param messages campaign fetch response from the IAM server.
+   * @param campaigns campaign fetch response from the IAM server.
    */
-  public void processCampaignFetch(List<Campaign.ThickContent> messages) {
+  public void processCampaignFetch(List<Campaign> campaigns) {
     // We only care about this logic if we are not already a test device.
     if (!isTestDevice) {
       updateFreshInstallStatus();
-      for (Campaign.ThickContent message : messages) {
-        if (message.getIsTestCampaign()) {
+      for (Campaign campaign : campaigns) {
+        if (campaign.isTestCampaign()) {
           setTestDeviceStatus(true);
           Logging.logi("Setting this device as a test device");
           return;

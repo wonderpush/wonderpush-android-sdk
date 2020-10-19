@@ -26,8 +26,6 @@ import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 
-import java.util.Date;
-
 /**
  * Class to store and retrieve in app message impressions
  *
@@ -104,19 +102,19 @@ public class ImpressionStorageClient {
   }
 
   /** Returns {@code Single.just(true)} if the campaign has been impressed */
-  public Single<Boolean> isCapped(Campaign.ThickContent content) {
-    String campaignId = content.getPayload().getCampaignId();
+  public Single<Boolean> isCapped(Campaign campaign) {
+    String campaignId = campaign.getNotificationMetadata().getCampaignId();
     CampaignImpressionList campaignImpressionList = getAllImpressions().blockingGet();
     long now = System.currentTimeMillis();
     if (campaignId != null && campaignImpressionList != null) {
       for (CampaignImpression impression : campaignImpressionList.getCampaignImpressionList()) {
         if (campaignId.equals(impression.getCampaignId())) {
           // enforce maxImpressions
-          if (impression.getImpressionCount() >= content.getCapping().getMaxImpressions()) {
+          if (impression.getImpressionCount() >= campaign.getCapping().getMaxImpressions()) {
             return Single.just(true);
           }
           // enforce snooze
-          if (now - impression.getImpressionTimestampMillis() <  content.getCapping().getSnoozeTime()) {
+          if (now - impression.getImpressionTimestampMillis() <  campaign.getCapping().getSnoozeTime()) {
             return Single.just(true);
           }
           break;

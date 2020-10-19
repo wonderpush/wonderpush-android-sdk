@@ -66,10 +66,10 @@ public class AnalyticsEventsManager {
   }
 
   //@VisibleForTesting
-  static Set<String> extractAnalyticsEventNames(List<Campaign.ThickContent> messages) {
+  static Set<String> extractAnalyticsEventNames(List<Campaign> campaigns) {
     Set<String> analyticsEvents = new HashSet<>();
-    for (Campaign.ThickContent content : messages) {
-      for (CommonTypesProto.TriggeringCondition condition : content.getTriggeringConditionsList()) {
+    for (Campaign campaign : campaigns) {
+      for (CommonTypesProto.TriggeringCondition condition : campaign.getTriggeringConditions()) {
         if (condition.getEvent() != null && !TextUtils.isEmpty(condition.getEvent().getName())) {
           analyticsEvents.add(condition.getEvent().getName());
         }
@@ -78,10 +78,10 @@ public class AnalyticsEventsManager {
     return analyticsEvents;
   }
 
-  public void updateContextualTriggers(List<Campaign.ThickContent> messages) {
+  public void updateContextualTriggers(List<Campaign> campaigns) {
     Logging.logd(
             "Updating contextual triggers for the following analytics events: " + analyticsEventNames);
-    analyticsEventNames = extractAnalyticsEventNames(messages);
+    analyticsEventNames = extractAnalyticsEventNames(campaigns);
   }
 
   private class AnalyticsFlowableSubscriber implements FlowableOnSubscribe<String> {

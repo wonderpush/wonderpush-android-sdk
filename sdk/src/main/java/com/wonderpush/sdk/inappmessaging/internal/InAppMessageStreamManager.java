@@ -23,7 +23,7 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.Programma
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
 import com.wonderpush.sdk.inappmessaging.model.*;
-import com.wonderpush.sdk.inappmessaging.model.Campaign.ThickContent;
+import com.wonderpush.sdk.inappmessaging.model.Campaign;
 import com.wonderpush.sdk.inappmessaging.model.CommonTypesProto.TriggeringCondition;
 
 import java.util.ArrayList;
@@ -87,11 +87,11 @@ public class InAppMessageStreamManager {
     this.inAppMessagingConfiguration = inAppMessagingConfiguration;
   }
 
-  private static boolean containsTriggeringCondition(String event, ThickContent content) {
-    if (isAppForegroundEvent(event) && content.getIsTestCampaign()) {
+  private static boolean containsTriggeringCondition(String event, Campaign campaign) {
+    if (isAppForegroundEvent(event) && campaign.isTestCampaign()) {
       return true; // the triggering condition for test campaigns is always 'app foreground'
     }
-    for (TriggeringCondition condition : content.getTriggeringConditionsList()) {
+    for (TriggeringCondition condition : campaign.getTriggeringConditions()) {
       if (hasIamTrigger(condition, event) || hasAnalyticsTrigger(condition, event)) {
         Logging.logd(String.format("The event %s is contained in the list of triggers", event));
         return true;
@@ -100,22 +100,22 @@ public class InAppMessageStreamManager {
     return false;
   }
 
-  private static boolean matchesSegment(Segmenter segmenter, ThickContent content) {
+  private static boolean matchesSegment(Segmenter segmenter, Campaign campaign) {
       // No segment means match all
-      if (content.getSegment() == null) return true;
+      if (campaign.getSegment() == null) return true;
       // No segmenter means we can't perform segmentation
       if (segmenter == null) return false;
       try {
-          ASTCriterionNode parsedInstallationSegment = Segmenter.parseInstallationSegment(content.getSegment());
+          ASTCriterionNode parsedInstallationSegment = Segmenter.parseInstallationSegment(campaign.getSegment());
           return segmenter.matchesInstallation(parsedInstallationSegment);
       } catch (Exception e) {
-          Logging.loge(String.format("Could not parse segment %s", content.getSegment().toString()), e);
+          Logging.loge(String.format("Could not parse segment %s", campaign.getSegment().toString()), e);
           return false;
       }
   }
 
-  private static long delayForEvent(String event, ThickContent content) {
-      for (TriggeringCondition condition : content.getTriggeringConditionsList()) {
+  private static long delayForEvent(String event, Campaign campaign) {
+      for (TriggeringCondition condition : campaign.getTriggeringConditions()) {
           if (hasIamTrigger(condition, event) || hasAnalyticsTrigger(condition, event)) {
               Logging.logd(String.format("The event %s is contained in the list of triggers", event));
               return condition.getDelay();
@@ -132,9 +132,9 @@ public class InAppMessageStreamManager {
     return tc.getEvent() != null && tc.getEvent().getName() != null && tc.getEvent().getName().equals(event);
   }
 
-  private static boolean isActive(Clock clock, ThickContent content) {
-    long campaignStartTime = content.getPayload().getCampaignStartTimeMillis();
-    long campaignEndTime = content.getPayload().getCampaignEndTimeMillis();
+  private static boolean isActive(Clock clock, Campaign campaign) {
+    long campaignStartTime = campaign.getCampaignStartTimeMillis();
+    long campaignEndTime = campaign.getCampaignEndTimeMillis();
     long currentTime = clock.now();
     return currentTime > campaignStartTime && (campaignEndTime == 0 || currentTime < campaignEndTime);
   }
@@ -142,18 +142,14 @@ public class InAppMessageStreamManager {
   // Comparisons treat the numeric values of priorities like they were ranks i.e lower is better.
   // If one campaign is a test campaign it is of higher priority.
   // Example: P1 > P2. P2(test) > P1. P1(test) > P2(test)
-  private static int compareByPriority(ThickContent content1, ThickContent content2) {
-    if (content1.getIsTestCampaign() && !content2.getIsTestCampaign()) {
+  private static int compareByPriority(Campaign campaign1, Campaign campaign2) {
+    if (campaign1.isTestCampaign() && !campaign2.isTestCampaign()) {
       return -1;
     }
-    if (content2.getIsTestCampaign() && !content1.getIsTestCampaign()) {
+    if (campaign2.isTestCampaign() && !campaign1.isTestCampaign()) {
       return 1;
     }
-    return Integer.compare(content1.getPriority().getValue(), content2.getPriority().getValue());
-  }
-
-  public static boolean isAppForegroundEvent(TriggeringCondition event) {
-    return event.getIamTrigger().toString().equals(ON_FOREGROUND);
+    return 0;
   }
 
   public static boolean isAppForegroundEvent(String event) {
@@ -170,40 +166,40 @@ public class InAppMessageStreamManager {
         .concatMap(
             event -> {
 
-              Function<ThickContent, Maybe<ThickContent>> filterTooImpressed =
-                  content ->
-                      content.getIsTestCampaign()
-                          ? Maybe.just(content)
+              Function<Campaign, Maybe<Campaign>> filterTooImpressed =
+                  campaign ->
+                          campaign.isTestCampaign()
+                          ? Maybe.just(campaign)
                           : impressionStorageClient
-                              .isCapped(content)
+                              .isCapped(campaign)
                               .doOnError(
                                   e ->
                                       Logging.logw("Impression store read fail: " + e.getMessage()))
                               .onErrorResumeNext(
                                   Single.just(false)) // Absorb impression read errors
-                              .doOnSuccess(isCapped -> logCappedStatus(content, isCapped))
+                              .doOnSuccess(isCapped -> logCappedStatus(campaign, isCapped))
                               .filter(isCapped -> !isCapped)
-                              .map(isCapped -> content);
+                              .map(isCapped -> campaign);
 
-              Function<ThickContent, Maybe<ThickContent>> appForegroundRateLimitFilter =
+              Function<Campaign, Maybe<Campaign>> appForegroundRateLimitFilter =
                   content -> getContentIfNotRateLimited(event, content);
 
-              Function<ThickContent, Maybe<ThickContent>> filterDisplayable =
-                  thickContent -> {
-                    switch (thickContent.getContent().getMessageDetailsCase()) {
+              Function<Campaign, Maybe<Campaign>> filterDisplayable =
+                  campaign -> {
+                    switch (campaign.getContent().getMessageDetailsCase()) {
                       case BANNER:
                       case IMAGE_ONLY:
                       case MODAL:
                       case CARD:
-                        return Maybe.just(thickContent);
+                        return Maybe.just(campaign);
                       default:
                         Logging.logd("Filtering non-displayable message");
                         return Maybe.empty();
                     }
                   };
 
-              Function<List<ThickContent>, Maybe<TriggeredInAppMessage>>
-                  selectThickContent =
+              Function<List<Campaign>, Maybe<TriggeredInAppMessage>>
+                  selectCampaign =
                       response ->
                           getTriggeredInAppMessageMaybe(
                               event,
@@ -212,20 +208,20 @@ public class InAppMessageStreamManager {
                               filterDisplayable,
                               response);
 
-              Maybe<List<Campaign.ThickContent>> serviceFetch =
-                      Maybe.<List<Campaign.ThickContent>>create(
+              Maybe<List<Campaign>> serviceFetch =
+                      Maybe.<List<Campaign>>create(
                               emitter -> {
                                   inAppMessagingConfiguration.fetchInAppConfig((JSONObject config, Throwable error) -> {
                                       try {
                                           if (error != null) emitter.onError(error);
                                           else {
                                               JSONArray campaignsJson = config != null ? config.optJSONArray("campaigns") : null;
-                                              List<Campaign.ThickContent> messages = new ArrayList<>();
+                                              List<Campaign> messages = new ArrayList<>();
                                               for (int i = 0; campaignsJson != null && i < campaignsJson.length(); i++) {
                                                   JSONObject campaignJson = campaignsJson.optJSONObject(i);
                                                   if (campaignJson == null) continue;
-                                                  Campaign.ThickContent thickContent = Campaign.ThickContent.fromJSON(campaignJson);
-                                                  if (thickContent != null) messages.add(thickContent);
+                                                  Campaign campaign = Campaign.fromJSON(campaignJson);
+                                                  if (campaign != null) messages.add(campaign);
                                               }
                                               emitter.onSuccess(messages);
                                           }
@@ -249,38 +245,38 @@ public class InAppMessageStreamManager {
                               .onErrorResumeNext(Maybe.empty()); // Absorb service failures
 
               return serviceFetch
-                      .flatMap(selectThickContent)
+                      .flatMap(selectCampaign)
                       .toFlowable();
             })
         .observeOn(schedulers.mainThread()); // Updates are delivered on the main thread
   }
 
-  private Maybe<ThickContent> getContentIfNotRateLimited(String event, ThickContent content) {
-    if (!content.getIsTestCampaign() && isAppForegroundEvent(event)) {
+  private Maybe<Campaign> getContentIfNotRateLimited(String event, Campaign campaign) {
+    if (!campaign.isTestCampaign() && isAppForegroundEvent(event)) {
       return rateLimiterClient
           .isRateLimited(appForegroundRateLimit)
           .doOnSuccess(
               isRateLimited -> Logging.logi("App foreground rate limited ? : " + isRateLimited))
           .onErrorResumeNext(Single.just(false)) // Absorb rate limit errors
           .filter(isRateLimited -> !isRateLimited)
-          .map(isRateLimited -> content);
+          .map(isRateLimited -> campaign);
     }
-    return Maybe.just(content);
+    return Maybe.just(campaign);
   }
 
-  private static void logCappedStatus(ThickContent content, Boolean isCapped) {
+  private static void logCappedStatus(Campaign campaign, Boolean isCapped) {
       Logging.logi(
               String.format(
                       "Campaign %s capped ? : %s",
-                      content.getPayload().getCampaignId(), isCapped));
+                      campaign.getNotificationMetadata().getCampaignId(), isCapped));
   }
 
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
           String event,
-          Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed,
-          Function<ThickContent, Maybe<ThickContent>> appForegroundRateLimitFilter,
-          Function<ThickContent, Maybe<ThickContent>> filterDisplayable,
-          List<Campaign.ThickContent> messages) {
+          Function<Campaign, Maybe<Campaign>> filterAlreadyImpressed,
+          Function<Campaign, Maybe<Campaign>> appForegroundRateLimitFilter,
+          Function<Campaign, Maybe<Campaign>> filterDisplayable,
+          List<Campaign> campaigns) {
     Segmenter.Data segmenterData = null;
     try {
       JSONObject installation = JSONSyncInstallation.forCurrentUser().getSdkState();
@@ -294,49 +290,33 @@ public class InAppMessageStreamManager {
       Logging.loge("Could not create segmenter data", e);
     }
     final Segmenter segmenter = segmenterData == null ? null : new Segmenter(segmenterData);
-    return Flowable.fromIterable(messages)
-        .filter(content -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, content))
-        .filter(content -> containsTriggeringCondition(event, content))
-        .filter(content -> matchesSegment(segmenter, content))
+    return Flowable.fromIterable(campaigns)
+        .filter(campaign -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, campaign))
+        .filter(campaign -> containsTriggeringCondition(event, campaign))
+        .filter(campaign -> matchesSegment(segmenter, campaign))
         .flatMapMaybe(filterAlreadyImpressed)
         .flatMapMaybe(appForegroundRateLimitFilter)
         .flatMapMaybe(filterDisplayable)
         .sorted(InAppMessageStreamManager::compareByPriority)
         .firstElement()
-        .flatMap(content -> triggeredInAppMessage(content, event, delayForEvent(event, content)));
+        .flatMap(campaign -> triggeredInAppMessage(campaign, event, delayForEvent(event, campaign)));
   }
 
-  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(ThickContent content, String event, long delay) {
-    String campaignId = content.getPayload().getCampaignId();
-    String notificationId = content.getPayload().getNotificationId();
-    String viewId = content.getPayload().getViewId();
+  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(Campaign campaign, String event, long delay) {
+    String campaignId = campaign.getNotificationMetadata().getCampaignId();
+    String notificationId = campaign.getNotificationMetadata().getNotificationId();
+    String viewId = campaign.getNotificationMetadata().getViewId();
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(
-            content.getContent(),
+            campaign.getContent(),
             campaignId,
             notificationId,
             viewId,
-            content.getIsTestCampaign());
-    if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
+            campaign.isTestCampaign());
+    if (inAppMessage.getMessageType() == null || inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event, delay));
-  }
-
-  private static <T> Maybe<T> taskToMaybe(Task<T> task) {
-    return Maybe.create(
-        emitter -> {
-          task.addOnSuccessListener(
-              result -> {
-                emitter.onSuccess(result);
-                emitter.onComplete();
-              });
-          task.addOnFailureListener(
-              e -> {
-                emitter.onError(e);
-                emitter.onComplete();
-              });
-        });
   }
 }
