@@ -153,7 +153,7 @@ public class InAppMessageStreamManager {
   }
 
   public static boolean isAppForegroundEvent(String event) {
-    return event.equals(ON_FOREGROUND);
+    return event != null && event.equals(ON_FOREGROUND);
   }
 
   public Flowable<TriggeredInAppMessage> createInAppMessageStream() {
