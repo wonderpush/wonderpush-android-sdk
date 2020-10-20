@@ -96,21 +96,8 @@ public final class Campaign implements JSONSerializable {
       throw new InvalidJsonException("Missing notificationId in reporting payload: " + reportingJson.toString());
     }
     notificationMetadata = new NotificationMetadata(campaignId, notificationId, viewId, false);
-
-    JSONObject cardJson = contentJson.optJSONObject("card");
-    JSONObject bannerJson = contentJson.optJSONObject("banner");
-    JSONObject modalJson = contentJson.optJSONObject("modal");
-    JSONObject imageOnlyJson = contentJson.optJSONObject("imageOnly");
-
-    if (cardJson != null) {
-      content = CardMessage.create(notificationMetadata, payloadJson, cardJson);
-    } else if (bannerJson != null) {
-      content = BannerMessage.create(notificationMetadata, payloadJson, bannerJson);
-    } else if (modalJson != null) {
-      content = ModalMessage.create(notificationMetadata, payloadJson, modalJson);
-    } else if (imageOnlyJson != null) {
-      content = ImageOnlyMessage.create(notificationMetadata, payloadJson, imageOnlyJson);
-    } else {
+    content = parseContent(notificationMetadata, payloadJson, contentJson);
+    if (content == null) {
       throw new InvalidJsonException("Unknown message type in message node: " + contentJson.toString());
     }
 
@@ -125,6 +112,24 @@ public final class Campaign implements JSONSerializable {
     if (triggeringConditions.size() < 1) {
       throw new InvalidJsonException("No triggers in campaign" + campaignJson.toString());
     }
+  }
+
+  public static InAppMessage parseContent(NotificationMetadata notificationMetadata, JSONObject payloadJson, JSONObject contentJson) throws InvalidJsonException {
+    JSONObject cardJson = contentJson.optJSONObject("card");
+    JSONObject bannerJson = contentJson.optJSONObject("banner");
+    JSONObject modalJson = contentJson.optJSONObject("modal");
+    JSONObject imageOnlyJson = contentJson.optJSONObject("imageOnly");
+
+    if (cardJson != null) {
+      return CardMessage.create(notificationMetadata, payloadJson, cardJson);
+    } else if (bannerJson != null) {
+      return BannerMessage.create(notificationMetadata, payloadJson, bannerJson);
+    } else if (modalJson != null) {
+      return ModalMessage.create(notificationMetadata, payloadJson, modalJson);
+    } else if (imageOnlyJson != null) {
+      return ImageOnlyMessage.create(notificationMetadata, payloadJson, imageOnlyJson);
+    }
+    return null;
   }
 
   public boolean isTestCampaign() {
