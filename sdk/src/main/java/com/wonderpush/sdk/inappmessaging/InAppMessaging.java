@@ -31,6 +31,7 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.components.Universal
 import com.wonderpush.sdk.inappmessaging.internal.injection.modules.*;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
+import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.TriggeredInAppMessage;
 
 import java.util.concurrent.Executor;
@@ -301,6 +302,10 @@ public class InAppMessaging {
    */
   public void triggerEvent(String eventType) {
     programaticContextualTriggers.triggerEvent(eventType);
+  }
+
+  public void displayInAppMessage(InAppMessage inAppMessage) {
+    triggerInAppMessage(new TriggeredInAppMessage(inAppMessage, null, 0));
   }
 
   private void triggerInAppMessage(TriggeredInAppMessage inAppMessage) {

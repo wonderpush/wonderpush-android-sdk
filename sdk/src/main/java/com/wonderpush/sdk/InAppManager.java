@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,6 +25,10 @@ class InAppManager {
     private final static String TAG = WonderPush.TAG;
 
     protected static void handleInApp(Context context, NotificationModel notif) {
+        if (notif.getInAppMessage() != null && notif.getType() != NotificationModel.Type.DATA) {
+            InAppMessaging.getInstance().displayInAppMessage(notif.getInAppMessage());
+            return;
+        }
         try {
             switch (notif.getType()) {
                 case SIMPLE:
