@@ -7,6 +7,8 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.wonderpush.sdk.inappmessaging.model.Campaign;
+import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -143,6 +145,7 @@ public abstract class NotificationModel implements Parcelable {
     public List<ActionModel> actions = new ArrayList<>();
     private boolean receipt;
     private boolean receiptUsingMeasurements;
+    private InAppMessage inAppMessage;
 
     // Common in-app message data
     private final AtomicReference<ButtonModel> choice = new AtomicReference<>();
@@ -233,6 +236,17 @@ public abstract class NotificationModel implements Parcelable {
             for (int i = 0 ; i < actionCount ; ++i) {
                 JSONObject action = actions.optJSONObject(i);
                 rtn.addAction(new ActionModel(action));
+            }
+
+            // Read in-app
+            JSONObject inApp = wpData.optJSONObject("inApp");
+            if (inApp != null) {
+                JSONObject reporting = inApp.optJSONObject("reporting");
+                JSONObject content = inApp.optJSONObject("content");
+                if (reporting != null && content != null) {
+                    NotificationMetadata notificationMetadata = new NotificationMetadata(reporting.optString("campaignId", null), reporting.optString("notificationId", null), reporting.optString("viewId", null), false);
+                    rtn.inAppMessage = Campaign.parseContent(notificationMetadata, new JSONObject(), content);
+                }
             }
 
             // Read common in-app fields
@@ -393,4 +407,7 @@ public abstract class NotificationModel implements Parcelable {
         return choice;
     }
 
+    public InAppMessage getInAppMessage() {
+        return inAppMessage;
+    }
 }
