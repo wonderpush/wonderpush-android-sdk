@@ -61,6 +61,16 @@ public class MeasurementsApiClient {
                                 return;
                             }
                             Log.d(TAG, String.format("Request the measurements API %s complete. Payload: %s", resource, params.toString()));
+
+                            // Read config version
+                            if (responseJson != null && responseJson.has("_configVersion") && !responseJson.isNull("_configVersion")) {
+                                String version = responseJson.optString("_configVersion", Long.toString(responseJson.optLong("_configVersion", 0)));
+                                if (version != null && WonderPush.getRemoteConfigManager() != null) {
+                                    WonderPush.getRemoteConfigManager().declareVersion(version);
+                                }
+                            }
+
+                            // Callback
                             if (request.getHandler() != null) {
                                 request.getHandler().onSuccess(response.code(), new Response(responseJson));
                             }
