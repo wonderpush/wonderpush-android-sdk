@@ -23,6 +23,7 @@ public class MeasurementsApiClient {
         final Request.Params params = request.getParams() != null ? request.getParams() : new Request.Params();
         params.add("clientId", WonderPush.getClientId());
         params.add("devicePlatform", "Android");
+        params.add("sdkVersion", WonderPush.SDK_VERSION);
         if (WonderPushConfiguration.getUserId() != null) {
             params.add("userId", WonderPushConfiguration.getUserId());
         }
