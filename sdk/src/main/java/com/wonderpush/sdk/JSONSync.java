@@ -19,6 +19,9 @@ class JSONSync {
         void upgrade(JSONObject upgradeMeta, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator);
     }
 
+    private static final int SAVED_STATE_STATE_VERSION_1 = 1;
+    private static final int SAVED_STATE_STATE_VERSION_2 = 2;
+    private static final String SAVED_STATE_FIELD__SYNC_STATE_VERSION = "_syncStateVersion";
     private static final String SAVED_STATE_FIELD_UPGRADE_META = "upgradeMeta";
     private static final String SAVED_STATE_FIELD_SDK_STATE = "sdkState";
     private static final String SAVED_STATE_FIELD_SERVER_STATE = "serverState";
@@ -109,6 +112,11 @@ class JSONSync {
         this.scheduledPatchCall = scheduledPatchCall;
         this.inflightPatchCall = inflightPatchCall;
 
+        // Handle state version upgrades
+        // - 0 -> 1: No-op. 0 means no previous state.
+        // - 1 -> 2: No-op. Only the "upgradeMeta" key has been added and it is read with proper default.
+
+        // Handle client upgrades
         applyUpgrade();
 
         if (this.inflightPatchCall) {
@@ -123,6 +131,7 @@ class JSONSync {
     private synchronized void save() {
         try {
             JSONObject state = new JSONObject();
+            state.put(SAVED_STATE_FIELD__SYNC_STATE_VERSION,      SAVED_STATE_STATE_VERSION_2);
             state.put(SAVED_STATE_FIELD_UPGRADE_META,             upgradeMeta);
             state.put(SAVED_STATE_FIELD_SDK_STATE,                sdkState);
             state.put(SAVED_STATE_FIELD_SERVER_STATE,             serverState);
