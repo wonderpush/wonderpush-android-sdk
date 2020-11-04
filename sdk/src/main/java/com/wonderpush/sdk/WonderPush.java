@@ -101,7 +101,6 @@ public class WonderPush {
     private static String sClientSecret;
     private static String sBaseURL;
     private static boolean sIsInitialized = false;
-    private static boolean sIsReady = false;
     private static boolean sIsReachable = false;
 
     private static boolean sRequiresUserConsent = false;
@@ -191,11 +190,6 @@ public class WonderPush {
      * The preference.subscriptionStatus value when notifications are disabled.
      */
     static final String INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT = "optOut";
-
-    /**
-     * Local intent broadcasted when the WonderPush SDK has been initialized and network is reachable.
-     */
-    public static final String INTENT_INTIALIZED = "wonderpushInitialized";
 
     /**
      * Local intent broadcasted when the push token has changed.
@@ -1518,24 +1512,10 @@ public class WonderPush {
 
     /**
      * Whether {@link #initialize(Context, String, String)} has been called.
-     * Different from having fetched an access token,
-     * and hence from {@link #INTENT_INTIALIZED} being dispatched.
      * @return {@code true} if the SDK is initialized, {@code false} otherwise.
      */
     static boolean isInitialized() {
         return sIsInitialized;
-    }
-
-    /**
-     * Whether the SDK is ready to operate and
-     * the {@link #INTENT_INTIALIZED} intent has been dispatched.
-     *
-     * The SDK is ready when it is initialized and has fetched an access token.
-     * @return {@code true} if the SDK is ready, {@code false} otherwise.
-     */
-    @SuppressWarnings("unused")
-    public static boolean isReady() {
-        return sIsReady;
     }
 
     /**
@@ -1700,7 +1680,6 @@ public class WonderPush {
 
     private static void initForNewUser(final String userId) {
         WonderPush.logDebug("initForNewUser(" + userId + ")");
-        sIsReady = false;
         WonderPushConfiguration.changeUserId(userId);
         // Wait for SDK to be initialized and fetch anonymous token if needed.
         WonderPush.safeDeferWithConsent(new Runnable() {
@@ -1711,9 +1690,6 @@ public class WonderPush {
                         @Override
                         public void run() {
                             refreshPreferencesAndConfiguration(false);
-                            sIsReady = true;
-                            Intent broadcast = new Intent(INTENT_INTIALIZED);
-                            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(broadcast);
                         }
                     };
                     boolean isFetchingToken = ApiClient.fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
@@ -2221,7 +2197,6 @@ public class WonderPush {
      * <p>Returns {@code null} if called without required user consent.</p>
      *
      * @return The device id, or {@code null} if the SDK is not initialized.
-     * @see #isReady()
      * @see #initialize(Context)
      */
     @SuppressWarnings("unused")
@@ -2243,7 +2218,6 @@ public class WonderPush {
      * <p>Returns {@code null} if called without required user consent.</p>
      *
      * @return The device id, or {@code null} if the SDK is not initialized.
-     * @see #isReady()
      */
     @SuppressWarnings("unused")
     public static String getInstallationId() {
@@ -2290,7 +2264,6 @@ public class WonderPush {
      * <p>Returns {@code null} if called without required user consent.</p>
      *
      * @return The access token, or {@code null} if the SDK is not initialized.
-     * @see #isReady()
      */
     @SuppressWarnings("unused")
     public static String getAccessToken() {
