@@ -297,13 +297,11 @@ class ApiClient {
 
                     @Override
                     public void onFailure(Call call, IOException e) {
-                        WonderPush.setNetworkAvailable(false);
                         handler.onFailure(e, new Response((JSONObject)null));
                     }
 
                     @Override
                     public void onResponse(Call call, okhttp3.Response response) throws IOException {
-                        WonderPush.setNetworkAvailable(true);
                         // Try parse JSON
                         String responseString = response.body().string();
                         JSONObject responseJson;

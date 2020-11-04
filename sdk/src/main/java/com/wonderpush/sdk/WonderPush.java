@@ -101,7 +101,6 @@ public class WonderPush {
     private static String sClientSecret;
     private static String sBaseURL;
     private static boolean sIsInitialized = false;
-    private static boolean sIsReachable = false;
 
     private static boolean sRequiresUserConsent = false;
     private static final WonderPushNotInitializedImpl sNotInitializedImpl = new WonderPushNotInitializedImpl();
@@ -472,14 +471,6 @@ public class WonderPush {
      */
     protected static String getClientSecret() {
         return sClientSecret;
-    }
-
-    protected static void setNetworkAvailable(boolean state) {
-        sIsReachable = state;
-    }
-
-    protected static boolean isNetworkAvailable() {
-        return sIsReachable;
     }
 
     /**
@@ -1567,7 +1558,6 @@ public class WonderPush {
             )) {
 
                 sIsInitialized = false;
-                setNetworkAvailable(false);
 
                 sApplicationContext = context.getApplicationContext();
                 sClientId = clientId;
