@@ -97,6 +97,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
   private IamListener iamListener;
   private InAppMessage inAppMessage;
+  private boolean impressionDetected;
   private BindingWrapper bindingWrapper;
   private InAppMessagingDisplayCallbacks callbacks;
   private com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay inAppMessagingDisplay;
@@ -169,6 +170,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       InAppMessage inAppMessage,
       InAppMessagingDisplayCallbacks callbacks) {
     this.inAppMessage = inAppMessage;
+    this.impressionDetected = false;
     this.callbacks = callbacks;
     showActiveIam(activity);
   }
@@ -212,6 +214,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         return true;
       }
       inAppMessage = iam;
+      impressionDetected = false;
       callbacks = cb;
 
       if (delay > 0) {
@@ -390,6 +393,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                   removeDisplayedIam(activity);
                 }
                 inAppMessage = null;
+                impressionDetected = false;
                 callbacks = null;
                 bindingWrapper = null;
               }
@@ -441,11 +445,11 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                 new RenewableTimer.Callback() {
                   @Override
                   public void onFinish() {
-                    if (inAppMessage != null && callbacks != null) {
+                    if (inAppMessage != null && callbacks != null && !impressionDetected) {
                       Logging.logi(
                           "Impression timer onFinish for: "
                               + inAppMessage.getNotificationMetadata().getCampaignId());
-
+                      impressionDetected = true;
                       callbacks.impressionDetected();
                     }
                   }
@@ -506,6 +510,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
             // Reset ourselves
             inAppMessage = null;
+            impressionDetected = false;
             callbacks = null;
             bindingWrapper = null;
 
@@ -597,6 +602,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       removeDisplayedIam(activity);
     }
     inAppMessage = null;
+    impressionDetected = false;
     callbacks = null;
     bindingWrapper = null;
   }
