@@ -51,7 +51,7 @@ public class ImpressionStorageClient {
       CampaignImpression currentImpression = rtn.getAlreadySeenCampaigns(i);
       if (campaignId != null && campaignId.equals(currentImpression.getCampaignId())) {
         campaignIdFound = true;
-        impression.setImpressionCount(1 + currentImpression.getImpressionCount());
+        impression.setImpressionCount(impression.getImpressionCount() + currentImpression.getImpressionCount());
         rtn.setAlreadySeenCampaigns(i, impression);
         break;
       }
