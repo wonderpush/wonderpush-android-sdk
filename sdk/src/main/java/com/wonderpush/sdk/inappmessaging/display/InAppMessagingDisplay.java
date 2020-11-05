@@ -79,7 +79,7 @@ import javax.inject.Provider;
 public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   static final long IMPRESSION_THRESHOLD_MILLIS = 1 * 1000; // 1 second is a valid impression
   static final long DISMISS_THRESHOLD_MILLIS =
-      20 * 1000; // auto dismiss after 20 seconds for banner
+      12 * 1000; // auto dismiss after 12 seconds for banner
   static final long INTERVAL_MILLIS = 1000;
 
   private static InAppMessagingDisplay instance;
