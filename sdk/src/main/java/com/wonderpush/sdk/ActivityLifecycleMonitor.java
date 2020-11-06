@@ -103,9 +103,6 @@ class ActivityLifecycleMonitor {
                 createFirstDate = TimeSync.getTime();
             }
             ++createCount;
-            WonderPush.showPotentialNotification(activity, activity.getIntent());
-            handler.removeCallbacks(stopPresenceRunnable);
-            updatePresence(true);
         }
 
         @Override
