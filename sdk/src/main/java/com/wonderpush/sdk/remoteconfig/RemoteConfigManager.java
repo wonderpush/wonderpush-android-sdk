@@ -251,7 +251,7 @@ public class RemoteConfigManager {
             if (fetchError != null) {
                 Log.e(TAG, "Could not fetch RemoteConfig from server", fetchError);
             }
-            handler.handle(null, fetchError);
+            handler.handle(currentConfig, fetchError);
         });
     }
 
