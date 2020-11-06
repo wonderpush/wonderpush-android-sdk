@@ -1400,7 +1400,7 @@ public class WonderPush {
         }
     }
 
-    protected static void onInteraction(boolean leaving) {
+    protected static void injectAppOpenIfNecessary() {
         if (!hasUserConsent()) {
             logDebug("onInteraction ignored without user consent");
             return;
@@ -1424,80 +1424,69 @@ public class WonderPush {
                 )
         ;
 
-        if (leaving) {
 
-            if (shouldInjectAppOpen) {
-                // Keep the old date as this new interaction is only for a closing activity
-            } else {
-                // Note the current time as the most accurate hint of last interaction
-                WonderPushConfiguration.setLastInteractionDate(now);
-            }
+        if (shouldInjectAppOpen) {
+            // We will track a new app open event
 
-        } else {
-
-            if (shouldInjectAppOpen) {
-                // We will track a new app open event
-
-                // We must first close the possibly still-open previous session
-                if (lastAppCloseDate < lastAppOpenDate) {
-                    JSONObject closeInfo = WonderPushConfiguration.getLastAppOpenInfoJson();
-                    if (closeInfo == null) {
-                        closeInfo = new JSONObject();
-                    }
-                    long appCloseDate = lastInteractionDate;
-                    try {
-                        closeInfo.put("actionDate", appCloseDate);
-                        closeInfo.put("openedTime", appCloseDate - lastAppOpenDate);
-                    } catch (JSONException e) {
-                        logDebug("Failed to fill @APP_CLOSE information", e);
-                    }
-                    // trackInternalEvent("@APP_CLOSE", closeInfo);
-                    WonderPushConfiguration.setLastAppCloseDate(appCloseDate);
+            // We must first close the possibly still-open previous session
+            if (lastAppCloseDate < lastAppOpenDate) {
+                JSONObject closeInfo = WonderPushConfiguration.getLastAppOpenInfoJson();
+                if (closeInfo == null) {
+                    closeInfo = new JSONObject();
                 }
-
-                // Track the new app open event
-                JSONObject openInfo = new JSONObject();
-                // Add the elapsed time between the last received notification
-                if (lastReceivedNotificationDate <= now) {
-                    try {
-                        openInfo.put("lastReceivedNotificationTime", now - lastReceivedNotificationDate);
-                    } catch (JSONException e) {
-                        logDebug("Failed to fill @APP_OPEN previous notification information", e);
-                    }
-                }
-                NotificationManager.setLastClickedNotificationMetadata(null);
-                // Add the information of the clicked notification
-                if (now - lastOpenedNotificationDate < 10 * 1000) { // allow a few seconds between click on the notification and the call to this method
-                    String notificationId = lastOpenedNotificationInfo.optString("notificationId");
-                    String campaignId = lastOpenedNotificationInfo.optString("campaignId");
-                    String viewId = lastOpenedNotificationInfo.optString("viewId");
-                    try {
-                        openInfo.putOpt("notificationId", notificationId);
-                        openInfo.putOpt("campaignId", campaignId);
-
-                    } catch (JSONException e) {
-                        logDebug("Failed to fill @APP_OPEN opened notification information", e);
-                    }
-                    if (campaignId != null || notificationId != null || viewId != null) {
-                        NotificationManager.setLastClickedNotificationMetadata(new NotificationMetadata(campaignId, notificationId, viewId, false));
-                    }
-                }
-                // Presence
+                long appCloseDate = lastInteractionDate;
                 try {
-                    PresenceManager.PresencePayload presence = getPresenceManager().presenceDidStart();
-                    openInfo.put("presence", presence.toJSONObject());
-                } catch (InterruptedException e) {
-                    WonderPush.logError("Could not start presence", e);
+                    closeInfo.put("actionDate", appCloseDate);
+                    closeInfo.put("openedTime", appCloseDate - lastAppOpenDate);
                 } catch (JSONException e) {
-                    WonderPush.logError("Could not serialize presence", e);
+                    logDebug("Failed to fill @APP_CLOSE information", e);
                 }
-                trackInternalEvent("@APP_OPEN", openInfo);
-                WonderPushConfiguration.setLastAppOpenDate(now);
-                WonderPushConfiguration.setLastAppOpenInfoJson(openInfo);
+                // trackInternalEvent("@APP_CLOSE", closeInfo);
+                WonderPushConfiguration.setLastAppCloseDate(appCloseDate);
             }
 
-            WonderPushConfiguration.setLastInteractionDate(now);
+            // Track the new app open event
+            JSONObject openInfo = new JSONObject();
+            // Add the elapsed time between the last received notification
+            if (lastReceivedNotificationDate <= now) {
+                try {
+                    openInfo.put("lastReceivedNotificationTime", now - lastReceivedNotificationDate);
+                } catch (JSONException e) {
+                    logDebug("Failed to fill @APP_OPEN previous notification information", e);
+                }
+            }
+            NotificationManager.setLastClickedNotificationMetadata(null);
+            // Add the information of the clicked notification
+            if (now - lastOpenedNotificationDate < 10 * 1000) { // allow a few seconds between click on the notification and the call to this method
+                String notificationId = lastOpenedNotificationInfo.optString("notificationId");
+                String campaignId = lastOpenedNotificationInfo.optString("campaignId");
+                String viewId = lastOpenedNotificationInfo.optString("viewId");
+                try {
+                    openInfo.putOpt("notificationId", notificationId);
+                    openInfo.putOpt("campaignId", campaignId);
 
+                } catch (JSONException e) {
+                    logDebug("Failed to fill @APP_OPEN opened notification information", e);
+                }
+                if (campaignId != null || notificationId != null || viewId != null) {
+                    NotificationManager.setLastClickedNotificationMetadata(new NotificationMetadata(campaignId, notificationId, viewId, false));
+                }
+            }
+            // Presence
+            try {
+                PresenceManager manager = getPresenceManager();
+                PresenceManager.PresencePayload presence = manager.isCurrentlyPresent() ? null : manager.presenceDidStart();
+                if (presence != null) {
+                    openInfo.put("presence", presence.toJSONObject());
+                }
+            } catch (InterruptedException e) {
+                WonderPush.logError("Could not start presence", e);
+            } catch (JSONException e) {
+                WonderPush.logError("Could not serialize presence", e);
+            }
+            trackInternalEvent("@APP_OPEN", openInfo);
+            WonderPushConfiguration.setLastAppOpenDate(now);
+            WonderPushConfiguration.setLastAppOpenInfoJson(openInfo);
         }
     }
 
@@ -1620,7 +1609,7 @@ public class WonderPush {
                         @Override
                         public void onUserConsentChanged(boolean hasUserConsent) {
                             if (hasUserConsent) {
-                                onInteraction(false);
+                                injectAppOpenIfNecessary();
                             }
                         }
                     });
@@ -1720,7 +1709,7 @@ public class WonderPush {
 
         if (hasUserConsent()) {
             showPotentialNotification(activity, activity.getIntent());
-            onInteraction(false); // keep after onCreateMainActivity() as a possible received notification's information is needed
+            injectAppOpenIfNecessary();
         }
     }
 
