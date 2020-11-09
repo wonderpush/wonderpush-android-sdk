@@ -55,6 +55,7 @@ public class InAppMessaging {
   private final DisplayCallbacksFactory displayCallbacksFactory;
   private final DeveloperListenerManager developerListenerManager;
   private final ProgramaticContextualTriggers programaticContextualTriggers;
+  private boolean isPaused;
 
   private boolean areMessagesSuppressed;
   private InAppMessagingDisplay iamDisplay;
@@ -80,6 +81,7 @@ public class InAppMessaging {
     Disposable unused =
         inAppMessageStreamManager
             .createInAppMessageStream()
+            .filter(inAppMessage -> !InAppMessaging.this.isPaused)
             .subscribe(InAppMessaging.this::triggerInAppMessage);
   }
 
@@ -134,6 +136,17 @@ public class InAppMessaging {
     return instance;
   }
 
+  void pause() {
+    synchronized (this) {
+      isPaused = true;
+    }
+  }
+
+  void resume() {
+    synchronized (this) {
+      isPaused = false;
+    }
+  }
   /**
    * Enable or disable suppression of In App Messaging messages
    *
