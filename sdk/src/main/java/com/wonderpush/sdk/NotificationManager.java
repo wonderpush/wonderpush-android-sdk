@@ -40,7 +40,6 @@ public class NotificationManager {
     static final String TAG = WonderPush.TAG;
 
     private static WeakReference<Intent> sLastHandledIntentRef;
-    static final long DEFAULT_LAST_RECEIVED_NOTIFICATION_CHECK_DELAY = 7 * 86400 * 1000;
 
     static final String LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY = "lastReceivedNotificationCheckDate";
 
@@ -84,10 +83,7 @@ public class NotificationManager {
         }
 
         // Track lastReceivedNotificationCheckDate
-        String wpDataString = intent.getExtras() != null ? intent.getExtras().getString("_wp") : null;
         try {
-            JSONObject wpData = wpDataString != null ? new JSONObject(wpDataString) : new JSONObject();
-            long lastReceivedNotificationCheckDelay = wpData.optLong("lastReceivedNotificationCheckDelay", DEFAULT_LAST_RECEIVED_NOTIFICATION_CHECK_DELAY);
             JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
             if (installation != null) {
                 long lastReceivedNotificationCheckDateMs = installation.getSdkState().optLong(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, -1);
@@ -95,7 +91,7 @@ public class NotificationManager {
                 Date now = new Date();
                 boolean reportLastReceivedNotificationCheckDate =
                         lastReceivedNotificationCheckDate == null
-                        || ((now.getTime() - lastReceivedNotificationCheckDate.getTime()) > lastReceivedNotificationCheckDelay);
+                        || ((now.getTime() - lastReceivedNotificationCheckDate.getTime()) > notif.getLastReceivedNotificationCheckDelay());
 
                 if (reportLastReceivedNotificationCheckDate) {
                     JSONObject diff = new JSONObject();

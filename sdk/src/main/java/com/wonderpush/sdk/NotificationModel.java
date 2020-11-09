@@ -21,6 +21,8 @@ public abstract class NotificationModel implements Parcelable {
 
     private static final String TAG = WonderPush.TAG;
 
+    static final long DEFAULT_LAST_RECEIVED_NOTIFICATION_CHECK_DELAY = 7 * 86400 * 1000;
+
     public static class NotTargetedForThisInstallationException extends Exception {
         private static final long serialVersionUID = -1642569383307930845L;
         public NotTargetedForThisInstallationException(String detailMessage) {
@@ -135,6 +137,8 @@ public abstract class NotificationModel implements Parcelable {
     private final String inputJSONString;
 
     private String targetedInstallation;
+
+    private long lastReceivedNotificationCheckDelay;
     private String campaignId;
     private String notificationId;
     private String viewId;
@@ -221,6 +225,8 @@ public abstract class NotificationModel implements Parcelable {
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", false));
             rtn.setReceiptUsingMeasurements(wpData.optBoolean("receiptUsingMeasurements", false));
+            rtn.setLastReceivedNotificationCheckDelay(wpData.optLong("lastReceivedNotificationCheckDelay", DEFAULT_LAST_RECEIVED_NOTIFICATION_CHECK_DELAY));
+
 
             // Read receive actions
             JSONArray receiveActions = wpData.optJSONArray("receiveActions");
@@ -409,5 +415,13 @@ public abstract class NotificationModel implements Parcelable {
 
     public InAppMessage getInAppMessage() {
         return inAppMessage;
+    }
+
+    public long getLastReceivedNotificationCheckDelay() {
+        return lastReceivedNotificationCheckDelay;
+    }
+
+    public void setLastReceivedNotificationCheckDelay(long lastReceivedNotificationCheckDelay) {
+        this.lastReceivedNotificationCheckDelay = lastReceivedNotificationCheckDelay;
     }
 }
