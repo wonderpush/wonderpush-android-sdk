@@ -3,7 +3,6 @@ package com.wonderpush.sdk;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;

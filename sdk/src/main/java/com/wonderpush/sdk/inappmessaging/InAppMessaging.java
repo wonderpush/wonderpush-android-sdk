@@ -64,6 +64,21 @@ public class InAppMessaging {
   private static AppComponent appComponent;
   private static InAppMessaging instance;
 
+  public class PrivateController {
+    public void pause() {
+      synchronized (InAppMessaging.this) {
+        isPaused = true;
+      }
+    }
+
+    public void resume() {
+      synchronized (InAppMessaging.this) {
+        isPaused = false;
+      }
+    }
+  }
+  PrivateController mPrivateController = new PrivateController();
+
   @Inject
   InAppMessaging(
       InAppMessageStreamManager inAppMessageStreamManager,
@@ -109,9 +124,10 @@ public class InAppMessaging {
     void handle(@Nullable JSONObject jsonObject, @Nullable Throwable error);
   }
 
-  public interface InAppMessagingConfiguration {
+  public interface InAppMessagingDelegate {
     boolean inAppViewedReceipts();
     void fetchInAppConfig(JSONObjectHandler handler);
+    void onReady(PrivateController privateController);
   }
 
   /**
@@ -121,11 +137,12 @@ public class InAppMessaging {
   @Keep
   public static InAppMessaging initialize(Application application,
                                           InternalEventTracker internalEventTracker,
-                                          InAppMessagingConfiguration configuration) {
-    if (ConfigurationModule.getInstance() == null) ConfigurationModule.setInstance(configuration);
+                                          InAppMessagingDelegate delegate) {
+    if (ConfigurationModule.getInstance() == null) ConfigurationModule.setInstance(delegate);
     if (instance == null) {
       instance = initializeAppComponent(application, internalEventTracker).providesInAppMessaging();
     }
+    delegate.onReady(instance.mPrivateController);
     return instance;
   }
 
@@ -136,17 +153,6 @@ public class InAppMessaging {
     return instance;
   }
 
-  void pause() {
-    synchronized (this) {
-      isPaused = true;
-    }
-  }
-
-  void resume() {
-    synchronized (this) {
-      isPaused = false;
-    }
-  }
   /**
    * Enable or disable suppression of In App Messaging messages
    *

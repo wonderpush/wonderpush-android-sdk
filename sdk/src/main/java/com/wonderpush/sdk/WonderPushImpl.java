@@ -24,11 +24,12 @@ class WonderPushImpl implements IWonderPush {
 
     @Override
     public void _activate() {
-        WonderPush.initializeInAppMessaging(WonderPush.getApplicationContext());
+        WonderPush.resumeInAppMessaging();
     }
 
     @Override
     public void _deactivate() {
+        WonderPush.pauseInAppMessaging();
     }
 
     @Override

@@ -14,7 +14,6 @@
 
 package com.wonderpush.sdk.inappmessaging.internal;
 
-import com.google.android.gms.tasks.Task;
 import com.wonderpush.sdk.JSONSyncInstallation;
 import com.wonderpush.sdk.WonderPushConfiguration;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
@@ -61,7 +60,7 @@ public class InAppMessageStreamManager {
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
-  private final InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration;
+  private final InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate;
 
   @Inject
   public InAppMessageStreamManager(
@@ -74,7 +73,7 @@ public class InAppMessageStreamManager {
           RateLimiterClient rateLimiterClient,
           @AppForeground RateLimit appForegroundRateLimit,
           TestDeviceHelper testDeviceHelper,
-          InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration) {
+          InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
     this.clock = clock;
@@ -84,7 +83,7 @@ public class InAppMessageStreamManager {
     this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
-    this.inAppMessagingConfiguration = inAppMessagingConfiguration;
+    this.inAppMessagingDelegate = inAppMessagingDelegate;
   }
 
   private static boolean containsTriggeringCondition(String event, Campaign campaign) {
@@ -204,7 +203,7 @@ public class InAppMessageStreamManager {
               Maybe<List<Campaign>> serviceFetch =
                       Maybe.<List<Campaign>>create(
                               emitter -> {
-                                  inAppMessagingConfiguration.fetchInAppConfig((JSONObject config, Throwable error) -> {
+                                  inAppMessagingDelegate.fetchInAppConfig((JSONObject config, Throwable error) -> {
                                       try {
                                           if (error != null) emitter.onError(error);
                                           else {

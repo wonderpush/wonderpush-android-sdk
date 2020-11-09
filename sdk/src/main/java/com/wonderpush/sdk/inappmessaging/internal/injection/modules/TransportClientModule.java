@@ -34,7 +34,7 @@ public class TransportClientModule {
 
   @Provides
   @InAppMessagingScope
-  static MetricsLoggerClient providesApiClient(DeveloperListenerManager developerListenerManager, InternalEventTracker internalEventTracker, InAppMessaging.InAppMessagingConfiguration configuration) {
-    return new MetricsLoggerClient(developerListenerManager, internalEventTracker, configuration);
+  static MetricsLoggerClient providesApiClient(DeveloperListenerManager developerListenerManager, InternalEventTracker internalEventTracker, InAppMessaging.InAppMessagingDelegate delegate) {
+    return new MetricsLoggerClient(developerListenerManager, internalEventTracker, delegate);
   }
 }

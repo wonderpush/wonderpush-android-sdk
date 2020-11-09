@@ -63,6 +63,8 @@ public class WonderPush {
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
     private static InAppMessaging sInAppMessaging;
+    private static InAppMessaging.PrivateController sInAppMessagingPrivateController;
+
     private static Context sApplicationContext;
     protected static Application sApplication;
 
@@ -108,6 +110,15 @@ public class WonderPush {
 
     private static final Map<String, Runnable> sUserConsentDeferred = new TreeMap<>();
     private static final Set<UserConsentListener> sUserConsentListeners = new LinkedHashSet<>();
+
+    static void resumeInAppMessaging() {
+        sInAppMessagingPrivateController.resume();
+    }
+
+    static void pauseInAppMessaging() {
+        sInAppMessagingPrivateController.pause();
+    }
+
     interface UserConsentListener {
         void onUserConsentChanged(boolean hasUserConsent);
     }
@@ -1565,6 +1576,7 @@ public class WonderPush {
                 MeasurementsApiClient.setDisabled(true);
                 JSONSyncInstallation.initialize();
                 WonderPushRequestVault.initialize();
+                initializeInAppMessaging(context);
 
                 // Setup a remote config handler to execute as soon as we get the config
                 // and everytime the config changes.
@@ -1746,7 +1758,7 @@ public class WonderPush {
     static void initializeInAppMessaging(Context context) {
         Application application = (Application)context.getApplicationContext();
         if (sInAppMessaging == null) {
-            sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker(), new InAppMessaging.InAppMessagingConfiguration() {
+            sInAppMessaging = InAppMessaging.initialize(application, new InternalEventTracker(), new InAppMessaging.InAppMessagingDelegate() {
                 @Override
                 public boolean inAppViewedReceipts() {
                     Boolean b = WonderPushConfiguration.getOverrideNotificationReceipt();
@@ -1760,11 +1772,21 @@ public class WonderPush {
                         handler.handle(null, null);
                         return;
                     }
-                    sRemoteConfigManager.read((RemoteConfig config, Throwable error) -> {
-                        handler.handle(config != null ? config.getData().optJSONObject("inAppConfig") : null, error);
-                    });
+                    safeDeferWithConsent(new Runnable() {
+                        @Override
+                        public void run() {
+                            sRemoteConfigManager.read((RemoteConfig config, Throwable error) -> {
+                                handler.handle(config != null ? config.getData().optJSONObject("inAppConfig") : null, error);
+                            });
+                        }
+                    }, null);
                 }
 
+                @Override
+                public void onReady(InAppMessaging.PrivateController privateController) {
+                    sInAppMessagingPrivateController = privateController;
+                    privateController.pause();
+                }
             });
         }
         InAppMessagingDisplay.initialize(application, sInAppMessaging);

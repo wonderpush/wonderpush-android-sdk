@@ -42,15 +42,15 @@ public class MetricsLoggerClient {
 
   private final DeveloperListenerManager developerListenerManager;
   private final InternalEventTracker internalEventTracker;
-  private final InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration;
+  private final InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate;
 
   @Inject
   public MetricsLoggerClient(DeveloperListenerManager developerListenerManager,
                              InternalEventTracker internalEventTracker,
-                             InAppMessaging.InAppMessagingConfiguration inAppMessagingConfiguration) {
+                             InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate) {
     this.developerListenerManager = developerListenerManager;
     this.internalEventTracker = internalEventTracker;
-    this.inAppMessagingConfiguration = inAppMessagingConfiguration;
+    this.inAppMessagingDelegate = inAppMessagingDelegate;
   }
 
   private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map<String, Object> data) {
@@ -74,7 +74,7 @@ public class MetricsLoggerClient {
 
   /** Log impression */
   public void logImpression(InAppMessage message) {
-    boolean useMeasurementsApi = !inAppMessagingConfiguration.inAppViewedReceipts();
+    boolean useMeasurementsApi = !inAppMessagingDelegate.inAppViewedReceipts();
     this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata(), null, useMeasurementsApi);
 
     // No matter what, always trigger developer callbacks
