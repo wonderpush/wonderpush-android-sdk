@@ -149,6 +149,11 @@ class WonderPushImpl implements IWonderPush {
             WonderPushConfiguration.setCachedOsAreNotificationsEnabledDate(TimeSync.getTime());
             WonderPushConfiguration.setCachedDisabledNotificationChannelIds(disabledChannels);
             WonderPushConfiguration.setCachedDisabledNotificationChannelIdsDate(TimeSync.getTime());
+
+            if (!previousValue.equals(value)) {
+                WonderPush.subscriptionStatusChanged();
+            }
+
         } catch (Exception e) {
             Log.e(WonderPush.TAG, "Unexpected error while setting notification enabled to " + status, e);
         }

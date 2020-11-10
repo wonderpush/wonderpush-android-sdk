@@ -22,4 +22,12 @@ public class InternalEventTracker {
         WonderPush.countInternalEvent(type, eventData, customData);
     }
 
+    public WonderPush.SubscriptionStatus getSubscriptionStatus() {
+        return WonderPush.getSubscriptionStatus();
+    }
+
+    public boolean isSubscriptionStatusOptIn() {
+        return WonderPush.isSubscriptionStatusOptIn();
+    }
+
 }

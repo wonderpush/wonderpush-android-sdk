@@ -110,6 +110,8 @@ public class WonderPush {
 
     private static final Map<String, Runnable> sUserConsentDeferred = new TreeMap<>();
     private static final Set<UserConsentListener> sUserConsentListeners = new LinkedHashSet<>();
+    private static final Map<String, Runnable> sSubscriptionDeferred = new TreeMap<>();
+    private static final Set<SubscriptionStatusListener> sSubscriptionStatusListeners = new LinkedHashSet<>();
 
     static void resumeInAppMessaging() {
         sInAppMessagingPrivateController.resume();
@@ -122,6 +124,9 @@ public class WonderPush {
     interface UserConsentListener {
         void onUserConsentChanged(boolean hasUserConsent);
     }
+    interface SubscriptionStatusListener {
+        void onSubscriptionStatusChanged(SubscriptionStatus subscriptionStatus);
+    }
     static {
         // Add the necessary user consent listener to dequeue sUserConsentDeferred
         addUserConsentListener(new UserConsentListener() {
@@ -133,6 +138,20 @@ public class WonderPush {
                             WonderPush.safeDefer(runnable, 0);
                         }
                         sUserConsentDeferred.clear();
+                    }
+                }
+            }
+        });
+
+        addSubscriptionStatusListener(new SubscriptionStatusListener() {
+            @Override
+            public void onSubscriptionStatusChanged(SubscriptionStatus subscriptionStatus) {
+                if (isSubscriptionStatusOptIn()) {
+                    synchronized (sSubscriptionDeferred) {
+                        for (Runnable runnable : sSubscriptionDeferred.values()) {
+                            WonderPush.safeDefer(runnable, 0);
+                        }
+                        sSubscriptionDeferred.clear();
                     }
                 }
             }
@@ -2084,6 +2103,57 @@ public class WonderPush {
         }, 0);
     }
 
+    static void addSubscriptionStatusListener(SubscriptionStatusListener listener) {
+        synchronized (sSubscriptionStatusListeners) {
+            sSubscriptionStatusListeners.add(listener);
+        }
+    }
+
+    static void removeSubscriptionStatusListener(SubscriptionStatusListener listener) {
+        synchronized (sSubscriptionStatusListeners) {
+            sSubscriptionStatusListeners.remove(listener);
+        }
+    }
+
+    static void subscriptionStatusChanged() {
+        synchronized (sSubscriptionStatusListeners) {
+            if (!sIsInitialized) logError("subscriptionStatusChanged called before SDK is initialized");
+            // Iterate on a copy to let listeners de-register themselves
+            // during iteration without triggering a java.util.ConcurrentModificationException
+            Set<SubscriptionStatusListener> iterationSet = new HashSet<>(sSubscriptionStatusListeners);
+            SubscriptionStatus subscriptionStatus = getSubscriptionStatus();
+            for (SubscriptionStatusListener listener : iterationSet) {
+                try {
+                    listener.onSubscriptionStatusChanged(subscriptionStatus);
+                } catch (Exception ex) {
+                    Log.e(TAG, "Unexpected error while processing user consent changed listeners", ex);
+                }
+            }
+        }
+    }
+
+    /**
+     * Defers code to execute once user is subscribed, using {@link #safeDefer(Runnable, long)}.
+     * If user is subscribed, the code is still executed using {@link #safeDefer(Runnable, long)}.
+     * @param runnable The code to execute
+     * @param id - Permits to replace an old runnable still waiting with the same id.
+     *           If {@code null}, a UUID is generated.
+     */
+    static void safeDeferWithSubscription(final Runnable runnable, @Nullable final String id) {
+        safeDefer(new Runnable() {
+            @Override
+            public void run() {
+                if (isSubscriptionStatusOptIn()) {
+                    runnable.run();
+                } else {
+                    synchronized (sSubscriptionDeferred) {
+                        sSubscriptionDeferred.put(id != null ? id : UUID.randomUUID().toString(), runnable);
+                    }
+                }
+            }
+        }, 0);
+    }
+
     /**
      * Exports all data stored locally and on WonderPush servers and then starts a sharing activity
      * for the user to save it.
@@ -2529,4 +2599,31 @@ public class WonderPush {
             sEventsBlackWhiteList = new BlackWhiteList(rules);
         }
     }
+
+    enum SubscriptionStatus {
+        OPT_IN("optIn"),
+        OPT_OUT("optOut");
+        public final String slug;
+        SubscriptionStatus(String slug) {
+            this.slug = slug;
+        }
+    }
+
+    static SubscriptionStatus getSubscriptionStatus() {
+        JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
+        try {
+            JSONObject preferences = installation != null ? installation.getSdkState().optJSONObject("preferences") : null;
+            String subscriptionStatus = preferences != null ? preferences.optString("subscriptionStatus") : null;
+            if (subscriptionStatus != null && subscriptionStatus.equals(SubscriptionStatus.OPT_OUT.slug)) {
+                return SubscriptionStatus.OPT_OUT;
+            }
+        } catch (JSONException e) {
+        }
+        return SubscriptionStatus.OPT_IN;
+    }
+
+    static boolean isSubscriptionStatusOptIn() {
+        return getSubscriptionStatus() == SubscriptionStatus.OPT_IN;
+    }
+
 }
