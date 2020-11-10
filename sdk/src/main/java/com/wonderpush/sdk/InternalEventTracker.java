@@ -14,12 +14,12 @@ public class InternalEventTracker {
         WonderPush.trackInternalEvent(type, eventData);
     }
 
-    public void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData) {
-        WonderPush.trackInternalEventWithMeasurementsApi(type, eventData);
+    public void countInternalEvent(String type, JSONObject eventData) {
+        WonderPush.countInternalEvent(type, eventData);
     }
 
-    public void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData, JSONObject customData) {
-        WonderPush.trackInternalEventWithMeasurementsApi(type, eventData, customData);
+    public void countInternalEvent(String type, JSONObject eventData, JSONObject customData) {
+        WonderPush.countInternalEvent(type, eventData, customData);
     }
 
 }

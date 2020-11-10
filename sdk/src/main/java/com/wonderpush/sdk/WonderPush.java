@@ -1231,36 +1231,32 @@ public class WonderPush {
         if (type == null || type.length() == 0 || type.charAt(0) == '@') {
             throw new IllegalArgumentException("Bad event type");
         }
-        sendEvent(type, eventData, attributes);
+        _trackEvent(type, eventData, attributes);
     }
 
     static void trackInternalEvent(String type, JSONObject eventData) {
         trackInternalEvent(type, eventData, null);
     }
 
-    static void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData) {
-        trackInternalEventWithMeasurementsApi(type, eventData, null);
+    static void countInternalEvent(String type, JSONObject eventData) {
+        countInternalEvent(type, eventData, null);
     }
 
-    static void trackInternalEventWithMeasurementsApi(String type, JSONObject eventData, JSONObject customData) {
+    static void countInternalEvent(String type, JSONObject eventData, JSONObject customData) {
         if (type.charAt(0) != '@') {
             throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
         }
-        sendEvent(type, eventData, customData, true);
+        _countEvent(type, eventData, customData);
     }
 
     static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
         if (type.charAt(0) != '@') {
             throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
         }
-        sendEvent(type, eventData, customData);
+        _trackEvent(type, eventData, customData);
     }
 
-    private static void sendEvent(String type, JSONObject eventData, JSONObject customData) {
-        sendEvent(type, eventData, customData, false);
-    }
-
-    private static void sendEvent(String type, JSONObject eventData, JSONObject customData, boolean useMeasurementsApi) {
+    private static void _trackEvent(String type, JSONObject eventData, JSONObject customData) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
             return;
@@ -1271,8 +1267,62 @@ public class WonderPush {
             return;
         }
 
-        String eventEndpoint = "/events/";
+        JSONObject event = getEventObject(type, eventData, customData);
 
+        Request.Params parameters = new Request.Params();
+        parameters.put("body", event.toString());
+
+        // Remember
+        WonderPushConfiguration.rememberTrackedEvent(event);
+
+        // Broadcast locally that an event was tracked
+        Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
+        eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
+        if (customData != null) {
+            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
+        }
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
+
+        postEventually("/events/", parameters);
+    }
+
+    private static void _countEvent(String type, JSONObject eventData, JSONObject customData) {
+        if (!hasUserConsent()) {
+            logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
+            return;
+        }
+
+        if (sEventsBlackWhiteList != null && !sEventsBlackWhiteList.allow(type)) {
+            logError("Not tracking event forbidden by config. type=" + type + ", data=" + eventData + " custom=" + customData);
+            return;
+        }
+
+        if (WonderPushConfiguration.getAccessToken() != null
+                && WonderPushConfiguration.getOverrideNotificationReceipt()) {
+            _trackEvent(type, eventData, customData);
+            return;
+        }
+
+        JSONObject event = getEventObject(type, eventData, customData);
+
+        Request.Params parameters = new Request.Params();
+        parameters.put("body", event.toString());
+
+        // Remember
+        WonderPushConfiguration.rememberTrackedEvent(event);
+
+        // Broadcast locally that an event was tracked
+        Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
+        eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
+        if (customData != null) {
+            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
+        }
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
+
+        postEventuallyWithMeasurementsApiClient("/events", parameters);
+    }
+
+    private static JSONObject getEventObject(String type, JSONObject eventData, JSONObject customData) {
         JSONObject event = new JSONObject();
         if (eventData != null && eventData.length() > 0) {
             @SuppressWarnings("unchecked")
@@ -1312,26 +1362,7 @@ public class WonderPush {
         } catch (JSONException ex) {
             WonderPush.logError("Error building event object body", ex);
         }
-
-        Request.Params parameters = new Request.Params();
-        parameters.put("body", event.toString());
-
-        // Remember
-        WonderPushConfiguration.rememberTrackedEvent(event);
-
-        // Broadcast locally that an event was tracked
-        Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
-        eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
-        if (customData != null) {
-            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
-        }
-        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
-
-        if (useMeasurementsApi) {
-            postEventuallyWithMeasurementsApiClient("/events", parameters);
-        } else {
-            postEventually(eventEndpoint, parameters);
-        }
+        return event;
     }
 
     /**

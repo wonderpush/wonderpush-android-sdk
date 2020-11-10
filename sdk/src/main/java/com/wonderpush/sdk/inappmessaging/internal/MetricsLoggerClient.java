@@ -14,10 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.internal;
 
-import com.wonderpush.sdk.ActionModel;
-import com.wonderpush.sdk.InternalEventTracker;
-import com.wonderpush.sdk.NotificationMetadata;
-import com.wonderpush.sdk.TimeSync;
+import com.wonderpush.sdk.*;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
@@ -53,30 +50,21 @@ public class MetricsLoggerClient {
     this.inAppMessagingDelegate = inAppMessagingDelegate;
   }
 
-  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map<String, Object> data) {
-    logInternalEvent(eventName, metadata, data, false);
-  }
-
-  private void logInternalEvent(String eventName, NotificationMetadata metadata, @Nullable Map<String, Object> data, boolean useMeasurementsApi) {
+  private JSONObject eventData(NotificationMetadata metadata, @Nullable Map<String, Object> data) {
     JSONObject eventData = data != null ? new JSONObject(data) : new JSONObject();
     try {
       if (metadata.getCampaignId() != null) eventData.put("campaignId", metadata.getCampaignId());
       if (metadata.getNotificationId() != null) eventData.put("notificationId", metadata.getNotificationId());
       if (metadata.getViewId() != null) eventData.put("viewId", metadata.getViewId());
       eventData.put("actionDate", TimeSync.getTime());
-      if (useMeasurementsApi) {
-        this.internalEventTracker.trackInternalEventWithMeasurementsApi(eventName, eventData);
-      } else {
-        this.internalEventTracker.trackInternalEvent(eventName, eventData);
-      }
     } catch (JSONException e) {}
+    return eventData;
   }
 
   /** Log impression */
   public void logImpression(InAppMessage message) {
-    boolean useMeasurementsApi = !inAppMessagingDelegate.inAppViewedReceipts();
-    this.logInternalEvent("@INAPP_VIEWED", message.getNotificationMetadata(), null, useMeasurementsApi);
-
+    JSONObject eventData = this.eventData(message.getNotificationMetadata(), null);
+    this.internalEventTracker.countInternalEvent("@INAPP_VIEWED", eventData);
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
   }
@@ -87,7 +75,8 @@ public class MetricsLoggerClient {
     InAppMessage.ButtonType buttonType = message.getButtonType(actions);
     if (buttonType == InAppMessage.ButtonType.PRIMARY) data.put("buttonLabel", "primary");
     if (buttonType == InAppMessage.ButtonType.SECONDARY) data.put("buttonLabel", "secondary");
-    this.logInternalEvent("@INAPP_CLICKED", message.getNotificationMetadata(), data);
+    JSONObject eventData = this.eventData(message.getNotificationMetadata(), data);
+    this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.messageClicked(message, actions);

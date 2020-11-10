@@ -73,7 +73,7 @@ public class NotificationManager {
                 notifReceipt = overrideNotificationReceipt;
             }
             if (receiptUsingMeasurements) {
-                WonderPush.trackInternalEventWithMeasurementsApi("@NOTIFICATION_RECEIVED", trackData);
+                WonderPush.countInternalEvent("@NOTIFICATION_RECEIVED", trackData);
             } else if (notifReceipt) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_RECEIVED", trackData);
             }
