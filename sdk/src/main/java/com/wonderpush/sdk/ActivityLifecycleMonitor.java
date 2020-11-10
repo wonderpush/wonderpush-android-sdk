@@ -8,7 +8,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.WeakHashMap;
 
 /**
@@ -17,15 +19,22 @@ import java.util.WeakHashMap;
  */
 class ActivityLifecycleMonitor {
 
+    public interface ResumeListener {
+        void onResume(Activity activity);
+    }
+
     private static final Monitor sSingleton = new Monitor();
     private static boolean sActivityLifecycleCallbacksRegistered;
     private static final WeakHashMap<Activity, Object> sTrackedActivities = new WeakHashMap<>();
-
     protected static void monitorActivitiesLifecycle() {
         if (!sActivityLifecycleCallbacksRegistered && WonderPush.sApplication != null) {
             WonderPush.sApplication.registerActivityLifecycleCallbacks(sSingleton);
             sActivityLifecycleCallbacksRegistered = true;
         }
+    }
+
+    static void onNextResume(ResumeListener listener) {
+        sSingleton.onNextResume(listener);
     }
 
     protected static void addTrackedActivity(Activity activity) {
@@ -96,6 +105,18 @@ class ActivityLifecycleMonitor {
         private WeakReference<Activity> lastResumedActivityRef = new WeakReference<>(null);
         private WeakReference<Activity> lastStoppedActivityRef = new WeakReference<>(null);
 
+        private List<ResumeListener> onNextResumeListeners = new ArrayList<>();
+        synchronized void onNextResume(ResumeListener listener) {
+            onNextResumeListeners.add(listener);
+        }
+
+        private synchronized void callOnNextResumeListeners(Activity activity) {
+            for (ResumeListener l : onNextResumeListeners) {
+                l.onResume(activity);
+            }
+            onNextResumeListeners = new ArrayList<>();
+        }
+
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
             if (!hasCreatedActivities()) {
@@ -128,6 +149,7 @@ class ActivityLifecycleMonitor {
             updatePresence(true);
             WonderPush.showPotentialNotification(activity, activity.getIntent());
             WonderPushConfiguration.setLastInteractionDate(new Date().getTime());
+            callOnNextResumeListeners(activity);
         }
 
         @Override
