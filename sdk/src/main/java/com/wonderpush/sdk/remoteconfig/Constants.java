@@ -12,5 +12,6 @@ public class Constants {
     public static final String REMOTE_CONFIG_DISABLE_API_CLIENT_KEY = "disableApiClient";
     public static final String REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY = "disableMeasurementsApiClient";
     public static final String REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY = "eventsBlackWhiteList";
+    public static final String REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY = "trackEventsForNonSubscribers";
 
 }

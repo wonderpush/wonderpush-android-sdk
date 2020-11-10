@@ -1302,7 +1302,23 @@ public class WonderPush {
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
-        postEventually("/events/", parameters);
+        Runnable post = new Runnable() {
+            @Override
+            public void run() {
+                postEventually("/events/", parameters);
+            }
+        };
+
+        getRemoteConfigManager().read(new RemoteConfigHandler() {
+            @Override
+            public void handle(RemoteConfig config, Throwable error) {
+                if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
+                    post.run();
+                } else {
+                    safeDeferWithSubscription(post, null);
+                }
+            }
+        });
     }
 
     private static void _countEvent(String type, JSONObject eventData, JSONObject customData) {
