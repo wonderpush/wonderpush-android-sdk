@@ -871,7 +871,11 @@ public class NotificationManager {
             }
             NotificationMetadata metadata = new NotificationMetadata(notif);
             sLastClickedNotificationMetadata = metadata;
-            WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
+            if (WonderPush.isSubscriptionStatusOptIn()) {
+                WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
+            } else {
+                WonderPush.countInternalEvent("@NOTIFICATION_OPENED", trackData);
+            }
 
             WonderPushConfiguration.setLastOpenedNotificationInfoJson(trackData);
         } catch (JSONException e) {

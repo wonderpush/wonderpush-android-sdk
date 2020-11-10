@@ -64,7 +64,11 @@ public class MetricsLoggerClient {
   /** Log impression */
   public void logImpression(InAppMessage message) {
     JSONObject eventData = this.eventData(message.getNotificationMetadata(), null);
-    this.internalEventTracker.countInternalEvent("@INAPP_VIEWED", eventData);
+    if (this.internalEventTracker.isSubscriptionStatusOptIn()) {
+      this.internalEventTracker.trackInternalEvent("@INAPP_VIEWED", eventData);
+    } else {
+      this.internalEventTracker.countInternalEvent("@INAPP_VIEWED", eventData);
+    }
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
   }
