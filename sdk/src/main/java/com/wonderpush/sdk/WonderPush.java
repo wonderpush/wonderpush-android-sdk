@@ -1317,7 +1317,7 @@ public class WonderPush {
         }
 
         if (WonderPushConfiguration.getAccessToken() != null
-                && WonderPushConfiguration.getOverrideNotificationReceipt()) {
+                && WonderPushConfiguration.getOverrideNotificationReceipt() == Boolean.TRUE) {
             _trackEvent(type, eventData, customData);
             return;
         }
