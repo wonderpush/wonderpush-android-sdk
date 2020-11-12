@@ -61,7 +61,7 @@ public class WonderPushConfiguration {
     private static final String LAST_INTERACTION_DATE_PREF_NAME = "__last_interaction_date";
     private static final String LAST_APPOPEN_DATE_PREF_NAME = "__last_appopen_date";
     private static final String LAST_APPOPEN_INFO_PREF_NAME = "__last_appopen_info_json";
-    private static final String LAST_APPCLOSE_DATE_PREF_NAME = "__last_appclose_date";
+    private static final String LAST_APP_OPEN_SENT_DATE_PREF_NAME = "__last_app_open_sent_date";
 
     private static final String COUNTRY_PREF_NAME = "__country";
     private static final String CURRENCY_PREF_NAME = "__currency";
@@ -127,7 +127,7 @@ public class WonderPushConfiguration {
             currentUserArchive.putOpt(LAST_INTERACTION_DATE_PREF_NAME, getLastInteractionDate());
             currentUserArchive.putOpt(LAST_APPOPEN_DATE_PREF_NAME, getLastAppOpenDate());
             currentUserArchive.putOpt(LAST_APPOPEN_INFO_PREF_NAME, getLastAppOpenInfoJson());
-            currentUserArchive.putOpt(LAST_APPCLOSE_DATE_PREF_NAME, getLastAppCloseDate());
+            currentUserArchive.putOpt(LAST_APP_OPEN_SENT_DATE_PREF_NAME, getLastAppOpenSentDate());
             currentUserArchive.putOpt(COUNTRY_PREF_NAME, getCountry());
             currentUserArchive.putOpt(CURRENCY_PREF_NAME, getCurrency());
             currentUserArchive.putOpt(LOCALE_PREF_NAME, getLocale());
@@ -166,7 +166,7 @@ public class WonderPushConfiguration {
         setLastInteractionDate(newUserArchive.optLong(LAST_INTERACTION_DATE_PREF_NAME));
         setLastAppOpenDate(newUserArchive.optLong(LAST_APPOPEN_DATE_PREF_NAME));
         setLastAppOpenInfoJson(newUserArchive.optJSONObject(LAST_APPOPEN_INFO_PREF_NAME));
-        setLastAppCloseDate(newUserArchive.optLong(LAST_APPCLOSE_DATE_PREF_NAME));
+        setLastAppOpenSentDate(newUserArchive.optLong(LAST_APP_OPEN_SENT_DATE_PREF_NAME));
         setCountry(JSONUtil.optString(newUserArchive, COUNTRY_PREF_NAME));
         setCurrency(JSONUtil.optString(newUserArchive, CURRENCY_PREF_NAME));
         setLocale(JSONUtil.optString(newUserArchive, LOCALE_PREF_NAME));
@@ -213,7 +213,7 @@ public class WonderPushConfiguration {
                 editor.remove(LAST_INTERACTION_DATE_PREF_NAME);
                 editor.remove(LAST_APPOPEN_DATE_PREF_NAME);
                 editor.remove(LAST_APPOPEN_INFO_PREF_NAME);
-                editor.remove(LAST_APPCLOSE_DATE_PREF_NAME);
+                editor.remove(LAST_APP_OPEN_SENT_DATE_PREF_NAME);
                 editor.remove(STORED_TRACKED_EVENTS_PREF_NAME);
                 editor.apply();
             }
@@ -930,19 +930,19 @@ public class WonderPushConfiguration {
     }
 
     /**
-     * Get the last app-close date timestamp in milliseconds stored in the user's shared preferences.
+     * Get the last time we queued an @APP_OPEN event to the request vault.
      */
-    static long getLastAppCloseDate() {
-        return getLong(LAST_APPCLOSE_DATE_PREF_NAME, 0);
+    static long getLastAppOpenSentDate() {
+        return getLong(LAST_APP_OPEN_SENT_DATE_PREF_NAME, 0);
     }
 
     /**
-     * Set the last app-close date timestamp in milliseconds stored in the user's shared preferences.
+     * Set the last time we queued an @APP_OPEN event to the request vault.
      * @param date
-     *            The last app-close date to be stored
+     *            The date
      */
-    static void setLastAppCloseDate(long date) {
-        putLong(LAST_APPCLOSE_DATE_PREF_NAME, date);
+    static void setLastAppOpenSentDate(long date) {
+        putLong(LAST_APP_OPEN_SENT_DATE_PREF_NAME, date);
     }
 
     /**

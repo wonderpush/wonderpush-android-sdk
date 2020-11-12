@@ -1250,7 +1250,7 @@ public class WonderPush {
         if (type == null || type.length() == 0 || type.charAt(0) == '@') {
             throw new IllegalArgumentException("Bad event type");
         }
-        _trackEvent(type, eventData, attributes);
+        _trackEvent(type, eventData, attributes, null);
     }
 
     static void trackInternalEvent(String type, JSONObject eventData) {
@@ -1268,14 +1268,18 @@ public class WonderPush {
         _countEvent(type, eventData, customData);
     }
 
-    static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
+    static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData, Runnable sentCallback) {
         if (type.charAt(0) != '@') {
             throw new IllegalArgumentException("This method must only be called for internal events, starting with an '@'");
         }
-        _trackEvent(type, eventData, customData);
+        _trackEvent(type, eventData, customData, sentCallback);
     }
 
-    private static void _trackEvent(String type, JSONObject eventData, JSONObject customData) {
+    static void trackInternalEvent(String type, JSONObject eventData, JSONObject customData) {
+        trackInternalEvent(type, eventData, customData, null);
+    }
+
+    private static void _trackEvent(String type, JSONObject eventData, JSONObject customData, final Runnable sentCallback) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
             return;
@@ -1306,6 +1310,11 @@ public class WonderPush {
             @Override
             public void run() {
                 postEventually("/events/", parameters);
+                if (sentCallback != null) {
+                    WonderPush.safeDefer(() -> {
+                        sentCallback.run();
+                    }, 0);
+                }
             }
         };
 
@@ -1334,7 +1343,7 @@ public class WonderPush {
 
         if (WonderPushConfiguration.getAccessToken() != null
                 && WonderPushConfiguration.getOverrideNotificationReceipt() == Boolean.TRUE) {
-            _trackEvent(type, eventData, customData);
+            _trackEvent(type, eventData, customData, null);
             return;
         }
 
@@ -1477,14 +1486,13 @@ public class WonderPush {
         }
     }
 
+    private static boolean appOpenQueued;
     protected static void injectAppOpenIfNecessary() {
         if (!hasUserConsent()) {
             logDebug("onInteraction ignored without user consent");
             return;
         }
         long lastInteractionDate = WonderPushConfiguration.getLastInteractionDate();
-        long lastAppOpenDate = WonderPushConfiguration.getLastAppOpenDate();
-        long lastAppCloseDate = WonderPushConfiguration.getLastAppCloseDate();
         JSONObject lastReceivedNotificationInfo = WonderPushConfiguration.getLastReceivedNotificationInfoJson();
         if (lastReceivedNotificationInfo == null) lastReceivedNotificationInfo = new JSONObject();
         long lastReceivedNotificationDate = lastReceivedNotificationInfo.optLong("actionDate", Long.MAX_VALUE);
@@ -1501,26 +1509,15 @@ public class WonderPush {
                 )
         ;
 
+        // Non-subscribers will have an up-to-date lastInteraction time.
+        // Queue an @APP_OPEN event if we've never sent one to the server and haven't already queued one.
+        // This will ensure newly subscribed users have at least one @APP_OPEN event in their timeline.
+        if (WonderPushConfiguration.getLastAppOpenSentDate() == 0 && !appOpenQueued) {
+            shouldInjectAppOpen = true;
+        }
 
         if (shouldInjectAppOpen) {
             // We will track a new app open event
-
-            // We must first close the possibly still-open previous session
-            if (lastAppCloseDate < lastAppOpenDate) {
-                JSONObject closeInfo = WonderPushConfiguration.getLastAppOpenInfoJson();
-                if (closeInfo == null) {
-                    closeInfo = new JSONObject();
-                }
-                long appCloseDate = lastInteractionDate;
-                try {
-                    closeInfo.put("actionDate", appCloseDate);
-                    closeInfo.put("openedTime", appCloseDate - lastAppOpenDate);
-                } catch (JSONException e) {
-                    logDebug("Failed to fill @APP_CLOSE information", e);
-                }
-                // trackInternalEvent("@APP_CLOSE", closeInfo);
-                WonderPushConfiguration.setLastAppCloseDate(appCloseDate);
-            }
 
             // Track the new app open event
             JSONObject openInfo = new JSONObject();
@@ -1561,7 +1558,11 @@ public class WonderPush {
             } catch (JSONException e) {
                 WonderPush.logError("Could not serialize presence", e);
             }
-            trackInternalEvent("@APP_OPEN", openInfo);
+
+            trackInternalEvent("@APP_OPEN", openInfo, null, () -> {
+                WonderPushConfiguration.setLastAppOpenSentDate(TimeSync.getTime());
+            });
+            appOpenQueued = true;
             WonderPushConfiguration.setLastAppOpenDate(now);
             WonderPushConfiguration.setLastAppOpenInfoJson(openInfo);
         }
