@@ -114,26 +114,12 @@ class WonderPushImpl implements IWonderPush {
         try {
             WonderPush.logDebug("Set notification enabled: " + status);
 
-            boolean previousStatus = WonderPushConfiguration.getNotificationEnabled();
+            WonderPush.SubscriptionStatus previousSubscriptionStatus = WonderPush.getSubscriptionStatus();
             boolean osAreNotificationsEnabled = NotificationManagerCompat.from(WonderPush.getApplicationContext()).areNotificationsEnabled();
-            boolean cachedOsAreNotificationsEnabled = WonderPushConfiguration.getCachedOsAreNotificationsEnabled();
-            Set<String> cachedDisabledChannels = WonderPushConfiguration.getCachedDisabledNotificationChannelIds();
             Set<String> disabledChannels = WonderPushUserPreferences.getDisabledChannelIds();
-            String previousValue = previousStatus && cachedOsAreNotificationsEnabled
-                    ? WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
-                    : WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
             String value = status && osAreNotificationsEnabled
                     ? WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
                     : WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
-
-            if (previousStatus == status
-                    && value.equals(previousValue)
-                    && osAreNotificationsEnabled == cachedOsAreNotificationsEnabled
-                    && disabledChannels.equals(cachedDisabledChannels)
-            ) {
-                WonderPush.logDebug("Set notification enabled: no change to apply");
-                return;
-            }
 
             JSONObject diff = new JSONObject();
             JSONObject preferences = new JSONObject();
@@ -150,7 +136,7 @@ class WonderPushImpl implements IWonderPush {
             WonderPushConfiguration.setCachedDisabledNotificationChannelIds(disabledChannels);
             WonderPushConfiguration.setCachedDisabledNotificationChannelIdsDate(TimeSync.getTime());
 
-            if (!previousValue.equals(value)) {
+            if (WonderPush.getSubscriptionStatus() != previousSubscriptionStatus) {
                 WonderPush.subscriptionStatusChanged();
             }
 

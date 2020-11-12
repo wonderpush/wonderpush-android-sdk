@@ -2632,12 +2632,17 @@ public class WonderPush {
         try {
             JSONObject preferences = installation != null ? installation.getSdkState().optJSONObject("preferences") : null;
             String subscriptionStatus = preferences != null ? preferences.optString("subscriptionStatus") : null;
-            if (subscriptionStatus != null && subscriptionStatus.equals(SubscriptionStatus.OPT_OUT.slug)) {
+            if (subscriptionStatus == null) return null;
+
+            if (subscriptionStatus.equals(SubscriptionStatus.OPT_OUT.slug)) {
                 return SubscriptionStatus.OPT_OUT;
+            }
+            if (subscriptionStatus.equals(SubscriptionStatus.OPT_IN.slug)) {
+                return SubscriptionStatus.OPT_IN;
             }
         } catch (JSONException e) {
         }
-        return SubscriptionStatus.OPT_IN;
+        return null;
     }
 
     static boolean isSubscriptionStatusOptIn() {
