@@ -1559,6 +1559,15 @@ public class WonderPush {
                 WonderPush.logError("Could not serialize presence", e);
             }
 
+            if (!WonderPush.isSubscriptionStatusOptIn()) {
+                WonderPush.countInternalEvent("@VISIT",openInfo,null);
+                try {
+                    openInfo.put("doNotSynthesizeVisit", true);
+                } catch (JSONException e) {
+                    WonderPush.logError("Could not add doNotSynthesizeVisit", e);
+                }
+            }
+
             trackInternalEvent("@APP_OPEN", openInfo, null, () -> {
                 WonderPushConfiguration.setLastAppOpenSentDate(TimeSync.getTime());
             });
