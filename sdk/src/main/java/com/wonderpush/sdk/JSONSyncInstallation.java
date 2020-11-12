@@ -297,7 +297,7 @@ public class JSONSyncInstallation {
     }
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         return "JSONSyncInstallationCustom"
                 + "{userId=" + userId
                 + ",sync=" + sync
@@ -308,23 +308,23 @@ public class JSONSyncInstallation {
     /// Forward JSONSync methods
     ///
 
-    public JSONObject getSdkState() throws JSONException {
+    public synchronized JSONObject getSdkState() throws JSONException {
         return sync.getSdkState();
     }
 
-    public void put(JSONObject diff) throws JSONException {
+    public synchronized void put(JSONObject diff) throws JSONException {
         sync.put(diff);
     }
 
-    public void receiveServerState(JSONObject srvState) throws JSONException {
+    public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
         sync.receiveServerState(srvState);
     }
 
-    public void receiveState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
+    public synchronized void receiveState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
         sync.receiveState(receivedState, resetSdkState);
     }
 
-    public void receiveDiff(JSONObject diff) throws JSONException {
+    public synchronized void receiveDiff(JSONObject diff) throws JSONException {
         sync.receiveDiff(diff);
     }
 }
