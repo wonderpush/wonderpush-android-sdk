@@ -369,6 +369,7 @@ class Request {
          * @param key   the key name for the param, either existing or new.
          * @param value the value string for the new param.
          */
+        @SuppressWarnings("unchecked")
         public void add(String key, String value) {
             if (key != null && value != null) {
                 Object params = urlParamsWithObjects.get(key);
@@ -429,11 +430,11 @@ class Request {
         private List<BasicNameValuePair> getParamsList(String key, Object value) {
             List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
             if (value instanceof Map) {
-                Map map = (Map) value;
-                List list = new ArrayList<Object>(map.keySet());
+                Map<?,?> map = (Map<?,?>) value;
+                List<?> list = new ArrayList<Object>(map.keySet());
                 // Ensure consistent ordering in query string
                 if (list.size() > 0 && list.get(0) instanceof Comparable) {
-                    Collections.sort(list);
+                    Collections.sort(list, null);
                 }
                 for (Object nestedKey : list) {
                     if (nestedKey instanceof String) {
@@ -445,7 +446,7 @@ class Request {
                     }
                 }
             } else if (value instanceof List) {
-                List list = (List) value;
+                List<?> list = (List<?>) value;
                 int listSize = list.size();
                 for (int nestedValueIndex = 0; nestedValueIndex < listSize; nestedValueIndex++) {
                     params.addAll(getParamsList(String.format(Locale.US, "%s[%d]", key, nestedValueIndex), list.get(nestedValueIndex)));
@@ -457,7 +458,7 @@ class Request {
                     params.addAll(getParamsList(String.format(Locale.US, "%s[%d]", key, nestedValueIndex), array[nestedValueIndex]));
                 }
             } else if (value instanceof Set) {
-                Set set = (Set) value;
+                Set<?> set = (Set<?>) value;
                 for (Object nestedValue : set) {
                     params.addAll(getParamsList(key, nestedValue));
                 }

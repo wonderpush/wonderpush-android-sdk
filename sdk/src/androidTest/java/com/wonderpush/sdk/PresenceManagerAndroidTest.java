@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
@@ -201,7 +202,7 @@ public class PresenceManagerAndroidTest {
 
         CompletableFuture<Void> future = new CompletableFuture<>();
 
-        final Map lastStartDate = new HashMap();
+        final AtomicReference<Date> lastStartDate = new AtomicReference<>();
         for (int i = 0; i < 5; i++) {
             setTimeout(() -> {
                 assertNull(delegate.presenceToRenew);
@@ -210,7 +211,7 @@ public class PresenceManagerAndroidTest {
                 } catch (InterruptedException e) {
                     fail();
                 }
-                lastStartDate.put("lastStartDate", new Date());
+                lastStartDate.set(new Date());
 
             }, 100);
         }
@@ -218,7 +219,7 @@ public class PresenceManagerAndroidTest {
         setTimeout(() -> {
             assertNotNull(delegate.presenceToRenew);
             PresenceManager.PresencePayload stopPayload = manager.presenceWillStop();
-            assertEquals(((Date)lastStartDate.get("lastStartDate")).getTime(), stopPayload.getFromDate().getTime(), 10);
+            assertEquals((lastStartDate.get()).getTime(), stopPayload.getFromDate().getTime(), 10);
             future.complete(null);
         }, 710);
 
