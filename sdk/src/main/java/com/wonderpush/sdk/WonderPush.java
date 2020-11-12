@@ -2061,26 +2061,27 @@ public class WonderPush {
     }
 
     private static void hasUserConsentChanged(boolean hasUserConsent) {
-        synchronized (sUserConsentListeners) {
-            if (!sIsInitialized) logError("hasUserConsentChanged called before SDK is initialized");
-            logDebug("User consent changed to " + hasUserConsent);
-            sApiImpl._deactivate();
-            if (hasUserConsent) {
-                sApiImpl = new WonderPushImpl();
-            } else {
-                sApiImpl = new WonderPushNoConsentImpl();
-            }
-            sApiImpl._activate();
+        if (!sIsInitialized) logError("hasUserConsentChanged called before SDK is initialized");
+        logDebug("User consent changed to " + hasUserConsent);
+        sApiImpl._deactivate();
+        if (hasUserConsent) {
+            sApiImpl = new WonderPushImpl();
+        } else {
+            sApiImpl = new WonderPushNoConsentImpl();
+        }
+        sApiImpl._activate();
 
-            // Iterate on a copy to let listeners de-register themselves
-            // during iteration without triggering a java.util.ConcurrentModificationException
-            Set<UserConsentListener> iterationSet = new HashSet<>(sUserConsentListeners);
-            for (UserConsentListener listener : iterationSet) {
-                try {
-                    listener.onUserConsentChanged(hasUserConsent);
-                } catch (Exception ex) {
-                    Log.e(TAG, "Unexpected error while processing user consent changed listeners", ex);
-                }
+        // Iterate on a copy to let listeners de-register themselves
+        // during iteration without triggering a java.util.ConcurrentModificationException
+        Set<UserConsentListener> iterationSet;
+        synchronized (sUserConsentListeners) {
+            iterationSet = new HashSet<>(sUserConsentListeners);
+        }
+        for (UserConsentListener listener : iterationSet) {
+            try {
+                listener.onUserConsentChanged(hasUserConsent);
+            } catch (Exception ex) {
+                Log.e(TAG, "Unexpected error while processing user consent changed listeners", ex);
             }
         }
     }
