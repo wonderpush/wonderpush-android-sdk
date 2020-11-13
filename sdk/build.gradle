@@ -35,15 +35,6 @@ android {
 }
 
 dependencies {
-    // Add a dependency on the FCM push service support by default, so
-    // that the most common build scenarios don't need to add an
-    // explicit dependency on it, and thus we avoid breaking builds.
-    runtimeOnly 'com.wonderpush:wonderpush-android-sdk-fcm:[1.0,2.0)'
-    // Instrumented tests do not like wonderpush-android-sdk-fcm depending on wonderpush-android-sdk
-    // because wonderpush-android-sdk depends on wonderpush-android-sdk-fcm.
-    // I expected the dependency on project(':sdk') to be smarted than that.
-    configurations.androidTestCompile.exclude(group: 'com.wonderpush', module: 'wonderpush-android-sdk-fcm')
-
     // This is how we can declare incompatibility with previous modules.
     // This way a newer SDK version can say it is not compatible with
     // previous module versions, whereas the module version can only
