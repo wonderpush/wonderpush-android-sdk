@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation.parser;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.segmentation.parser.criteria.UnknownCriterionError;
 

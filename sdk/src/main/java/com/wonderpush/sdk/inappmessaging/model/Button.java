@@ -14,7 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.model;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.JSONUtil;
 

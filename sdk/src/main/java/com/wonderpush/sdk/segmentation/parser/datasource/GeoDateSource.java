@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation.parser.datasource;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.segmentation.parser.DataSource;
 import com.wonderpush.sdk.segmentation.parser.DataSourceVisitor;

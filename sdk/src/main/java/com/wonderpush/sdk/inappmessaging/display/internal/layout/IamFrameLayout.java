@@ -15,7 +15,7 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.layout;
 
 import android.content.Context;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.widget.FrameLayout;

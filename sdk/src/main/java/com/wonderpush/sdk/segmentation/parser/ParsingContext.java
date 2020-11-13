@@ -1,6 +1,6 @@
 package com.wonderpush.sdk.segmentation.parser;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public class ParsingContext {
 

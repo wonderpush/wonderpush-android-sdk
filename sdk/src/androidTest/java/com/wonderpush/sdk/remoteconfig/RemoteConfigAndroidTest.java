@@ -1,10 +1,10 @@
 package com.wonderpush.sdk.remoteconfig;
 
 import android.content.*;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;

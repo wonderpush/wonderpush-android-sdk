@@ -14,7 +14,7 @@
 
 package com.wonderpush.sdk;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /** Provides the following about any message, */
 public class NotificationMetadata {

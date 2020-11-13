@@ -14,8 +14,8 @@
 
 package com.wonderpush.sdk.inappmessaging.model;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Value object class representing rate limits.

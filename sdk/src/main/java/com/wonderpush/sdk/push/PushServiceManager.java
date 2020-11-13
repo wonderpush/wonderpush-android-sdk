@@ -2,10 +2,9 @@ package com.wonderpush.sdk.push;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.wonderpush.sdk.InstallationManager;
 import com.wonderpush.sdk.JSONSyncInstallation;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushConfiguration;

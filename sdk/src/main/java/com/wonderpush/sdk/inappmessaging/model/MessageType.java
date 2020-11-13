@@ -14,7 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.model;
 
-import android.support.annotation.Keep;
+import androidx.annotation.Keep;
 
 /** Template type of an in-app message */
 @Keep

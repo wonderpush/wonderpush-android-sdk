@@ -14,7 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.internal;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingClickListener;

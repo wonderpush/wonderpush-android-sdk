@@ -15,9 +15,9 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers;
 
 import android.graphics.Color;
-import android.support.annotation.NonNull;
-import android.support.annotation.RestrictTo;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;

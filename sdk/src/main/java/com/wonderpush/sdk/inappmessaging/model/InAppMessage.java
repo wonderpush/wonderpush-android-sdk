@@ -14,9 +14,8 @@
 
 package com.wonderpush.sdk.inappmessaging.model;
 
-import android.app.Notification;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationMetadata;
@@ -24,7 +23,6 @@ import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import org.json.JSONObject;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 /** Encapsulates an In App Message. */
