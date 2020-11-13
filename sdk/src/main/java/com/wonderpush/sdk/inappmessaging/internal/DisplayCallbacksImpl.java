@@ -14,20 +14,15 @@
 
 package com.wonderpush.sdk.inappmessaging.internal;
 
-import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
-import com.wonderpush.sdk.inappmessaging.model.CampaignImpression;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.RateLimit;
 
 import java.util.List;
 
 import io.reactivex.*;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
@@ -43,7 +38,6 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
   private static boolean wasImpressed;
   private static final String MESSAGE_CLICK = "message click to metrics logger";
 
-  @VisibleForTesting
   DisplayCallbacksImpl(
       ImpressionStorageClient impressionStorageClient,
       Clock clock,

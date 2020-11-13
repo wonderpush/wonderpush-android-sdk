@@ -21,7 +21,6 @@ import com.wonderpush.sdk.inappmessaging.internal.AnalyticsEventsManager;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.ImpressionStorageClient;
 import com.wonderpush.sdk.inappmessaging.internal.ProgramaticContextualTriggers;
-import com.wonderpush.sdk.inappmessaging.internal.ProviderInstaller;
 import com.wonderpush.sdk.inappmessaging.internal.RateLimiterClient;
 import com.wonderpush.sdk.inappmessaging.internal.Schedulers;
 import com.wonderpush.sdk.inappmessaging.internal.injection.modules.AnalyticsEventsModule;
@@ -65,7 +64,6 @@ import io.reactivex.flowables.ConnectableFlowable;
       RateLimitModule.class
     })
 public interface UniversalComponent {
-  ProviderInstaller probiderInstaller();
 
   Schedulers schedulers();
 
@@ -97,4 +95,5 @@ public interface UniversalComponent {
   RateLimit appForegroundRateLimit();
 
   DeveloperListenerManager developerListenerManager();
+
 }
