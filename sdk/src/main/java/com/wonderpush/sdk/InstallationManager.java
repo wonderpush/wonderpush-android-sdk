@@ -18,10 +18,12 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeSet;
 
 public class InstallationManager {
@@ -279,6 +281,7 @@ public class InstallationManager {
 
                     JSONObject configuration = new JSONObject();
                     configuration.put("timeZone", getUserTimezone());
+                    configuration.put("timeOffset", getUserTimeOffset());
                     configuration.put("carrier", getCarrierName());
                     configuration.put("locale", getLocaleString());
                     configuration.put("country", getLocaleCountry());
@@ -314,6 +317,12 @@ public class InstallationManager {
 
     protected static String getUserTimezone() {
         return WonderPush.getTimeZone();
+    }
+
+    protected static long getUserTimeOffset() {
+        String timeZone = WonderPush.getTimeZone();
+        TimeZone tz = TimeZone.getTimeZone(timeZone);
+        return tz.getOffset(new Date().getTime());
     }
 
     protected static String getCarrierName() {
