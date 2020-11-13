@@ -1947,6 +1947,9 @@ public class WonderPush {
             String initializerClassName = null;
             try {
                 Bundle metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+                if (metaData == null) {
+                    metaData = new Bundle();
+                }
                 initializerClassName = metaData.getString(METADATA_INITIALIZER_CLASS);
                 if (initializerClassName != null) {
                     if (initializerClassName.startsWith(".")) {

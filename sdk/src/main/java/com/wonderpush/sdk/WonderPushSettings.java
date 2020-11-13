@@ -29,6 +29,9 @@ public class WonderPushSettings {
 
         try {
             sMetaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            if (sMetaData == null) {
+                sMetaData = new Bundle();
+            }
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Failed to read application meta-data", e);
         }

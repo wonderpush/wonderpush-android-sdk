@@ -220,6 +220,9 @@ public class FCMPushService implements PushService {
         int iconId = 0;
         try {
             Bundle metaData = sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            if (metaData == null) {
+                metaData = new Bundle();
+            }
             iconId = metaData.getInt("com.google.firebase.messaging.default_notification_icon");
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while getting notification icon", e);
@@ -236,6 +239,9 @@ public class FCMPushService implements PushService {
         int color = 0;
         try {
             Bundle metaData = sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            if (metaData == null) {
+                metaData = new Bundle();
+            }
             int resId = metaData.getInt("com.google.firebase.messaging.default_notification_color");
             if (resId != 0) {
                 color = contextCompatGetColor(sContext, resId);
