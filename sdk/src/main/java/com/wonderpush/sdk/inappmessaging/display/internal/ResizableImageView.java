@@ -18,9 +18,9 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.AppCompatImageView;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.widget.ImageView;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.util.MeasureUtils;
 
@@ -36,7 +36,7 @@ import com.wonderpush.sdk.inappmessaging.display.internal.layout.util.MeasureUti
  * @hide
  */
 // TODO (ashwinraghav) tests pending
-public class ResizableImageView extends AppCompatImageView {
+public class ResizableImageView extends ImageView {
   private int mDensityDpi;
 
   public ResizableImageView(Context context) {

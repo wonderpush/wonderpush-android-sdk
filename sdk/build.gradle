@@ -47,12 +47,8 @@ dependencies {
     //    }
     //}
 
-    // Use the full support-v4 instead of the module support-compat
-    // because com.google.firebase:firebase-messaging (indirectly) depends on it
-    // and all modules must use the same version.
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.core:core:1.0.0' // Note: this dependency is already depended on by at least com.google.firebase:firebase-messaging:20.1.2
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0' // Note: this dependency is already depended on by at least com.google.firebase:firebase-messaging:20.1.2
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'com.google.dagger:dagger:2.24'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.24'
@@ -63,7 +59,6 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
     implementation "com.squareup.picasso:picasso:2.71828"
     implementation "com.squareup.okhttp3:okhttp:3.14.9"
-    implementation 'androidx.exifinterface:exifinterface:1.0.0'
     // necessary to bump dependency from picasso
 
     testImplementation 'junit:junit:4.12'
