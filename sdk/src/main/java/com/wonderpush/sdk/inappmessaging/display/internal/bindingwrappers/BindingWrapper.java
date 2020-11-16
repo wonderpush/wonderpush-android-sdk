@@ -53,6 +53,9 @@ public abstract class BindingWrapper {
     this.message = message;
   }
 
+  @Nullable
+  public abstract View getDismissView();
+
   @NonNull
   public abstract ImageView getImageView();
 

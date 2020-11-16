@@ -3,33 +3,42 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/image_root"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:layout_gravity="center"
     android:clickable="true"
     android:clipToPadding="false"
-    android:focusable="true"
-    android:padding="24dp">
+    android:focusable="true">
 
     <FrameLayout
-        android:id="@+id/image_content_root"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal">
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:padding="24dp">
 
-        <com.wonderpush.sdk.inappmessaging.display.internal.ResizableImageView
-            android:id="@+id/image_view"
-            style="@style/WPIamUI.ResizableImageView"
-            android:clickable="true"
-            android:focusable="true"
-            android:adjustViewBounds="true"
-            tools:src="@drawable/placeholder_850_850"
-            tools:visibility="visible" />
+        <FrameLayout
+                android:id="@+id/image_content_root"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal">
+
+            <com.wonderpush.sdk.inappmessaging.display.internal.ResizableImageView
+                    android:id="@+id/image_view"
+                    style="@style/WPIamUI.ResizableImageView"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:adjustViewBounds="true"
+                    tools:src="@drawable/placeholder_850_850"
+                    tools:visibility="visible" />
+        </FrameLayout>
+
+        <Button
+                android:id="@+id/collapse_button"
+                style="@style/WPIamUI.CollapseButton"
+                android:layout_gravity="top|end" />
+
     </FrameLayout>
 
-    <Button
-        android:id="@+id/collapse_button"
-        style="@style/WPIamUI.CollapseButton"
-        android:layout_gravity="top|end" />
 
 </com.wonderpush.sdk.inappmessaging.display.internal.layout.IamFrameLayout>

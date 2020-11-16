@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.wonderpush.sdk.inappmessaging.display.internal.layout.IamCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.wonderpush.sdk.inappmessaging.display.internal.layout.IamBackButtonFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card_root"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:clipToPadding="false"
-    app:cardCornerRadius="6dp"
-    app:contentPadding="0dp">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <include layout="@layout/card_landscape_inner" />
-</com.wonderpush.sdk.inappmessaging.display.internal.layout.IamCardView>
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:clickable="true"
+        app:cardCornerRadius="6dp"
+        app:contentPadding="0dp">
+
+        <include layout="@layout/card_landscape_inner" />
+
+    </androidx.cardview.widget.CardView>
+
+</com.wonderpush.sdk.inappmessaging.display.internal.layout.IamBackButtonFrameLayout>

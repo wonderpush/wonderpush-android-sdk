@@ -109,6 +109,12 @@ public class ImageBindingWrapper extends BindingWrapper {
     return null;
   }
 
+  @Nullable
+  @Override
+  public View getDismissView() {
+    return imageRoot;
+  }
+
   @NonNull
   @Override
   public ImageView getImageView() {

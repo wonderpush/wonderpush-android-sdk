@@ -39,7 +39,6 @@ public class InAppMessageLayoutConfig implements Cloneable {
   private Integer viewWindowGravity;
   private Integer windowWidth;
   private Integer windowHeight;
-  private Boolean backgroundEnabled;
   private Boolean autoDismiss;
 
   @NonNull
@@ -87,10 +86,6 @@ public class InAppMessageLayoutConfig implements Cloneable {
 
   public Integer windowHeight() {
     return windowHeight;
-  }
-
-  public Boolean backgroundEnabled() {
-    return backgroundEnabled;
   }
 
   public Boolean autoDismiss() {
@@ -171,11 +166,6 @@ public class InAppMessageLayoutConfig implements Cloneable {
 
     public Builder setWindowHeight(Integer windowHeight) {
       config.windowHeight = windowHeight;
-      return this;
-    }
-
-    public Builder setBackgroundEnabled(Boolean backgroundEnabled) {
-      config.backgroundEnabled = backgroundEnabled;
       return this;
     }
 

@@ -421,14 +421,14 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
           @Override
           public void onSuccess() {
             // Setup dismiss on touch outside
-            if (!bindingWrapper.getConfig().backgroundEnabled()) {
+            if (bindingWrapper.getDismissView() != null) {
               bindingWrapper
-                  .getRootView()
+                  .getDismissView()
                   .setOnTouchListener(
                       new View.OnTouchListener() {
                         @Override
                         public boolean onTouch(View v, MotionEvent event) {
-                          if (event.getAction() == MotionEvent.ACTION_OUTSIDE) {
+                          if (event.getAction() == MotionEvent.ACTION_DOWN) {
                             if (callbacks != null) {
                               callbacks.messageDismissed(
                                   InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);

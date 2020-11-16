@@ -18,6 +18,7 @@ import android.graphics.Color;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,20 +35,21 @@ import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.BaseModalLayout;
-import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamCardView;
+import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamBackButtonFrameLayout;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.MessageType;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /** @hide */
 @InAppMessageScope
 public class CardBindingWrapper extends BindingWrapper {
 
-  private IamCardView cardRoot;
+  private IamBackButtonFrameLayout cardRoot;
   private BaseModalLayout cardContentRoot;
   private ScrollView bodyScroll;
   private Button primaryButton;
@@ -110,6 +112,12 @@ public class CardBindingWrapper extends BindingWrapper {
   @NonNull
   public View getTitleView() {
     return messageTitle;
+  }
+
+  @Nullable
+  @Override
+  public View getDismissView() {
+    return cardRoot;
   }
 
   @NonNull

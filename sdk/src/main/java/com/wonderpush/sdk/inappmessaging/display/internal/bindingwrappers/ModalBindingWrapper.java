@@ -16,6 +16,7 @@ package com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers;
 
 import android.graphics.Color;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import android.text.TextUtils;
@@ -115,6 +116,12 @@ public class ModalBindingWrapper extends BindingWrapper {
 
     }
     return layoutListener;
+  }
+
+  @Nullable
+  @Override
+  public View getDismissView() {
+    return modalRoot;
   }
 
   @NonNull

@@ -19,23 +19,24 @@ import androidx.cardview.widget.CardView;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.util.BackButtonHandler;
 
 /** @hide */
-public class IamCardView extends CardView implements BackButtonLayout {
+public class IamBackButtonFrameLayout extends FrameLayout implements BackButtonLayout {
 
   private BackButtonHandler mBackHandler;
 
-  public IamCardView(Context context) {
+  public IamBackButtonFrameLayout(Context context) {
     super(context);
   }
 
-  public IamCardView(Context context, AttributeSet attrs) {
+  public IamBackButtonFrameLayout(Context context, AttributeSet attrs) {
     super(context, attrs);
   }
 
-  public IamCardView(Context context, AttributeSet attrs, int defStyleAttr) {
+  public IamBackButtonFrameLayout(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
   }
 

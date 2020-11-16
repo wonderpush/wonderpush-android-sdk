@@ -106,9 +106,8 @@ public class InflaterConfigModule {
         .setMaxImageHeightWeight(0.8f)
         .setViewWindowGravity(Gravity.CENTER)
         .setWindowFlag(DISABLED_BG_FLAG)
-        .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setBackgroundEnabled(false)
+        .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
+        .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
         .setAutoDismiss(false)
         .build();
   }
@@ -126,9 +125,8 @@ public class InflaterConfigModule {
         .setMaxImageHeightWeight(0.8f)
         .setViewWindowGravity(Gravity.CENTER)
         .setWindowFlag(DISABLED_BG_FLAG)
-        .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setBackgroundEnabled(false)
+        .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
+        .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
         .setAutoDismiss(false)
         .build();
   }
@@ -149,7 +147,6 @@ public class InflaterConfigModule {
         .setWindowFlag(DISABLED_BG_FLAG)
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
         .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
-        .setBackgroundEnabled(false)
         .setAutoDismiss(false)
         .build();
   }
@@ -169,8 +166,7 @@ public class InflaterConfigModule {
         .setViewWindowGravity(Gravity.CENTER)
         .setWindowFlag(DISABLED_BG_FLAG)
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
-        .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setBackgroundEnabled(false)
+        .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
         .setAutoDismiss(false)
         .build();
   }
@@ -187,9 +183,8 @@ public class InflaterConfigModule {
         .setMaxImageWidthWeight(0.5f)
         .setViewWindowGravity(Gravity.CENTER)
         .setWindowFlag(DISMISSIBLE_DIALOG_FLAG)
-        .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setBackgroundEnabled(false)
+        .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
+        .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
         .setAutoDismiss(false)
         .build();
   }
@@ -208,9 +203,8 @@ public class InflaterConfigModule {
         .setMaxBodyWidthWeight(0.9f) // entire dialog width
         .setViewWindowGravity(Gravity.CENTER)
         .setWindowFlag(DISMISSIBLE_DIALOG_FLAG)
-        .setWindowWidth(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setBackgroundEnabled(false)
+        .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
+        .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
         .setAutoDismiss(false)
         .build();
   }
@@ -230,7 +224,6 @@ public class InflaterConfigModule {
         .setWindowFlag(ENABLED_BG_FLAG)
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setBackgroundEnabled(true)
         .setAutoDismiss(true)
         .build();
   }
@@ -250,7 +243,6 @@ public class InflaterConfigModule {
         .setWindowFlag(ENABLED_BG_FLAG)
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
-        .setBackgroundEnabled(true)
         .setAutoDismiss(true)
         .build();
   }

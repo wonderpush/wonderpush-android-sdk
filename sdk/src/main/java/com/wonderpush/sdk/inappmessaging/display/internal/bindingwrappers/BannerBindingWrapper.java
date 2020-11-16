@@ -156,6 +156,12 @@ public class BannerBindingWrapper extends BindingWrapper {
     return config;
   }
 
+  @Nullable
+  @Override
+  public View getDismissView() {
+    return null;
+  }
+
   @NonNull
   @Override
   public ImageView getImageView() {
