@@ -22,6 +22,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
 
@@ -112,6 +114,7 @@ public class IamAnimator {
     view.setAlpha(0.0f);
     view.animate()
         .setDuration(app.getResources().getInteger(android.R.integer.config_shortAnimTime))
+        .setInterpolator(new DecelerateInterpolator())
         .alpha(1.0f)
         .setListener(completeListener != null ? new AnimatorListenerAdapter() {
           @Override
@@ -132,6 +135,7 @@ public class IamAnimator {
     view.setAlpha(1.0f);
     view.animate()
             .setDuration(app.getResources().getInteger(android.R.integer.config_shortAnimTime))
+            .setInterpolator(new AccelerateInterpolator())
             .alpha(0.0f)
             .setListener(completeListener != null ? new AnimatorListenerAdapter() {
               @Override
@@ -172,6 +176,7 @@ public class IamAnimator {
                     .alpha(1.0f)
                     .setDuration(
                         app.getResources().getInteger(android.R.integer.config_longAnimTime))
+                    .setInterpolator(new DecelerateInterpolator())
                     .setListener(completeListener != null ?new AnimatorListenerAdapter() {
                       @Override
                       public void onAnimationEnd(Animator animation) {
@@ -210,6 +215,7 @@ public class IamAnimator {
         .translationY(start.y)
         .alpha(0.0f)
         .setDuration(app.getResources().getInteger(android.R.integer.config_longAnimTime))
+        .setInterpolator(new AccelerateInterpolator())
         .setListener(animatorListenerAdapter);
   }
 
