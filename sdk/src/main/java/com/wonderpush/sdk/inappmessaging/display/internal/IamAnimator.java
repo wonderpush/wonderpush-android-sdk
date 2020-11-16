@@ -20,6 +20,8 @@ import android.app.Application;
 import android.graphics.Point;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import android.graphics.Rect;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
@@ -226,7 +228,15 @@ public class IamAnimator {
     BOTTOM;
 
     private static Point getPoint(Position d, View view) {
-      view.measure(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+      if (view.getLayoutParams() == null) {
+        return new Point(0,0);
+      }
+
+      Rect rect = new Rect();
+      view.getWindowVisibleDisplayFrame(rect);
+      view.measure(
+              ViewGroup.getChildMeasureSpec(View.MeasureSpec.makeMeasureSpec(rect.width(), View.MeasureSpec.EXACTLY), 0, view.getLayoutParams().width),
+              ViewGroup.getChildMeasureSpec(View.MeasureSpec.makeMeasureSpec(rect.height(), View.MeasureSpec.EXACTLY), 0, view.getLayoutParams().height));
 
       switch (d) {
         case LEFT:
