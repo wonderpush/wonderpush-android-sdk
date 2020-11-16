@@ -373,6 +373,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             new View.OnClickListener() {
               @Override
               public void onClick(View v) {
+                if (inAppMessage == null) return;
                 if (callbacks != null) {
                   callbacks.messageClicked(actions);
                 }
