@@ -159,7 +159,7 @@ public class IamAnimator {
     view.animate()
         .translationX(start.x)
         .translationY(start.y)
-        .setDuration(1)
+        .setDuration(0)
         .setListener(
             new AnimatorListenerAdapter() {
               @Override
@@ -208,6 +208,7 @@ public class IamAnimator {
     view.animate()
         .translationX(start.x)
         .translationY(start.y)
+        .alpha(0.0f)
         .setDuration(app.getResources().getInteger(android.R.integer.config_longAnimTime))
         .setListener(animatorListenerAdapter);
   }
