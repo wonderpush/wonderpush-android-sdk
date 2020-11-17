@@ -1,5 +1,7 @@
 package com.wonderpush.sdk.remoteconfig;
 
+import com.wonderpush.sdk.SafeOkHttpCallback;
+
 import okhttp3.*;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,14 +33,14 @@ public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
         String url = String.format(Locale.ENGLISH, "%s%s%s?_=%d",Constants.REMOTE_CONFIG_BASE_URL, clientId, Constants.REMOTE_CONFIG_SUFFIX, new Date().getTime());
         this.safeDeferProvider.safeDefer(() -> {
             Request request = new Request.Builder().url(url).get().build();
-            client.newCall(request).enqueue(new Callback() {
+            client.newCall(request).enqueue(new SafeOkHttpCallback() {
                 @Override
-                public void onFailure(Call call, IOException e) {
+                public void onFailureSafe(Call call, IOException e) {
                     handler.handle(null, e);
                 }
 
                 @Override
-                public void onResponse(Call call, Response response) throws IOException {
+                public void onResponseSafe(Call call, Response response) throws IOException {
                     if (!response.isSuccessful()) {
                         handler.handle(null, new Exception("Invalid status code from remote config server:" + response.code()));
                         return;

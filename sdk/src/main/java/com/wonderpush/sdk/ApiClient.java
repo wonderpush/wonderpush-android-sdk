@@ -293,15 +293,15 @@ class ApiClient {
                 };
 
                 final long sendDate = SystemClock.elapsedRealtime();
-                Callback jsonHandler = new Callback() {
+                Callback jsonHandler = new SafeOkHttpCallback() {
 
                     @Override
-                    public void onFailure(Call call, IOException e) {
+                    public void onFailureSafe(Call call, IOException e) {
                         handler.onFailure(e, new Response((JSONObject)null));
                     }
 
                     @Override
-                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
+                    public void onResponseSafe(Call call, okhttp3.Response response) throws IOException {
                         // Try parse JSON
                         String responseString = response.body().string();
                         JSONObject responseJson;

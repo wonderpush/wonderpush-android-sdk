@@ -38,9 +38,9 @@ public class MeasurementsApiClient {
                 requestBuilder.header(authorizationHeader.getName(), authorizationHeader.getValue());
             }
             sClient.newCall(requestBuilder.build())
-                    .enqueue(new okhttp3.Callback() {
+                    .enqueue(new SafeOkHttpCallback() {
                         @Override
-                        public void onFailure(okhttp3.Call call, IOException e) {
+                        public void onFailureSafe(okhttp3.Call call, IOException e) {
                             Log.w(TAG, String.format("Request the measurements API %s failed", resource), e);
                             if (request.getHandler() != null) {
                                 request.getHandler().onFailure(e, null);
@@ -48,7 +48,7 @@ public class MeasurementsApiClient {
                         }
 
                         @Override
-                        public void onResponse(okhttp3.Call call, okhttp3.Response response) throws IOException {
+                        public void onResponseSafe(okhttp3.Call call, okhttp3.Response response) throws IOException {
                             String responseString = response.body().string();
                             JSONObject responseJson = null;
                             try {
