@@ -74,8 +74,6 @@ public class WonderPush {
     protected static final ScheduledExecutorService sScheduledExecutor;
     private static PresenceManager sPresenceManager;
     private static RemoteConfigManager sRemoteConfigManager;
-    @Nullable
-    private static BlackWhiteList sEventsBlackWhiteList = null;
 
     static {
         sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
@@ -1285,15 +1283,7 @@ public class WonderPush {
             return;
         }
 
-        if (sEventsBlackWhiteList != null && !sEventsBlackWhiteList.allow(type)) {
-            logError("Not tracking event forbidden by config. type=" + type + ", data=" + eventData + " custom=" + customData);
-            return;
-        }
-
-        JSONObject event = getEventObject(type, eventData, customData);
-
-        Request.Params parameters = new Request.Params();
-        parameters.put("body", event.toString());
+        final JSONObject event = getEventObject(type, eventData, customData);
 
         // Remember
         WonderPushConfiguration.rememberTrackedEvent(event);
@@ -1306,38 +1296,47 @@ public class WonderPush {
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
-        Runnable post = new Runnable() {
-            @Override
-            public void run() {
-                postEventually("/events/", parameters);
-                if (sentCallback != null) {
-                    WonderPush.safeDefer(() -> {
-                        sentCallback.run();
-                    }, 0);
-                }
-            }
-        };
+        getEventsBlackWhiteList((BlackWhiteList eventsBlackWhiteList, Throwable error) -> {
 
-        getRemoteConfigManager().read(new RemoteConfigHandler() {
-            @Override
-            public void handle(RemoteConfig config, Throwable error) {
-                if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
-                    post.run();
-                } else {
-                    safeDeferWithSubscription(post, null);
-                }
+            // Do not send to server if blacklisted.
+            if (eventsBlackWhiteList != null && !eventsBlackWhiteList.allow(type)) {
+                logError("Not tracking event forbidden by config. type=" + type + ", data=" + eventData + " custom=" + customData);
+                return;
             }
+
+            Request.Params parameters = new Request.Params();
+            parameters.put("body", event.toString());
+
+            Runnable post = new Runnable() {
+                @Override
+                public void run() {
+                    postEventually("/events/", parameters);
+                    if (sentCallback != null) {
+                        WonderPush.safeDefer(() -> {
+                            sentCallback.run();
+                        }, 0);
+                    }
+                }
+            };
+
+            getRemoteConfigManager().read(new RemoteConfigHandler() {
+                @Override
+                public void handle(RemoteConfig config, Throwable error) {
+                    if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
+                        post.run();
+                    } else {
+                        safeDeferWithSubscription(post, null);
+                    }
+                }
+            });
+
         });
+
     }
 
     private static void _countEvent(String type, JSONObject eventData, JSONObject customData) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
-            return;
-        }
-
-        if (sEventsBlackWhiteList != null && !sEventsBlackWhiteList.allow(type)) {
-            logError("Not tracking event forbidden by config. type=" + type + ", data=" + eventData + " custom=" + customData);
             return;
         }
 
@@ -1347,10 +1346,7 @@ public class WonderPush {
             return;
         }
 
-        JSONObject event = getEventObject(type, eventData, customData);
-
-        Request.Params parameters = new Request.Params();
-        parameters.put("body", event.toString());
+        final JSONObject event = getEventObject(type, eventData, customData);
 
         // Remember
         WonderPushConfiguration.rememberTrackedEvent(event);
@@ -1363,7 +1359,19 @@ public class WonderPush {
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
-        postEventuallyWithMeasurementsApiClient("/events", parameters);
+        getEventsBlackWhiteList((BlackWhiteList eventsBlackWhiteList, Throwable error) -> {
+
+            // Do not send to server if blacklisted.
+            if (eventsBlackWhiteList != null && !eventsBlackWhiteList.allow(type)) {
+                logError("Not tracking event forbidden by config. type=" + type + ", data=" + eventData + " custom=" + customData);
+                return;
+            }
+
+            Request.Params parameters = new Request.Params();
+            parameters.put("body", event.toString());
+
+            postEventuallyWithMeasurementsApiClient("/events", parameters);
+        });
     }
 
     private static JSONObject getEventObject(String type, JSONObject eventData, JSONObject customData) {
@@ -1664,7 +1672,6 @@ public class WonderPush {
                         if (!JSONSyncInstallation.isDisabled()) JSONSyncInstallation.flushAll();
                         ApiClient.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
                         MeasurementsApiClient.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY, false));
-                        updateEventsBlackWhiteList(config);
                     }
                 };
 
@@ -2617,17 +2624,31 @@ public class WonderPush {
         return sRemoteConfigManager;
     }
 
-    private static void updateEventsBlackWhiteList(@NonNull RemoteConfig config) {
-        sEventsBlackWhiteList = null;
-        JSONArray blackWhiteListRules = config.getData().optJSONArray(REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY);
-        if (blackWhiteListRules != null) {
-            List<String> rules = new ArrayList<>();
-            for (int i = 0; i < blackWhiteListRules.length(); i++) {
-                String rule = blackWhiteListRules.optString(i);
-                if (rule != null) rules.add(rule);
+    private interface EventsBlackWhiteListCallback {
+        void call(BlackWhiteList list, Throwable error);
+    }
+
+    private static BlackWhiteList parseEventsBlackWhiteList(RemoteConfig config) {
+        if (config == null) return null;
+        BlackWhiteList list = null;
+        if (config != null) {
+            JSONArray blackWhiteListRules = config.getData().optJSONArray(REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY);
+            if (blackWhiteListRules != null) {
+                List<String> rules = new ArrayList<>();
+                for (int i = 0; i < blackWhiteListRules.length(); i++) {
+                    String rule = blackWhiteListRules.optString(i);
+                    if (rule != null) rules.add(rule);
+                }
+                list = new BlackWhiteList(rules);
             }
-            sEventsBlackWhiteList = new BlackWhiteList(rules);
         }
+        return list;
+    }
+
+    private static void getEventsBlackWhiteList(EventsBlackWhiteListCallback callback) {
+        getRemoteConfigManager().read((RemoteConfig config, Throwable error) -> {
+            if (callback != null) callback.call(parseEventsBlackWhiteList(config), error);
+        });
     }
 
     enum SubscriptionStatus {
