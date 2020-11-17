@@ -1088,7 +1088,15 @@ public class WonderPushConfiguration {
         JSONArray storedTrackedEvents = getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME);
         for (int i = 0; storedTrackedEvents != null && i < storedTrackedEvents.length(); i++) {
             JSONObject event = storedTrackedEvents.optJSONObject(i);
-            if (event != null) result.add(event);
+            if (event == null) continue;
+            if (!event.has("creationDate") && event.has("actionDate")) {
+                try {
+                    event.putOpt("creationDate", event.opt("actionDate"));
+                } catch (JSONException ex) {
+                    Log.w(WonderPush.TAG, "Unexpected exception while copying actionDate into creationDate", ex);
+                }
+            }
+            result.add(event);
         }
         return result;
     }
