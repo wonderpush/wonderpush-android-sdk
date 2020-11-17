@@ -1872,6 +1872,11 @@ public class WonderPush {
                     sInAppMessagingPrivateController = privateController;
                     privateController.pause();
                 }
+
+                @Override
+                public PresenceManager getPresenceManager() {
+                    return WonderPush.getPresenceManager();
+                }
             });
         }
         InAppMessagingDisplay.initialize(application, sInAppMessaging);

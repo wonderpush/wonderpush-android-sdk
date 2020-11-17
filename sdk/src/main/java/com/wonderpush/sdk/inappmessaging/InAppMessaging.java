@@ -19,6 +19,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
 import com.wonderpush.sdk.InternalEventTracker;
+import com.wonderpush.sdk.PresenceManager;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.DisplayCallbacksFactory;
 import com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManager;
@@ -128,6 +129,7 @@ public class InAppMessaging {
     boolean inAppViewedReceipts();
     void fetchInAppConfig(JSONObjectHandler handler);
     void onReady(PrivateController privateController);
+    PresenceManager getPresenceManager();
   }
 
   /**

@@ -16,16 +16,18 @@ public class PresenceManager {
         private Date fromDate;
         private Date untilDate;
         private long elapsedTime;
-        public PresencePayload(Date fromDate, Date untilDate) {
+        public PresencePayload(@NonNull Date fromDate, @NonNull Date untilDate) {
             this.fromDate = fromDate;
             this.untilDate = untilDate;
             this.elapsedTime = untilDate.getTime() - fromDate.getTime();
         }
 
+        @NonNull
         public Date getFromDate() {
             return fromDate;
         }
 
+        @NonNull
         public Date getUntilDate() {
             return untilDate;
         }
@@ -141,6 +143,11 @@ public class PresenceManager {
     public boolean isCurrentlyPresent() {
         if (lastPresencePayload == null) return false;
         return lastPresencePayload.getUntilDate().getTime() - new Date().getTime() > 0;
+    }
+
+    @Nullable
+    public PresencePayload getLastPresencePayload() {
+        return lastPresencePayload;
     }
 
     private void extendPresence() {

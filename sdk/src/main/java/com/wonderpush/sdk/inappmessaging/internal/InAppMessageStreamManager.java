@@ -15,6 +15,7 @@
 package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.wonderpush.sdk.JSONSyncInstallation;
+import com.wonderpush.sdk.PresenceManager;
 import com.wonderpush.sdk.WonderPushConfiguration;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
@@ -276,8 +277,12 @@ public class InAppMessageStreamManager {
       // Tracked events
       List<JSONObject> trackedEvents = WonderPushConfiguration.getTrackedEvents();
 
+      // Presence info
+      PresenceManager.PresencePayload lastPresencePayload = inAppMessagingDelegate.getPresenceManager().getLastPresencePayload();
+      Segmenter.PresenceInfo presenceInfo = lastPresencePayload == null ? null : new Segmenter.PresenceInfo(lastPresencePayload.getFromDate().getTime(), lastPresencePayload.getUntilDate().getTime(), lastPresencePayload.getElapsedTime());
+
       // Build segmenter data
-      segmenterData = new Segmenter.Data(installation, trackedEvents,null, WonderPushConfiguration.getLastAppOpenDate());
+      segmenterData = new Segmenter.Data(installation, trackedEvents, presenceInfo, WonderPushConfiguration.getLastAppOpenDate());
     } catch (JSONException e) {
       Logging.loge("Could not create segmenter data", e);
     }
