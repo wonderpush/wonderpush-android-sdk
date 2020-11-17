@@ -71,5 +71,6 @@ public class IamFrameLayout extends FrameLayout implements BackButtonLayout, Iam
   @Override
   public void setTouchDisabled(boolean disabled) {
     mTouchDisabled = disabled;
+    setClickable(!disabled);
   }
 }
