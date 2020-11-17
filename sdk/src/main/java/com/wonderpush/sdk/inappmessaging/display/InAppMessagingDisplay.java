@@ -424,19 +424,15 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             if (bindingWrapper.getDismissView() != null) {
               bindingWrapper
                   .getDismissView()
-                  .setOnTouchListener(
-                      new View.OnTouchListener() {
+                  .setOnClickListener(
+                      new View.OnClickListener() {
                         @Override
-                        public boolean onTouch(View v, MotionEvent event) {
-                          if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                            if (callbacks != null) {
-                              callbacks.messageDismissed(
-                                  InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
-                            }
-                            dismissIam(activity);
-                            return true;
+                        public void onClick(View v) {
+                          if (callbacks != null) {
+                            callbacks.messageDismissed(
+                                InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
                           }
-                          return false;
+                          dismissIam(activity);
                         }
                       });
             }
