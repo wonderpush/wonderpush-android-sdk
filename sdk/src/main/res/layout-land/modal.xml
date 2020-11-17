@@ -15,6 +15,7 @@
         style="@style/WPIamUI.Modal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:clickable="true"
         android:background="@drawable/rounded_layout"
         android:padding="24dp"
         android:layout_centerInParent="true"
