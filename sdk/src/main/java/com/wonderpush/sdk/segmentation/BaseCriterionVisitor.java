@@ -197,15 +197,21 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
         } else {
             status = SubscriptionStatusCriterionNode.SubscriptionStatus.optIn;
         }
-        return node.subscriptionStatus == status;
+        boolean rtn = node.subscriptionStatus == status;
+        if (debug) Log.d(TAG, "[visitSubscriptionStatusCriterionNode] return " + rtn + " because we are " + status);
+        return rtn;
     }
 
     @Override
     public Boolean visitLastActivityDateCriterionNode(LastActivityDateCriterionNode node) {
+        Boolean rtn;
         if (node.dateComparison == null) {
-            return this.data.lastAppOpenDate > 0;
+            rtn = this.data.lastAppOpenDate > 0;
+        } else {
+            rtn = node.dateComparison.accept(this);
         }
-        return node.dateComparison.accept(this);
+        if (debug) Log.d(TAG, "[visitLastActivityDateCriterionNode] return " + rtn);
+        return rtn;
     }
 
     @Override
@@ -235,14 +241,18 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
             for (JSONObject event : this.data.allEvents) {
                 EventVisitor eventVisitor = new EventVisitor(data, event);
                 if (node.child.accept(eventVisitor)) {
+                    if (debug) Log.d(TAG, "[visitJoinCriterionNode] return true for event " + event);
                     return true;
                 }
             }
+            if (debug) Log.d(TAG, "[visitJoinCriterionNode] return false for all events");
             return false;
         }
         if (node.context.dataSource instanceof InstallationSource) {
             InstallationVisitor installationVisitor = new InstallationVisitor(data);
-            return node.child.accept(installationVisitor);
+            Boolean rtn = node.child.accept(installationVisitor);
+            if (debug) Log.d(TAG, "[visitJoinCriterionNode] return " + rtn + " for installation");
+            return rtn;
         }
         Log.w(TAG, "[visitJoinCriterionNode] return false for unsupported " + node.context.dataSource.getClass().getSimpleName());
         return false;
@@ -252,24 +262,26 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
     public Boolean visitEqualityCriterionNode(EqualityCriterionNode node) {
         List<Object> dataSourceValues = node.context.dataSource.accept(this);
         Object actualValue = node.value.accept(this);
+        boolean result;
         if (actualValue == null || actualValue == JSONObject.NULL) {
-            return dataSourceValues.isEmpty();
-        }
-        boolean result = false;
-        for (Object dataSourceValue : dataSourceValues) {
-            if (actualValue instanceof Number) {
-                if (!(dataSourceValue instanceof Number)) {
-                    result = false;
-                } else if ((actualValue instanceof Byte || actualValue instanceof Short || actualValue instanceof Integer || actualValue instanceof Long)
-                    && (dataSourceValue instanceof Byte || dataSourceValue instanceof Short || dataSourceValue instanceof Integer || dataSourceValue instanceof Long)) {
-                    result = ((Number) actualValue).longValue() == ((Number) dataSourceValue).longValue();
+            result = dataSourceValues.isEmpty();
+        } else {
+            result = false;
+            for (Object dataSourceValue : dataSourceValues) {
+                if (actualValue instanceof Number) {
+                    if (!(dataSourceValue instanceof Number)) {
+                        result = false;
+                    } else if ((actualValue instanceof Byte || actualValue instanceof Short || actualValue instanceof Integer || actualValue instanceof Long)
+                            && (dataSourceValue instanceof Byte || dataSourceValue instanceof Short || dataSourceValue instanceof Integer || dataSourceValue instanceof Long)) {
+                        result = ((Number) actualValue).longValue() == ((Number) dataSourceValue).longValue();
+                    } else {
+                        result = ((Number) actualValue).doubleValue() == ((Number) dataSourceValue).doubleValue();
+                    }
                 } else {
-                    result = ((Number) actualValue).doubleValue() == ((Number) dataSourceValue).doubleValue();
+                    result = actualValue.equals(dataSourceValue);
                 }
-            } else {
-                result = actualValue.equals(dataSourceValue);
+                if (result) break;
             }
-            if (result) break;
         }
         if (debug) Log.d(TAG, "[visitEqualityCriterionNode] return " + result + " because " + dataSourceValues + " " + (result ? "==" : "!=") + " " + actualValue);
         return result;
