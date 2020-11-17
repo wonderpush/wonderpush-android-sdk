@@ -35,7 +35,7 @@ import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.BaseModalLayout;
-import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamBackButtonFrameLayout;
+import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamFrameLayout;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.MessageType;
@@ -49,7 +49,7 @@ import javax.inject.Inject;
 @InAppMessageScope
 public class CardBindingWrapper extends BindingWrapper {
 
-  private IamBackButtonFrameLayout cardRoot;
+  private IamFrameLayout cardRoot;
   private BaseModalLayout cardContentRoot;
   private ScrollView bodyScroll;
   private Button primaryButton;

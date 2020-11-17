@@ -34,6 +34,9 @@ import javax.inject.Inject;
 /** @hide */
 @InAppMessagingScope
 public class IamAnimator {
+  public interface DisableTouchLayout {
+    public void setTouchDisabled(boolean disabled);
+  }
 
   public enum EntryAnimation {
     FADE_IN("fadeIn"),
@@ -74,40 +77,56 @@ public class IamAnimator {
   IamAnimator() {}
 
   public void executeExitAnimation(ExitAnimation animation, final Application app, final View view, @Nullable final AnimationCompleteListener completeListener) {
+    AnimationCompleteListener ourListener = new AnimationCompleteListener() {
+      @Override
+      public void onComplete() {
+        if (view instanceof DisableTouchLayout) ((DisableTouchLayout) view).setTouchDisabled(false);
+        if (completeListener != null) completeListener.onComplete();
+      }
+    };
+    if (view instanceof DisableTouchLayout) ((DisableTouchLayout) view).setTouchDisabled(true);
     switch (animation) {
       case SLIDE_OUT_DOWN:
-        slideOutOfView(app, view, Position.BOTTOM, completeListener);
+        slideOutOfView(app, view, Position.BOTTOM, ourListener);
         break;
       case SLIDE_OUT_TOP:
-        slideOutOfView(app, view, Position.TOP, completeListener);
+        slideOutOfView(app, view, Position.TOP, ourListener);
         break;
       case SLIDE_OUT_LEFT:
-        slideOutOfView(app, view, Position.LEFT, completeListener);
+        slideOutOfView(app, view, Position.LEFT, ourListener);
         break;
       case SLIDE_OUT_RIGHT:
-        slideOutOfView(app, view, Position.RIGHT, completeListener);
+        slideOutOfView(app, view, Position.RIGHT, ourListener);
         break;
       case FADE_OUT:
-        fadeOut(app, view, completeListener);
+        fadeOut(app, view, ourListener);
         break;
     }  }
 
   public void executeEntryAnimation(EntryAnimation animation, final Application app, final View view, @Nullable final AnimationCompleteListener completeListener) {
+    AnimationCompleteListener ourListener = new AnimationCompleteListener() {
+      @Override
+      public void onComplete() {
+        if (view instanceof DisableTouchLayout) ((DisableTouchLayout) view).setTouchDisabled(false);
+        if (completeListener != null) completeListener.onComplete();
+      }
+    };
+    if (view instanceof DisableTouchLayout) ((DisableTouchLayout) view).setTouchDisabled(true);
     switch (animation) {
       case SLIDE_IN_FROM_BOTTOM:
-        slideIntoView(app, view, Position.BOTTOM ,completeListener);
+        slideIntoView(app, view, Position.BOTTOM, ourListener);
         break;
       case SLIDE_IN_FROM_TOP:
-        slideIntoView(app, view, Position.TOP, completeListener);
+        slideIntoView(app, view, Position.TOP, ourListener);
         break;
       case SLIDE_IN_FROM_LEFT:
-        slideIntoView(app, view, Position.LEFT, completeListener);
+        slideIntoView(app, view, Position.LEFT, ourListener);
         break;
       case SLIDE_IN_FROM_RIGHT:
-        slideIntoView(app, view, Position.RIGHT, completeListener);
+        slideIntoView(app, view, Position.RIGHT, ourListener);
         break;
       case FADE_IN:
-        fadeIn(app, view, completeListener);
+        fadeIn(app, view, ourListener);
         break;
     }
   }

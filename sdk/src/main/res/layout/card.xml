@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?><!-- This file should be text identical to layout-sw600dp/card.xml.
      See comment there for reasoning. -->
-<com.wonderpush.sdk.inappmessaging.display.internal.layout.IamBackButtonFrameLayout
+<com.wonderpush.sdk.inappmessaging.display.internal.layout.IamFrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card_root"
@@ -21,4 +21,4 @@
 
     </androidx.cardview.widget.CardView>
 
-</com.wonderpush.sdk.inappmessaging.display.internal.layout.IamBackButtonFrameLayout>
+</com.wonderpush.sdk.inappmessaging.display.internal.layout.IamFrameLayout>

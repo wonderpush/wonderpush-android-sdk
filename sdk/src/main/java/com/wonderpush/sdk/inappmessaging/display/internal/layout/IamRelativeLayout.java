@@ -15,17 +15,20 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.layout;
 
 import android.content.Context;
+import android.view.MotionEvent;
 import androidx.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.widget.RelativeLayout;
 
+import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.util.BackButtonHandler;
 
 /** @hide */
-public class IamRelativeLayout extends RelativeLayout implements BackButtonLayout {
+public class IamRelativeLayout extends RelativeLayout implements BackButtonLayout, IamAnimator.DisableTouchLayout {
 
   private BackButtonHandler mBackHandler;
+  private boolean mTouchDisabled;
 
   public IamRelativeLayout(Context context) {
     super(context);
@@ -52,11 +55,26 @@ public class IamRelativeLayout extends RelativeLayout implements BackButtonLayou
 
   @Override
   public boolean dispatchKeyEvent(KeyEvent event) {
-    Boolean handled = mBackHandler.dispatchKeyEvent(event);
+    Boolean handled = mBackHandler != null ? mBackHandler.dispatchKeyEvent(event) : null;
     if (handled != null) {
       return handled;
     } else {
       return super.dispatchKeyEvent(event);
     }
   }
+
+  @Override
+  public boolean onInterceptTouchEvent(MotionEvent ev) {
+    if (mTouchDisabled) {
+      return true;
+    }
+    return super.onInterceptTouchEvent(ev);
+  }
+
+  @Override
+  public void setTouchDisabled(boolean disabled) {
+    mTouchDisabled = disabled;
+    setClickable(!disabled);
+  }
+
 }
