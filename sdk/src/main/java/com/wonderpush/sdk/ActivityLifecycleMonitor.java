@@ -111,10 +111,11 @@ class ActivityLifecycleMonitor {
         }
 
         private synchronized void callOnNextResumeListeners(Activity activity) {
-            for (ResumeListener l : onNextResumeListeners) {
+            List<ResumeListener> listeners = new ArrayList<>(onNextResumeListeners);
+            onNextResumeListeners = new ArrayList<>();
+            for (ResumeListener l : listeners) {
                 l.onResume(activity);
             }
-            onNextResumeListeners = new ArrayList<>();
         }
 
         @Override

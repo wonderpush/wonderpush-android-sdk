@@ -132,10 +132,11 @@ public class WonderPush {
             public void onUserConsentChanged(boolean hasUserConsent) {
                 if (hasUserConsent) {
                     synchronized (sUserConsentDeferred) {
-                        for (Runnable runnable : sUserConsentDeferred.values()) {
+                        List<Runnable> runnables = new ArrayList<>(sUserConsentDeferred.values());
+                        sUserConsentDeferred.clear();
+                        for (Runnable runnable : runnables) {
                             WonderPush.safeDefer(runnable, 0);
                         }
-                        sUserConsentDeferred.clear();
                     }
                 }
             }
@@ -146,10 +147,11 @@ public class WonderPush {
             public void onSubscriptionStatusChanged(SubscriptionStatus subscriptionStatus) {
                 if (isSubscriptionStatusOptIn()) {
                     synchronized (sSubscriptionDeferred) {
-                        for (Runnable runnable : sSubscriptionDeferred.values()) {
+                        List<Runnable> runnables = new ArrayList<>(sSubscriptionDeferred.values());
+                        sSubscriptionDeferred.clear();
+                        for (Runnable runnable : runnables) {
                             WonderPush.safeDefer(runnable, 0);
                         }
-                        sSubscriptionDeferred.clear();
                     }
                 }
             }

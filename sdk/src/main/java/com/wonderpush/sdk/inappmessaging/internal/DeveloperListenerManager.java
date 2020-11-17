@@ -23,6 +23,7 @@ import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayErrorListener;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingImpressionListener;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,8 @@ public class DeveloperListenerManager {
 
   // Used internally by MetricsLoggerClient
   public void impressionDetected(InAppMessage inAppMessage) {
-    for (ImpressionExecutorAndListener listener : registeredImpressionListeners.values()) {
+    List<ImpressionExecutorAndListener> listeners = new ArrayList<>(registeredImpressionListeners.values());
+    for (ImpressionExecutorAndListener listener : listeners) {
       listener
           .withExecutor(CALLBACK_QUEUE_EXECUTOR)
           .execute(() -> listener.getListener().impressionDetected(inAppMessage));
@@ -81,7 +83,8 @@ public class DeveloperListenerManager {
   public void displayErrorEncountered(
       InAppMessage inAppMessage,
       InAppMessagingDisplayCallbacks.InAppMessagingErrorReason errorReason) {
-    for (ErrorsExecutorAndListener listener : registeredErrorListeners.values()) {
+    List<ErrorsExecutorAndListener> listeners = new ArrayList<>(registeredErrorListeners.values());
+    for (ErrorsExecutorAndListener listener : listeners) {
       listener
           .withExecutor(CALLBACK_QUEUE_EXECUTOR)
           .execute(() -> listener.getListener().displayErrorEncountered(inAppMessage, errorReason));
@@ -89,7 +92,8 @@ public class DeveloperListenerManager {
   }
 
   public void messageClicked(InAppMessage inAppMessage, List<ActionModel> actions) {
-    for (ClicksExecutorAndListener listener : registeredClickListeners.values()) {
+    List<ClicksExecutorAndListener> listeners = new ArrayList<>(registeredClickListeners.values());
+    for (ClicksExecutorAndListener listener : listeners) {
       listener
           .withExecutor(CALLBACK_QUEUE_EXECUTOR)
           .execute(() -> listener.getListener().messageClicked(inAppMessage, actions));
