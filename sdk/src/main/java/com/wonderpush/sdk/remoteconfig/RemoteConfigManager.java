@@ -205,10 +205,11 @@ public class RemoteConfigManager {
 
             RemoteConfigHandler handler = (RemoteConfig config, Throwable error) -> {
                 synchronized (queuedHandlers) {
-                    for (RemoteConfigHandler h : queuedHandlers) {
+                    List<RemoteConfigHandler> queuedHandlersCopy = new ArrayList<>(queuedHandlers);
+                    queuedHandlers.clear();
+                    for (RemoteConfigHandler h : queuedHandlersCopy) {
                         h.handle(config, error);
                     }
-                    queuedHandlers.clear();
                 }
                 synchronized (this) {
                     isFetching = false;
