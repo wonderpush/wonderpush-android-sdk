@@ -586,6 +586,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   // This action needs to be idempotent since multiple callbacks compete to dismiss.
   // For example, a swipe and a click on the banner compete.
   private void dismissIam(Activity activity) {
+    if (inAppMessage == null) return;
     Logging.logd("Dismissing iam");
     notifyIamDismiss();
     if (bindingWrapper != null && bindingWrapper.getExitAnimation() != null) {
