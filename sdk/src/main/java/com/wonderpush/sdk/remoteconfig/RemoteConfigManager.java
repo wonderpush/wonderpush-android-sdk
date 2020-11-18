@@ -5,6 +5,7 @@ import android.content.Intent;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 import com.wonderpush.sdk.SimpleVersion;
+import com.wonderpush.sdk.WonderPush;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -223,6 +224,7 @@ public class RemoteConfigManager {
                     return;
                 }
 
+                if (WonderPush.getLogging()) Log.d(TAG, "Got new configuration with version " + newConfig.getVersion());
                 remoteConfigStorage.storeRemoteConfig(newConfig, (Throwable storageError) -> {
                     if (storageError != null) {
                         Log.e(TAG, "Could not store RemoteConfig in storage", storageError);
