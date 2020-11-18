@@ -16,6 +16,7 @@ package com.wonderpush.sdk.inappmessaging.internal;
 
 import com.wonderpush.sdk.JSONSyncInstallation;
 import com.wonderpush.sdk.PresenceManager;
+import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushConfiguration;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
@@ -273,6 +274,7 @@ public class InAppMessageStreamManager {
     Segmenter.Data segmenterData = null;
     try {
       JSONObject installation = JSONSyncInstallation.forCurrentUser().getSdkState();
+      installation.putOpt("userId", WonderPush.getUserId());
 
       // Tracked events
       List<JSONObject> trackedEvents = WonderPushConfiguration.getTrackedEvents();
