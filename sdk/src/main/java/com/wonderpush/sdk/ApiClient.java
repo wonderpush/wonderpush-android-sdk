@@ -448,7 +448,11 @@ class ApiClient {
                     @Override
                     public void onFailure(Throwable e, Response errorResponse) {
                         if (nbRetries <= 0) {
-                            Log.e(TAG, "Error request anonymous access token (aborting): " + (errorResponse != null ? errorResponse.toString() : "null error response, aborting"), e);
+                            if (e instanceof Request.ClientDisabledException) {
+                                if (WonderPush.getLogging()) Log.w(TAG, "Request anonymous access token is currently disabled (once the configuration is fetched, it should enable it)");
+                            } else {
+                                Log.e(TAG, "Error request anonymous access token (aborting): " + (errorResponse != null ? errorResponse.toString() : "null error response, aborting"), e);
+                            }
                             if (errorResponse != null && ERROR_INVALID_CREDENTIALS == errorResponse.getErrorCode()) {
                                 Log.e(TAG, "Check your clientId/clientSecret couple");
                             }
