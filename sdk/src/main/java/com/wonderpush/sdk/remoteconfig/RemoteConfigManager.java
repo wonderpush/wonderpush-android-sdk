@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 public class RemoteConfigManager {
-    private static final String TAG = "WonderPushRemoteConfMgr";
+    private static final String TAG = "WonderPush." + RemoteConfigManager.class.getSimpleName();
     @Nonnull
     public RemoteConfigFetcher remoteConfigFetcher;
 

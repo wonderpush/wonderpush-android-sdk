@@ -16,7 +16,7 @@ import java.util.*;
  */
 class ApiClient {
 
-    private static final String TAG = ApiClient.class.getSimpleName();
+    private static final String TAG = "WonderPush." + ApiClient.class.getSimpleName();
 
     enum HttpMethod {
         GET,

@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 
 public class MeasurementsApiClient {
-    private static final String TAG = MeasurementsApiClient.class.getSimpleName();
+    private static final String TAG = "WonderPush." + MeasurementsApiClient.class.getSimpleName();
     private static final okhttp3.OkHttpClient sClient = new okhttp3.OkHttpClient();
     private static boolean disabled;
     public static void execute(Request request) {

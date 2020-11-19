@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 class Request {
     static class ClientDisabledException extends Exception {}
 
-    private static final String TAG = ApiClient.class.getSimpleName();
+    private static final String TAG = "WonderPush." + Request.class.getSimpleName();
 
     String mUserId;
     ApiClient.HttpMethod mMethod;
@@ -228,7 +228,7 @@ class Request {
      */
     static class Params implements Parcelable {
 
-        public static final String TAG = "RequestParams";
+        public static final String TAG = "WonderPush.Request." + Params.class.getSimpleName();
 
         public Params(Parcel in) throws JSONException {
             JSONObject json = new JSONObject(in.readString());

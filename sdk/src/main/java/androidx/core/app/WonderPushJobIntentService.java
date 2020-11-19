@@ -6,7 +6,7 @@ import android.util.Log;
 // See: https://github.com/optimizely/android-sdk/pull/193
 public abstract class WonderPushJobIntentService extends JobIntentService {
 
-    private static final String TAG = "WPJobIntentService";
+    private static final String TAG = WonderPushJobIntentService.class.getSimpleName();
 
     @Override
     public void onDestroy() {
