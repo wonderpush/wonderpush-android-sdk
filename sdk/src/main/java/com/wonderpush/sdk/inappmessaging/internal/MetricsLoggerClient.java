@@ -64,11 +64,7 @@ public class MetricsLoggerClient {
   /** Log impression */
   public void logImpression(InAppMessage message) {
     JSONObject eventData = this.eventData(message.getNotificationMetadata(), null);
-    if (this.internalEventTracker.isSubscriptionStatusOptIn()) {
-      this.internalEventTracker.trackInternalEvent("@INAPP_VIEWED", eventData);
-    } else {
-      this.internalEventTracker.countInternalEvent("@INAPP_VIEWED", eventData);
-    }
+    this.internalEventTracker.countInternalEvent("@INAPP_VIEWED", eventData);
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
   }
@@ -80,7 +76,11 @@ public class MetricsLoggerClient {
     if (buttonType == InAppMessage.ButtonType.PRIMARY) data.put("buttonLabel", "primary");
     if (buttonType == InAppMessage.ButtonType.SECONDARY) data.put("buttonLabel", "secondary");
     JSONObject eventData = this.eventData(message.getNotificationMetadata(), data);
-    this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
+    if (this.internalEventTracker.isSubscriptionStatusOptIn()) {
+      this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
+    } else {
+      this.internalEventTracker.countInternalEvent("@INAPP_CLICKED", eventData);
+    }
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.messageClicked(message, actions);
