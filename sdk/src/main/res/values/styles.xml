@@ -1,12 +1,12 @@
 <resources>
 
-    <style name="WPIamUI" parent="Theme.AppCompat.Light"></style>
+    <style name="WPIamUI" parent="android:Theme.Material.Light"></style>
 
     <style name="WPIamUI.CollapseButton" parent="WPIamUI.CollapseButtonBase">
         <!-- nothing here, see values-v21 -->
     </style>
 
-    <style name="WPIamUI.CollapseButtonBase" parent="@style/Base.Widget.AppCompat.Button">
+    <style name="WPIamUI.CollapseButtonBase" parent="android:Widget.Material.Button">
         <item name="android:layout_width">24dp</item>
         <item name="android:layout_height">24dp</item>
         <item name="android:clickable">true</item>
@@ -20,7 +20,7 @@
         <!-- nothing here, see values-v21 -->
     </style>
 
-    <style name="WPIamUI.ModalBody" parent="@style/Base.TextAppearance.AppCompat.Body1">
+    <style name="WPIamUI.ModalBody" parent="android:TextAppearance.Material.Body1">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textSize">20sp</item>
@@ -66,7 +66,7 @@
         <item name="android:padding">@dimen/paddingSmall</item>
     </style>
 
-    <style name="WPIamUI.Card.ActionBar.Button" parent="@style/Base.Widget.AppCompat.Button.Colored">
+    <style name="WPIamUI.Card.ActionBar.Button" parent="android:Widget.Material.Button">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textSize">16sp</item>
@@ -88,12 +88,12 @@
         <!-- nothing here, see values-v21 -->
     </style>
 
-    <style name="WPIamUI.Text.BannerTitle" parent="@style/Base.TextAppearance.AppCompat.Body1">
+    <style name="WPIamUI.Text.BannerTitle" parent="android:TextAppearance.Material.Body1">
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="WPIamUI.Text.Title" parent="@style/Base.TextAppearance.AppCompat.Headline">
+    <style name="WPIamUI.Text.Title" parent="android:TextAppearance.Material.Headline">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textStyle">bold</item>
