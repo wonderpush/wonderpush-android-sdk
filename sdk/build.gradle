@@ -17,7 +17,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 21
         consumerProguardFiles 'proguard-exported.pro'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         versionName project.version
