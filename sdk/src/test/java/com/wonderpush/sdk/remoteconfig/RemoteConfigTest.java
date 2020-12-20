@@ -129,6 +129,9 @@ public class RemoteConfigTest {
         assertEquals(storage.storedHighestVersion, "1");
     }
 
+    /**
+     * Checking that fetching without prior declareVersion call fetches the config.
+     */
     @Test
     public void testInitialRead() throws ExecutionException, InterruptedException {
         assertNull(fetcher.fetchedConfig);
