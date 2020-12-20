@@ -77,7 +77,7 @@ public class RemoteConfigManager {
 
                     // If we're declaring the same version as the current config, update the current config's fetchDate
                     if (RemoteConfig.compareVersions(config.getVersion(), version) == 0) {
-                        RemoteConfig configWithUpdatedDate = RemoteConfig.with(config.getData(), config.getVersion(), now, config.getMaxAge());
+                        RemoteConfig configWithUpdatedDate = RemoteConfig.with(config.getData(), config.getVersion(), now, config.getMaxAge(), config.getMinAge());
                         remoteConfigStorage.storeRemoteConfig(configWithUpdatedDate, (Throwable storageError) -> {
                             synchronized (this) {
                                 if (storageError == null) storedConfig = configWithUpdatedDate;
