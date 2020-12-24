@@ -7,6 +7,10 @@
     public void initialize(android.content.Context);
 }
 
+-keep public class com.wonderpush.sdk.push.DiscoveryService
+-keep public interface com.wonderpush.sdk.push.PushService
+-keep public class * implements com.wonderpush.sdk.push.PushService
+
 # Keep configuration from BuildConfig
 -keep class **.BuildConfig {
     *** WONDERPUSH_*;

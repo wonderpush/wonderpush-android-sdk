@@ -30,12 +30,14 @@ public class DiscoveryService extends Service {
     static Collection<PushService> instantiatePushServices(Context context) {
         Bundle metaData = null;
         try {
+            // Note: Using the class' name programmatically requires the matching ProGuard rule
             ComponentName myService = new ComponentName(context, DiscoveryService.class);
             metaData = context.getPackageManager().getServiceInfo(myService, PackageManager.GET_META_DATA).metaData;
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Failed to read " + DiscoveryService.class.getCanonicalName() + " meta-data", e);
         }
         if (metaData == null) {
+            Log.w(TAG, "Found no meta-data for " + DiscoveryService.class.getCanonicalName());
             return Collections.emptyList();
         }
 
@@ -46,10 +48,12 @@ public class DiscoveryService extends Service {
             //                android:value="com.wonderpush.sdk.push.PushService" />
             if (!key.startsWith(METADATA_NAME_PREFIX)) continue;
             String value = metaData.getString(key);
+            // Note: Using the class' name programmatically requires the matching ProGuard rule
             if (!value.equals(PushService.class.getCanonicalName())) continue;
             String clazzName = key.substring(METADATA_NAME_PREFIX.length());
             if (WonderPush.getLogging()) Log.d(TAG, "Loading push service using class " + clazzName);
             try {
+                // Note: Using the class' name programmatically requires the matching ProGuard rule
                 Class<? extends PushService> initializerClass = Class.forName(clazzName).asSubclass(PushService.class);
                 PushService pushService = initializerClass.newInstance();
                 rtn.add(pushService);
