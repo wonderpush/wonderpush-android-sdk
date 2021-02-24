@@ -1,5 +1,7 @@
 package com.wonderpush.sdk;
 
+import android.os.SystemClock;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,6 +26,7 @@ public class PresenceManagerAndroidTest {
 
     @Before
     public void setUp() {
+        TimeSync.syncTimeWithServer(SystemClock.elapsedRealtime(), SystemClock.elapsedRealtime(), System.currentTimeMillis(), 0);
         synchronized (errors) {
             errors.clear();
         }

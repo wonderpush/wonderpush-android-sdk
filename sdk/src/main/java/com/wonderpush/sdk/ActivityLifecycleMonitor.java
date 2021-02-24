@@ -149,7 +149,7 @@ class ActivityLifecycleMonitor {
             ++resumeCount;
             updatePresence(true);
             WonderPush.showPotentialNotification(activity, activity.getIntent());
-            WonderPushConfiguration.setLastInteractionDate(new Date().getTime());
+            WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
             callOnNextResumeListeners(activity);
         }
 
@@ -159,7 +159,7 @@ class ActivityLifecycleMonitor {
             if (!hasResumedActivities()) {
                 pausedLastDate = TimeSync.getTime();
             }
-            WonderPushConfiguration.setLastInteractionDate(new Date().getTime());
+            WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
         }
 
         @Override

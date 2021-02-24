@@ -30,7 +30,7 @@ public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
 
     @Override
     public void fetchRemoteConfig(@Nullable String version, @Nonnull RemoteConfigHandler handler) {
-        String url = String.format(Locale.ENGLISH, "%s%s%s?_=%d",Constants.REMOTE_CONFIG_BASE_URL, clientId, Constants.REMOTE_CONFIG_SUFFIX, new Date().getTime());
+        String url = String.format(Locale.ENGLISH, "%s%s%s?_=%d",Constants.REMOTE_CONFIG_BASE_URL, clientId, Constants.REMOTE_CONFIG_SUFFIX, System.currentTimeMillis());
         this.safeDeferProvider.safeDefer(() -> {
             Request request = new Request.Builder().url(url).get().build();
             client.newCall(request).enqueue(new SafeOkHttpCallback() {

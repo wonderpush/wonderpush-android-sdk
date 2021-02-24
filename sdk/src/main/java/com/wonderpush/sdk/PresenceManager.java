@@ -124,7 +124,7 @@ public class PresenceManager {
         stopAutoRenew();
         if (this.autoRenew()) startAutoRenew();
 
-        Date startDate = new Date();
+        Date startDate = new Date(TimeSync.getTime());
         Date untilDate = new Date(startDate.getTime() + anticipatedTime);
         lastPresencePayload = new PresencePayload(startDate, untilDate);
         return lastPresencePayload;
@@ -133,7 +133,7 @@ public class PresenceManager {
     @NonNull
     public PresencePayload presenceWillStop() {
         stopAutoRenew();
-        Date now = new Date();
+        Date now = new Date(TimeSync.getTime());
         Date fromDate = new Date((lastPresencePayload != null ? lastPresencePayload.getFromDate() : now).getTime());
         PresencePayload payload = new PresencePayload(fromDate, now);
         lastPresencePayload = null;
@@ -142,7 +142,7 @@ public class PresenceManager {
 
     public boolean isCurrentlyPresent() {
         if (lastPresencePayload == null) return false;
-        return lastPresencePayload.getUntilDate().getTime() - new Date().getTime() > 0;
+        return lastPresencePayload.getUntilDate().getTime() - TimeSync.getTime() > 0;
     }
 
     @Nullable
@@ -151,7 +151,7 @@ public class PresenceManager {
     }
 
     private void extendPresence() {
-        Date now = new Date();
+        Date now = new Date(TimeSync.getTime());
         long timeUntilPresenceEnds = lastPresencePayload != null ? lastPresencePayload.getUntilDate().getTime() - now.getTime() : 0;
 
         // Not time to update yet.

@@ -322,7 +322,7 @@ public class InstallationManager {
     protected static long getUserTimeOffset() {
         String timeZone = WonderPush.getTimeZone();
         TimeZone tz = TimeZone.getTimeZone(timeZone);
-        return tz.getOffset(new Date().getTime());
+        return tz.getOffset(TimeSync.getTime());
     }
 
     protected static String getCarrierName() {
