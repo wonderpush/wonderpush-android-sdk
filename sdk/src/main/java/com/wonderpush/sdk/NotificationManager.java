@@ -86,16 +86,15 @@ public class NotificationManager {
         try {
             JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
             if (installation != null) {
-                long lastReceivedNotificationCheckDateMs = installation.getSdkState().optLong(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, -1);
-                Date lastReceivedNotificationCheckDate = lastReceivedNotificationCheckDateMs == -1 ? null : new Date(lastReceivedNotificationCheckDateMs);
-                Date now = new Date();
+                long lastReceivedNotificationCheckDate = installation.getSdkState().optLong(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, -1);
+                long now = TimeSync.getTime();
                 boolean reportLastReceivedNotificationCheckDate =
-                        lastReceivedNotificationCheckDate == null
-                        || ((now.getTime() - lastReceivedNotificationCheckDate.getTime()) > notif.getLastReceivedNotificationCheckDelay());
+                        lastReceivedNotificationCheckDate == -1
+                        || ((now - lastReceivedNotificationCheckDate) > notif.getLastReceivedNotificationCheckDelay());
 
                 if (reportLastReceivedNotificationCheckDate) {
                     JSONObject diff = new JSONObject();
-                    diff.put(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, now.getTime());
+                    diff.put(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, now);
                     installation.put(diff);
                 }
             }
