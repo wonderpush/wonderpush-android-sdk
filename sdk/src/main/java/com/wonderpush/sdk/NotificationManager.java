@@ -748,7 +748,7 @@ public class NotificationManager {
             case BIG_PICTURE:
                 AlertBigPictureModel alertBigPicture = (AlertBigPictureModel) alert;
                 builder.setStyle(new NotificationCompat.BigPictureStyle()
-                        .bigLargeIcon(alertBigPicture.getBigLargeIcon() != null ? alertBigPicture.getBigLargeIcon() : alert.getLargeIcon())
+                        .bigLargeIcon(alertBigPicture.hasBigLargeIcon() ? alertBigPicture.getBigLargeIcon() : alert.getLargeIcon())
                         .bigPicture(alertBigPicture.getBigPicture())
                         .setBigContentTitle(alertBigPicture.getBigTitle()) // automatically falls back to alert.getTitle()
                         .setSummaryText(alertBigPicture.getSummaryText() != null ? alertBigPicture.getSummaryText() : alert.getText())

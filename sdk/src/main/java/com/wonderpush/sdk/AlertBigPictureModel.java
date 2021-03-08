@@ -10,6 +10,7 @@ class AlertBigPictureModel extends AlertModel {
 
     // Modify forCurrentSettings() and clone() when adding a field below
     private Bitmap bigLargeIcon;
+    private boolean hasBigLargeIcon;
     private Bitmap bigPicture;
     private CharSequence bigTitle;
     private CharSequence summaryText;
@@ -19,10 +20,19 @@ class AlertBigPictureModel extends AlertModel {
         super(inputJSON);
     }
 
+    public boolean hasBigLargeIcon() {
+        return hasBigLargeIcon;
+    }
+
+    public void setHasBigLargeIcon(boolean value) {
+        hasBigLargeIcon = value;
+    }
+
     @Override
     protected void fromJSONCommon(JSONObject wpAlert) {
         super.fromJSONCommon(wpAlert);
         setBigLargeIcon(JSONUtil.getString(wpAlert, "bigLargeIcon"));
+        setHasBigLargeIcon(wpAlert.has("bigLargeIcon"));
         setBigPicture(JSONUtil.getString(wpAlert, "bigPicture"));
         setBigTitle(JSONUtil.getString(wpAlert, "bigTitle"));
         setSummaryText(JSONUtil.getString(wpAlert, "summaryText"));
@@ -33,8 +43,9 @@ class AlertBigPictureModel extends AlertModel {
         super.forCurrentSettingsInternal(_from);
         if (_from instanceof AlertBigPictureModel) {
             AlertBigPictureModel from = (AlertBigPictureModel) _from;
-            if (from.getBigLargeIcon() != null) {
+            if (from.hasBigLargeIcon()) {
                 setBigLargeIcon(from.getBigLargeIcon());
+                setHasBigLargeIcon(from.hasBigLargeIcon());
             }
             if (from.getBigPicture() != null) {
                 setBigPicture(from.getBigPicture());
