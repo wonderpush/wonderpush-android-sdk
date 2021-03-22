@@ -90,7 +90,7 @@ publishing {
     repositories {
         maven {
             name = 'wonderpush-android-sdk-fcm-repository'
-            url = 'https://api.bintray.com/maven/wonderpush/maven/wonderpush-android-sdk-fcm/'
+            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
             credentials {
                 username = wonderpush_publishing_repositories_maven_credentials_username
                 password = wonderpush_publishing_repositories_maven_credentials_password
