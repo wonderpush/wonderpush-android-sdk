@@ -172,7 +172,12 @@ public class WonderPushConfiguration {
         setLocale(JSONUtil.optString(newUserArchive, LOCALE_PREF_NAME));
         setTimeZone(JSONUtil.optString(newUserArchive, TIME_ZONE_PREF_NAME));
         try {
-            setTrackedEvents(new JSONArray(JSONUtil.optString(newUserArchive, STORED_TRACKED_EVENTS_PREF_NAME)));
+            String trackedEventsJson = JSONUtil.optString(newUserArchive, STORED_TRACKED_EVENTS_PREF_NAME);
+            JSONArray trackedEvents = null;
+            if (trackedEventsJson != null) {
+                trackedEvents = new JSONArray(trackedEventsJson);
+            }
+            setTrackedEvents(trackedEvents);
         } catch (JSONException e) {
             setTrackedEvents(null);
         }
