@@ -133,6 +133,8 @@ public class WonderPushService extends Service {
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
                         (Parcelable) intent.getParcelableExtra("receivedPushNotificationIntent"));
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
+                        // this extra must be removed if handled outside the app,
+                        // or we'll get ClassNotFoundException: E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
                         notif);
                 activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                         notif.getType().toString());
@@ -224,6 +226,9 @@ public class WonderPushService extends Service {
                 // Remove restriction within this application
                 if (!launchSuccessful) {
                     activityIntent.setPackage(null);
+                    // Avoid ClassNotFoundException E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
+                    // Besides, this extra is not useful when the intent is not handled by the application itself.
+                    activityIntent.removeExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL);
                 }
 
                 if (!launchSuccessful) {
