@@ -8,7 +8,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.GoogleApiAvailabilityLight;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
@@ -19,7 +19,6 @@ import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushSettings;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
-import com.wonderpush.sdk.push.fcm.BuildConfig;
 import com.wonderpush.sdk.push.PushService;
 
 public class FCMPushService implements PushService {
@@ -195,15 +194,12 @@ public class FCMPushService implements PushService {
     @Override
     public boolean isAvailable() {
         try {
-            Class.forName("com.google.android.gms.common.GooglePlayServicesUtil");
-            GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
+            GoogleApiAvailabilityLight googleApiAvailability = GoogleApiAvailabilityLight.getInstance();
             int resultCode = googleApiAvailability.isGooglePlayServicesAvailable(sContext);
             if (resultCode == ConnectionResult.SUCCESS) {
                 return true;
             }
             Log.w(TAG, "This device does not support Google Play Services: " + googleApiAvailability.getErrorString(resultCode));
-        } catch (ClassNotFoundException e) {
-            Log.w(TAG, "The Google Play Services have not been added to the application", e);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while checking the Google Play Services", e);
         }
