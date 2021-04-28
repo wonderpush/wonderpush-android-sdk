@@ -6,6 +6,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.wonderpush.sdk.JSONSyncInstallation;
+import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushConfiguration;
 
@@ -58,8 +59,15 @@ public class PushServiceManager {
     }
 
     public static int getNotificationIcon() {
-        if (sUsedPushService == null) return 0;
-        return sUsedPushService.getNotificationIcon();
+        int iconId = 0;
+        if (sUsedPushService != null) {
+            iconId = sUsedPushService.getNotificationIcon();
+        }
+        if (iconId == 0) {
+            // Default to an embedded icon
+            iconId = R.drawable.ic_notifications_white_24dp;
+        }
+        return iconId;
     }
 
     public static int getNotificationColor() {
