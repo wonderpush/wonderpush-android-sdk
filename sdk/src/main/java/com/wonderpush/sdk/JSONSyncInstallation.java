@@ -274,23 +274,28 @@ public class JSONSyncInstallation {
         ApiClient.requestForUser(userId, ApiClient.HttpMethod.PATCH, "/installation", parameters, new ResponseHandler() {
             @Override
             public void onFailure(Throwable ex, Response errorResponse) {
-                Log.e(WonderPush.TAG, "Failed to send installation custom diff, got " + errorResponse, ex);
-                handler.onFailure();
+
+                synchronized (JSONSyncInstallation.this) {
+                    Log.e(WonderPush.TAG, "Failed to send installation custom diff, got " + errorResponse, ex);
+                    handler.onFailure();
+                }
             }
 
             @Override
             public void onSuccess(Response response) {
-                try {
-                    if (response.isError() || !response.getJSONObject().has("success") || !response.getJSONObject().getBoolean("success")) {
-                        Log.e(WonderPush.TAG, "Failed to send installation custom diff, got " + response);
+                synchronized (JSONSyncInstallation.this) {
+                    try {
+                        if (response.isError() || !response.getJSONObject().has("success") || !response.getJSONObject().getBoolean("success")) {
+                            Log.e(WonderPush.TAG, "Failed to send installation custom diff, got " + response);
+                            handler.onFailure();
+                        } else {
+                            WonderPush.logDebug("Succeeded to send diff for user " + userId + ": " + diff);
+                            handler.onSuccess();
+                        }
+                    } catch (JSONException ex) {
+                        Log.e(WonderPush.TAG, "Failed to read success field from response " + response, ex);
                         handler.onFailure();
-                    } else {
-                        WonderPush.logDebug("Succeeded to send diff for user " + userId + ": " + diff);
-                        handler.onSuccess();
                     }
-                } catch (JSONException ex) {
-                    Log.e(WonderPush.TAG, "Failed to read success field from response " + response, ex);
-                    handler.onFailure();
                 }
             }
         });
