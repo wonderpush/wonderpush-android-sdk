@@ -5,8 +5,8 @@ project.archivesBaseName = 'wonderpush-android-sdk'
 project.version = "4.0.7-SNAPSHOT"
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion "28.0.3"
+    compileSdkVersion 29
+    buildToolsVersion "30.0.3"
 
     lintOptions {
         abortOnError false
@@ -20,7 +20,7 @@ android {
         minSdkVersion 21
         consumerProguardFiles 'proguard-exported.pro'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        versionName project.version
+        buildConfigField 'String', 'WONDERPUSH_SDK_VERSION', '"' + project.version + '"'
     }
     buildTypes {
         release {

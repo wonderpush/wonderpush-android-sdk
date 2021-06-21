@@ -47,7 +47,7 @@ public class FCMPushService implements PushService {
 
     @Override
     public String getVersion() {
-        return BuildConfig.VERSION_NAME;
+        return BuildConfig.WONDERPUSH_FCM_VERSION;
     }
 
     @Override

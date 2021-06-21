@@ -12,13 +12,11 @@ repositories {
 
 android {
     compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+    buildToolsVersion "30.0.2"
 
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 29
-        versionCode 1
-        versionName project.version
+        buildConfigField 'String', 'WONDERPUSH_HCM_VERSION', '"' + project.version + '"'
 
         consumerProguardFiles 'consumer-rules.pro'
     }

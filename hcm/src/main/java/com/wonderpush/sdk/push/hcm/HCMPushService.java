@@ -37,7 +37,7 @@ public class HCMPushService implements PushService {
 
     @Override
     public String getVersion() {
-        return BuildConfig.VERSION_NAME;
+        return BuildConfig.WONDERPUSH_HCM_VERSION;
     }
 
     @Override
