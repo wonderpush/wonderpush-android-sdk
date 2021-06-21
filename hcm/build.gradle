@@ -6,7 +6,7 @@ project.version = "1.0.1-SNAPSHOT"
 
 repositories {
     maven {
-        url 'http://developer.huawei.com/repo/'
+        url 'https://developer.huawei.com/repo/'
     }
 }
 
