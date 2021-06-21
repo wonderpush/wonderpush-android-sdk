@@ -13,8 +13,8 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.installations.FirebaseInstallations;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushSettings;
 import com.wonderpush.sdk.push.PushServiceManager;
@@ -124,8 +124,10 @@ public class FCMPushService implements PushService {
         if (sFirebaseApp != null) {
             try {
                 if (WonderPush.getLogging()) Log.d(TAG, "Checking FirebaseApp initialization");
-                FirebaseInstanceId.getInstance(sFirebaseApp);
-            } catch (IllegalArgumentException ex) {
+                if (sFirebaseApp.get(FirebaseMessaging.class) == null) {
+                    throw new NullPointerException("Could not get a FirebaseMessaging instance");
+                }
+            } catch (IllegalArgumentException | NullPointerException ex) {
                 Log.e(TAG, "Failed to check FirebaseApp initialization", ex);
                 // We'll try to get the default instance
                 //sFirebaseApp.delete(); // do not delete or we'll get a FATAL EXCEPTION from an FCM background thread
@@ -254,26 +256,26 @@ public class FCMPushService implements PushService {
     }
 
     public static void fetchInstanceId() {
-        if (WonderPush.getLogging()) Log.d(TAG, "FirebaseInstanceId.getInstanceId() called…");
+        if (WonderPush.getLogging()) Log.d(TAG, "FirebaseMessaging.getToken() called…");
         if (getFirebaseApp() == null) {
-            Log.w(TAG, "FirebaseInstanceId.getInstanceId() cannot proceed, FirebaseApp was not initialized.");
+            Log.w(TAG, "FirebaseMessaging.getToken() cannot proceed, FirebaseApp was not initialized.");
             return;
         }
-        FirebaseInstanceId.getInstance(getFirebaseApp()).getInstanceId()
-                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+        getFirebaseApp().get(FirebaseMessaging.class).getToken()
+                .addOnCompleteListener(new OnCompleteListener<String>() {
                     @Override
-                    public void onComplete(Task<InstanceIdResult> task) {
+                    public void onComplete(Task<String> task) {
                         if (!task.isSuccessful()) {
-                            Log.e(TAG, "Could not get Firebase InstanceId", task.getException());
+                            Log.e(TAG, "Could not get Firebase installation token", task.getException());
                             return;
                         }
-                        InstanceIdResult result = task.getResult();
+                        String result = task.getResult();
                         if (result == null) {
-                            if (WonderPush.getLogging()) Log.d(TAG, "FirebaseInstanceId.getInstanceId() = null");
+                            if (WonderPush.getLogging()) Log.d(TAG, "FirebaseMessaging.getToken() = null");
                             return;
                         }
-                        if (WonderPush.getLogging()) Log.d(TAG, "FirebaseInstanceId.getInstanceId() = " + result.getToken());
-                        storeRegistrationId(sContext, getSenderId(), result.getToken());
+                        if (WonderPush.getLogging()) Log.d(TAG, "FirebaseMessaging.getToken() = " + result);
+                        storeRegistrationId(sContext, getSenderId(), result);
                     }
                 });
     }
