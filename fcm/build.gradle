@@ -30,7 +30,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly project(':sdk')
     runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0,)"
-    implementation "com.google.firebase:firebase-messaging:17.6.0"
+    implementation "com.google.firebase:firebase-messaging:19.0.0"
     implementation "com.google.android.gms:play-services-basement:16.0.1" // for GoogleApiAvailabilityLight
 }
 
