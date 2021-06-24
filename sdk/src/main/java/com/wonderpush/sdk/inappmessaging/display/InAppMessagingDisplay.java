@@ -312,16 +312,16 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
     switch (inAppMessage.getMessageType()) {
       case BANNER:
-        bindingWrapper = bindingWrapperFactory.createBannerBindingWrapper(config, inAppMessage);
+        bindingWrapper = bindingWrapperFactory.createBannerBindingWrapper(activity, config, inAppMessage);
         break;
       case MODAL:
-        bindingWrapper = bindingWrapperFactory.createModalBindingWrapper(config, inAppMessage);
+        bindingWrapper = bindingWrapperFactory.createModalBindingWrapper(activity, config, inAppMessage);
         break;
       case IMAGE_ONLY:
-        bindingWrapper = bindingWrapperFactory.createImageBindingWrapper(config, inAppMessage);
+        bindingWrapper = bindingWrapperFactory.createImageBindingWrapper(activity, config, inAppMessage);
         break;
       case CARD:
-        bindingWrapper = bindingWrapperFactory.createCardBindingWrapper(config, inAppMessage);
+        bindingWrapper = bindingWrapperFactory.createCardBindingWrapper(activity, config, inAppMessage);
         break;
       default:
         Logging.loge("No bindings found for this message type");

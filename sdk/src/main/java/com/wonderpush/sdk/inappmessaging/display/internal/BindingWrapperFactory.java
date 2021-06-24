@@ -14,7 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.display.internal;
 
-import android.app.Application;
+import android.app.Activity;
 
 import android.view.Gravity;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
@@ -31,33 +31,30 @@ import javax.inject.Singleton;
 @Singleton
 public class BindingWrapperFactory {
 
-  private final Application application;
-
   @Inject
-  BindingWrapperFactory(Application application) {
-    this.application = application;
+  BindingWrapperFactory() {
   }
 
   public BindingWrapper createImageBindingWrapper(
-          InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+          Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
     InAppMessageComponent inAppMessageComponent =
         DaggerInAppMessageComponent.builder()
-            .inflaterModule(new InflaterModule(inAppMessage, config, application))
+            .inflaterModule(new InflaterModule(inAppMessage, config, activity))
             .build();
     return inAppMessageComponent.imageBindingWrapper();
   }
 
   public BindingWrapper createModalBindingWrapper(
-          InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+          Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
     InAppMessageComponent inAppMessageComponent =
         DaggerInAppMessageComponent.builder()
-            .inflaterModule(new InflaterModule(inAppMessage, config, application))
+            .inflaterModule(new InflaterModule(inAppMessage, config, activity))
             .build();
     return inAppMessageComponent.modalBindingWrapper();
   }
 
   public BindingWrapper createBannerBindingWrapper(
-          InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+          Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
     InAppMessageLayoutConfig updatedConfig = config;
     if (inAppMessage instanceof BannerMessage && ((BannerMessage)inAppMessage).getBannerPosition().equals(InAppMessage.BannerPosition.BOTTOM)) {
       try {
@@ -67,16 +64,16 @@ public class BindingWrapperFactory {
     }
     InAppMessageComponent inAppMessageComponent =
         DaggerInAppMessageComponent.builder()
-            .inflaterModule(new InflaterModule(inAppMessage, updatedConfig, application))
+            .inflaterModule(new InflaterModule(inAppMessage, updatedConfig, activity))
             .build();
     return inAppMessageComponent.bannerBindingWrapper();
   }
 
   public BindingWrapper createCardBindingWrapper(
-          InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+          Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
     InAppMessageComponent inAppMessageComponent =
         DaggerInAppMessageComponent.builder()
-            .inflaterModule(new InflaterModule(inAppMessage, config, application))
+            .inflaterModule(new InflaterModule(inAppMessage, config, activity))
             .build();
     return inAppMessageComponent.cardBindingWrapper();
   }

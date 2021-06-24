@@ -14,7 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.display.internal.injection.modules;
 
-import android.app.Application;
+import android.app.Activity;
 import android.content.Context;
 import android.view.LayoutInflater;
 
@@ -30,21 +30,21 @@ import dagger.Provides;
 public class InflaterModule {
   private final InAppMessage inAppMessage;
   private final InAppMessageLayoutConfig inAppMessageLayoutConfig;
-  private final Application application;
+  private final Activity activity;
 
   public InflaterModule(
       InAppMessage inAppMessage,
       InAppMessageLayoutConfig inAppMessageLayoutConfig,
-      Application application) {
+      Activity activity) {
     this.inAppMessage = inAppMessage;
     this.inAppMessageLayoutConfig = inAppMessageLayoutConfig;
-    this.application = application;
+    this.activity = activity;
   }
 
   @Provides
   @InAppMessageScope
   public LayoutInflater providesInflaterservice() {
-    return (LayoutInflater) application.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    return (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
   }
 
   @Provides
