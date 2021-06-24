@@ -10,7 +10,7 @@ buildscript {
 
 allprojects {
     repositories {
-        mavelCentral()
+        mavenCentral()
         google()
     }
     if (wonderpush_signing_gnupg_keyName != '0823F63F') throw "wonderpush_signing_gnupg_keyName is expected to be '0823F63F'"
