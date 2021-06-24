@@ -191,13 +191,13 @@ class InAppManager {
                     completion.accept(null);
                     return;
                 }
-                int screenWidth = InstallationManager.getScreenWidth(context);
-                int screenHeight = InstallationManager.getScreenHeight(context);
+                int screenWidth = InstallationManager.getScreenWidth();
+                int screenHeight = InstallationManager.getScreenHeight();
                 double ratio = screenWidth / (double)screenHeight;
                 int width = ratio >= 1 ? Math.min(640, screenWidth) : (int)Math.floor(ratio * Math.min(640, screenHeight));
                 int height = ratio <= 1 ? Math.min(640, screenHeight) : (int)Math.floor(Math.min(640, screenWidth) / ratio);
                 String size = width + "x" + height;
-                int scale = InstallationManager.getScreenDensity(context) >= 192 ? 2 : 1;
+                int scale = InstallationManager.getScreenDensity() >= 192 ? 2 : 1;
                 String locale = WonderPush.getLocale();
                 if (locale == null) locale = "en";
                 URL url = new URL("https://maps.google.com/maps/api/staticmap"

@@ -4,11 +4,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.os.Build;
 import android.telephony.TelephonyManager;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -273,9 +272,9 @@ public class InstallationManager {
                     device.put("brand", getDeviceBrand());
                     device.put("model", getDeviceModel());
                     device.put("name", getDeviceName());
-                    device.put("screenWidth", getScreenWidth(context));
-                    device.put("screenHeight", getScreenHeight(context));
-                    device.put("screenDensity", getScreenDensity(context));
+                    device.put("screenWidth", getScreenWidth());
+                    device.put("screenHeight", getScreenHeight());
+                    device.put("screenDensity", getScreenDensity());
 
                     JSONObject configuration = new JSONObject();
                     configuration.put("timeZone", getUserTimezone());
@@ -372,30 +371,16 @@ public class InstallationManager {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
-    private static DisplayMetrics getDisplayMetrics(Context context) {
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        WindowManager windowManager =
-                (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            context.getDisplay().getRealMetrics(displayMetrics);
-        } else {
-            windowManager.getDefaultDisplay().getMetrics(displayMetrics);
-        }
-
-        return displayMetrics;
+    protected static int getScreenDensity() {
+        return Resources.getSystem().getConfiguration().densityDpi;
     }
 
-    protected static int getScreenDensity(Context context) {
-        return getDisplayMetrics(context).densityDpi;
+    protected static int getScreenWidth() {
+        return Resources.getSystem().getDisplayMetrics().widthPixels;
     }
 
-    protected static int getScreenWidth(Context context) {
-        return getDisplayMetrics(context).widthPixels;
-    }
-
-    protected static int getScreenHeight(Context context) {
-        return getDisplayMetrics(context).heightPixels;
+    protected static int getScreenHeight() {
+        return Resources.getSystem().getDisplayMetrics().heightPixels;
     }
 
 }
