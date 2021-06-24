@@ -35,23 +35,26 @@ import dagger.multibindings.StringKey;
 @Module
 public class InflaterConfigModule {
 
+  @SuppressWarnings("deprecation")
+  private static final int FLAG_LAYOUT_INSET_DECOR = WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
+
   // visible for testing
   public static int DISABLED_BG_FLAG =
       WindowManager.LayoutParams.FLAG_DIM_BEHIND
           | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
           | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-          | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
+          | FLAG_LAYOUT_INSET_DECOR;
 
   public static int DISMISSIBLE_DIALOG_FLAG =
       WindowManager.LayoutParams.FLAG_DIM_BEHIND
           | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
           | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
           | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-          | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
+          | FLAG_LAYOUT_INSET_DECOR;
 
   private int ENABLED_BG_FLAG =
       WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-          | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+          | FLAG_LAYOUT_INSET_DECOR
           | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
 
   public static String configFor(MessageType type, int orientation) {
