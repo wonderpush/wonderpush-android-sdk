@@ -124,6 +124,15 @@ public class IamWindowManager {
     return (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
   }
 
+  @SuppressWarnings("deprecation")
+  private Display getDisplay(@NonNull Activity activity) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      return activity.getDisplay();
+    } else {
+      return getWindowManager(activity).getDefaultDisplay();
+    }
+  }
+
   /**
    * Get the total size of the display in pixels, with no exclusions. For example on a Pixel this
    * would return 1920x1080 rather than the content frame which gives up 63 pixels to the status bar
@@ -132,12 +141,8 @@ public class IamWindowManager {
   private Point getDisplaySize(@NonNull Activity activity) {
     Point size = new Point();
 
-    Display display = getWindowManager(activity).getDefaultDisplay();
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      display.getRealSize(size);
-    } else {
-      display.getSize(size);
-    }
+    Display display = getDisplay(activity);
+    display.getRealSize(size);
 
     return size;
   }

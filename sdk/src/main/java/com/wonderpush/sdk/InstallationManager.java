@@ -8,7 +8,6 @@ import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.WindowManager;
 
 import org.json.JSONArray;
@@ -18,7 +17,6 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -374,25 +372,30 @@ public class InstallationManager {
         return null;
     }
 
+    @SuppressWarnings("deprecation")
+    private static DisplayMetrics getDisplayMetrics(Context context) {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        WindowManager windowManager =
+                (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.getDisplay().getRealMetrics(displayMetrics);
+        } else {
+            windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+        }
+
+        return displayMetrics;
+    }
+
     protected static int getScreenDensity(Context context) {
-        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
-        return metrics.densityDpi;
+        return getDisplayMetrics(context).densityDpi;
     }
 
     protected static int getScreenWidth(Context context) {
-        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
-        return metrics.widthPixels;
+        return getDisplayMetrics(context).widthPixels;
     }
 
     protected static int getScreenHeight(Context context) {
-        Display display = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
-        return metrics.heightPixels;
+        return getDisplayMetrics(context).heightPixels;
     }
 
 }

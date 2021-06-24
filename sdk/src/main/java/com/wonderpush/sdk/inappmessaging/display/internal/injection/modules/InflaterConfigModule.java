@@ -17,6 +17,7 @@ package com.wonderpush.sdk.inappmessaging.display.internal.injection.modules;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -88,11 +89,16 @@ public class InflaterConfigModule {
   }
 
   @Provides
+  @SuppressWarnings("deprecation")
   DisplayMetrics providesDisplayMetrics(Application application) {
     DisplayMetrics displayMetrics = new DisplayMetrics();
     WindowManager windowManager =
         (WindowManager) application.getSystemService(Context.WINDOW_SERVICE);
-    windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      application.getDisplay().getRealMetrics(displayMetrics);
+    } else {
+      windowManager.getDefaultDisplay().getMetrics(displayMetrics);
+    }
 
     return displayMetrics;
   }
