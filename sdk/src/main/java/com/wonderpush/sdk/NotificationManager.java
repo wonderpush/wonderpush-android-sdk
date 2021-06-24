@@ -10,7 +10,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -32,6 +31,7 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -147,14 +147,14 @@ public class NotificationManager {
         if (notif.getAlert() != null && !notif.getAlert().getResourcesToFetch().isEmpty()) {
             WonderPush.logDebug("Start fetching resources");
             long start = SystemClock.elapsedRealtime();
-            Collection<AsyncTask<CacheUtil.FetchWork, Void, File[]>> tasks = new ArrayList<>(notif.getAlert().getResourcesToFetch().size());
+            Collection<Future<File>> tasks = new ArrayList<>(notif.getAlert().getResourcesToFetch().size());
             int i = 0;
             for (CacheUtil.FetchWork fetchWork : notif.getAlert().getResourcesToFetch()) {
                 ++i;
-                tasks.add(new CacheUtil.FetchWork.AsyncTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, fetchWork));
+                tasks.add(WonderPush.safeDefer(fetchWork::execute, 0));
             }
             i = 0;
-            for (AsyncTask<CacheUtil.FetchWork, Void, File[]> task : tasks) {
+            for (Future<File> task : tasks) {
                 ++i;
                 try {
                     task.get(Math.max(0, start + timeoutMs - SystemClock.elapsedRealtime()), TimeUnit.MILLISECONDS);

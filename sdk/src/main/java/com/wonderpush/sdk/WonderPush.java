@@ -12,11 +12,9 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -31,8 +29,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.wonderpush.sdk.remoteconfig.Constants.REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY;
@@ -68,34 +71,31 @@ public class WonderPush {
     private static Context sApplicationContext;
     protected static Application sApplication;
 
+    protected static final ScheduledExecutorService sScheduledExecutor = Executors.newScheduledThreadPool(0, new ThreadFactory() {
+        // Adapted from Executors.DefaultThreadFactory to customize the thread names for better debuggability
+        private final ThreadGroup group;
+        private final AtomicInteger threadNumber = new AtomicInteger(1);
+        {
+            SecurityManager s = System.getSecurityManager();
+            group = s != null ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+        }
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(group, r, "WonderPush-" + threadNumber.getAndIncrement(), 0);
+            if (t.isDaemon()) {
+                t.setDaemon(false);
+            }
+            int priority = Thread.NORM_PRIORITY - 1;
+            if (t.getPriority() != priority) {
+                t.setPriority(priority);
+            }
+            return t;
+        }
+    });
+
     private static WonderPushRequestVault sMeasurementsApiRequestVault;
-    private static Looper sLooper;
-    private static Handler sDeferHandler;
-    protected static final ScheduledExecutorService sScheduledExecutor;
     private static PresenceManager sPresenceManager;
     private static RemoteConfigManager sRemoteConfigManager;
-
-    static {
-        sDeferHandler = new Handler(Looper.getMainLooper()); // temporary value until our thread is started
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Looper.prepare();
-                sLooper = Looper.myLooper();
-                sDeferHandler = new Handler(sLooper);
-                for (;;) {
-                    try {
-                        Looper.loop();
-                    } catch (Exception ex) {
-                        Log.e(WonderPush.TAG, "Uncaught exception in WonderPush defer handler", ex);
-                        continue; // loop on exceptions
-                    }
-                    break; // allow normal exits
-                }
-            }
-        }, "WonderPush").start();
-        sScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    }
 
     private static String sClientId;
     private static String sClientSecret;
@@ -2203,8 +2203,7 @@ public class WonderPush {
      * for the user to save it.
      *
      * <p>
-     *     Call this within an {@link com.wonderpush.sdk.CacheUtil.FetchWork.AsyncTask}
-     *     as this method is blocking.
+     *     This method is blocking.
      * </p>
      */
     public static void downloadAllData() {
@@ -2540,21 +2539,12 @@ public class WonderPush {
         sIntegrator = integrator;
     }
 
-    protected static boolean safeDefer(final Runnable runnable, long defer) {
-        return sDeferHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    runnable.run();
-                } catch (Exception ex) {
-                    Log.e(TAG, "Unexpected error on deferred task", ex);
-                }
-            }
-        }, defer);
+    protected static void safeDefer(final Runnable runnable, long defer) {
+        sScheduledExecutor.schedule(runnable, defer, TimeUnit.MILLISECONDS);
     }
 
-    protected static Looper getLooper() {
-        return sLooper;
+    protected static <V> Future<V> safeDefer(final Callable<V> callable, long defer) {
+        return sScheduledExecutor.schedule(callable, defer, TimeUnit.MILLISECONDS);
     }
 
     /**

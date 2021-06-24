@@ -22,8 +22,8 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
 import android.text.TextUtils;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 
@@ -218,7 +218,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       callbacks = cb;
 
       if (delay > 0) {
-        new android.os.Handler().postDelayed(
+        activity.findViewById(android.R.id.content).postDelayed(
                 new Runnable() {
                   public void run() {
                     showActiveIam(activity);

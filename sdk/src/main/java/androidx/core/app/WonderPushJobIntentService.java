@@ -11,9 +11,7 @@ public abstract class WonderPushJobIntentService extends JobIntentService {
     @Override
     public void onDestroy() {
         try {
-            if (mCurProcessor != null) {
-                mCurProcessor.cancel(true);
-            }
+            this.doStopCurrentWork();
         } catch (Exception ex) {
             Log.e(TAG, "Unexpected error while in canceling current processor in onDestroy", ex);
         }

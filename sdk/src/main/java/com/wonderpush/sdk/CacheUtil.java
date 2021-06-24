@@ -32,17 +32,6 @@ class CacheUtil {
         final int maxCacheSize;
         final String logPrefix;
 
-        static class AsyncTask extends android.os.AsyncTask<FetchWork, Void, File[]> {
-            @Override
-            protected File[] doInBackground(FetchWork... fetchWorks) {
-                File[] rtn = new File[fetchWorks.length];
-                for (int i = 0; i < fetchWorks.length; ++i) {
-                    rtn[i] = fetchWorks[i].execute();
-                }
-                return rtn;
-            }
-        }
-
         public FetchWork(Uri uri, int maxFileSize, String cacheSubfolder, int maxCacheSize, String logPrefix) {
             this.uri = uri;
             this.maxFileSize = maxFileSize;

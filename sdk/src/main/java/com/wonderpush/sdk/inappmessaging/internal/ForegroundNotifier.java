@@ -18,6 +18,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.flowables.ConnectableFlowable;
@@ -59,7 +60,7 @@ import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManag
  */
 public class ForegroundNotifier implements Application.ActivityLifecycleCallbacks {
   public static final long DELAY_MILLIS = 1000;
-  private final Handler handler = new Handler();
+  private final Handler handler = new Handler(Looper.getMainLooper());
   private boolean foreground = false, paused = true;
   private Runnable check;
   private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();

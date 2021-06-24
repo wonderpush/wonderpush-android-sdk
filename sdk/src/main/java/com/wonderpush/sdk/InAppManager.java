@@ -4,7 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +20,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import androidx.core.util.Consumer;
 
 class InAppManager {
 
@@ -163,52 +165,8 @@ class InAppManager {
 
         builder.show();
 
-        new AsyncTask<Object, Object, Bitmap>() {
-            @Override
-            protected Bitmap doInBackground(Object... args) {
-                try {
-                    String loc;
-                    if (point != null) {
-                        loc = point.getLat() + "," + point.getLon();
-                    } else if (place.getName() != null) {
-                        loc = place.getName();
-                    } else {
-                        loc = place.getQuery();
-                    }
-                    if (loc == null) {
-                        Log.e(NotificationManager.TAG, "No location for map");
-                        return null;
-                    }
-                    int screenWidth = InstallationManager.getScreenWidth(context);
-                    int screenHeight = InstallationManager.getScreenHeight(context);
-                    double ratio = screenWidth / (double)screenHeight;
-                    int width = ratio >= 1 ? Math.min(640, screenWidth) : (int)Math.floor(ratio * Math.min(640, screenHeight));
-                    int height = ratio <= 1 ? Math.min(640, screenHeight) : (int)Math.floor(Math.min(640, screenWidth) / ratio);
-                    String size = width + "x" + height;
-                    int scale = InstallationManager.getScreenDensity(context) >= 192 ? 2 : 1;
-                    String locale = WonderPush.getLocale();
-                    if (locale == null) locale = "en";
-                    URL url = new URL("https://maps.google.com/maps/api/staticmap"
-                            + "?center=" + loc
-                            + "&zoom=" + (place.getZoom() != null ? place.getZoom() : 13)
-                            + "&size=" + size
-                            + "&sensors=false"
-                            + "&markers=color:red%7C" + loc
-                            + "&scale=" + scale
-                            + "&language=" + locale
-                    );
-                    return BitmapFactory.decodeStream(url.openConnection().getInputStream());
-                } catch (MalformedURLException e) {
-                    Log.e(NotificationManager.TAG, "Malformed map URL", e);
-                } catch (IOException e) {
-                    Log.e(NotificationManager.TAG, "Could not load map image", e);
-                } catch (Exception e) {
-                    Log.e(NotificationManager.TAG, "Unexpected error while loading map image", e);
-                }
-                return null;
-            }
-            @Override
-            protected void onPostExecute(Bitmap bmp) {
+        final Consumer<Bitmap> completion = (final Bitmap bmp) -> {
+            new Handler(Looper.getMainLooper()).post(() -> {
                 if (bmp == null) {
                     mapImg.setVisibility(View.GONE);
                     text.setMaxLines(Integer.MAX_VALUE);
@@ -216,8 +174,52 @@ class InAppManager {
                     mapImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
                     mapImg.setImageBitmap(bmp);
                 }
+            });
+        };
+        WonderPush.safeDefer(() -> {
+            try {
+                String loc;
+                if (point != null) {
+                    loc = point.getLat() + "," + point.getLon();
+                } else if (place.getName() != null) {
+                    loc = place.getName();
+                } else {
+                    loc = place.getQuery();
+                }
+                if (loc == null) {
+                    Log.e(NotificationManager.TAG, "No location for map");
+                    completion.accept(null);
+                    return;
+                }
+                int screenWidth = InstallationManager.getScreenWidth(context);
+                int screenHeight = InstallationManager.getScreenHeight(context);
+                double ratio = screenWidth / (double)screenHeight;
+                int width = ratio >= 1 ? Math.min(640, screenWidth) : (int)Math.floor(ratio * Math.min(640, screenHeight));
+                int height = ratio <= 1 ? Math.min(640, screenHeight) : (int)Math.floor(Math.min(640, screenWidth) / ratio);
+                String size = width + "x" + height;
+                int scale = InstallationManager.getScreenDensity(context) >= 192 ? 2 : 1;
+                String locale = WonderPush.getLocale();
+                if (locale == null) locale = "en";
+                URL url = new URL("https://maps.google.com/maps/api/staticmap"
+                        + "?center=" + loc
+                        + "&zoom=" + (place.getZoom() != null ? place.getZoom() : 13)
+                        + "&size=" + size
+                        + "&sensors=false"
+                        + "&markers=color:red%7C" + loc
+                        + "&scale=" + scale
+                        + "&language=" + locale
+                );
+                completion.accept(BitmapFactory.decodeStream(url.openConnection().getInputStream()));
+                return;
+            } catch (MalformedURLException e) {
+                Log.e(NotificationManager.TAG, "Malformed map URL", e);
+            } catch (IOException e) {
+                Log.e(NotificationManager.TAG, "Could not load map image", e);
+            } catch (Exception e) {
+                Log.e(NotificationManager.TAG, "Unexpected error while loading map image", e);
             }
-        }.execute();
+            completion.accept(null);
+        }, 0);
     }
 
     private static WonderPushDialogBuilder createWebNotificationBasePre(final Context context, final NotificationModel notif, WonderPushView webView) {
