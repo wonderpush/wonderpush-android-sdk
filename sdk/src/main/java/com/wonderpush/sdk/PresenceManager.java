@@ -92,7 +92,7 @@ public class PresenceManager {
     private void startAutoRenew() throws InterruptedException {
         synchronized (this) {
             if (handlerThread != null) return;
-            handlerThread = new HandlerThread("presence");
+            handlerThread = new HandlerThread("WonderPush-Presence");
             handlerThread.start();
             Looper looper = handlerThread.getLooper();
             handler = new Handler(looper);

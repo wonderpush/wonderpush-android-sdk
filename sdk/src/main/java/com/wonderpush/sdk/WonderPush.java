@@ -71,7 +71,7 @@ public class WonderPush {
     private static Context sApplicationContext;
     protected static Application sApplication;
 
-    protected static final ScheduledExecutorService sScheduledExecutor = Executors.newScheduledThreadPool(0, new ThreadFactory() {
+    protected static final ScheduledExecutorService sScheduledExecutor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
         // Adapted from Executors.DefaultThreadFactory to customize the thread names for better debuggability
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);

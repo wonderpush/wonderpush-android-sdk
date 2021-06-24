@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class will make sure important {@link Request} objects are run eventually, even if the user
@@ -44,6 +45,7 @@ class WonderPushRequestVault {
         }
     }
 
+    private static final AtomicInteger threadCounter = new AtomicInteger(1);
     private final WonderPushJobQueue mJobQueue;
     private final Thread mThread;
     private final RequestExecutor mRequestExecutor;
@@ -51,7 +53,9 @@ class WonderPushRequestVault {
     WonderPushRequestVault(WonderPushJobQueue jobQueue, RequestExecutor requestExecutor) {
         mJobQueue = jobQueue;
         mRequestExecutor = requestExecutor;
-        mThread = new Thread(getRunnable());
+        mThread = new Thread(getRunnable(), "WonderPush-RequestVault-" + threadCounter.getAndIncrement());
+        mThread.setDaemon(false);
+        mThread.setPriority(Thread.NORM_PRIORITY - 1);
         mThread.start();
         WonderPush.addUserConsentListener(new WonderPush.UserConsentListener() {
             @Override

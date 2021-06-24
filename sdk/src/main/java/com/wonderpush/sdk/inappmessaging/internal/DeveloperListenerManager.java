@@ -162,11 +162,9 @@ public class DeveloperListenerManager {
     @SuppressWarnings("ThreadPriorityCheck")
     @Override
     public Thread newThread(@NonNull Runnable r) {
-      Thread t = new Thread(r, "IAM-" + mNameSuffix + threadNumber.getAndIncrement());
+      Thread t = new Thread(r, "WonderPush-IAM-" + mNameSuffix + threadNumber.getAndIncrement());
       t.setDaemon(false);
-      t.setPriority(
-          android.os.Process.THREAD_PRIORITY_BACKGROUND
-              + android.os.Process.THREAD_PRIORITY_MORE_FAVORABLE);
+      t.setPriority(Thread.NORM_PRIORITY - 1);
       return t;
     }
   }
