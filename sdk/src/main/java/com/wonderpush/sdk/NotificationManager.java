@@ -3,6 +3,7 @@ package com.wonderpush.sdk;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -1027,10 +1028,10 @@ public class NotificationManager {
 
             Uri uri = Uri.parse(url);
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            if (intent.resolveActivity(context.getPackageManager()) != null) {
+            try {
                 context.startActivity(intent);
-            } else {
-                Log.e(TAG, "No service for intent " + intent);
+            } catch (ActivityNotFoundException e) {
+                Log.e(TAG, "No service for intent " + intent, e);
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to perform a " + ActionModel.Type.LINK + " action", e);
@@ -1046,10 +1047,10 @@ public class NotificationManager {
 
             Uri uri = Uri.parse(url);
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-            if (intent.resolveActivity(context.getPackageManager()) != null) {
+            try {
                 context.startActivity(intent);
-            } else {
-                Log.e(TAG, "No service for intent " + intent);
+            } catch (ActivityNotFoundException e) {
+                Log.e(TAG, "No service for intent " + intent, e);
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to perform a " + ActionModel.Type.RATING + " action", e);
@@ -1301,10 +1302,10 @@ public class NotificationManager {
 
             Intent open = new Intent(Intent.ACTION_VIEW);
             open.setData(Uri.parse(url));
-            if (open.resolveActivity(context.getPackageManager()) != null) {
+            try {
                 WonderPush.logDebug("Will open location " + open.getDataString());
                 context.startActivity(open);
-            } else {
+            } catch (ActivityNotFoundException e1) {
                 WonderPush.logDebug("No activity can open location " + open.getDataString());
                 WonderPush.logDebug("Falling back to regular URL");
                 geo = new Uri.Builder();
@@ -1323,10 +1324,10 @@ public class NotificationManager {
                 }
                 open = new Intent(Intent.ACTION_VIEW);
                 open.setData(geo.build());
-                if (open.resolveActivity(context.getPackageManager()) != null) {
+                try {
                     WonderPush.logDebug("Opening URL " + open.getDataString());
                     context.startActivity(open);
-                } else {
+                } catch (ActivityNotFoundException e2) {
                     WonderPush.logDebug("No activity can open URL " + open.getDataString());
                     Log.w(NotificationManager.TAG, "Cannot open map!");
                     Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();

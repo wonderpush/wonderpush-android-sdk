@@ -2,6 +2,7 @@ package com.wonderpush.sdk;
 
 import android.app.Activity;
 import android.app.Service;
+import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -144,6 +145,7 @@ public class WonderPushService extends Service {
                         true);
 
                 // Restrict first to this application
+                // NOTE: Using Intent.resolveActivity() is thus allowed in this case.
                 activityIntent.setPackage(getApplicationContext().getPackageName());
 
                 if (targetUrl.toLowerCase().startsWith(WonderPush.INTENT_NOTIFICATION_SCHEME + ":")) {
@@ -224,6 +226,10 @@ public class WonderPushService extends Service {
                 }
 
                 // Remove restriction within this application
+                // NOTE: Under this line, since Android SDK API 30, we must no longer call
+                //       Intent.resolveActivity() because of changes in Package Visibility,
+                //       rather we must use Context.startActivity/startService() directly and handle
+                //       a potential ActivityNotFoundException
                 if (!launchSuccessful) {
                     activityIntent.setPackage(null);
                     // Avoid ClassNotFoundException E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
@@ -233,26 +239,31 @@ public class WonderPushService extends Service {
 
                 if (!launchSuccessful) {
                     // Try as an activity
-                    if (activityIntent.resolveActivity(getPackageManager()) != null) {
+                    int oldFlags = activityIntent.getFlags();
+                    try {
                         Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
                         if (activity == null) {
                             activity = ActivityLifecycleMonitor.getLastStoppedActivity();
                         }
                         if (activity != null && !activity.isFinishing()) {
-                            WonderPush.logDebug("Delivered opened notification to an activity outside the app on top of last/current activity: " + activity.getClass().getCanonicalName());
+                            WonderPush.logDebug("Delivering opened notification to an activity outside the app on top of last/current activity: " + activity.getClass().getCanonicalName());
                             // We have a current activity stack, keep it
                             activityIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             activity.startActivity(activityIntent);
                             // Show the potential in-app when the user comes back on the application
                             WonderPush.showPotentialNotification(activity, intent);
                         } else {
-                            WonderPush.logDebug("Delivered opened notification using a new task to an activity outside the app");
+                            WonderPush.logDebug("Delivering opened notification using a new task to an activity outside the app");
                             // We must start a new task
                             TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
                             stackBuilder.addNextIntentWithParentStack(activityIntent);
                             stackBuilder.startActivities();
                         }
                         launchSuccessful = true;
+                    } catch (ActivityNotFoundException ex) {
+                        Log.w(TAG, "Could not delivered opened notification to an activity outside the app, got an ActivityNotFoundException; will try starting a service instead");
+                        // Remove the flags we may have changed
+                        activityIntent.setFlags(oldFlags);
                     }
                 }
                 if (!launchSuccessful) {
