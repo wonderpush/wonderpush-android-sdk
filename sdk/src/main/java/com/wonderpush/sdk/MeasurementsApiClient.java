@@ -1,15 +1,24 @@
 package com.wonderpush.sdk;
 
+import android.net.TrafficStats;
 import android.net.Uri;
+import android.os.Process;
 import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 
 public class MeasurementsApiClient {
     private static final String TAG = "WonderPush." + MeasurementsApiClient.class.getSimpleName();
-    private static final okhttp3.OkHttpClient sClient = new okhttp3.OkHttpClient();
+    private static final okhttp3.OkHttpClient sClient = new okhttp3.OkHttpClient.Builder().eventListener(new okhttp3.EventListener() {
+        @Override
+        public void connectStart(okhttp3.Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+            TrafficStats.setThreadStatsTag(Process.myTid());
+        }
+    }).build();
     private static boolean disabled;
     public static void execute(Request request) {
         if (isDisabled()) {

@@ -1,8 +1,11 @@
 package com.wonderpush.sdk;
 
+import android.net.TrafficStats;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import android.os.Process;
 import android.util.Log;
 
 import java.io.File;
@@ -124,6 +127,7 @@ class CacheUtil {
                 boolean success = false;
                 try {
                     WonderPush.logDebug(work.logPrefix + ": Will open URL: " + work.uri);
+                    TrafficStats.setThreadStatsTag(Process.myTid());
                     URLConnection conn = new URL(work.uri.toString()).openConnection();
                     InputStream is = (InputStream) conn.getContent();
                     WonderPush.logDebug(work.logPrefix + ": Content-Type: " + conn.getContentType());

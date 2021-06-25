@@ -15,6 +15,8 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.injection.modules;
 
 import android.app.Application;
+import android.net.TrafficStats;
+import android.os.Process;
 
 import com.squareup.picasso.OkHttp3Downloader;
 import com.squareup.picasso.Picasso;
@@ -22,9 +24,13 @@ import com.wonderpush.sdk.inappmessaging.display.internal.PicassoErrorListener;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 
 import dagger.Module;
 import dagger.Provides;
+import okhttp3.Call;
+import okhttp3.EventListener;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
@@ -36,7 +42,7 @@ public class PicassoModule {
   @InAppMessagingScope
   Picasso providesIamController(
       Application application, PicassoErrorListener picassoErrorListener) {
-    okhttp3.OkHttpClient client =
+    OkHttpClient client =
         new OkHttpClient.Builder()
             .addInterceptor(
                 new Interceptor() {
@@ -45,6 +51,12 @@ public class PicassoModule {
                     return chain.proceed(
                         chain.request().newBuilder().addHeader("Accept", "image/*").build());
                   }
+                })
+                .eventListener(new EventListener() {
+                    @Override
+                    public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                        TrafficStats.setThreadStatsTag(Process.myTid());
+                    }
                 })
             .build();
 

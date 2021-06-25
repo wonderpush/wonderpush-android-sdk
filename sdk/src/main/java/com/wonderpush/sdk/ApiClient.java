@@ -1,14 +1,20 @@
 package com.wonderpush.sdk;
 
+import android.net.TrafficStats;
+import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import android.util.Log;
 
 import okhttp3.*;
+import okhttp3.EventListener;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.*;
 
 /**
@@ -35,7 +41,12 @@ class ApiClient {
     private static boolean sIsFetchingAnonymousAccessToken = false;
     private static final List<ResponseHandler> sPendingHandlers = new ArrayList<>();
 
-    private static final OkHttpClient sClient = new OkHttpClient();
+    private static final OkHttpClient sClient = new OkHttpClient.Builder().eventListener(new EventListener() {
+        @Override
+        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+            TrafficStats.setThreadStatsTag(Process.myTid());
+        }
+    }).build();
     private static boolean sDisabled = false;
 
     /**
