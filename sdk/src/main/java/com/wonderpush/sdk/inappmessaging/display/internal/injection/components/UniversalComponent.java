@@ -15,7 +15,6 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.injection.components;
 
 import android.app.Application;
-import android.util.DisplayMetrics;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.BindingWrapperFactory;
 import com.wonderpush.sdk.inappmessaging.display.internal.IamWindowManager;
@@ -35,8 +34,6 @@ import dagger.Component;
 @Component(modules = {ApplicationModule.class, InflaterConfigModule.class})
 public interface UniversalComponent {
   Application providesApplication();
-
-  DisplayMetrics displayMetrics();
 
   IamWindowManager iamWindowManager();
 

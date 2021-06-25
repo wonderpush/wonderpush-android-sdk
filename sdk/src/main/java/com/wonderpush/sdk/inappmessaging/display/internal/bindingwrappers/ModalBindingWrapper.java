@@ -19,6 +19,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import android.graphics.Rect;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -64,8 +66,8 @@ public class ModalBindingWrapper extends BindingWrapper {
   @Inject
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public ModalBindingWrapper(
-          InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
-    super(config, inflater, message);
+          Rect displayBounds, InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
+    super(displayBounds, config, inflater, message);
   }
 
   @NonNull
@@ -215,8 +217,8 @@ public class ModalBindingWrapper extends BindingWrapper {
   }
 
   private void setLayoutConfig(InAppMessageLayoutConfig config) {
-    imageView.setMaxHeight(config.getMaxImageHeight());
-    imageView.setMaxWidth(config.getMaxImageWidth());
+    imageView.setMaxHeight((int) (config.getMaxImageHeightRatio() * this.displayBounds.height()));
+    imageView.setMaxWidth((int) (config.getMaxImageWidthRatio() * this.displayBounds.width()));
   }
 
   private void setDismissListener(View.OnClickListener dismissListener) {

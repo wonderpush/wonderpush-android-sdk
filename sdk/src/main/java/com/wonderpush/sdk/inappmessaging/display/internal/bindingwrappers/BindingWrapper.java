@@ -15,6 +15,7 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers;
 
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,12 +43,14 @@ import java.util.List;
  * @hide
  */
 public abstract class BindingWrapper {
+  final Rect displayBounds;
   protected final InAppMessage message;
   final InAppMessageLayoutConfig config;
   final LayoutInflater inflater;
 
   protected BindingWrapper(
-          InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
+          Rect displayBounds, InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
+    this.displayBounds = displayBounds;
     this.config = config;
     this.inflater = inflater;
     this.message = message;

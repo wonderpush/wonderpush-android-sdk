@@ -16,6 +16,8 @@ package com.wonderpush.sdk.inappmessaging.display.internal.injection.modules;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.view.LayoutInflater;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
@@ -57,4 +59,17 @@ public class InflaterModule {
   InAppMessageLayoutConfig inAppMessageLayoutConfig() {
     return inAppMessageLayoutConfig;
   }
+
+  @Provides
+  @SuppressWarnings("deprecation")
+  Rect providesDisplayBounds() {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+      return this.activity.getWindowManager().getCurrentWindowMetrics().getBounds();
+    } else {
+      Point point = new Point();
+      this.activity.getWindowManager().getDefaultDisplay().getSize(point);
+      return new Rect(0, 0, point.x, point.y);
+    }
+  }
+
 }

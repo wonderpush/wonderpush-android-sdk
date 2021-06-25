@@ -18,6 +18,8 @@ import android.graphics.Color;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import android.graphics.Rect;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,8 +61,8 @@ public class BannerBindingWrapper extends BindingWrapper {
   @Inject
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public BannerBindingWrapper(
-          InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
-    super(config, inflater, message);
+          Rect displayBounds, InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
+    super(displayBounds, config, inflater, message);
   }
 
   @Nullable
@@ -125,7 +127,7 @@ public class BannerBindingWrapper extends BindingWrapper {
 
   private void setLayoutConfig(InAppMessageLayoutConfig layoutConfig) {
     // TODO: Document why the width is the min of the max width and height
-    int bannerWidth = Math.min(layoutConfig.maxDialogWidthPx(), layoutConfig.maxDialogHeightPx());
+    int bannerWidth = (int) Math.min(layoutConfig.maxDialogWidthRatio() * this.displayBounds.width(), layoutConfig.maxDialogHeightRatio() * this.displayBounds.height());
 
     ViewGroup.LayoutParams params = bannerRoot.getLayoutParams();
     if (params == null) {
@@ -137,8 +139,8 @@ public class BannerBindingWrapper extends BindingWrapper {
 
     bannerRoot.setLayoutParams(params);
 
-    bannerImage.setMaxHeight(layoutConfig.getMaxImageHeight());
-    bannerImage.setMaxWidth(layoutConfig.getMaxImageWidth());
+    bannerImage.setMaxHeight((int) (layoutConfig.getMaxImageHeightRatio() * this.displayBounds.height()));
+    bannerImage.setMaxWidth((int) (layoutConfig.getMaxImageWidthRatio() * this.displayBounds.width()));
   }
 
   private void setSwipeDismissListener(final View.OnClickListener dismissListener) {

@@ -33,8 +33,8 @@ public class InAppMessageLayoutConfig implements Cloneable {
   private Float maxImageWidthWeight;
   private Float maxBodyHeightWeight;
   private Float maxBodyWidthWeight;
-  private Integer maxDialogHeightPx;
-  private Integer maxDialogWidthPx;
+  private Float maxDialogHeightRatio;
+  private Float maxDialogWidthRatio;
   private Integer windowFlag;
   private Integer viewWindowGravity;
   private Integer windowWidth;
@@ -64,12 +64,12 @@ public class InAppMessageLayoutConfig implements Cloneable {
     return maxBodyWidthWeight;
   }
 
-  public Integer maxDialogHeightPx() {
-    return maxDialogHeightPx;
+  public Float maxDialogHeightRatio() {
+    return maxDialogHeightRatio;
   }
 
-  public Integer maxDialogWidthPx() {
-    return maxDialogWidthPx;
+  public Float maxDialogWidthRatio() {
+    return maxDialogWidthRatio;
   }
 
   public Integer windowFlag() {
@@ -92,20 +92,20 @@ public class InAppMessageLayoutConfig implements Cloneable {
     return autoDismiss;
   }
 
-  public int getMaxImageHeight() {
-    return (int) (maxImageHeightWeight() * maxDialogHeightPx());
+  public float getMaxImageHeightRatio() {
+    return maxImageHeightWeight() * maxDialogHeightRatio();
   }
 
-  public int getMaxImageWidth() {
-    return (int) (maxImageWidthWeight() * maxDialogWidthPx());
+  public float getMaxImageWidthRatio() {
+    return maxImageWidthWeight() * maxDialogWidthRatio();
   }
 
-  public int getMaxBodyHeight() {
-    return (int) (maxBodyHeightWeight() * maxDialogHeightPx());
+  public float getMaxBodyHeightRatio() {
+    return maxBodyHeightWeight() * maxDialogHeightRatio();
   }
 
-  public int getMaxBodyWidth() {
-    return (int) (maxBodyWidthWeight() * maxDialogWidthPx());
+  public float getMaxBodyWidthRatio() {
+    return maxBodyWidthWeight() * maxDialogWidthRatio();
   }
 
   public static class Builder {
@@ -139,13 +139,13 @@ public class InAppMessageLayoutConfig implements Cloneable {
       return this;
     }
 
-    public Builder setMaxDialogHeightPx(Integer maxDialogHeightPx) {
-      config.maxDialogHeightPx = maxDialogHeightPx;
+    public Builder setMaxDialogHeightRatio(Float maxDialogHeightRatio) {
+      config.maxDialogHeightRatio = maxDialogHeightRatio;
       return this;
     }
 
-    public Builder setMaxDialogWidthPx(Integer maxDialogWidthPx) {
-      config.maxDialogWidthPx = maxDialogWidthPx;
+    public Builder setMaxDialogWidthRatio(Float maxDialogWidthRatio) {
+      config.maxDialogWidthRatio = maxDialogWidthRatio;
       return this;
     }
 

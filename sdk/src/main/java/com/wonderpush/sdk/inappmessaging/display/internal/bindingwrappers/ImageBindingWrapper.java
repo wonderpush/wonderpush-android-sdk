@@ -17,6 +17,8 @@ package com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import android.graphics.Rect;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,8 +57,8 @@ public class ImageBindingWrapper extends BindingWrapper {
   @Inject
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public ImageBindingWrapper(
-          InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
-    super(config, inflater, message);
+          Rect displayBounds, InAppMessageLayoutConfig config, LayoutInflater inflater, InAppMessage message) {
+    super(displayBounds, config, inflater, message);
   }
 
   @Nullable
@@ -71,8 +73,8 @@ public class ImageBindingWrapper extends BindingWrapper {
     collapseButton = v.findViewById(R.id.collapse_button);
 
     // Setup ImageView.
-    imageView.setMaxHeight(config.getMaxImageHeight());
-    imageView.setMaxWidth(config.getMaxImageWidth());
+    imageView.setMaxHeight((int) (config.getMaxImageHeightRatio() * this.displayBounds.height()));
+    imageView.setMaxWidth((int) (config.getMaxImageWidthRatio() * this.displayBounds.width()));
     if (message.getMessageType().equals(MessageType.IMAGE_ONLY)) {
       ImageOnlyMessage msg = (ImageOnlyMessage) message;
       imageView.setVisibility(

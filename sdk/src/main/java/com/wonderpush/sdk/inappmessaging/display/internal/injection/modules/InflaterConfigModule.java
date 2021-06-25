@@ -14,12 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.display.internal.injection.modules;
 
-import android.app.Application;
-import android.content.Context;
 import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.os.Build;
-import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -89,19 +84,14 @@ public class InflaterConfigModule {
     }
   }
 
-  @Provides
-  DisplayMetrics providesDisplayMetrics() {
-    return Resources.getSystem().getDisplayMetrics();
-  }
-
   // visible for testing
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.IMAGE_ONLY_PORTRAIT)
-  public InAppMessageLayoutConfig providesPortraitImageLayoutConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesPortraitImageLayoutConfig() {
     return InAppMessageLayoutConfig.builder()
-        .setMaxDialogHeightPx((int) (0.9f * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx((int) (0.9f * displayMetrics.widthPixels))
+        .setMaxDialogHeightRatio(0.9f)
+        .setMaxDialogWidthRatio(0.9f)
         .setMaxImageWidthWeight(0.8f)
         .setMaxImageHeightWeight(0.8f)
         .setViewWindowGravity(Gravity.CENTER)
@@ -116,11 +106,10 @@ public class InflaterConfigModule {
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.IMAGE_ONLY_LANDSCAPE)
-  public InAppMessageLayoutConfig providesLandscapeImageLayoutConfig(
-      DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesLandscapeImageLayoutConfig() {
     return InAppMessageLayoutConfig.builder()
-        .setMaxDialogHeightPx((int) (0.9f * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx((int) (0.9f * displayMetrics.widthPixels))
+        .setMaxDialogHeightRatio(0.9f)
+        .setMaxDialogWidthRatio(0.9f)
         .setMaxImageWidthWeight(0.8f)
         .setMaxImageHeightWeight(0.8f)
         .setViewWindowGravity(Gravity.CENTER)
@@ -135,10 +124,10 @@ public class InflaterConfigModule {
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.MODAL_LANDSCAPE)
-  public InAppMessageLayoutConfig providesModalLandscapeConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesModalLandscapeConfig() {
     return InAppMessageLayoutConfig.builder()
-        .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx(displayMetrics.widthPixels)
+        .setMaxDialogHeightRatio(0.8f)
+        .setMaxDialogWidthRatio(1f)
         .setMaxImageHeightWeight(1f) // entire dialog height
         .setMaxImageWidthWeight(0.4f)
         .setMaxBodyHeightWeight(0.6f)
@@ -155,10 +144,10 @@ public class InflaterConfigModule {
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.MODAL_PORTRAIT)
-  public InAppMessageLayoutConfig providesModalPortraitConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesModalPortraitConfig() {
     return InAppMessageLayoutConfig.builder()
-        .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx((int) (0.7f * displayMetrics.widthPixels))
+        .setMaxDialogHeightRatio(0.8f)
+        .setMaxDialogWidthRatio(0.7f)
         .setMaxImageHeightWeight(0.6f)
         .setMaxBodyHeightWeight(0.1f)
         .setMaxImageWidthWeight(0.9f) // entire dialog width
@@ -175,10 +164,10 @@ public class InflaterConfigModule {
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.CARD_LANDSCAPE)
-  public InAppMessageLayoutConfig providesCardLandscapeConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesCardLandscapeConfig() {
     return InAppMessageLayoutConfig.builder()
-        .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx(displayMetrics.widthPixels)
+        .setMaxDialogHeightRatio(0.8f)
+        .setMaxDialogWidthRatio(1f)
         .setMaxImageHeightWeight(1f) // entire dialog height
         .setMaxImageWidthWeight(0.5f)
         .setViewWindowGravity(Gravity.CENTER)
@@ -193,10 +182,10 @@ public class InflaterConfigModule {
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.CARD_PORTRAIT)
-  public InAppMessageLayoutConfig providesCardPortraitConfig(DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesCardPortraitConfig() {
     return InAppMessageLayoutConfig.builder()
-        .setMaxDialogHeightPx((int) (0.8 * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx((int) (0.7f * displayMetrics.widthPixels))
+        .setMaxDialogHeightRatio(0.8f)
+        .setMaxDialogWidthRatio(0.7f)
         .setMaxImageHeightWeight(0.6f)
         .setMaxImageWidthWeight(1f) // entire dialog width
         .setMaxBodyHeightWeight(0.1f)
@@ -213,13 +202,12 @@ public class InflaterConfigModule {
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.BANNER_PORTRAIT)
-  public InAppMessageLayoutConfig providesBannerPortraitLayoutConfig(
-      DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesBannerPortraitLayoutConfig() {
     return InAppMessageLayoutConfig.builder()
         .setMaxImageHeightWeight(0.3f)
         .setMaxImageWidthWeight(0.3f)
-        .setMaxDialogHeightPx((int) (0.5f * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx((int) (0.9f * displayMetrics.widthPixels))
+        .setMaxDialogHeightRatio(0.5f)
+        .setMaxDialogWidthRatio(0.9f)
         .setViewWindowGravity(Gravity.TOP)
         .setWindowFlag(ENABLED_BG_FLAG)
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
@@ -232,13 +220,12 @@ public class InflaterConfigModule {
   @Provides
   @IntoMap
   @StringKey(LayoutConfigKey.BANNER_LANDSCAPE)
-  public InAppMessageLayoutConfig providesBannerLandscapeLayoutConfig(
-      DisplayMetrics displayMetrics) {
+  public InAppMessageLayoutConfig providesBannerLandscapeLayoutConfig() {
     return InAppMessageLayoutConfig.builder()
         .setMaxImageHeightWeight(0.3f)
         .setMaxImageWidthWeight(0.3f)
-        .setMaxDialogHeightPx((int) (0.5f * displayMetrics.heightPixels))
-        .setMaxDialogWidthPx((int) (0.9f * displayMetrics.widthPixels))
+        .setMaxDialogHeightRatio(0.5f)
+        .setMaxDialogWidthRatio(0.9f)
         .setViewWindowGravity(Gravity.TOP)
         .setWindowFlag(ENABLED_BG_FLAG)
         .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
