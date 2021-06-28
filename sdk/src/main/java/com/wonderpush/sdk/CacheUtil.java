@@ -147,6 +147,7 @@ class CacheUtil {
                         outputStream.write(buffer, 0, read);
                     }
                     outputStream.close();
+                    is.close();
                     success = true;
                     WonderPush.logDebug(work.logPrefix + ": Finished reading " + ttl + " bytes");
                 } catch (IOException ex) {
