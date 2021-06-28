@@ -5,6 +5,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import android.os.Looper;
 import android.os.Process;
 import android.util.Log;
 
@@ -91,6 +92,9 @@ class CacheUtil {
     }
 
     private static FetchResult fetch(FetchWork work) {
+        if (Looper.getMainLooper() != null && Looper.getMainLooper().getThread() == Thread.currentThread()) {
+            return FetchResult.workTask(work);
+        }
         File cached = getCachedFile(work);
         if (cached == null || isUsable(work, cached)) {
             return FetchResult.immediate(cached);
