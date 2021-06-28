@@ -1,5 +1,8 @@
 package com.wonderpush.sdk.remoteconfig;
 
+import android.net.TrafficStats;
+import android.os.Process;
+
 import com.wonderpush.sdk.SafeOkHttpCallback;
 
 import okhttp3.*;
@@ -9,12 +12,19 @@ import org.json.JSONObject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.Date;
 import java.util.Locale;
 
 public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
     @Nonnull
-    OkHttpClient client = new OkHttpClient();
+    OkHttpClient client = new OkHttpClient.Builder().eventListener(new EventListener() {
+        @Override
+        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+            TrafficStats.setThreadStatsTag(Process.myTid());
+        }
+    }).build();
     @Nonnull
     String clientId;
     @Nonnull

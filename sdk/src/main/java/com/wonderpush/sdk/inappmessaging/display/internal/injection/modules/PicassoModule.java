@@ -51,13 +51,14 @@ public class PicassoModule {
                     return chain.proceed(
                         chain.request().newBuilder().addHeader("Accept", "image/*").build());
                   }
-                })
-                .eventListener(new EventListener() {
-                    @Override
-                    public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
-                        TrafficStats.setThreadStatsTag(Process.myTid());
-                    }
-                })
+                }
+            )
+            .eventListener(new EventListener() {
+                @Override
+                public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                    TrafficStats.setThreadStatsTag(Process.myTid());
+                }
+            })
             .build();
 
     Picasso.Builder builder = new Picasso.Builder(application);
