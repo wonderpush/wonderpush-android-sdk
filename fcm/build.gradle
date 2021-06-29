@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 project.group = 'com.wonderpush'
 project.archivesBaseName = 'wonderpush-android-sdk-fcm'
-project.version = "1.0.3"
+project.version = "1.0.4-SNAPSHOT"
 
 android {
     compileSdkVersion 30
