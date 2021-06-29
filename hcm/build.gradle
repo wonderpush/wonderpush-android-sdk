@@ -96,8 +96,12 @@ publishing {
             name = 'wonderpush-android-sdk-hcm-repository'
             url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
             credentials {
-                username = wonderpush_publishing_repositories_maven_credentials_username
-                password = wonderpush_publishing_repositories_maven_credentials_password
+                if (project.hasProperty('wonderpush_publishing_repositories_maven_credentials_username')) {
+                    username = wonderpush_publishing_repositories_maven_credentials_username
+                }
+                if (project.hasProperty('wonderpush_publishing_repositories_maven_credentials_password')) {
+                    password = wonderpush_publishing_repositories_maven_credentials_password
+                }
             }
         }
     }
