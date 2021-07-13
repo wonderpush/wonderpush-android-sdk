@@ -308,7 +308,8 @@ public class NotificationManager {
             activityIntent.setPackage(context.getPackageName());
 
             return PendingIntent.getService(context, 0, activityIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
+                            | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
         }
 
         public PendingIntent buildForWillOpenBroadcast() {
@@ -333,6 +334,7 @@ public class NotificationManager {
 
         private PendingIntent buildPendingIntent(boolean fromUserInteraction, Bundle extrasOverride, Map<String, String> extraQueryParams) {
             Intent resultIntent = new Intent();
+            resultIntent.setPackage(context.getPackageName());
             resultIntent.setClass(context, WonderPushService.class);
             resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
             resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
@@ -365,12 +367,14 @@ public class NotificationManager {
             PendingIntent resultPendingIntent;
             if (WonderPushService.isProperlySetup()) {
                 resultPendingIntent = PendingIntent.getService(context, 0, resultIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
+                                | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
             } else {
                 TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
                 stackBuilder.addNextIntentWithParentStack(resultIntent);
                 resultPendingIntent = stackBuilder.getPendingIntent(0,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
+                                | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
             }
 
             return resultPendingIntent;

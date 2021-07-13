@@ -3,6 +3,7 @@ package com.wonderpush.sdk;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.NotificationChannelGroup;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -38,6 +39,15 @@ public class WonderPushCompatibilityHelper {
             return Intent.FLAG_ACTIVITY_NEW_DOCUMENT;
         } else {
             return Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET;
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    public static int getPendingIntentFlagImmutable() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            return PendingIntent.FLAG_IMMUTABLE;
+        } else {
+            return 0;
         }
     }
 
