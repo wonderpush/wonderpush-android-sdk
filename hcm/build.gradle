@@ -34,7 +34,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly project(path: ':sdk')
     runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0,)"
-    implementation 'com.huawei.hms:push:4.0.3.301'
+    implementation 'com.huawei.hms:push:5.3.0.304'
 }
 
 if (file('local.gradle').exists()) {
