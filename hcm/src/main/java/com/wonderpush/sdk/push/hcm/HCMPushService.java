@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.huawei.agconnect.config.AGConnectServicesConfig;
+import com.huawei.agconnect.AGConnectOptionsBuilder;
 import com.huawei.hms.aaid.HmsInstanceId;
 import com.huawei.hms.api.HuaweiApiAvailability;
 import com.wonderpush.sdk.WonderPush;
@@ -15,7 +15,6 @@ import com.wonderpush.sdk.WonderPushSettings;
 import com.wonderpush.sdk.push.PushService;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
-import com.wonderpush.sdk.push.hcm.BuildConfig;
 
 public class HCMPushService implements PushService {
 
@@ -149,7 +148,7 @@ public class HCMPushService implements PushService {
     }
 
     static String getDefaultAppId() {
-        String appId = AGConnectServicesConfig.fromContext(sContext).getString("client/app_id");
+        String appId = new AGConnectOptionsBuilder().build(sContext).getString("client/app_id");
         if (TextUtils.isEmpty(appId)) {
             return null;
         }
