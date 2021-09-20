@@ -12,7 +12,8 @@
         </service>
 
         <service
-            android:name="com.wonderpush.sdk.push.fcm.FirebaseMessagingService">
+            android:name="com.wonderpush.sdk.push.fcm.FirebaseMessagingService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
