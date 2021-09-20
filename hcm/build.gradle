@@ -15,7 +15,7 @@ android {
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        minSdkVersion 17
+        minSdkVersion 19
         buildConfigField 'String', 'WONDERPUSH_HCM_VERSION', '"' + project.version + '"'
 
         consumerProguardFiles 'consumer-rules.pro'
@@ -34,7 +34,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     compileOnly project(path: ':sdk')
     runtimeOnly "com.wonderpush:wonderpush-android-sdk:[3.4.0,)"
-    implementation 'com.huawei.hms:push:5.3.0.304'
+    implementation 'com.huawei.hms:push:6.1.0.300'
 }
 
 if (file('local.gradle').exists()) {
