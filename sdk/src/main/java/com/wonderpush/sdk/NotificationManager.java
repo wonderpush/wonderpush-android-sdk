@@ -1,5 +1,7 @@
 package com.wonderpush.sdk;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -779,10 +781,18 @@ public class NotificationManager {
         return builder.build();
     }
 
+    @TargetApi(Build.VERSION_CODES.S)
+    @SuppressLint("MissingPermission")
+    private static void closeSystemDialogs(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        }
+    }
+
     public static void ensureNotificationDismissed(Context context, Intent intent, NotificationModel notif) {
         // Manually dismiss the notification and close the system drawer, when an action button is clicked.
         // May be a kind of bug, or may be a feature when the associated PendingIntent resolves a Service instead of an Activity.
-        context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        NotificationManager.closeSystemDialogs(context);
         String localNotificationIdStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_LOCAL_NOTIFICATION_ID);
         int localNotificationId = -1;
         try {
