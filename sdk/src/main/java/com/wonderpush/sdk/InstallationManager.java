@@ -271,7 +271,6 @@ public class InstallationManager {
                     device.put("osVersion", getOsVersion());
                     device.put("brand", getDeviceBrand());
                     device.put("model", getDeviceModel());
-                    device.put("name", getDeviceName());
                     device.put("screenWidth", getScreenWidth());
                     device.put("screenHeight", getScreenHeight());
                     device.put("screenDensity", getScreenDensity());
@@ -353,22 +352,6 @@ public class InstallationManager {
 
     protected static String getDeviceBrand() {
         return Build.MANUFACTURER;
-    }
-
-    /**
-     * Returns the Bluetooth device name, if permissions are granted,
-     * and provided the device actually has Bluetooth.
-     */
-    protected static String getDeviceName() {
-        try {
-            if (WonderPush.getApplicationContext().getPackageManager().checkPermission(android.Manifest.permission.BLUETOOTH, WonderPush.getApplicationContext().getPackageName()) == PackageManager.PERMISSION_GRANTED) {
-                BluetoothAdapter btDevice = BluetoothAdapter.getDefaultAdapter();
-                return btDevice.getName();
-            }
-        } catch (Exception ex) {
-            // Ignore
-        }
-        return null;
     }
 
     protected static int getScreenDensity() {
