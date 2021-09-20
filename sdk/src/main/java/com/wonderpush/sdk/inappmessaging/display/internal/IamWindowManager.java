@@ -138,12 +138,17 @@ public class IamWindowManager {
    * would return 1920x1080 rather than the content frame which gives up 63 pixels to the status bar
    * and 126 pixels to the navigation bar.
    */
+  @SuppressWarnings("deprecation")
   private Point getDisplaySize(@NonNull Activity activity) {
     Point size = new Point();
-
-    Display display = getDisplay(activity);
-    display.getRealSize(size);
-
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+      Rect rect = getWindowManager(activity).getCurrentWindowMetrics().getBounds();
+      size.x = rect.width();
+      size.y = rect.height();
+    } else {
+      Display display = getDisplay(activity);
+      display.getRealSize(size);
+    }
     return size;
   }
 
