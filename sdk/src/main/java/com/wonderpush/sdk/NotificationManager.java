@@ -783,6 +783,7 @@ public class NotificationManager {
 
     @TargetApi(Build.VERSION_CODES.S)
     @SuppressLint("MissingPermission")
+    @SuppressWarnings("deprecation")
     private static void closeSystemDialogs(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
