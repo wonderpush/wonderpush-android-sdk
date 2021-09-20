@@ -196,45 +196,12 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   }
 
   /**
-   * Clears iam listener
-   *
    * @hide
    */
   @Keep
   @Override
   public void onActivityStarted(final Activity activity) {
     super.onActivityStarted(activity);
-
-    // Register IAM listener with the headless sdk.
-    this.inAppMessagingDisplay = (iam, cb, delay) -> {
-      // When we are in the middle of showing a message, we ignore other notifications these
-      // messages will be fired when the corresponding events happen the next time.
-      if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
-        Logging.logd("Active IAM exists. Skipping trigger");
-        return true;
-      }
-      inAppMessage = iam;
-      impressionDetected = false;
-      callbacks = cb;
-
-      if (delay > 0) {
-        activity.findViewById(android.R.id.content).postDelayed(
-                new Runnable() {
-                  public void run() {
-                    showActiveIam(activity);
-                  }
-                },
-                delay);
-      } else {
-        showActiveIam(activity);
-      }
-      return true;
-    };
-
-    if (headlessInAppMessaging.getMessageDisplayComponent() == null) {
-      headlessInAppMessaging.setMessageDisplayComponent(this.inAppMessagingDisplay);
-    }
-
   }
 
   /**
@@ -280,6 +247,37 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @Override
   public void onActivityResumed(Activity activity) {
     super.onActivityResumed(activity);
+
+    // Register IAM listener with the headless sdk.
+    this.inAppMessagingDisplay = (iam, cb, delay) -> {
+      // When we are in the middle of showing a message, we ignore other notifications these
+      // messages will be fired when the corresponding events happen the next time.
+      if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
+        Logging.logd("Active IAM exists. Skipping trigger");
+        return true;
+      }
+      inAppMessage = iam;
+      impressionDetected = false;
+      callbacks = cb;
+
+      if (delay > 0) {
+        activity.findViewById(android.R.id.content).postDelayed(
+                new Runnable() {
+                  public void run() {
+                    showActiveIam(activity);
+                  }
+                },
+                delay);
+      } else {
+        showActiveIam(activity);
+      }
+      return true;
+    };
+
+    if (headlessInAppMessaging.getMessageDisplayComponent() == null) {
+      headlessInAppMessaging.setMessageDisplayComponent(this.inAppMessagingDisplay);
+    }
+
     if (inAppMessage != null) {
       showActiveIam(activity);
     }
