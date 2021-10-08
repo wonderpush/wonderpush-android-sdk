@@ -136,7 +136,6 @@ class ActivityLifecycleMonitor {
                 startFirstDate = TimeSync.getTime();
             }
             ++startCount;
-            WonderPush.injectAppOpenIfNecessary();
             updatePresence(true);
         }
 
@@ -147,6 +146,7 @@ class ActivityLifecycleMonitor {
             }
             lastResumedActivityRef = new WeakReference<>(activity);
             ++resumeCount;
+            WonderPush.injectAppOpenIfNecessary();
             updatePresence(true);
             WonderPush.showPotentialNotification(activity, activity.getIntent());
             WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
