@@ -22,17 +22,13 @@
             android:exported="false">
         </service>
 
-        <!-- Required to properly handle deep links and notifications in foreground -->
-        <service
-            android:name="com.wonderpush.sdk.WonderPushService"
-            android:enabled="true"
-            android:exported="false"
-            android:label="Push Notification service">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <data android:scheme="wonderpush" />
-            </intent-filter>
-        </service>
+        <!-- Required to properly track notification clicks -->
+        <activity
+            android:name="com.wonderpush.sdk.WonderPushNotificationTrackingReceiver"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false" />
 
         <!-- Required for modular support of push services -->
         <service

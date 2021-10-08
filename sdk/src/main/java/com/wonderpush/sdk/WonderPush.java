@@ -271,12 +271,12 @@ public class WonderPush {
     public static final String INTENT_NOTIFICATION_WILL_OPEN = "wonderpushNotificationWillOpen";
 
     /**
-     * The scheme for the WonderPushService intents.
+     * The scheme for the WonderPush intents.
      */
     protected static final String INTENT_NOTIFICATION_WILL_OPEN_SCHEME = "wonderpush";
 
     /**
-     * The authority for handling notification opens with deep links calling the WonderPushService.
+     * The authority for handling notification opens with deep links with WonderPush special handling.
      */
     protected static final String INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY = "notificationOpen";
 

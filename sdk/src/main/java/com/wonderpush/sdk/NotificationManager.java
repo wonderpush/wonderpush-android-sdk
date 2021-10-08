@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -15,6 +16,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
 import androidx.core.app.NotificationCompat;
@@ -196,7 +198,9 @@ public class NotificationManager {
             // Fire an Intent to notify the application anyway (especially for `data` notifications)
             try {
                 if (notif.getType() == NotificationModel.Type.DATA) {
-                    work.getPendingIntentBuilder(context).buildForDataNotificationWillOpenBroadcast().send();
+                    // Broadcast locally that a notification is to be opened, and don't do anything else
+                    Intent localIntent = work.getPendingIntentBuilder(context).buildIntentForDataNotificationWillOpenLocalBroadcast();
+                    LocalBroadcastManager.getInstance(context).sendBroadcast(localIntent);
                 } else {
                     work.getPendingIntentBuilder(context).buildForWillOpenBroadcast().send();
                 }
@@ -286,32 +290,24 @@ public class NotificationManager {
             return buildPendingIntent(true, extrasOverride, extraQueryParams);
         }
 
-        public PendingIntent buildForDataNotificationWillOpenBroadcast() {
-            if (!WonderPushService.isProperlySetup()) {
-                return buildPendingIntent(false, null, null);
-            }
-
-            Intent activityIntent = new Intent();
-            activityIntent.setAction(Intent.ACTION_VIEW);
-            activityIntent.setData(Uri.parse(WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
-                    + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST));
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+        public Intent buildIntentForDataNotificationWillOpenLocalBroadcast() {
+            Intent localIntent = new Intent();
+            localIntent.setAction(WonderPush.INTENT_NOTIFICATION_WILL_OPEN);
+            localIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
                     pushIntent);
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
+            localIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
                     notif);
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
+            localIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                     notif.getType().toString());
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+            localIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
                     false);
-            activityIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+            localIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
                     true);
 
-            // Restrict first to this application
-            activityIntent.setPackage(context.getPackageName());
+            // Restrict to this application
+            localIntent.setPackage(context.getPackageName());
 
-            return PendingIntent.getService(context, 0, activityIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
-                            | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
+            return localIntent;
         }
 
         public PendingIntent buildForWillOpenBroadcast() {
@@ -335,18 +331,15 @@ public class NotificationManager {
         }
 
         private PendingIntent buildPendingIntent(boolean fromUserInteraction, Bundle extrasOverride, Map<String, String> extraQueryParams) {
-            Intent resultIntent = new Intent();
-            resultIntent.setPackage(context.getPackageName());
-            resultIntent.setClass(context, WonderPushService.class);
-            resultIntent.putExtra("receivedPushNotificationIntent", pushIntent);
-            resultIntent.putExtra("fromUserInteraction", fromUserInteraction);
+            // Construct the WonderPush tracking intent
+            Intent wpTrackingIntent = new Intent();
+            wpTrackingIntent.setPackage(context.getPackageName());
+            wpTrackingIntent.setClass(context, WonderPushNotificationTrackingReceiver.class);
+            wpTrackingIntent.putExtra("receivedPushNotificationIntent", pushIntent);
+            wpTrackingIntent.putExtra("fromUserInteraction", fromUserInteraction);
             if (extrasOverride != null) {
-                resultIntent.putExtras(extrasOverride);
+                wpTrackingIntent.putExtras(extrasOverride);
             }
-
-            resultIntent.setAction(Intent.ACTION_MAIN);
-            resultIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-            resultIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED | WonderPushCompatibilityHelper.getIntentFlagActivityNewDocument() | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
             Uri.Builder dataUriBuilder = new Uri.Builder()
                     .scheme(WonderPush.INTENT_NOTIFICATION_SCHEME)
@@ -364,22 +357,132 @@ public class NotificationManager {
                 }
             }
             Uri dataUri = dataUriBuilder.build();
-            resultIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
+            wpTrackingIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
 
-            PendingIntent resultPendingIntent;
-            if (WonderPushService.isProperlySetup()) {
-                resultPendingIntent = PendingIntent.getService(context, 0, resultIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
-                                | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
+            // Construct the destination intent
+            Intent destinationIntent;
+            String targetUrl = notif.getTargetUrl();
+            if (extrasOverride != null && extrasOverride.containsKey("overrideTargetUrl")) {
+                targetUrl = extrasOverride.getString("overrideTargetUrl");
+            }
+            if (targetUrl == null) {
+                targetUrl = WonderPush.INTENT_NOTIFICATION_WILL_OPEN_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT;
+            }
+            targetUrl = WonderPush.delegateUrlForDeepLink(new DeepLinkEvent(context, targetUrl));
+            WonderPush.logDebug("Notification target URL: " + targetUrl);
+
+            if (targetUrl == null) {
+                // No targetUrl
+                destinationIntent = null;
             } else {
-                TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-                stackBuilder.addNextIntentWithParentStack(resultIntent);
-                resultPendingIntent = stackBuilder.getPendingIntent(0,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
-                                | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
+
+                // Handle targetUrl
+                Uri parsedTargetUrl = Uri.parse(targetUrl);
+                if (WonderPush.INTENT_NOTIFICATION_SCHEME.equals(parsedTargetUrl.getScheme())
+                        && WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY.equals(parsedTargetUrl.getAuthority())
+                ) {
+
+                    // wonderpush://notificationOpen/* URLs
+                    if (parsedTargetUrl.getPathSegments().size() == 1 && WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT.equals(parsedTargetUrl.getLastPathSegment())) {
+
+                        // wonderpush://notificationOpen/default: Start the application as a launcher would
+                        destinationIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                        if (destinationIntent != null) {
+                            // A launcher would have used Intent.setPackage(null), needed on pre Android-11 to avoid duplicating the top activity
+                            // We previously used Intent.FLAG_ACTIVITY_SINGLE_TOP but as we add our tracking activity on top, the situation is different
+                            destinationIntent.setPackage(null);
+                            destinationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // this is actually already added by PackageManager.getLaunchIntentForPackage()
+                            destinationIntent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                            destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                                    (Parcelable) pushIntent);
+                            destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
+                                    // We can use this because we are restricting to the the current package,
+                                    // otherwise we'd get ClassNotFoundException: E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
+                                    notif);
+                            destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
+                                    notif.getType().toString());
+                            destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                                    fromUserInteraction);
+                            destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+                                    true);
+                        }
+
+                    } else { // broadcast or noop will both still need the tracking activity
+
+                        destinationIntent = null;
+
+                    }
+
+                } else {
+
+                    // Non wonderpush://notificationOpen/* URLs
+
+                    destinationIntent = new Intent();
+                    destinationIntent.setAction(Intent.ACTION_VIEW);
+                    destinationIntent.setData(parsedTargetUrl);
+                    destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                            (Parcelable) pushIntent);
+                    destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
+                            // this extra must be removed if handled outside the app,
+                            // or we'll get ClassNotFoundException: E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
+                            notif);
+                    destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
+                            notif.getType().toString());
+                    destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                            fromUserInteraction);
+                    destinationIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
+                            true);
+
+                    // Restrict first to this application
+                    // NOTE: Using Intent.resolveActivity() is thus allowed in this case.
+                    destinationIntent.setPackage(context.getPackageName());
+
+                    ComponentName resolvedActivity = destinationIntent.resolveActivity(context.getPackageManager());
+                    if (resolvedActivity == null) {
+                        // Clean for delivery outside this application
+                        destinationIntent.setPackage(null);
+                        // Avoid a ClassNotFoundException: E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
+                        destinationIntent.removeExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL);
+                    }
+
+                }
+
             }
 
-            return resultPendingIntent;
+            // Create the composite PendingIntent
+            Intent[] intents;
+            if (destinationIntent == null) {
+                wpTrackingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); // avoid bringing the background app to the front
+                intents = new Intent[] { wpTrackingIntent };
+            } else {
+                TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+                stackBuilder.addNextIntentWithParentStack(destinationIntent);
+                if (destinationIntent.getPackage() != null && stackBuilder.getIntentCount() == 1) {
+                    // The target activity has no parent
+                    Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                    ComponentName defaultActivity = launchIntent == null ? null : launchIntent.resolveActivity(context.getPackageManager());
+                    if (defaultActivity != null) {
+                        ComponentName resolvedActivity = destinationIntent.resolveActivity(context.getPackageManager());
+                        if (!resolvedActivity.getClassName().equals(defaultActivity.getClassName())) {
+                            WonderPush.logDebug("Injecting the default activity as parent to the orphan target activity to avoid closing app on the user pressing back");
+                            // Add the default activity as parent of the target activity
+                            // it has otherwise no parent and pressing back would close the application
+                            stackBuilder = TaskStackBuilder.create(context);
+                            stackBuilder.addNextIntentWithParentStack(launchIntent);
+                            stackBuilder.addNextIntent(destinationIntent);
+                        } // else: the target activity is already the default activity, don't add anything to the parent stack
+                    }
+                }
+                stackBuilder.addNextIntent(wpTrackingIntent);
+                intents = stackBuilder.getIntents();
+                // Clear the first intent of any flags added by TaskStackBuilder
+                if (intents.length > 0) {
+                    intents[0].setFlags(intents[0].getFlags() & (Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED));
+                }
+            }
+            return PendingIntent.getActivities(context, 0, intents,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
+                    | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
         }
 
     }
@@ -807,7 +910,9 @@ public class NotificationManager {
     }
 
     public static boolean showPotentialNotification(Context context, Intent intent) {
-        if (containsExplicitNotification(intent) || containsWillOpenNotificationAutomaticallyOpenable(intent)) {
+        boolean isDataNotification = WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
+                intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE));
+        if (containsExplicitNotification(intent) || (isDataNotification && containsWillOpenNotificationAutomaticallyOpenable(intent))) {
             final NotificationModel notif = NotificationModel.fromLocalIntent(intent, context);
             if (notif == null) {
                 Log.e(TAG, "Failed to extract notification object");
@@ -816,10 +921,7 @@ public class NotificationManager {
 
             sLastHandledIntentRef = new WeakReference<>(intent);
 
-            if (!WonderPushService.isProperlySetup()) {
-                handleOpenedNotificationFromService(context, intent, notif);
-            } else if (WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA.equals(
-                    intent.getStringExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE))) {
+            if (isDataNotification) {
                 // Track data notification opens, and display any in-app
                 handleOpenedManuallyDisplayedDataNotification(context, intent, notif);
             }
@@ -857,7 +959,7 @@ public class NotificationManager {
                 ;
     }
 
-    public static void handleOpenedNotificationFromService(Context context, Intent intent, NotificationModel notif) {
+    public static void handleOpenedNotificationFromTrackingActivity(Context context, Intent intent, NotificationModel notif) {
         ensureNotificationDismissed(context, intent, notif);
 
         WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
