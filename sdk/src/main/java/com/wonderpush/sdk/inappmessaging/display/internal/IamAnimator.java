@@ -101,6 +101,9 @@ public class IamAnimator {
       case FADE_OUT:
         fadeOut(app, view, ourListener);
         break;
+      default:
+        ourListener.onComplete();
+        break;
     }  }
 
   public void executeEntryAnimation(EntryAnimation animation, final Application app, final View view, @Nullable final AnimationCompleteListener completeListener) {
@@ -127,6 +130,9 @@ public class IamAnimator {
         break;
       case FADE_IN:
         fadeIn(app, view, ourListener);
+        break;
+      default:
+        ourListener.onComplete();
         break;
     }
   }
