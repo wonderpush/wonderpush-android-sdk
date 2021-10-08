@@ -196,15 +196,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   }
 
   /**
-   * @hide
-   */
-  @Keep
-  @Override
-  public void onActivityStarted(final Activity activity) {
-    super.onActivityStarted(activity);
-  }
-
-  /**
    * Clear iam listener on activity paused
    *
    * @hide
@@ -219,23 +210,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     imageLoader.cancelTag(activity.getClass());
     removeDisplayedIam(activity);
     super.onActivityPaused(activity);
-  }
-
-  /**
-   * Clear iam listener on activity destroyed
-   *
-   * @hide
-   */
-  @Keep
-  @Override
-  public void onActivityDestroyed(Activity activity) {
-    // clear all state scoped to activity and dismiss iam
-    if (this.inAppMessagingDisplay == headlessInAppMessaging.getMessageDisplayComponent()) {
-      headlessInAppMessaging.clearDisplayListener();
-    }
-    imageLoader.cancelTag(activity.getClass());
-    removeDisplayedIam(activity);
-    super.onActivityDestroyed(activity);
   }
 
   /**
