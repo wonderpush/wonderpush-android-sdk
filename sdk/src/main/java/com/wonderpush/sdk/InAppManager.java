@@ -27,7 +27,7 @@ class InAppManager {
     private final static String TAG = WonderPush.TAG;
 
     protected static void handleInApp(Context context, NotificationModel notif) {
-        if (notif.getInAppMessage() != null && notif.getType() != NotificationModel.Type.DATA) {
+        if (notif.getInAppMessage() != null) {
             InAppMessaging.getInstance().displayInAppMessage(notif.getInAppMessage());
             return;
         }
