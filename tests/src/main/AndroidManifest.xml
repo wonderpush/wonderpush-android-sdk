@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.wonderpush.tests">
+
+    <application
+        android:name=".Application"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Wonderpushandroidsdk">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/actMain_label"
+            android:launchMode="singleTop">
+
+            <!-- android:launchMode="singleTop" makes the SupportActionBar back button as as if setDisplayHomeAsUpEnabled(true) was called -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="main"
+                    android:scheme="wonderpushtests" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ChildActivity"
+            android:exported="true"
+            android:label="@string/actChild_label"
+            android:parentActivityName=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="child"
+                    android:scheme="wonderpushtests" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".OrphanActivity"
+            android:exported="true"
+            android:label="@string/actOrphan_label">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="orphan"
+                    android:scheme="wonderpushtests" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".NavigationActivity"
+            android:parentActivityName=".MainActivity"
+            android:label="@string/actNavigation_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="navigation"
+                    android:scheme="wonderpushtests" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

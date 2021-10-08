@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdk 31
+
+    defaultConfig {
+        applicationId "com.wonderpush.tests"
+        minSdk 21
+        targetSdk 31
+        versionCode 1
+        versionName "1.0"
+
+        buildConfigField 'String', 'WONDERPUSH_CLIENT_ID', '"7524c8a317c1794c0b23895dce3a3314d6a24105"'
+        buildConfigField 'String', 'WONDERPUSH_CLIENT_SECRET', '"b43a2d0fbdb54d24332b4d70736954eab5d24d29012b18ef6d214ff0f51e7901"'
+        buildConfigField 'String', 'WONDERPUSH_SENDER_ID', '"1023997258979"' // WonderPush Sender ID
+        buildConfigField 'String', 'WONDERPUSH_HCM_APP_ID', '"102131397"'
+        buildConfigField 'boolean', 'WONDERPUSH_LOGGING', 'true'
+        buildConfigField 'boolean', 'WONDERPUSH_REQUIRES_USER_CONSENT', 'false'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildToolsVersion '31.0.0'
+    compileSdkVersion 31
+}
+
+dependencies {
+    implementation project(":sdk")
+//    implementation 'com.wonderpush:wonderpush-android-sdk:4.0.8'
+    implementation(project(":fcm")) {
+        exclude group: 'com.wonderpush', module: 'wonderpush-android-sdk'
+    }
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'com.google.android.material:material:1.4.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
+}

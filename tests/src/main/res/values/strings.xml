@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">WonderPushTests</string>
+    <string name="actMain_btnChildActivity">Child activity</string>
+    <string name="actMain_lblRandom">Random:</string>
+    <string name="actChild_lblRandom">Random:</string>
+    <string name="actOrphan_lblRandom">Random:</string>
+    <string name="actMain_label">WonderPushTests</string>
+    <string name="actChild_label">Child activity</string>
+    <string name="actOrphan_label">Orphan activity</string>
+    <string name="actNavigation_txtNavigationText">Loading incoming intent&#8230;</string>
+    <string name="actNavigation_label">Navigation activity</string>
+    <string name="actMain_btnTriggerInappCard">Trigger in-app: Card</string>
+    <string name="actMain_btnTriggerInappModal">Trigger in-app: Modal</string>
+    <string name="actMain_btnTriggerInappBanner">Trigger in-app: Banner</string>
+    <string name="actMain_btnTriggerInappImage">Trigger in-app: Image</string>
+</resources>
