@@ -27,6 +27,8 @@ import io.reactivex.subjects.BehaviorSubject;
 import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManager.APP_LAUNCH;
 import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
 
+import androidx.annotation.NonNull;
+
 /**
  * The {@link ForegroundNotifier} notifies listeners via {@link #foregroundFlowable()} when an
  * application comes to the foreground.
@@ -66,13 +68,13 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   private Runnable check;
   private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
 
-  /** @returns a {@link ConnectableFlowable} representing a stream of foreground events */
+  /** @return a {@link ConnectableFlowable} representing a stream of foreground events */
   public ConnectableFlowable<String> foregroundFlowable() {
     return foregroundSubject.toFlowable(BackpressureStrategy.BUFFER).publish();
   }
 
   @Override
-  public void onActivityResumed(Activity activity) {
+  public void onActivityResumed(@NonNull Activity activity) {
     paused = false;
     boolean wasBackground = !foreground;
     foreground = true;
@@ -94,7 +96,7 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   }
 
   @Override
-  public void onActivityPaused(Activity activity) {
+  public void onActivityPaused(@NonNull Activity activity) {
     paused = true;
 
     if (check != null) {
@@ -106,17 +108,17 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   }
 
   @Override
-  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+  public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {}
 
   @Override
-  public void onActivityStarted(Activity activity) {}
+  public void onActivityStarted(@NonNull Activity activity) {}
 
   @Override
-  public void onActivityStopped(Activity activity) {}
+  public void onActivityStopped(@NonNull Activity activity) {}
 
   @Override
-  public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
 
   @Override
-  public void onActivityDestroyed(Activity activity) {}
+  public void onActivityDestroyed(@NonNull Activity activity) {}
 }
