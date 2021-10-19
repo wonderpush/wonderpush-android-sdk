@@ -201,7 +201,8 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
                     .storeImpression(campaignId)
                     .doOnError(e -> Logging.loge("Impression store write failure:" + e.getMessage()))
                     .doOnComplete(() -> Logging.logd("Impression store write success"));
-    if (InAppMessageStreamManager.isAppForegroundEvent(triggeringEvent)) {
+    if (InAppMessageStreamManager.isAppForegroundEvent(triggeringEvent)
+        || InAppMessageStreamManager.isAppLaunchEvent(triggeringEvent)) {
       Completable incrementAppForegroundRateLimit =
               rateLimiterClient
                       .increment(appForegroundRateLimit)

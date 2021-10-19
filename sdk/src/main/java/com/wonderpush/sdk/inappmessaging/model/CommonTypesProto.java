@@ -112,8 +112,7 @@ public final class CommonTypesProto {
         if (systemEvent.equals("ON_FOREGROUND")) {
           result.setIamTrigger(Trigger.ON_FOREGROUND);
         } else if (systemEvent.equals("APP_LAUNCH")) {
-          // APP_LAUNCH and ON_FOREGROUND are equivalent on Android
-          result.setIamTrigger(Trigger.ON_FOREGROUND);
+          result.setIamTrigger(Trigger.APP_LAUNCH);
         } else {
           result.setIamTrigger(Trigger.UNRECOGNIZED);
         }

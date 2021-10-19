@@ -24,6 +24,7 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.subjects.BehaviorSubject;
 
+import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManager.APP_LAUNCH;
 import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
 
 /**
@@ -61,7 +62,7 @@ import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManag
 public class ForegroundNotifier implements Application.ActivityLifecycleCallbacks {
   public static final long DELAY_MILLIS = 1000;
   private final Handler handler = new Handler(Looper.getMainLooper());
-  private boolean foreground = false, paused = true;
+  private boolean foreground = false, paused = true, firstActivity = true;
   private Runnable check;
   private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
 
@@ -81,6 +82,12 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
     }
 
     if (wasBackground) {
+      // Detect app launch before triggering a foreground event
+      if (firstActivity) {
+        firstActivity = false;
+        Logging.logi("app launch");
+        foregroundSubject.onNext(APP_LAUNCH);
+      }
       Logging.logi("went foreground");
       foregroundSubject.onNext(ON_FOREGROUND);
     }

@@ -52,6 +52,7 @@ import org.json.JSONObject;
  */
 @InAppMessagingScope
 public class InAppMessageStreamManager {
+  public static final String APP_LAUNCH = "APP_LAUNCH";
   public static final String ON_FOREGROUND = "ON_FOREGROUND";
   private final ConnectableFlowable<String> appForegroundEventFlowable;
   private final ConnectableFlowable<String> programmaticTriggerEventFlowable;
@@ -153,6 +154,10 @@ public class InAppMessageStreamManager {
     return 0;
   }
 
+  public static boolean isAppLaunchEvent(String event) {
+      return event != null && event.equals(APP_LAUNCH);
+  }
+
   public static boolean isAppForegroundEvent(String event) {
     return event != null && event.equals(ON_FOREGROUND);
   }
@@ -246,7 +251,7 @@ public class InAppMessageStreamManager {
   }
 
   private Maybe<Campaign> getContentIfNotRateLimited(String event, Campaign campaign) {
-    if (!campaign.isTestCampaign() && isAppForegroundEvent(event)) {
+    if (!campaign.isTestCampaign() && (isAppForegroundEvent(event) || isAppLaunchEvent(event))) {
       return rateLimiterClient
           .isRateLimited(appForegroundRateLimit)
           .doOnSuccess(
