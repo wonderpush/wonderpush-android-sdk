@@ -16,6 +16,8 @@ package com.wonderpush.sdk.inappmessaging.internal;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -38,8 +40,12 @@ import androidx.annotation.NonNull;
  * <ul>
  *   <li>App resumed phone screen is unlocked
  *   <li>App starts when app icon is clicked
- *   <li>App resumes aftercompletion of phone call
+ *   <li>App resumes after completion of phone call
  *   <li>App is chosen from recent apps menu
+ *   <li>A routing activity won't fire an event until we land on a normal activity, to support
+ *       splash screens
+ *   <li>A routing activity between two normal activities within the app navigation won't fire a
+ *       spurious foreground event
  * </ul>
  *
  * <p>This works as follows
@@ -56,7 +62,8 @@ import androidx.annotation.NonNull;
  *       is considered to have never gone to the background. The runnable is removed and the app
  *       remains in the foreground.
  *   <li>Similar to the first step, an event is published in the {@link
- *       #onActivityResumed(Activity)} callback if the app was deemed to be in the background</>
+ *       #onActivityResumed(Activity)} callback if the app was deemed to be in the background.
+ *   <li>Events are held back from firing while on routing activities, identified using a metadata.
  * </ul>
  *
  * @hide
@@ -64,7 +71,11 @@ import androidx.annotation.NonNull;
 public class ForegroundNotifier implements Application.ActivityLifecycleCallbacks {
   public static final long DELAY_MILLIS = 1000;
   private final Handler handler = new Handler(Looper.getMainLooper());
-  private boolean foreground = false, paused = true, firstActivity = true;
+  private boolean heldBackAppLaunch = false;
+  private boolean heldBackForeground = false;
+  private boolean foreground = false;
+  private boolean paused = true;
+  private boolean firstActivity = true;
   private Runnable check;
   private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
 
@@ -83,13 +94,43 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
       handler.removeCallbacks(check);
     }
 
+    boolean holdBack = false;
+    try {
+      ActivityInfo ai = activity.getPackageManager().getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA);
+      Object resValue = ai.metaData == null ? null : ai.metaData.get("com.wonderpush.sdk.iam.ignoreForeground");
+      if (resValue instanceof Boolean) {
+        holdBack = (Boolean) resValue;
+      } else if ("true".equals(resValue) || "false".equals(resValue)) {
+        holdBack = "true".equals(resValue);
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      Logging.logw("could not resolve activity info in ForegroundNotifier: " + e.getMessage());
+    }
+    if (holdBack) {
+      Logging.logi("holding app launch and foreground in-app triggers while on activity " + activity.getComponentName().getShortClassName());
+    }
+
+    boolean doAppLaunch = !holdBack && heldBackAppLaunch;
+    boolean doForeground = !holdBack && heldBackForeground;
     if (wasBackground) {
-      // Detect app launch before triggering a foreground event
+      // Detect app launch
       if (firstActivity) {
         firstActivity = false;
-        Logging.logi("app launch");
-        foregroundSubject.onNext(APP_LAUNCH);
+        heldBackAppLaunch = holdBack;
+        doAppLaunch = !holdBack;
       }
+      heldBackForeground = holdBack;
+      doForeground = !holdBack;
+    }
+
+    // Trigger an app launch before a foreground event
+    if (doAppLaunch) {
+      heldBackAppLaunch = false;
+      Logging.logi("app launch");
+      foregroundSubject.onNext(APP_LAUNCH);
+    }
+    if (doForeground) {
+      heldBackForeground = false;
       Logging.logi("went foreground");
       foregroundSubject.onNext(ON_FOREGROUND);
     }
@@ -104,7 +145,15 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
     }
 
     handler.postDelayed(
-        check = () -> foreground = (!foreground || !paused) && foreground, DELAY_MILLIS);
+        check = this::delayedBackgroundCheck, DELAY_MILLIS);
+  }
+
+  private void delayedBackgroundCheck() {
+    if (paused) {
+      foreground = false;
+      heldBackAppLaunch = false;
+      heldBackForeground = false;
+    }
   }
 
   @Override
