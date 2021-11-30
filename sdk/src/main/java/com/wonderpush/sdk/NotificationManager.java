@@ -959,7 +959,7 @@ public class NotificationManager {
                 ;
     }
 
-    public static void handleOpenedNotificationFromTrackingActivity(Context context, Intent intent, NotificationModel notif) {
+    protected static void handleOpenedNotificationFromTrackingActivity(Context context, Intent intent, NotificationModel notif) {
         ensureNotificationDismissed(context, intent, notif);
 
         WonderPush.logDebug("Handling opened notification: " + notif.getInputJSONString());
@@ -968,7 +968,7 @@ public class NotificationManager {
         handleOpenedNotification(context, intent, notif);
     }
 
-    public static void handleOpenedManuallyDisplayedDataNotification(Context context, Intent intent, NotificationModel notif) {
+    protected static void handleOpenedManuallyDisplayedDataNotification(Context context, Intent intent, NotificationModel notif) {
         WonderPush.logDebug("Handling opened manually displayed data notification: " + notif.getInputJSONString());
         trackOpenedNotification(intent, notif);
         notifyNotificationOpened(intent, notif);
