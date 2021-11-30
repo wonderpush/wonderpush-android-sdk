@@ -279,11 +279,7 @@ public class NotificationManager {
             Bundle extrasOverride = new Bundle();
             extrasOverride.putInt(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, buttonIndex);
             String targetUrl = notif.getAlert().getButtons().get(buttonIndex).targetUrl;
-            if (targetUrl != null) {
-                extrasOverride.putString("overrideTargetUrl", targetUrl);
-            }
-
-            return buildPendingIntent(true, extrasOverride, null);
+            return buildPendingIntent(true, extrasOverride, targetUrl);
         }
 
         public Intent buildIntentForDataNotificationWillOpenLocalBroadcast() {
@@ -309,11 +305,10 @@ public class NotificationManager {
         }
 
         public PendingIntent buildForWillOpenBroadcast() {
-            Bundle extrasOverride = new Bundle();
-            extrasOverride.putString("overrideTargetUrl",
+            String targetUrl =
                     WonderPush.INTENT_NOTIFICATION_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY
-                            + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST);
-            return buildPendingIntent(false, extrasOverride, null);
+                            + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST;
+            return buildPendingIntent(false, null, targetUrl);
         }
 
         public PendingIntent buildForGroupSummary() {
@@ -323,18 +318,26 @@ public class NotificationManager {
             if (this.notif.getAlert().getGroupTargetUrl() == null) {
                 return null;
             }
-            Bundle extrasOverride = new Bundle();
-            extrasOverride.putString("overrideTargetUrl", this.notif.getAlert().getGroupTargetUrl());
-            return buildPendingIntent(true, extrasOverride, null);
+            String targetUrl = this.notif.getAlert().getGroupTargetUrl();
+            return buildPendingIntent(true, null, targetUrl);
         }
 
-        private PendingIntent buildPendingIntent(boolean fromUserInteraction, Bundle extrasOverride, Map<String, String> extraQueryParams) {
+        private PendingIntent buildPendingIntent(boolean fromUserInteraction, Bundle extrasOverride, String targetUrlOverride) {
+            String targetUrl = notif.getTargetUrl();
+            if (targetUrl == null) {
+                targetUrl = WonderPush.INTENT_NOTIFICATION_WILL_OPEN_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT;
+            }
+            if (targetUrlOverride != null) {
+                targetUrl = targetUrlOverride;
+            }
+
             // Construct the WonderPush tracking intent
             Intent wpTrackingIntent = new Intent();
             wpTrackingIntent.setPackage(context.getPackageName());
             wpTrackingIntent.setClass(context, WonderPushNotificationTrackingReceiver.class);
             wpTrackingIntent.putExtra("receivedPushNotificationIntent", pushIntent);
             wpTrackingIntent.putExtra("fromUserInteraction", fromUserInteraction);
+            wpTrackingIntent.putExtra("targetUrl", targetUrl);
             if (extrasOverride != null) {
                 wpTrackingIntent.putExtras(extrasOverride);
             }
@@ -349,23 +352,11 @@ public class NotificationManager {
                     // We could add the notification's tag as query parameter too, but it's more cumbersome to pass it down here.
                     .appendQueryParameter("_cacheBuster", "" + System.currentTimeMillis() + "-" + Math.random())
                     ;
-            if (extraQueryParams != null) {
-                for (Map.Entry<String, String> extraQueryParamEntry : extraQueryParams.entrySet()) {
-                    dataUriBuilder.appendQueryParameter(extraQueryParamEntry.getKey(), extraQueryParamEntry.getValue());
-                }
-            }
             Uri dataUri = dataUriBuilder.build();
             wpTrackingIntent.setDataAndType(dataUri, WonderPush.INTENT_NOTIFICATION_TYPE);
 
             // Construct the destination intent
             Intent destinationIntent;
-            String targetUrl = notif.getTargetUrl();
-            if (extrasOverride != null && extrasOverride.containsKey("overrideTargetUrl")) {
-                targetUrl = extrasOverride.getString("overrideTargetUrl");
-            }
-            if (targetUrl == null) {
-                targetUrl = WonderPush.INTENT_NOTIFICATION_WILL_OPEN_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_DEFAULT;
-            }
             targetUrl = WonderPush.delegateUrlForDeepLink(new DeepLinkEvent(context, targetUrl));
             WonderPush.logDebug("Notification target URL: " + targetUrl);
 

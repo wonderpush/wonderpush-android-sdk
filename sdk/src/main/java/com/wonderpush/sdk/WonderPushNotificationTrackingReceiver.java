@@ -49,7 +49,7 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
             NotificationManager.handleOpenedNotificationFromTrackingActivity(this, intent, notif);
             ActivityLifecycleMonitor.onNextResume(activity -> WonderPush.showPotentialNotification(activity, intent));
 
-            String targetUrl = notif.getTargetUrl();
+            String targetUrl = intent.getStringExtra("targetUrl");
             if (targetUrl != null) {
                 Uri parsedTargetUrl = Uri.parse(targetUrl);
                 if (WonderPush.INTENT_NOTIFICATION_SCHEME.equals(parsedTargetUrl.getScheme())
