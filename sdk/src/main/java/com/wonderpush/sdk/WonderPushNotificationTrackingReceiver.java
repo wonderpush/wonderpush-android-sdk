@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -15,8 +16,12 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Track the notification click
-        track(getIntent());
+        try {
+            // Track the notification click
+            track(getIntent());
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Failed to track notification", ex);
+        }
 
         // Exit as soon as possible
         finish();
@@ -27,8 +32,12 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
 
-        // Track the notification click
-        track(getIntent());
+        try {
+            // Track the notification click
+            track(getIntent());
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Failed to track notification", ex);
+        }
 
         // Exit as soon as possible
         finish();
