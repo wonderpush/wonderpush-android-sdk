@@ -276,18 +276,14 @@ public class NotificationManager {
         }
 
         public PendingIntent buildForButton(int buttonIndex) {
-            // The button index cannot be an extra or the PendingIntent of each action will be deduplicated
-            // @see Intent#filterEquals(android.content.Intent)
-            Map<String, String> extraQueryParams = new HashMap<>(1);
-            extraQueryParams.put(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX, String.valueOf(buttonIndex));
-
             Bundle extrasOverride = new Bundle();
+            extrasOverride.putInt(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, buttonIndex);
             String targetUrl = notif.getAlert().getButtons().get(buttonIndex).targetUrl;
             if (targetUrl != null) {
                 extrasOverride.putString("overrideTargetUrl", targetUrl);
             }
 
-            return buildPendingIntent(true, extrasOverride, extraQueryParams);
+            return buildPendingIntent(true, extrasOverride, null);
         }
 
         public Intent buildIntentForDataNotificationWillOpenLocalBroadcast() {
@@ -303,6 +299,8 @@ public class NotificationManager {
                     false);
             localIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
                     true);
+            localIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX,
+                    -1);
 
             // Restrict to this application
             localIntent.setPackage(context.getPackageName());
@@ -976,7 +974,7 @@ public class NotificationManager {
     }
 
     private static void trackOpenedNotification(Intent intent, NotificationModel notif) {
-        int clickedButtonIndex = getClickedButtonIndex(intent);
+        int clickedButtonIndex = intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1);
         try {
             JSONObject trackData = new JSONObject();
             trackData.put("campaignId", notif.getCampaignId());
@@ -1000,24 +998,10 @@ public class NotificationManager {
         }
     }
 
-    private static int getClickedButtonIndex(Intent intent) {
-        if (intent.getData() != null) {
-            String buttonIndexStr = intent.getData().getQueryParameter(WonderPush.INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX);
-            try {
-                if (buttonIndexStr != null) {
-                    return Integer.parseInt(buttonIndexStr);
-                }
-            } catch (Exception ignored) { // NumberFormatException
-                WonderPush.logError("Failed to parse buttonIndex " + buttonIndexStr, ignored);
-            }
-        }
-        return -1;
-    }
-
     private static void notifyNotificationOpened(Intent intent, NotificationModel notif) {
         boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
         Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
-        int buttonIndex = getClickedButtonIndex(intent);
+        int buttonIndex = intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1);
 
         // Notify the application that the notification has been opened
         Intent notificationOpenedIntent = new Intent(WonderPush.INTENT_NOTIFICATION_OPENED);
@@ -1029,7 +1013,7 @@ public class NotificationManager {
     }
 
     private static void handleOpenedNotification(Context context, Intent intent, NotificationModel notif) {
-        int clickedButtonIndex = getClickedButtonIndex(intent);
+        int clickedButtonIndex = intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1);
         List<ActionModel> actions = null;
         if (clickedButtonIndex < 0) {
             // Notification opened actions

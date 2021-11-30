@@ -258,7 +258,7 @@ public class WonderPush {
 
     /**
      * The extra key indicating which action button the user clicked on the notification
-     * in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
+     * in a {@link #INTENT_NOTIFICATION_OPENED} intent.
      */
     public static final String INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX =
             "wonderpushButtonIndex";
@@ -334,6 +334,13 @@ public class WonderPush {
     public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE_DATA = "data";
 
     /**
+     * The extra key indicating which action button the user clicked on the notification
+     * in a {@link #INTENT_NOTIFICATION_WILL_OPEN} intent.
+     */
+    public static final String INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX =
+            INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX;
+
+    /**
      * Local intent broadcast when an event is tracked by the WonderPush SDK.
      */
     public static final String INTENT_EVENT_TRACKED = "wonderpushEventTracked";
@@ -377,11 +384,6 @@ public class WonderPush {
      * Intent query parameter key for push notification data when the user clicks the notification.
      */
     protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER = "body";
-
-    /**
-     * Intent query parameter key for identifying which notification action button the user clicked.
-     */
-    protected static final String INTENT_NOTIFICATION_QUERY_PARAMETER_BUTTON_INDEX = "buttonIndex";
 
     /**
      * Intent query parameter key for identifying which local notification id the user clicked.

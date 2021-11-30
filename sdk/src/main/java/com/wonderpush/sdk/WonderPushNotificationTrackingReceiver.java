@@ -75,6 +75,8 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
                             intent.getBooleanExtra("fromUserInteraction", true));
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
                             true);
+                    notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX,
+                            intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1));
                     LocalBroadcastManager.getInstance(this).sendBroadcast(notificationWillOpenIntent);
                 }
             }
