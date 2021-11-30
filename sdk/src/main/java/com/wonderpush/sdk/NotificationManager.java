@@ -335,8 +335,10 @@ public class NotificationManager {
             Intent wpTrackingIntent = new Intent();
             wpTrackingIntent.setPackage(context.getPackageName());
             wpTrackingIntent.setClass(context, WonderPushNotificationTrackingReceiver.class);
-            wpTrackingIntent.putExtra("receivedPushNotificationIntent", pushIntent);
-            wpTrackingIntent.putExtra("fromUserInteraction", fromUserInteraction);
+            wpTrackingIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION,
+                    pushIntent);
+            wpTrackingIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
+                    fromUserInteraction);
             wpTrackingIntent.putExtra("targetUrl", targetUrl);
             if (extrasOverride != null) {
                 wpTrackingIntent.putExtras(extrasOverride);
@@ -990,8 +992,8 @@ public class NotificationManager {
     }
 
     private static void notifyNotificationOpened(Intent intent, NotificationModel notif) {
-        boolean fromUserInteraction = intent.getBooleanExtra("fromUserInteraction", true);
-        Intent receivedPushNotificationIntent = intent.getParcelableExtra("receivedPushNotificationIntent");
+        boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION, true);
+        Intent receivedPushNotificationIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
         int buttonIndex = intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1);
 
         // Notify the application that the notification has been opened

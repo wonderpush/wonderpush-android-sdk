@@ -62,9 +62,8 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
                     Intent notificationWillOpenIntent = new Intent();
                     notificationWillOpenIntent.setPackage(getApplicationContext().getPackageName());
                     notificationWillOpenIntent.setAction(WonderPush.INTENT_NOTIFICATION_WILL_OPEN);
-                    //notificationWillOpenIntent.setData(Uri.parse(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_SCHEME + "://" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_AUTHORITY + "/" + WonderPush.INTENT_NOTIFICATION_WILL_OPEN_PATH_BROADCAST));
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
-                            (Parcelable) intent.getParcelableExtra("receivedPushNotificationIntent"));
+                            (Parcelable) intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION));
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
                             // this extra must be removed if handled outside the app,
                             // or we'll get ClassNotFoundException: E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
@@ -72,7 +71,7 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_TYPE,
                             notif.getType().toString());
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION,
-                            intent.getBooleanExtra("fromUserInteraction", true));
+                            intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION, true));
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_AUTOMATIC_OPEN,
                             true);
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX,
