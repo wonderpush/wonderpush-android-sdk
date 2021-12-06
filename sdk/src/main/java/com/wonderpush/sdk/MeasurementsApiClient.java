@@ -12,7 +12,9 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 
 public class MeasurementsApiClient {
+
     private static final String TAG = "WonderPush." + MeasurementsApiClient.class.getSimpleName();
+
     private static final okhttp3.OkHttpClient sClient = new okhttp3.OkHttpClient.Builder().eventListener(new okhttp3.EventListener() {
         @Override
         public void connectStart(okhttp3.Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
@@ -20,15 +22,18 @@ public class MeasurementsApiClient {
         }
     }).build();
     private static boolean disabled;
+
     public static void execute(Request request) {
         if (isDisabled()) {
             if (request.getHandler() != null) request.getHandler().onFailure(new Request.ClientDisabledException(), new Response("Client disabled"));
             return;
         }
+
         ApiClient.HttpMethod method = request.getMethod();
         String resource = request.getResource();
         String url = String.format("%s%s", WonderPush.MEASUREMENTS_API_URL, resource);
         String contentType = "application/x-www-form-urlencoded";
+
         final Request.Params params = request.getParams() != null ? request.getParams() : new Request.Params();
         params.add("clientId", WonderPush.getClientId());
         params.add("devicePlatform", "Android");
@@ -37,7 +42,9 @@ public class MeasurementsApiClient {
             params.add("userId", WonderPushConfiguration.getUserId());
         }
         params.add("deviceId", WonderPushConfiguration.getDeviceId());
+
         Request.BasicNameValuePair authorizationHeader = Request.getAuthorizationHeader(method, Uri.parse(url), params);
+
         WonderPush.safeDefer(() -> {
             okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
                     .url(url)
@@ -46,11 +53,13 @@ public class MeasurementsApiClient {
             if (authorizationHeader != null) {
                 requestBuilder.header(authorizationHeader.getName(), authorizationHeader.getValue());
             }
+
+            WonderPush.logDebug(TAG, "Requesting: " + humanReadableRequest(method, resource, params));
             sClient.newCall(requestBuilder.build())
                     .enqueue(new SafeOkHttpCallback() {
                         @Override
                         public void onFailureSafe(okhttp3.Call call, IOException e) {
-                            Log.w(TAG, String.format("Request the measurements API %s failed", resource), e);
+                            Log.w(TAG, "Request failed: " + humanReadableRequest(method, resource, params), e);
                             if (request.getHandler() != null) {
                                 request.getHandler().onFailure(e, null);
                             }
@@ -70,7 +79,7 @@ public class MeasurementsApiClient {
                                 }
                                 return;
                             }
-                            if (WonderPush.getLogging()) Log.d(TAG, String.format("Request the measurements API %s complete. Payload: %s", resource, params.toString()));
+                            WonderPush.logDebug(TAG, "Request successful: (" + response.code() + ") " + responseString + " (for " + humanReadableRequest(method, resource, params) + ")");
 
                             // Read config version
                             if (responseJson != null && responseJson.has("_configVersion") && !responseJson.isNull("_configVersion")) {
@@ -97,4 +106,9 @@ public class MeasurementsApiClient {
     public static void setDisabled(boolean disabled) {
         MeasurementsApiClient.disabled = disabled;
     }
+
+    private static String humanReadableRequest(ApiClient.HttpMethod method, String resource, Request.Params params) {
+        return method + " " + resource + "?" + params.toHumanReadableString();
+    }
+
 }

@@ -217,7 +217,7 @@ class ApiClient {
         ResponseHandler wrapperHandler = new ResponseHandler() {
             @Override
             public void onSuccess(int status, Response response) {
-                WonderPush.logDebug("Request successful: (" + status + ") " + response + " (for " + request + ")");
+                WonderPush.logDebug(TAG, "Request successful: (" + status + ") " + response + " (for " + request.toHumanReadableString() + ")");
                 if (request.getHandler() != null) {
                     request.getHandler().onSuccess(status, response);
                 }
@@ -225,7 +225,7 @@ class ApiClient {
 
             @Override
             public void onFailure(Throwable e, Response errorResponse) {
-                WonderPush.logError("Request failed: " + errorResponse, e);
+                WonderPush.logError(TAG, "Request failed: " + errorResponse + " (for " + request.toHumanReadableString() + ")", e);
                 if (errorResponse != null && ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
                     WonderPushConfiguration.invalidateCredentials();
@@ -246,7 +246,7 @@ class ApiClient {
 
             @Override
             public void onSuccess(Response response) {
-                WonderPush.logDebug("Request successful: " + response + " (for " + request + ")");
+                WonderPush.logDebug(TAG, "Request successful: " + response + " (for " + request.toHumanReadableString() + ")");
                 if (request.getHandler() != null) {
                     request.getHandler().onSuccess(response);
                 }
@@ -264,7 +264,7 @@ class ApiClient {
      */
     private static void request(final Request request) {
         if (null == request) {
-            WonderPush.logError("Request with null request.");
+            WonderPush.logError(TAG, "Request with null request.");
             return;
         }
 
@@ -277,8 +277,7 @@ class ApiClient {
                 // Generate signature
                 Request.BasicNameValuePair authorizationHeader = request.getAuthorizationHeader();
 
-                String url = WonderPushUriHelper.getAbsoluteUrl(request.getResource());
-                WonderPush.logDebug("requesting url: " + request.getMethod() + " " + url + "?" + request.getParams().getURLEncodedString());
+                WonderPush.logDebug(TAG, "Requesting: " + request.toHumanReadableString());
                 // TODO: support other contentTypes such as "application/json"
                 String contentType = "application/x-www-form-urlencoded";
 
@@ -319,7 +318,11 @@ class ApiClient {
                         try {
                             responseJson = new JSONObject(responseString);
                         } catch (JSONException e) {
-                            WonderPush.logError("Unexpected string error answer: " + response.code() + " headers: " + response.headers().toString() + " response: (" + responseString.length() + ") \"" + responseString + "\"");
+                            if (WonderPush.getLogging()) {
+                                Log.e(TAG, "Unexpected string error answer: " + response.code() + " headers: " + response.headers().toString() + " response: (" + responseString.length() + ") \"" + responseString + "\" (for " + request.toHumanReadableString() + ")", e);
+                            } else {
+                                Log.e(TAG, "Unexpected string error answer: " + response.code() + " headers: " + response.headers().toString() + " response: (" + responseString.length() + ") \"" + responseString + "\"", e);
+                            }
                             handler.onFailure(e, new Response(responseString));
                             return;
                         }
@@ -327,8 +330,11 @@ class ApiClient {
                         syncTime(responseJson);
                         declareConfigVersion(responseJson);
                         if (!response.isSuccessful()) {
-                            WonderPush.logError("Error answer: " + response.code() + " headers: " + response.headers().toString() + " response: " + responseString);
-                            WonderPush.logDebug("Request Error: " + responseString);
+                            if (WonderPush.getLogging()) {
+                                Log.e(TAG, "Error answer: " + response.code() + " headers: " + response.headers().toString() + " response: " + responseString + " (for " + request.toHumanReadableString() + ")");
+                            } else {
+                                Log.e(TAG, "Error answer: " + response.code() + " headers: " + response.headers().toString() + " response: " + responseString);
+                            }
                             handler.onFailure(null, new Response(responseJson));
                         } else {
                             handler.onSuccess(response.code(), new Response(responseJson));
@@ -353,7 +359,7 @@ class ApiClient {
                     }
                 };
 
-                HttpUrl.Builder httpUrlBuilder = HttpUrl.parse(url).newBuilder();
+                HttpUrl.Builder httpUrlBuilder = HttpUrl.parse(WonderPushUriHelper.getAbsoluteUrl(request.getResource())).newBuilder();
                 okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder()
                         .addHeader("Content-Type", contentType);
                 if (authorizationHeader != null) {
@@ -483,7 +489,7 @@ class ApiClient {
                         WonderPush.safeDefer(new Runnable() {
                             @Override
                             public void run() {
-                                WonderPush.logDebug("re-requesting access token!");
+                                WonderPush.logDebug(TAG, "re-requesting access token!");
 
                                 sIsFetchingAnonymousAccessToken = false;
                                 fetchAnonymousAccessToken(userId, handler, nbRetries - 1);
@@ -495,7 +501,7 @@ class ApiClient {
                     public void onSuccess(int statusCode, Response response) {
                         // Parse response
                         JSONObject json = response.getJSONObject();
-                        WonderPush.logDebug("Got access token response: " + json);
+                        WonderPush.logDebug(TAG, "Got access token response: " + json);
                         if (json != null && json.has("token") && json.has("data")) {
                             String token = JSONUtil.getString(json, "token");
                             JSONObject data = json.optJSONObject("data");
@@ -600,4 +606,5 @@ class ApiClient {
     static boolean isDisabled() {
         return sDisabled;
     }
+
 }

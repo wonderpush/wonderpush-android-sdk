@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -207,6 +208,10 @@ class Request {
         return "" + mMethod + " " + mResource + "?" + mParams;
     }
 
+    public String toHumanReadableString() {
+        return "" + mMethod + " " + mResource + "?" + mParams.toHumanReadableString();
+    }
+
     public static class BasicNameValuePair {
         private String name;
         private String value;
@@ -242,6 +247,14 @@ class Request {
 
         public String toString() {
             return getURLEncodedString();
+        }
+
+        public String toHumanReadableString() {
+            String rtn = toString();
+            try {
+                rtn = URLDecoder.decode(rtn, "UTF-8");
+            } catch (UnsupportedEncodingException ignored) {}
+            return rtn;
         }
 
         public String getURLEncodedString() {

@@ -456,9 +456,21 @@ public class WonderPush {
         }
     }
 
+    protected static void logDebug(String tag, String debug) {
+        if (WonderPush.SHOW_DEBUG) {
+            Log.d(tag, debug);
+        }
+    }
+
     protected static void logDebug(String debug, Throwable tr) {
         if (WonderPush.SHOW_DEBUG) {
             Log.d(TAG, debug, tr);
+        }
+    }
+
+    protected static void logDebug(String tag, String debug, Throwable tr) {
+        if (WonderPush.SHOW_DEBUG) {
+            Log.d(tag, debug, tr);
         }
     }
 
@@ -468,9 +480,21 @@ public class WonderPush {
         }
     }
 
+    protected static void logError(String tag, String msg) {
+        if (WonderPush.SHOW_DEBUG) {
+            Log.e(tag, msg);
+        }
+    }
+
     protected static void logError(String msg, Throwable tr) {
         if (WonderPush.SHOW_DEBUG) {
             Log.e(TAG, msg, tr);
+        }
+    }
+
+    protected static void logError(String tag, String msg, Throwable tr) {
+        if (WonderPush.SHOW_DEBUG) {
+            Log.e(tag, msg, tr);
         }
     }
 
