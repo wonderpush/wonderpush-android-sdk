@@ -193,7 +193,6 @@ public class JSONSyncInstallation {
     }
 
     private synchronized void _save(JSONObject state) {
-        WonderPush.logDebug("Saving installation custom state for userId " + userId + ": " + state);
         String key = userId == null ? "" : userId;
         JSONObject installationCustomSyncStatePerUserId = WonderPushConfiguration.getInstallationCustomSyncStatePerUserId();
         if (installationCustomSyncStatePerUserId == null) installationCustomSyncStatePerUserId = new JSONObject();
