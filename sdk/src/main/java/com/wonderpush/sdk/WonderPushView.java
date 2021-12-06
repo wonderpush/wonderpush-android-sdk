@@ -130,7 +130,7 @@ class WonderPushView extends FrameLayout {
         closeButtonLayoutParams.setMargins(0, closeButtonMargin, closeButtonMargin, 0);
         mCloseButton.setLayoutParams(closeButtonLayoutParams);
         mCloseButton.setImageDrawable(closeButtonDrawable);
-        WonderPushCompatibilityHelper.ViewSetBackground(mCloseButton, null);
+        mCloseButton.setBackground(null);
         mCloseButton.setPadding(0, 0, 0, 0);
         mCloseButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -163,7 +163,6 @@ class WonderPushView extends FrameLayout {
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.getSettings().setDomStorageEnabled(true);
         mWebView.getSettings().setDatabaseEnabled(true);
-        WonderPushCompatibilityHelper.WebViewSettingsSetDatabasePath(mWebView, getContext().getDir("databases", Context.MODE_PRIVATE).getPath());
         // Set the medium font size that is normally used in dialogs
         int[] attrs = new int[] { android.R.attr.textSize, android.R.attr.textColorPrimary };
         TypedArray ta = WonderPushDialogBuilder.getDialogStyledAttributes(getContext(), attrs, android.R.attr.textAppearanceMedium, android.R.style.TextAppearance_Medium);

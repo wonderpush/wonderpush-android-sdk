@@ -459,12 +459,10 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
           public void onError(Exception e) {
             Logging.loge("Image download failure ");
             if (layoutListener != null) {
-              WonderPushCompatibilityHelper.removeOnGlobalLayoutListener(
-                  bindingWrapper
+              bindingWrapper
                       .getImageView()
-                      .getViewTreeObserver(),
-                  layoutListener
-              );
+                      .getViewTreeObserver()
+                      .removeOnGlobalLayoutListener(layoutListener);
             }
             cancelTimers(); // Not strictly necessary.
 

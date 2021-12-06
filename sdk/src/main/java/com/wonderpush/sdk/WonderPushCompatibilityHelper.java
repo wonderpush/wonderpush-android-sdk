@@ -15,36 +15,9 @@ import android.webkit.WebView;
 
 public class WonderPushCompatibilityHelper {
 
-    @SuppressLint("NewApi")
-    @SuppressWarnings("deprecation")
-    public static void ViewSetBackground(View view, Drawable background) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            view.setBackground(background);
-        } else {
-            view.setBackgroundDrawable(background);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    public static void WebViewSettingsSetDatabasePath(WebView webView, String path) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            webView.getSettings().setDatabasePath(path);
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    @SuppressWarnings("deprecation")
-    public static int getIntentFlagActivityNewDocument() {
-        if (Build.VERSION.SDK_INT >= 21) {
-            return Intent.FLAG_ACTIVITY_NEW_DOCUMENT;
-        } else {
-            return Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET;
-        }
-    }
-
     @TargetApi(Build.VERSION_CODES.M)
     public static int getPendingIntentFlagImmutable() {
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return PendingIntent.FLAG_IMMUTABLE;
         } else {
             return 0;
@@ -77,15 +50,6 @@ public class WonderPushCompatibilityHelper {
             return group != null && group.isBlocked();
         }
         return false;
-    }
-
-    @SuppressWarnings("deprecation")
-    public static void removeOnGlobalLayoutListener(ViewTreeObserver vto, ViewTreeObserver.OnGlobalLayoutListener listener) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            vto.removeGlobalOnLayoutListener(listener);
-        } else {
-            vto.removeOnGlobalLayoutListener(listener);
-        }
     }
 
 }

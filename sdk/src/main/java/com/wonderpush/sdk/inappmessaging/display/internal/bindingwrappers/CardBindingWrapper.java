@@ -224,9 +224,7 @@ public class CardBindingWrapper extends BindingWrapper {
   public class ScrollViewAdjustableListener implements ViewTreeObserver.OnGlobalLayoutListener {
     @Override
     public void onGlobalLayout() {
-      WonderPushCompatibilityHelper.removeOnGlobalLayoutListener(
-          imageView.getViewTreeObserver(),
-          this);
+      imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
     }
   }
 }
