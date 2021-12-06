@@ -136,7 +136,6 @@ class ActivityLifecycleMonitor {
                 startFirstDate = TimeSync.getTime();
             }
             ++startCount;
-            updatePresence(true);
         }
 
         @Override
