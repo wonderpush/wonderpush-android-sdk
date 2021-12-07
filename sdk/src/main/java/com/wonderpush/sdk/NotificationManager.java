@@ -448,23 +448,32 @@ public class NotificationManager {
             } else {
                 TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
                 stackBuilder.addNextIntentWithParentStack(destinationIntent);
-                if (destinationIntent.getPackage() != null && stackBuilder.getIntentCount() == 1) {
-                    // The target activity has no parent
-                    Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-                    ComponentName defaultActivity = launchIntent == null ? null : launchIntent.resolveActivity(context.getPackageManager());
-                    if (defaultActivity != null) {
-                        ComponentName resolvedActivity = destinationIntent.resolveActivity(context.getPackageManager());
-                        if (!resolvedActivity.getClassName().equals(defaultActivity.getClassName())) {
-                            WonderPush.logDebug("Injecting the default activity as parent to the orphan target activity to avoid closing app on the user pressing back");
-                            // Add the default activity as parent of the target activity
-                            // it has otherwise no parent and pressing back would close the application
-                            stackBuilder = TaskStackBuilder.create(context);
-                            stackBuilder.addNextIntentWithParentStack(launchIntent);
-                            stackBuilder.addNextIntent(destinationIntent);
-                        } // else: the target activity is already the default activity, don't add anything to the parent stack
+                if (destinationIntent.getPackage() == null) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                        Log.w(TAG, "Before Android 23 there is a known bug preventing from tracking opens when the deeplink opens an external application. Contact us if needed.");
+                    } else {
+                        wpTrackingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); // avoid bringing the background app to the front
+                        stackBuilder.addNextIntent(wpTrackingIntent);
                     }
+                } else {
+                    if (stackBuilder.getIntentCount() == 1) {
+                        // The target activity has no parent
+                        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                        ComponentName defaultActivity = launchIntent == null ? null : launchIntent.resolveActivity(context.getPackageManager());
+                        if (defaultActivity != null) {
+                            ComponentName resolvedActivity = destinationIntent.resolveActivity(context.getPackageManager());
+                            if (resolvedActivity != null && !resolvedActivity.getClassName().equals(defaultActivity.getClassName())) {
+                                WonderPush.logDebug("Injecting the default activity as parent to the orphan target activity to avoid closing app on the user pressing back");
+                                // Add the default activity as parent of the target activity
+                                // it has otherwise no parent and pressing back would close the application
+                                stackBuilder = TaskStackBuilder.create(context);
+                                stackBuilder.addNextIntentWithParentStack(launchIntent);
+                                stackBuilder.addNextIntent(destinationIntent);
+                            } // else: the target activity is already the default activity, don't add anything to the parent stack
+                        }
+                    }
+                    stackBuilder.addNextIntent(wpTrackingIntent);
                 }
-                stackBuilder.addNextIntent(wpTrackingIntent);
                 intents = stackBuilder.getIntents();
                 // Clear the first intent of any flags added by TaskStackBuilder
                 if (intents.length > 0) {
