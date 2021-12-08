@@ -102,11 +102,11 @@ public class RemoteConfigManager {
     }
 
     public void read(@Nonnull RemoteConfigHandler handler) {
-        if (isFetching) {
-            synchronized (queuedHandlers) {
+        synchronized (this) {
+            if (isFetching) {
                 queuedHandlers.add(handler);
+                return;
             }
-            return;
         }
 
         readConfigAndHighestDeclaredVersionFromStorage((RemoteConfig storedConfig, String highestVersion, Throwable storageError) -> {
@@ -183,13 +183,13 @@ public class RemoteConfigManager {
     }
 
     private void fetchAndStoreConfig(@Nullable String version, @Nullable RemoteConfig currentConfig, @Nullable RemoteConfigHandler completion) {
-        if (isFetching) {
-            if (completion != null) {
-                synchronized (queuedHandlers) {
+        synchronized (this) {
+            if (isFetching) {
+                if (completion != null) {
                     queuedHandlers.add(completion);
                 }
+                return;
             }
-            return;
         }
 
         // Is fetch disabled?
@@ -205,15 +205,14 @@ public class RemoteConfigManager {
         remoteConfigFetcher.fetchRemoteConfig(version, (RemoteConfig newConfig, Throwable fetchError) -> {
 
             RemoteConfigHandler handler = (RemoteConfig config, Throwable error) -> {
-                synchronized (queuedHandlers) {
-                    List<RemoteConfigHandler> queuedHandlersCopy = new ArrayList<>(queuedHandlers);
-                    queuedHandlers.clear();
-                    for (RemoteConfigHandler h : queuedHandlersCopy) {
-                        h.handle(config, error);
-                    }
-                }
+                List<RemoteConfigHandler> queuedHandlersCopy;
                 synchronized (this) {
                     isFetching = false;
+                    queuedHandlersCopy = new ArrayList<>(queuedHandlers);
+                    queuedHandlers.clear();
+                }
+                for (RemoteConfigHandler h : queuedHandlersCopy) {
+                    h.handle(config, error);
                 }
                 if (completion != null) completion.handle(config, error);
             };

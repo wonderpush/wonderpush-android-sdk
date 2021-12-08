@@ -890,4 +890,59 @@ public class RemoteConfigTest {
 
         future.get();
     }
+
+    /**
+     * Checking that fetching without prior declareVersion call fetches the config.
+     */
+    @Test
+    public void testReentrantRead() throws ExecutionException, InterruptedException {
+        // The async fetcher lets us call the completion handler ourselves.
+        AsyncRemoteConfigFetcher fetcher = new AsyncRemoteConfigFetcher();
+        manager.remoteConfigFetcher = fetcher;
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        // The first read triggers the fetch
+        manager.read((RemoteConfig config, Throwable error) -> {
+            // This second read is done when a non-queued handler is running
+            manager.read((RemoteConfig config2, Throwable error2) -> {
+                future.complete(null);
+            });
+        });
+
+        fetcher.resolve(RemoteConfig.with(new JSONObject(), "1.0.0"), null);
+
+        // Wait for test async stuff to complete
+        future.get();
+    }
+
+    /**
+     * Checking that fetching without prior declareVersion call fetches the config.
+     */
+    @Test
+    public void testReentrantQueuedRead() throws ExecutionException, InterruptedException {
+        // The async fetcher lets us call the completion handler ourselves.
+        AsyncRemoteConfigFetcher fetcher = new AsyncRemoteConfigFetcher();
+        manager.remoteConfigFetcher = fetcher;
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        // The first read triggers the fetch
+        manager.read((RemoteConfig config, Throwable error) -> {
+        });
+
+        // The second read is queued
+        manager.read((RemoteConfig config, Throwable error) -> {
+            // This third read is done when a queued handler is running
+            manager.read((RemoteConfig config2, Throwable error2) -> {
+                future.complete(null);
+            });
+        });
+
+        fetcher.resolve(RemoteConfig.with(new JSONObject(), "1.0.0"), null);
+
+        // Wait for test async stuff to complete
+        future.get();
+    }
+
 }
