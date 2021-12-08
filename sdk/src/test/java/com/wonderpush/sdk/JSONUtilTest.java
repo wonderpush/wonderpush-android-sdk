@@ -190,6 +190,7 @@ public class JSONUtilTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testNumberClasses() throws JSONException {
         JSONObject a, b;
 
