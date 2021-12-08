@@ -171,6 +171,12 @@ public class JSONUtilTest {
         assertEquals(new JSONObject("{\"a\": \"foo\"}"),
                 JSONUtil.diff(new JSONObject("{\"a\": {\"aa\":1}}"), new JSONObject("{\"a\": \"foo\"}")));
 
+        assertEquals(new JSONObject("{\"a\": \"foo\"}"),
+                JSONUtil.diff(new JSONObject("{\"a\": 1}"), new JSONObject("{\"a\": \"foo\"}")));
+
+        assertEquals(new JSONObject("{\"a\": 1}"),
+                JSONUtil.diff(new JSONObject("{\"a\": \"foo\"}"), new JSONObject("{\"a\": 1}")));
+
     }
 
     @Test
@@ -181,6 +187,129 @@ public class JSONUtilTest {
 
         assertEquals(new JSONObject("{\"a\": null}"),
                 JSONUtil.diff(new JSONObject("{\"a\": {\"aa\":1}}"), new JSONObject("{}")));
+    }
+
+    @Test
+    public void testNumberClasses() throws JSONException {
+        JSONObject a, b;
+
+        // A few manual tests first
+
+        a = new JSONObject();
+        a.put("a", new Integer(3600));
+        b = new JSONObject();
+        b.put("a", new Long(3600L));
+        assertEquals(new JSONObject(),
+                JSONUtil.diff(a ,b));
+
+        a = new JSONObject();
+        a.put("a", 3600);
+        b = new JSONObject();
+        b.put("a", 3600L);
+        assertEquals(new JSONObject(),
+                JSONUtil.diff(a ,b));
+
+        a = new JSONObject();
+        a.put("a", 3600);
+        b = new JSONObject();
+        b.put("a", new Float(3600));
+        assertEquals(new JSONObject(),
+                JSONUtil.diff(a ,b));
+
+        a = new JSONObject();
+        a.put("a", 3600);
+        b = new JSONObject();
+        b.put("a", 3600D);
+        assertEquals(new JSONObject(),
+                JSONUtil.diff(a ,b));
+
+        a = new JSONObject();
+        a.put("a", new Float(3600));
+        b = new JSONObject();
+        b.put("a", 3600D);
+        assertEquals(new JSONObject(),
+                JSONUtil.diff(a ,b));
+
+        // Exhaustive tests next
+        // We compare a few differently-sized numbers across underlying types
+
+        byte oneByte = 1;
+        short oneShort = 1;
+        int oneInt = 1;
+        long oneLong = 1;
+        float oneFloat = 1;
+        double oneDouble = 1;
+        // Test without boxing and with explicit boxing to compare against small interned numerics too
+        Object[] ones = new Object[] {
+                oneByte,
+                new Byte(oneByte),
+                oneShort,
+                new Short(oneShort),
+                oneInt,
+                new Integer(oneInt),
+                oneLong,
+                new Long(oneLong),
+                oneFloat,
+                new Float(oneFloat),
+                oneDouble,
+                new Double(oneDouble),
+        };
+
+        // Compare bigger, non interned numbers
+        short biggerShort = 32000;
+        int biggerInt = 32000;
+        long biggerLong = 32000;
+        float biggerFloat = 32000;
+        double biggerDouble = 32000;
+        Object[] bigger = new Object[] {
+                biggerShort,
+                new Short(biggerShort),
+                biggerInt,
+                new Integer(biggerInt),
+                biggerLong,
+                new Long(biggerLong),
+                biggerFloat,
+                new Float(biggerFloat),
+                biggerDouble,
+                new Double(biggerDouble),
+        };
+
+        // Compare numbers that cannot be represented as non floating points
+        float biggererFloat = Float.MAX_VALUE;
+        double biggererDouble = Float.MAX_VALUE;
+        Object[] biggerer = new Object[] {
+                biggererFloat,
+                new Float(biggererFloat),
+                biggererDouble,
+                new Double(biggererDouble),
+        };
+
+        Object[][] suites = new Object[][] {
+                ones, bigger, biggerer,
+        };
+
+        // For each suite…
+        for (Object[] suiteA : suites) {
+            for (Object[] suiteB : suites) {
+                // …compare each couple of values
+                for (Object valueA : suiteA) {
+                    for (Object valueB : suiteB) {
+                        a = new JSONObject();
+                        a.put("a", valueA);
+                        b = new JSONObject();
+                        b.put("a", valueB);
+                        assertEquals(
+                                suiteA == suiteB
+                                        // If values are taken from the same suite, the diff should be empty
+                                        ? new JSONObject()
+                                        // If values are taken from different suites, the diff should not be empty
+                                        : b,
+                                JSONUtil.diff(a, b)
+                        );
+                    }
+                }
+            }
+        }
     }
 
 }

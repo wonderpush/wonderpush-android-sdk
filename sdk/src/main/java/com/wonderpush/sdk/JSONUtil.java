@@ -166,6 +166,12 @@ public class JSONUtil {
             return true;
         } else if (a == null || b == null) {
             return false;
+        } else if (a instanceof Number && b instanceof Number) {
+            if (a instanceof Float || b instanceof Float
+                    || a instanceof Double || b instanceof Double) {
+                return ((Number) a).doubleValue() == ((Number) b).doubleValue();
+            }
+            return ((Number) a).longValue() == ((Number) b).longValue();
         } else if (a.getClass() != b.getClass()) {
             return false;
         } else if (a instanceof JSONObject) {
