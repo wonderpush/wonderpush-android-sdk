@@ -30,7 +30,7 @@ public class FCMPushService implements PushService {
     public static final String IDENTIFIER = "FCM"; // This key serves for ordering in case multiple push services are available
     static final String FIREBASE_DEFAULT_PROJECT_ID = "wonderpush-shared-project";
     static final String FIREBASE_DEFAULT_APPLICATION_ID = "1:416361470460:android:fc011131a2bdecf97eba79";
-    static final String FIREBASE_DEFAULT_API_KEY_BASE64 = "QUl6YVN5Qnp3WjVmUkpiQW9oSTE1NFRWRzFvdVZJS2tLODNvT09V";
+    static final String FIREBASE_DEFAULT_API_KEY_REV_BASE64_REV = "BlkehNVeDJVWxdHNnZTWDVna28VMppWMshEOzd2USR3XK1iSDNTR";
     static final String WONDERPUSH_DEFAULT_SENDER_ID = "1023997258979";
     static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
     static Context sContext;
@@ -177,7 +177,7 @@ public class FCMPushService implements PushService {
                         new FirebaseOptions.Builder()
                                 .setApplicationId(FIREBASE_DEFAULT_APPLICATION_ID)
                                 .setProjectId(FIREBASE_DEFAULT_PROJECT_ID)
-                                .setApiKey(new String(Base64.decode(FIREBASE_DEFAULT_API_KEY_BASE64, Base64.DEFAULT), StandardCharsets.UTF_8))
+                                .setApiKey(new StringBuilder(new String(Base64.decode(new StringBuilder(FIREBASE_DEFAULT_API_KEY_REV_BASE64_REV).reverse().toString(), Base64.DEFAULT), StandardCharsets.UTF_8)).reverse().toString())
                                 .setGcmSenderId(sSenderId)
                                 .build(),
                         FIREBASE_APP_NAME + "-3"
