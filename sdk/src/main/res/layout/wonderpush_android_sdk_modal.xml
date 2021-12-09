@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- This file should be text identical to layout/modal.xml.  The only reason it exists
-     is to make sure that tablets always use the portrait modal layout, even when they are
-     in landscape.  This works because "sw600dp" is more specific than "land" so it gets
-     chosen by the Android resource system -->
+<!-- This file should be text identical to layout-sw600dp/modal.xml.
+     See comment there for reasoning. -->
+
 <com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/modal_root"
@@ -11,7 +10,7 @@
     android:clipToPadding="false"
     android:padding="24dp">
 
-    <include layout="@layout/modal_portrait_inner" />
+    <include layout="@layout/wonderpush_android_sdk_modal_portrait_inner" />
 
     <Button
         android:id="@+id/collapse_button"
@@ -19,4 +18,5 @@
         android:layout_alignEnd="@+id/modal_content_root"
         android:layout_alignRight="@+id/modal_content_root"
         android:layout_alignTop="@+id/modal_content_root" />
+
 </com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout>

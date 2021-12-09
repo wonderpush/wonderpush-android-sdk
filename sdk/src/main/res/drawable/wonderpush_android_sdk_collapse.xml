@@ -6,5 +6,5 @@
     </shape>
   </item>
   <item
-      android:drawable="@drawable/btn_clear"/>
+      android:drawable="@drawable/wonderpush_android_sdk_btn_clear"/>
 </layer-list>

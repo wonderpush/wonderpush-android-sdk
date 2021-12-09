@@ -1433,12 +1433,12 @@ public class NotificationManager {
                 } catch (ActivityNotFoundException e2) {
                     WonderPush.logDebug("No activity can open URL " + open.getDataString());
                     Log.w(NotificationManager.TAG, "Cannot open map!");
-                    Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, R.string.wonderpush_android_sdk_could_not_open_location, Toast.LENGTH_SHORT).show();
                 }
             }
         } catch (Exception e) {
             Log.e(NotificationManager.TAG, "Unexpected error while opening map", e);
-            Toast.makeText(context, R.string.wonderpush_could_not_open_location, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.wonderpush_android_sdk_could_not_open_location, Toast.LENGTH_SHORT).show();
         }
     }
 

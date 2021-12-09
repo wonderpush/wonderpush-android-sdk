@@ -66,7 +66,7 @@ public class ImageBindingWrapper extends BindingWrapper {
   public ViewTreeObserver.OnGlobalLayoutListener inflate(
       List<View.OnClickListener> actionListeners,
       View.OnClickListener dismissOnClickListener) {
-    View v = inflater.inflate(R.layout.image, null);
+    View v = inflater.inflate(R.layout.wonderpush_android_sdk_image, null);
     imageRoot = v.findViewById(R.id.image_root);
     imageContentRoot = v.findViewById(R.id.image_content_root);
     imageView = v.findViewById(R.id.image_view);

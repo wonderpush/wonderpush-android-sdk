@@ -73,7 +73,7 @@ class InAppManager {
     private static void createDefaultCloseButtonIfNeeded(WonderPushDialogBuilder builder) {
         if (builder.getNotificationModel().getButtonCount() == 0) {
             ButtonModel defaultButton = new ButtonModel();
-            defaultButton.label = builder.getContext().getResources().getString(R.string.wonderpush_close);
+            defaultButton.label = builder.getContext().getResources().getString(R.string.wonderpush_android_sdk_close);
             builder.getNotificationModel().addButton(defaultButton);
         }
     }
@@ -134,7 +134,7 @@ class InAppManager {
         }
         final NotificationMapModel.Point point = place.getPoint();
 
-        final View dialogView = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.wonderpush_notification_map_dialog, null, false);
+        final View dialogView = ((LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.wonderpush_android_sdk_notification_map_dialog, null, false);
         final TextView text = (TextView) dialogView.findViewById(R.id.wonderpush_notification_map_dialog_text);
         if (notif.getMessage() != null) {
             text.setVisibility(View.VISIBLE);
@@ -147,14 +147,14 @@ class InAppManager {
         if (notif.getButtonCount() == 0) {
             // Close button
             ButtonModel closeButton = new ButtonModel();
-            closeButton.label = context.getResources().getString(R.string.wonderpush_close);
+            closeButton.label = context.getResources().getString(R.string.wonderpush_android_sdk_close);
             ActionModel closeAction = new ActionModel();
             closeAction.setType(ActionModel.Type.CLOSE);
             closeButton.actions.add(closeAction);
             notif.addButton(closeButton);
             // Open button
             ButtonModel openButton = new ButtonModel();
-            openButton.label = context.getResources().getString(R.string.wonderpush_open);
+            openButton.label = context.getResources().getString(R.string.wonderpush_android_sdk_open);
             ActionModel openAction = new ActionModel();
             openAction.setType(ActionModel.Type.MAP_OPEN);
             openAction.setMap(map);

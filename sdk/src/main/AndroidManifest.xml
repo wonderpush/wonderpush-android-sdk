@@ -45,7 +45,7 @@
             <path-permission android:pathPrefix="" />
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/wp_file_provider_paths" />
+                android:resource="@xml/wonderpush_android_sdk_file_provider_paths" />
         </provider>
 
         <receiver android:name="com.wonderpush.sdk.ConfigurationChangedReceiver"

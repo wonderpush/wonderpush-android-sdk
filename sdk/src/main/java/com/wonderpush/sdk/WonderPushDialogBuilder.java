@@ -83,7 +83,7 @@ class WonderPushDialogBuilder {
         if (listener == null) {
             WonderPush.logError("Calling WonderPushDialogBuilder.setupButtons() without OnChoice listener, ignoring!");
             if (notif.getButtonCount() > 0) {
-                builder.setNegativeButton(R.string.wonderpush_close, null);
+                builder.setNegativeButton(R.string.wonderpush_android_sdk_close, null);
             }
             return this;
         }

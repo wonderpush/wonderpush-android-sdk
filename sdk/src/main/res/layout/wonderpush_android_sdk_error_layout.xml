@@ -23,14 +23,14 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/wonderpush_cancel" />
+            android:text="@string/wonderpush_android_sdk_cancel" />
 
         <Button
             android:id="@+id/wonderpush_retry_button"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/wonderpush_retry" />
+            android:text="@string/wonderpush_android_sdk_retry" />
 
     </LinearLayout>
 

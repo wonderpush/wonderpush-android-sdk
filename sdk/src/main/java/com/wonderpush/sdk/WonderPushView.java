@@ -88,7 +88,7 @@ class WonderPushView extends FrameLayout {
     private void init() {
         // Create the error layout
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mErrorLayout = (ViewGroup) inflater.inflate(R.layout.wonderpush_error_layout, this, false);
+        mErrorLayout = (ViewGroup) inflater.inflate(R.layout.wonderpush_android_sdk_error_layout, this, false);
         if (mErrorLayout != null) {
             // Configure refresh button
             Button refreshButton = (Button) mErrorLayout.findViewById(R.id.wonderpush_retry_button);
@@ -363,7 +363,7 @@ class WonderPushView extends FrameLayout {
                         @Override
                         public void run() {
                             view.stopLoading();
-                            mMessageView.setText(R.string.wonderpush_network_error);
+                            mMessageView.setText(R.string.wonderpush_android_sdk_network_error);
                             setUserInterfaceState(new ErrorState());
                             // if we are preloading we must remove the preloaded view from the preloaded view pool
                             // if (WonderPushView.this.mIsPreloading) {
@@ -589,7 +589,7 @@ class WonderPushView extends FrameLayout {
             mCloseButton.setVisibility(View.GONE);
             mErrorLayout.setVisibility(View.VISIBLE);
             if (!WonderPushView.this.mIsPreloading) {
-                Toast.makeText(getContext(), R.string.wonderpush_network_error, Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), R.string.wonderpush_android_sdk_network_error, Toast.LENGTH_LONG).show();
             }
             if (mStateListener != null) {
                 mStateListener.onError();

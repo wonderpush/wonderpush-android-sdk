@@ -8,7 +8,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_centerInParent="true"
-    android:background="@drawable/rounded_layout"
+    android:background="@drawable/wonderpush_android_sdk_rounded_layout"
     android:padding="24dp"
     android:theme="@style/WPIamUI"
     iam:maxHeightPct="@dimen/dialogHeightPct"
@@ -27,7 +27,7 @@
         android:id="@+id/image_view"
         style="@style/WPIamUI.ModalImageView"
         android:layout_gravity="center_horizontal"
-        android:contentDescription="@string/modal_inner_content_descriptor"
+        android:contentDescription="@string/wonderpush_android_sdk_modal_inner_content_descriptor"
         android:scaleType="centerInside"
         tools:src="@drawable/placeholder_550_350" />
 

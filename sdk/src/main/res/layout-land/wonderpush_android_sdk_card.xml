@@ -15,7 +15,7 @@
         app:cardCornerRadius="6dp"
         app:contentPadding="0dp">
 
-        <include layout="@layout/card_landscape_inner" />
+        <include layout="@layout/wonderpush_android_sdk_card_landscape_inner" />
 
     </androidx.cardview.widget.CardView>
 

@@ -16,14 +16,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clickable="true"
-        android:background="@drawable/rounded_layout"
+        android:background="@drawable/wonderpush_android_sdk_rounded_layout"
         android:padding="24dp"
         android:layout_centerInParent="true"
         iam:maxWidthPct="0.85"
         iam:maxHeightPct="0.80">
 
         <ImageView
-            android:contentDescription="@string/modal_content_descriptor"
+            android:contentDescription="@string/wonderpush_android_sdk_modal_content_descriptor"
             android:id="@+id/image_view"
             style="@style/WPIamUI.ResizableImageView"
             android:layout_width="wrap_content"

@@ -71,7 +71,7 @@ public class BannerBindingWrapper extends BindingWrapper {
       List<View.OnClickListener> actionListeners,
       View.OnClickListener dismissOnClickListener) {
 
-    View root = inflater.inflate(R.layout.banner, null);
+    View root = inflater.inflate(R.layout.wonderpush_android_sdk_banner, null);
     bannerRoot = root.findViewById(R.id.banner_root);
     bannerContentRoot = root.findViewById(R.id.banner_content_root);
     bannerBody = root.findViewById(R.id.banner_body);

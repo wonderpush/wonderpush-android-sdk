@@ -28,6 +28,7 @@ android {
         }
     }
 
+    resourcePrefix 'wonderpush_android_sdk_hcm_'
 }
 
 dependencies {

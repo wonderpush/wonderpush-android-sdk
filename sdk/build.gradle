@@ -32,6 +32,8 @@ android {
     useLibrary 'android.test.runner'
     useLibrary 'android.test.base'
     useLibrary 'android.test.mock'
+
+    resourcePrefix 'wonderpush_android_sdk_'
 }
 
 dependencies {

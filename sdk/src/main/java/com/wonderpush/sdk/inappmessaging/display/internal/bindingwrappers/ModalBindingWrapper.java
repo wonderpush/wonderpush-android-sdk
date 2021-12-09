@@ -33,7 +33,6 @@ import android.widget.TextView;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.R;
-import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout;
@@ -76,7 +75,7 @@ public class ModalBindingWrapper extends BindingWrapper {
       List<View.OnClickListener> actionListeners,
       View.OnClickListener dismissOnClickListener) {
 
-    View root = inflater.inflate(R.layout.modal, null);
+    View root = inflater.inflate(R.layout.wonderpush_android_sdk_modal, null);
     bodyScroll = root.findViewById(R.id.body_scroll);
     button = root.findViewById(R.id.button);
     collapseImage = root.findViewById(R.id.collapse_button);
