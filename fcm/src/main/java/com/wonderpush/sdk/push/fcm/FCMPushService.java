@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -13,13 +14,14 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.WonderPushSettings;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
 import com.wonderpush.sdk.push.PushService;
+
+import java.nio.charset.StandardCharsets;
 
 public class FCMPushService implements PushService {
 
@@ -28,7 +30,7 @@ public class FCMPushService implements PushService {
     public static final String IDENTIFIER = "FCM"; // This key serves for ordering in case multiple push services are available
     static final String FIREBASE_DEFAULT_PROJECT_ID = "wonderpush-shared-project";
     static final String FIREBASE_DEFAULT_APPLICATION_ID = "1:416361470460:android:fc011131a2bdecf97eba79";
-    static final String FIREBASE_DEFAULT_API_KEY = "AIzaSyBzwZ5fRJbAohI154TVG1ouVIKkK83oOOU";
+    static final String FIREBASE_DEFAULT_API_KEY_BASE64 = "QUl6YVN5Qnp3WjVmUkpiQW9oSTE1NFRWRzFvdVZJS2tLODNvT09V";
     static final String WONDERPUSH_DEFAULT_SENDER_ID = "1023997258979";
     static final String FIREBASE_APP_NAME = "WonderPushFirebaseApp";
     static Context sContext;
@@ -134,7 +136,7 @@ public class FCMPushService implements PushService {
                 sFirebaseApp = null;
             }
         }
-        // If still not ready, use shared credentials
+        // If still not ready, use default application
         if (sFirebaseApp == null) {
             if (WonderPush.getLogging()) Log.d(TAG, "Using the default FirebaseApp");
             try {
@@ -175,7 +177,7 @@ public class FCMPushService implements PushService {
                         new FirebaseOptions.Builder()
                                 .setApplicationId(FIREBASE_DEFAULT_APPLICATION_ID)
                                 .setProjectId(FIREBASE_DEFAULT_PROJECT_ID)
-                                .setApiKey(FIREBASE_DEFAULT_API_KEY)
+                                .setApiKey(new String(Base64.decode(FIREBASE_DEFAULT_API_KEY_BASE64, Base64.DEFAULT), StandardCharsets.UTF_8))
                                 .setGcmSenderId(sSenderId)
                                 .build(),
                         FIREBASE_APP_NAME + "-3"
