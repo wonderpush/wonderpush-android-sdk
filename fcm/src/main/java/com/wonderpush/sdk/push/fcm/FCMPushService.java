@@ -1,7 +1,10 @@
 package com.wonderpush.sdk.push.fcm;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -22,6 +25,7 @@ import com.wonderpush.sdk.push.PushServiceResult;
 import com.wonderpush.sdk.push.PushService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class FCMPushService implements PushService {
 
@@ -192,6 +196,48 @@ public class FCMPushService implements PushService {
         // Make sure we get the right Sender ID
         if (sFirebaseApp != null) {
             sSenderId = sFirebaseApp.getOptions().getGcmSenderId();
+        }
+
+        // Setup sanity check:
+        // List registered FirebaseMessagingServices to ensure we can receive push notifications
+        Boolean firebaseMessagingServiceCheck = WonderPushSettings.getBoolean("WONDERPUSH_FIREBASE_MESSAGING_SERVICE_CHECK", "wonderpush_firebase_messagingServiceCheck", "com.wonderpush.sdk.firebaseMessagingServiceCheck");
+        if (firebaseMessagingServiceCheck == null) firebaseMessagingServiceCheck = true;
+        if (firebaseMessagingServiceCheck) {
+            Intent intentToFilter = new Intent("com.google.firebase.MESSAGING_EVENT")
+                    .setPackage(context.getPackageName());
+            List<ResolveInfo> services = context.getPackageManager().queryIntentServices(intentToFilter, 0);
+            // The list of services is sorted by decreasing priority. Only the first service will ever receive anything.
+            if (services.isEmpty()) {
+                // There is always Firebase Cloud Messaging module's own service, normally
+                Log.e(TAG, "No FirebaseMessagingServices found! You will not be able to receive push notifications.");
+            } else {
+                ServiceInfo receivingService = services.get(0).serviceInfo;
+                if (receivingService == null) {
+                    // Avoid NPE if ever Android no longer fills this field
+                    Log.e(TAG, "No ServiceInfo in the first FirebaseMessagingService found!");
+                } else if (!FirebaseMessagingService.class.getCanonicalName().equals(receivingService.name)) {
+                    if (receivingService.name.startsWith(context.getPackageName())) {
+                        // This looks like a service of the application itself, only inform.
+                        // Note that if using flavors or applicationIdSuffix this test will probably not match.
+                        Log.i(TAG, "WonderPush's FirebaseMessagingService will not receive push notifications, " + receivingService.name + " will instead.");
+                    } else {
+                        Log.e(TAG, "WonderPush's FirebaseMessagingService will not receive push notifications, " + receivingService.name + " will instead.");
+                        Log.i(TAG, "Registered FirebaseMessagingServices: (" + services.size() + " services)");
+                        for (ResolveInfo ri : services) {
+                            Log.i(TAG, "- " + ri);
+                        }
+                        Log.i(TAG, "In order to fix this issue, you can either:");
+                        Log.i(TAG, "- Remove the dependency that added this service. It's possible that WonderPush makes it no longer useful.");
+                        Log.i(TAG, "- Implement your own FirebaseMessagingService class; forward onNewToken(String) and onMessageReceived(RemoteMessage) to " + FirebaseMessagingService.class.getCanonicalName() + " and likewise for the other services; register it in your AndroidManifest.xml inside your `<application>` tag: `<service android:name=\".YourFirebaseMessagingService\" android:exported=\"false\"><intent-filter><action android:name=\"com.google.firebase.MESSAGING_EVENT\"/></intent-filter></service>`.");
+                    }
+                } else if (!receivingService.enabled) {
+                    Log.e(TAG, "WonderPush's FirebaseMessagingService is disabled and will not receive push notifications.");
+                } else if (receivingService.exported) {
+                    Log.e(TAG, "WonderPush's FirebaseMessagingService should not be exported to other applications.");
+                }
+            }
+        } else {
+            if (WonderPush.getLogging()) Log.d(TAG, "WonderPush's FirebaseMessagingService check is disabled");
         }
     }
 
