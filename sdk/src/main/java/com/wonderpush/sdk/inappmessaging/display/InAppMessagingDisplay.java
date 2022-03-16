@@ -275,30 +275,35 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
     notifyIamTrigger();
 
-    InAppMessageLayoutConfig config =
-        layoutConfigs
-            .get(
-                InflaterConfigModule.configFor(
-                    inAppMessage.getMessageType(), getScreenOrientation(application)))
-            .get();
+    // Create bindingWrapper if necessary and avoid creating 2 bindingWrappers
+    // This method might be called multiple times if a new activity is created while waiting for the delay of an in-app
+    if (bindingWrapper == null) {
+      InAppMessageLayoutConfig config =
+              layoutConfigs
+                      .get(
+                              InflaterConfigModule.configFor(
+                                      inAppMessage.getMessageType(), getScreenOrientation(application)))
+                      .get();
 
-    switch (inAppMessage.getMessageType()) {
-      case BANNER:
-        bindingWrapper = bindingWrapperFactory.createBannerBindingWrapper(activity, config, inAppMessage);
-        break;
-      case MODAL:
-        bindingWrapper = bindingWrapperFactory.createModalBindingWrapper(activity, config, inAppMessage);
-        break;
-      case IMAGE_ONLY:
-        bindingWrapper = bindingWrapperFactory.createImageBindingWrapper(activity, config, inAppMessage);
-        break;
-      case CARD:
-        bindingWrapper = bindingWrapperFactory.createCardBindingWrapper(activity, config, inAppMessage);
-        break;
-      default:
-        Logging.loge("No bindings found for this message type");
-        // so we should break out completely and not attempt to show anything
-        return;
+      switch (inAppMessage.getMessageType()) {
+        case BANNER:
+          bindingWrapper = bindingWrapperFactory.createBannerBindingWrapper(activity, config, inAppMessage);
+          break;
+        case MODAL:
+          bindingWrapper = bindingWrapperFactory.createModalBindingWrapper(activity, config, inAppMessage);
+          break;
+        case IMAGE_ONLY:
+          bindingWrapper = bindingWrapperFactory.createImageBindingWrapper(activity, config, inAppMessage);
+          break;
+        case CARD:
+          bindingWrapper = bindingWrapperFactory.createCardBindingWrapper(activity, config, inAppMessage);
+          break;
+        default:
+          Logging.loge("No bindings found for this message type");
+          // so we should break out completely and not attempt to show anything
+          return;
+      }
+
     }
 
     // The WindowManager LayoutParams.TYPE_APPLICATION_PANEL requires tokens from the activity
