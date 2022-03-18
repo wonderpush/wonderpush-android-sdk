@@ -13,6 +13,11 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.ListIterator;
+
 public class WonderPushCompatibilityHelper {
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -51,5 +56,22 @@ public class WonderPushCompatibilityHelper {
         }
         return false;
     }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <E> void sort(List<E> list, Comparator<? super E> c) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            list.sort(c);
+        } else {
+            // Code taken from java.util.List.sort default implementation
+            Object[] a = list.toArray();
+            Arrays.sort(a, (Comparator) c);
+            ListIterator<E> i = list.listIterator();
+            for (Object e : a) {
+                i.next();
+                i.set((E) e);
+            }
+        }
+    }
+
 
 }

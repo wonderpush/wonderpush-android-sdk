@@ -1696,10 +1696,17 @@ public class WonderPush {
                     @Override
                     public void handle(@javax.annotation.Nullable RemoteConfig config, @javax.annotation.Nullable Throwable error) {
                         if (config == null) return;
-                        JSONSyncInstallation.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_JSON_SYNC_KEY, false));
+                        JSONObject configData = config.getData();
+                        JSONSyncInstallation.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_JSON_SYNC_KEY, false));
                         if (!JSONSyncInstallation.isDisabled()) JSONSyncInstallation.flushAll();
-                        ApiClient.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
-                        MeasurementsApiClient.setDisabled(config.getData().optBoolean(Constants.REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY, false));
+                        ApiClient.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
+                        MeasurementsApiClient.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY, false));
+
+                        WonderPushConfiguration.setMaximumUncollapsedTrackedEventsAgeMs(configData.optLong(Constants.REMOTE_CONFIG_TRACKED_EVENTS_UNCOLLAPSED_MAXIMUM_AGE_MS_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS));
+                        WonderPushConfiguration.setMaximumUncollapsedTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_UNCOLLAPSED_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_COUNT));
+                        WonderPushConfiguration.setMaximumCollapsedLastBuiltinTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_LAST_BUILTIN_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_COLLAPSED_LAST_BUILTIN_TRACKED_EVENTS_COUNT));
+                        WonderPushConfiguration.setMaximumCollapsedLastCustomTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_LAST_CUSTOM_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_COLLAPSED_LAST_CUSTOM_TRACKED_EVENTS_COUNT));
+                        WonderPushConfiguration.setMaximumCollapsedOtherTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_OTHER_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT));
                     }
                 };
 

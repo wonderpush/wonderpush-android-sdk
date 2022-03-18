@@ -9,6 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,17 @@ public class WonderPushConfiguration {
     private static final String OVERRIDE_NOTIFICATION_RECEIPT_PREF_NAME = "__override_notification_receipt";
 
     private static Context sContext;
+
+    public static final int DEFAULT_MAXIMUM_COLLAPSED_LAST_BUILTIN_TRACKED_EVENTS_COUNT = 100;
+    public static final int DEFAULT_MAXIMUM_COLLAPSED_LAST_CUSTOM_TRACKED_EVENTS_COUNT = 1000;
+    public static final int DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT = 1000;
+    public static final int DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_COUNT = 10000;
+    public static final long DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS = 90L * 24 * 60 * 60 * 1000;
+    private static int maximumCollapsedLastBuiltinTrackedEventsCount = DEFAULT_MAXIMUM_COLLAPSED_LAST_BUILTIN_TRACKED_EVENTS_COUNT;
+    private static int maximumCollapsedLastCustomTrackedEventsCount = DEFAULT_MAXIMUM_COLLAPSED_LAST_CUSTOM_TRACKED_EVENTS_COUNT;
+    private static int maximumCollapsedOtherTrackedEventsCount = DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT;
+    private static int maximumUncollapsedTrackedEventsCount = DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_COUNT;
+    private static long maximumUncollapsedTrackedEventsAgeMs = DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS;
 
     public static void initialize(Context context) {
         sContext = context.getApplicationContext();
@@ -1063,25 +1075,153 @@ public class WonderPushConfiguration {
     }
 
     static void rememberTrackedEvent(JSONObject eventData) {
+        // Note: It is assumed that the given event is more recent than any other already stored events
+
         String type = JSONUtil.getString(eventData, "type");
         if (type == null) return;
-        List<JSONObject> trackedEvents = getTrackedEvents();
-        JSONArray storeTrackedEvents = new JSONArray();
-        for (JSONObject trackedEvent : trackedEvents) {
-            // Filter out events of the given type
-            // We only keep one copy per event type
-            if (type.equals(trackedEvent.optString("type"))) continue;
-            storeTrackedEvents.put(trackedEvent);
+        String campaignId = JSONUtil.optString(eventData, "campaignId");
+        String collapsing = JSONUtil.optString(eventData, "collapsing");
+
+        List<JSONObject> oldTrackedEvents = getTrackedEvents();
+        List<JSONObject> uncollapsedEvents = new ArrayList<>(oldTrackedEvents.size() + 1); // collapsing == null
+        List<JSONObject> collapsedLastBuiltinEvents = new ArrayList<>(); // collapsing.equals("last") && type.startsWith("@")
+        List<JSONObject> collapsedLastCustomEvents = new ArrayList<>(); // collapsing.equals("last") && !type.startsWith("@")
+        List<JSONObject> collapsedOtherEvents = new ArrayList<>(); // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
+
+        long now = TimeSync.getTime();
+        long getMaximumUncollapsedTrackedEventsAgeMs = getMaximumUncollapsedTrackedEventsAgeMs();
+        for (JSONObject oldTrackedEvent : oldTrackedEvents) {
+            String oldTrackedEventCollapsing = JSONUtil.optString(oldTrackedEvent, "collapsing");
+            String oldTrackedEventType = oldTrackedEvent.optString("type");
+            // Filter out the collapsing=last event of the same type as the new event we want to add
+            if ((collapsing == null || "last".equals(collapsing)) && "last".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType)) {
+                continue;
+            }
+            // Filter out the collapsing=campaign event of the same type and campaign as the new event we want to add
+            if (campaignId != null && "campaign".equals(collapsing) && "campaign".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType) && campaignId.equals(oldTrackedEvent.optString("campaignId"))) {
+                continue;
+            }
+            // Filter out old uncollapsed events
+            if (oldTrackedEventCollapsing == null && now - oldTrackedEvent.optLong("actionDate", now) >= getMaximumUncollapsedTrackedEventsAgeMs) {
+                continue;
+            }
+            // TODO We may want to filter out old collapsing=campaign (or any non-null value other than "last") events too
+            // Store the event in the proper, per-collapsing list
+            if (oldTrackedEventCollapsing == null) {
+                uncollapsedEvents.add(oldTrackedEvent);
+            } else if ("last".equals(oldTrackedEventCollapsing)) {
+                if (oldTrackedEventType.startsWith("@")) {
+                    collapsedLastBuiltinEvents.add(oldTrackedEvent);
+                } else {
+                    collapsedLastCustomEvents.add(oldTrackedEvent);
+                }
+            } else {
+                collapsedOtherEvents.add(oldTrackedEvent);
+            }
         }
+
+        // Add the new event, uncollapsed
+        JSONObject copyOfEventData;
+        if (collapsing == null) {
+            try {
+                copyOfEventData = new JSONObject(eventData.toString());
+                uncollapsedEvents.add(copyOfEventData);
+            } catch (JSONException e) {
+                Log.e(WonderPush.TAG, "Could not store uncollapsed tracked event", e);
+            }
+        }
+
+        // Add the new event with collapsing
+        // We default to collapsing=last, but we otherwise keep any existing collapsing
         try {
-            JSONObject copyOfEventData = new JSONObject(eventData.toString());
-            // FIXME: remove me when the server sends a different DSL to clients and the database
-            copyOfEventData.put("collapsing", "last");
-            storeTrackedEvents.put(copyOfEventData);
-            setTrackedEvents(storeTrackedEvents);
+            copyOfEventData = new JSONObject(eventData.toString());
+            if (collapsing == null) {
+                copyOfEventData.put("collapsing", "last");
+                collapsing = "last";
+            }
+            if ("last".equals(collapsing)) {
+                if (type.startsWith("@")) {
+                    collapsedLastBuiltinEvents.add(copyOfEventData);
+                } else {
+                    collapsedLastCustomEvents.add(copyOfEventData);
+                }
+            } else {
+                collapsedOtherEvents.add(copyOfEventData);
+            }
         } catch (JSONException e) {
-            Log.e(WonderPush.TAG, "Could not store tracked event", e);
+            Log.e(WonderPush.TAG, "Could not store collapsed tracked event", e);
         }
+
+        // Sort events by date
+        Comparator<? super JSONObject> eventActionDateComparator = (o1, o2) -> {
+            long delta = o1.optLong("actionDate", -1) - o2.optLong("actionDate", -1);
+            if (delta < 0) return -1;
+            if (delta > 0) return 1;
+            return 0;
+        };
+        WonderPushCompatibilityHelper.sort(uncollapsedEvents, eventActionDateComparator);
+        WonderPushCompatibilityHelper.sort(collapsedLastBuiltinEvents, eventActionDateComparator);
+        WonderPushCompatibilityHelper.sort(collapsedLastCustomEvents, eventActionDateComparator);
+        WonderPushCompatibilityHelper.sort(collapsedOtherEvents, eventActionDateComparator);
+        // Impose a limit on the maximum number of tracked events
+        uncollapsedEvents = removeExcessEventsFromStart(uncollapsedEvents, getMaximumUncollapsedTrackedEventsCount());
+        collapsedLastBuiltinEvents = removeExcessEventsFromStart(collapsedLastBuiltinEvents, getMaximumCollapsedLastBuiltinTrackedEventsCount());
+        collapsedLastCustomEvents = removeExcessEventsFromStart(collapsedLastCustomEvents, getMaximumCollapsedLastCustomTrackedEventsCount());
+        collapsedOtherEvents = removeExcessEventsFromStart(collapsedOtherEvents, getMaximumCollapsedOtherTrackedEventsCount());
+        // Reconstruct the whole list
+        JSONArray storeTrackedEvents = new JSONArray();
+        for (JSONObject trackedEvent : collapsedLastBuiltinEvents) storeTrackedEvents.put(trackedEvent);
+        for (JSONObject trackedEvent : collapsedLastCustomEvents) storeTrackedEvents.put(trackedEvent);
+        for (JSONObject trackedEvent : collapsedOtherEvents) storeTrackedEvents.put(trackedEvent);
+        for (JSONObject trackedEvent : uncollapsedEvents) storeTrackedEvents.put(trackedEvent);
+
+        // Store the new list
+        setTrackedEvents(storeTrackedEvents);
+    }
+
+    private static <T> List<T> removeExcessEventsFromStart(List<T> list, int max) {
+        int excessEvents = list.size() - max;
+        return list.subList(Math.max(0, excessEvents), list.size());
+    }
+
+    static int getMaximumCollapsedLastBuiltinTrackedEventsCount() {
+        return maximumCollapsedLastBuiltinTrackedEventsCount;
+    }
+
+    static void setMaximumCollapsedLastBuiltinTrackedEventsCount(int value) {
+        maximumCollapsedLastBuiltinTrackedEventsCount = value;
+    }
+
+    static int getMaximumCollapsedLastCustomTrackedEventsCount() {
+        return maximumCollapsedLastCustomTrackedEventsCount;
+    }
+
+    static void setMaximumCollapsedLastCustomTrackedEventsCount(int value) {
+        maximumCollapsedLastCustomTrackedEventsCount = value;
+    }
+
+    static int getMaximumCollapsedOtherTrackedEventsCount() {
+        return maximumCollapsedOtherTrackedEventsCount;
+    }
+
+    static void setMaximumCollapsedOtherTrackedEventsCount(int value) {
+        maximumCollapsedOtherTrackedEventsCount = value;
+    }
+
+    static int getMaximumUncollapsedTrackedEventsCount() {
+        return maximumUncollapsedTrackedEventsCount;
+    }
+
+    static void setMaximumUncollapsedTrackedEventsCount(int value) {
+        maximumUncollapsedTrackedEventsCount = value;
+    }
+
+    static long getMaximumUncollapsedTrackedEventsAgeMs() {
+        return maximumUncollapsedTrackedEventsAgeMs;
+    }
+
+    static void setMaximumUncollapsedTrackedEventsAgeMs(long value) {
+        maximumUncollapsedTrackedEventsAgeMs = value;
     }
 
     static void setTrackedEvents(JSONArray trackedEvents) {
