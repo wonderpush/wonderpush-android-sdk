@@ -14,15 +14,18 @@
 
 package com.wonderpush.sdk;
 
+import org.json.JSONObject;
+
 /** Provides the following about any message, */
 public class NotificationMetadata {
   private final String campaignId;
   private final String notificationId;
   private final String viewId;
+  private final JSONObject reporting;
   private final boolean isTestMessage;
 
   public NotificationMetadata(NotificationModel notif) {
-    this(notif.getCampaignId(), notif.getNotificationId(), notif.getViewId(), false);
+    this(notif.getCampaignId(), notif.getNotificationId(), notif.getViewId(), notif.getReporting(), false);
   }
 
   /**
@@ -30,10 +33,11 @@ public class NotificationMetadata {
    *
    * @hide
    */
-  public NotificationMetadata(String campaignId, String notificationId, String viewId, boolean isTestMessage) {
+  public NotificationMetadata(String campaignId, String notificationId, String viewId, JSONObject reporting, boolean isTestMessage) {
     this.campaignId = campaignId;
     this.notificationId = notificationId;
     this.viewId = viewId;
+    this.reporting = reporting;
     this.isTestMessage = isTestMessage;
   }
 
@@ -47,6 +51,10 @@ public class NotificationMetadata {
 
   public String getViewId() {
     return viewId;
+  }
+
+  public JSONObject getReporting() {
+    return reporting;
   }
 
   public boolean getIsTestMessage() {

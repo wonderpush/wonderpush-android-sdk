@@ -96,7 +96,7 @@ public final class Campaign implements JSONSerializable {
     if (notificationId == null) {
       throw new InvalidJsonException("Missing notificationId in reporting payload: " + reportingJson.toString());
     }
-    notificationMetadata = new NotificationMetadata(campaignId, notificationId, viewId, false);
+    notificationMetadata = new NotificationMetadata(campaignId, notificationId, viewId, reportingJson, false);
     content = parseContent(notificationMetadata, payloadJson, contentJson);
     if (content == null) {
       throw new InvalidJsonException("Unknown message type in message node: " + contentJson.toString());

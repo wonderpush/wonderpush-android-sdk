@@ -142,6 +142,7 @@ public abstract class NotificationModel implements Parcelable {
     private String campaignId;
     private String notificationId;
     private String viewId;
+    private JSONObject reporting;
     private Type type;
     private AlertModel alert;
     private String targetUrl;
@@ -222,6 +223,7 @@ public abstract class NotificationModel implements Parcelable {
             rtn.setCampaignId(JSONUtil.getString(wpData, "c"));
             rtn.setNotificationId(JSONUtil.getString(wpData, "n"));
             rtn.setViewId(JSONUtil.getString(wpData, "v"));
+            rtn.setReporting(wpData.optJSONObject("reporting"));
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", false));
             rtn.setReceiptUsingMeasurements(wpData.optBoolean("receiptUsingMeasurements", false));
@@ -248,9 +250,16 @@ public abstract class NotificationModel implements Parcelable {
             JSONObject inApp = wpData.optJSONObject("inApp");
             if (inApp != null) {
                 JSONObject reporting = inApp.optJSONObject("reporting");
+                if (reporting == null) reporting = rtn.getReporting();
+                String campaignId = JSONUtil.optString(reporting, "campaignId");
+                if (campaignId == null) campaignId = rtn.getCampaignId();
+                String notificationId = JSONUtil.optString(reporting, "notificationId");
+                if (notificationId == null) campaignId = rtn.getNotificationId();
+                String viewId = JSONUtil.optString(reporting, "viewId");
+                if (viewId == null) viewId = rtn.getViewId();
                 JSONObject content = inApp.optJSONObject("content");
                 if (reporting != null && content != null) {
-                    NotificationMetadata notificationMetadata = new NotificationMetadata(JSONUtil.optString(reporting, "campaignId"), JSONUtil.optString(reporting, "notificationId"), JSONUtil.optString(reporting, "viewId"), false);
+                    NotificationMetadata notificationMetadata = new NotificationMetadata(campaignId, notificationId, viewId, reporting, false);
                     rtn.inAppMessage = Campaign.parseContent(notificationMetadata, new JSONObject(), content);
                 }
             }
@@ -317,6 +326,14 @@ public abstract class NotificationModel implements Parcelable {
 
     public void setViewId(String viewId) {
         this.viewId = viewId;
+    }
+
+    public JSONObject getReporting() {
+        return reporting;
+    }
+
+    public void setReporting(JSONObject reporting) {
+        this.reporting = reporting;
     }
 
     public Type getType() {

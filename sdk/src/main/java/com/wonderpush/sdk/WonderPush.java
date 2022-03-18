@@ -1438,6 +1438,7 @@ public class WonderPush {
                 if (metadata.getCampaignId() != null && !event.has("campaignId")) event.put("campaignId", metadata.getCampaignId());
                 if (metadata.getNotificationId() != null && !event.has("notificationId")) event.put("notificationId", metadata.getNotificationId());
                 if (metadata.getViewId() != null && !event.has("viewId")) event.put("viewId", metadata.getViewId());
+                if (metadata.getReporting() != null && !event.has("reporting")) event.put("reporting", metadata.getReporting());
             }
         } catch (JSONException ex) {
             WonderPush.logError("Error building event object body", ex);
@@ -1571,15 +1572,17 @@ public class WonderPush {
                 String notificationId = JSONUtil.optString(lastOpenedNotificationInfo, "notificationId");
                 String campaignId = JSONUtil.optString(lastOpenedNotificationInfo, "campaignId");
                 String viewId = JSONUtil.optString(lastOpenedNotificationInfo, "viewId");
+                JSONObject reporting = lastOpenedNotificationInfo.optJSONObject("reporting");
                 try {
                     openInfo.putOpt("notificationId", notificationId);
                     openInfo.putOpt("campaignId", campaignId);
-
+                    openInfo.putOpt("viewId", viewId);
+                    openInfo.putOpt("reporting", reporting);
                 } catch (JSONException e) {
                     logDebug("Failed to fill @APP_OPEN opened notification information", e);
                 }
-                if (campaignId != null || notificationId != null || viewId != null) {
-                    NotificationManager.setLastClickedNotificationMetadata(new NotificationMetadata(campaignId, notificationId, viewId, false));
+                if (campaignId != null || notificationId != null || viewId != null || reporting != null) {
+                    NotificationManager.setLastClickedNotificationMetadata(new NotificationMetadata(campaignId, notificationId, viewId, reporting, false));
                 }
             }
             // Presence

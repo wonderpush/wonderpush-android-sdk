@@ -1174,6 +1174,7 @@ public class NotificationManager {
         try {
             trackingData.putOpt("campaignId", notificationMetadata.getCampaignId());
             trackingData.putOpt("notificationId", notificationMetadata.getNotificationId());
+            trackingData.putOpt("reporting", notificationMetadata.getReporting());
         } catch (JSONException ex) {
             Log.e(TAG, "Unexpected error while adding notification tracking info in trackEvent", ex);
         }

@@ -56,6 +56,7 @@ public class MetricsLoggerClient {
       if (metadata.getCampaignId() != null) eventData.put("campaignId", metadata.getCampaignId());
       if (metadata.getNotificationId() != null) eventData.put("notificationId", metadata.getNotificationId());
       if (metadata.getViewId() != null) eventData.put("viewId", metadata.getViewId());
+      if (metadata.getReporting() != null) eventData.put("reporting", metadata.getReporting());
       eventData.put("actionDate", TimeSync.getTime());
     } catch (JSONException e) {}
     return eventData;
