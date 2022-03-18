@@ -250,7 +250,7 @@ public abstract class NotificationModel implements Parcelable {
                 JSONObject reporting = inApp.optJSONObject("reporting");
                 JSONObject content = inApp.optJSONObject("content");
                 if (reporting != null && content != null) {
-                    NotificationMetadata notificationMetadata = new NotificationMetadata(reporting.optString("campaignId", null), reporting.optString("notificationId", null), reporting.optString("viewId", null), false);
+                    NotificationMetadata notificationMetadata = new NotificationMetadata(JSONUtil.optString(reporting, "campaignId"), JSONUtil.optString(reporting, "notificationId"), JSONUtil.optString(reporting, "viewId"), false);
                     rtn.inAppMessage = Campaign.parseContent(notificationMetadata, new JSONObject(), content);
                 }
             }

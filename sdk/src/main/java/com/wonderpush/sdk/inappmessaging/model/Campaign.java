@@ -1,6 +1,7 @@
 package com.wonderpush.sdk.inappmessaging.model;
 
 import com.wonderpush.sdk.JSONSerializable;
+import com.wonderpush.sdk.JSONUtil;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.inappmessaging.internal.Logging;
 import org.json.JSONArray;
@@ -86,12 +87,12 @@ public final class Campaign implements JSONSerializable {
       throw new InvalidJsonException("Missing triggers in notification payload: " + notificationJson.toString());
     }
 
-    String campaignId = reportingJson.optString("campaignId");
+    String campaignId = JSONUtil.optString(reportingJson, "campaignId");
     if (campaignId == null) {
       throw new InvalidJsonException("Missing campaignId in reporting payload: " + reportingJson.toString());
     }
-    String viewId = reportingJson.optString("viewId");
-    String notificationId = reportingJson.optString("notificationId");
+    String viewId = JSONUtil.optString(reportingJson, "viewId");
+    String notificationId = JSONUtil.optString(reportingJson, "notificationId");
     if (notificationId == null) {
       throw new InvalidJsonException("Missing notificationId in reporting payload: " + reportingJson.toString());
     }

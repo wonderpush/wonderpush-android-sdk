@@ -1568,9 +1568,9 @@ public class WonderPush {
             NotificationManager.setLastClickedNotificationMetadata(null);
             // Add the information of the clicked notification
             if (now - lastOpenedNotificationDate < 10 * 1000) { // allow a few seconds between click on the notification and the call to this method
-                String notificationId = lastOpenedNotificationInfo.optString("notificationId");
-                String campaignId = lastOpenedNotificationInfo.optString("campaignId");
-                String viewId = lastOpenedNotificationInfo.optString("viewId");
+                String notificationId = JSONUtil.optString(lastOpenedNotificationInfo, "notificationId");
+                String campaignId = JSONUtil.optString(lastOpenedNotificationInfo, "campaignId");
+                String viewId = JSONUtil.optString(lastOpenedNotificationInfo, "viewId");
                 try {
                     openInfo.putOpt("notificationId", notificationId);
                     openInfo.putOpt("campaignId", campaignId);

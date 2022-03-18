@@ -14,8 +14,6 @@
 
 package com.wonderpush.sdk;
 
-import androidx.annotation.NonNull;
-
 /** Provides the following about any message, */
 public class NotificationMetadata {
   private final String campaignId;
@@ -39,12 +37,10 @@ public class NotificationMetadata {
     this.isTestMessage = isTestMessage;
   }
 
-  @NonNull
   public String getCampaignId() {
     return campaignId;
   }
 
-  @NonNull
   public String getNotificationId() {
     return notificationId;
   }
