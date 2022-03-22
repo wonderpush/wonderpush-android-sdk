@@ -249,17 +249,13 @@ public abstract class NotificationModel implements Parcelable {
             // Read in-app
             JSONObject inApp = wpData.optJSONObject("inApp");
             if (inApp != null) {
-                JSONObject reporting = inApp.optJSONObject("reporting");
-                if (reporting == null) reporting = rtn.getReporting();
-                String campaignId = JSONUtil.optString(reporting, "campaignId");
-                if (campaignId == null) campaignId = rtn.getCampaignId();
-                String notificationId = JSONUtil.optString(reporting, "notificationId");
-                if (notificationId == null) notificationId = rtn.getNotificationId();
-                String viewId = JSONUtil.optString(reporting, "viewId");
-                if (viewId == null) viewId = rtn.getViewId();
+                JSONObject inAppReporting = inApp.optJSONObject("reporting");
                 JSONObject content = inApp.optJSONObject("content");
-                if (reporting != null && content != null) {
-                    NotificationMetadata notificationMetadata = new NotificationMetadata(campaignId, notificationId, viewId, reporting, false);
+                if (inAppReporting != null && content != null) {
+                    String campaignId = JSONUtil.optString(inAppReporting, "campaignId");
+                    String notificationId = JSONUtil.optString(inAppReporting, "notificationId");
+                    String viewId = JSONUtil.optString(inAppReporting, "viewId");
+                    NotificationMetadata notificationMetadata = new NotificationMetadata(campaignId, notificationId, viewId, inAppReporting, false);
                     rtn.inAppMessage = Campaign.parseContent(notificationMetadata, new JSONObject(), content);
                 }
             }
