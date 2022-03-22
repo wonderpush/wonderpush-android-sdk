@@ -1434,11 +1434,11 @@ public class WonderPush {
             }
             // Notification metadata
             NotificationMetadata metadata = NotificationManager.getLastClickedNotificationMetadata();
-            if (metadata != null) {
-                if (metadata.getCampaignId() != null && !event.has("campaignId")) event.put("campaignId", metadata.getCampaignId());
-                if (metadata.getNotificationId() != null && !event.has("notificationId")) event.put("notificationId", metadata.getNotificationId());
-                if (metadata.getViewId() != null && !event.has("viewId")) event.put("viewId", metadata.getViewId());
-                if (metadata.getReporting() != null && !event.has("reporting")) event.put("reporting", metadata.getReporting());
+            if (metadata != null && event.isNull("campaignId") && event.isNull("notificationId") && event.isNull("viewId") && event.isNull("reporting")) {
+                event.put("campaignId", metadata.getCampaignId());
+                event.put("notificationId", metadata.getNotificationId());
+                event.put("viewId", metadata.getViewId());
+                event.put("reporting", metadata.getReporting());
             }
         } catch (JSONException ex) {
             WonderPush.logError("Error building event object body", ex);
