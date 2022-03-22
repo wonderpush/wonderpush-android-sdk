@@ -254,7 +254,7 @@ public abstract class NotificationModel implements Parcelable {
                 String campaignId = JSONUtil.optString(reporting, "campaignId");
                 if (campaignId == null) campaignId = rtn.getCampaignId();
                 String notificationId = JSONUtil.optString(reporting, "notificationId");
-                if (notificationId == null) campaignId = rtn.getNotificationId();
+                if (notificationId == null) notificationId = rtn.getNotificationId();
                 String viewId = JSONUtil.optString(reporting, "viewId");
                 if (viewId == null) viewId = rtn.getViewId();
                 JSONObject content = inApp.optJSONObject("content");
