@@ -86,6 +86,8 @@ class InAppManager {
             eventData.putOpt("custom", dialog.getInteractionEventCustom());
             eventData.put("campaignId", dialog.getNotificationModel().getCampaignId());
             eventData.put("notificationId", dialog.getNotificationModel().getNotificationId());
+            eventData.put("viewId", dialog.getNotificationModel().getViewId());
+            eventData.put("reporting", dialog.getNotificationModel().getReporting());
         } catch (JSONException e) {
             WonderPush.logError("Failed to fill the @NOTIFICATION_ACTION event", e);
         }

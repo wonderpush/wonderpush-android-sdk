@@ -70,6 +70,8 @@ public class NotificationManager {
             final JSONObject trackData = new JSONObject();
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
+            trackData.put("viewId", notif.getViewId());
+            trackData.put("reporting", notif.getReporting());
             trackData.put("actionDate", TimeSync.getTime());
             boolean notifReceipt = notif.getReceipt();
             boolean receiptUsingMeasurements = notif.getReceiptUsingMeasurements();
@@ -981,6 +983,8 @@ public class NotificationManager {
             JSONObject trackData = new JSONObject();
             trackData.put("campaignId", notif.getCampaignId());
             trackData.put("notificationId", notif.getNotificationId());
+            trackData.put("viewId", notif.getViewId());
+            trackData.put("reporting", notif.getReporting());
             trackData.put("actionDate", TimeSync.getTime());
             if (clickedButtonIndex >= 0 && notif.getAlert() != null && notif.getAlert().getButtons() != null && clickedButtonIndex < notif.getAlert().getButtons().size()) {
                 NotificationButtonModel button = notif.getAlert().getButtons().get(clickedButtonIndex);
@@ -1174,6 +1178,7 @@ public class NotificationManager {
         try {
             trackingData.putOpt("campaignId", notificationMetadata.getCampaignId());
             trackingData.putOpt("notificationId", notificationMetadata.getNotificationId());
+            trackingData.putOpt("viewId", notificationMetadata.getViewId());
             trackingData.putOpt("reporting", notificationMetadata.getReporting());
         } catch (JSONException ex) {
             Log.e(TAG, "Unexpected error while adding notification tracking info in trackEvent", ex);
