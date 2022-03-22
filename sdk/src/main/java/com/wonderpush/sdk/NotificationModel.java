@@ -223,7 +223,14 @@ public abstract class NotificationModel implements Parcelable {
             rtn.setCampaignId(JSONUtil.getString(wpData, "c"));
             rtn.setNotificationId(JSONUtil.getString(wpData, "n"));
             rtn.setViewId(JSONUtil.getString(wpData, "v"));
-            rtn.setReporting(wpData.optJSONObject("reporting"));
+            JSONObject reporting = wpData.optJSONObject("reporting");
+            rtn.setReporting(reporting);
+            if (reporting != null) {
+                // Fill reporting ids read from short fields if they were missing
+                if (rtn.getCampaignId() == null) rtn.setCampaignId(JSONUtil.getString(reporting, "campaignId"));
+                if (rtn.getNotificationId() == null) rtn.setNotificationId(JSONUtil.getString(reporting, "notificationId"));
+                if (rtn.getViewId() == null) rtn.setViewId(JSONUtil.getString(reporting, "viewid"));
+            }
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", false));
             rtn.setReceiptUsingMeasurements(wpData.optBoolean("receiptUsingMeasurements", false));
