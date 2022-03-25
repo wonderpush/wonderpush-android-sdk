@@ -57,6 +57,7 @@ import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.MessageType;
 import com.wonderpush.sdk.inappmessaging.model.ModalMessage;
+import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -298,6 +299,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         case CARD:
           bindingWrapper = bindingWrapperFactory.createCardBindingWrapper(activity, config, inAppMessage);
           break;
+        case WEBVIEW:
+          bindingWrapper = bindingWrapperFactory.createWebViewBindingWrapper(activity, config, inAppMessage);
+          break;
         default:
           Logging.loge("No bindings found for this message type");
           // so we should break out completely and not attempt to show anything
@@ -504,6 +508,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       case CARD:
         result.add(((CardMessage) message).getPrimaryActions());
         result.add(((CardMessage) message).getSecondaryActions());
+        break;
+      case WEBVIEW:
+        result.add(((WebViewMessage) message).getActions());
         break;
       case IMAGE_ONLY:
         result.add(((ImageOnlyMessage) message).getActions());

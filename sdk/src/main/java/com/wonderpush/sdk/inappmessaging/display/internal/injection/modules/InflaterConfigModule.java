@@ -65,6 +65,8 @@ public class InflaterConfigModule {
           return LayoutConfigKey.IMAGE_ONLY_PORTRAIT;
         case BANNER:
           return LayoutConfigKey.BANNER_PORTRAIT;
+        case WEBVIEW:
+          return LayoutConfigKey.WEBVIEW_PORTRAIT;
         default:
           return null;
       }
@@ -78,6 +80,8 @@ public class InflaterConfigModule {
           return LayoutConfigKey.IMAGE_ONLY_LANDSCAPE;
         case BANNER:
           return LayoutConfigKey.BANNER_LANDSCAPE;
+        case WEBVIEW:
+          return LayoutConfigKey.WEBVIEW_LANDSCAPE;
         default:
           return null;
       }
@@ -232,5 +236,41 @@ public class InflaterConfigModule {
         .setWindowHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         .setAutoDismiss(true)
         .build();
+  }
+
+  // visible for testing
+  @Provides
+  @IntoMap
+  @StringKey(LayoutConfigKey.WEBVIEW_PORTRAIT)
+  public InAppMessageLayoutConfig providesPortraitWebViewLayoutConfig() {
+    return InAppMessageLayoutConfig.builder()
+            .setMaxDialogHeightRatio(0.9f)
+            .setMaxDialogWidthRatio(0.9f)
+            .setMaxImageWidthWeight(0.8f)
+            .setMaxImageHeightWeight(0.8f)
+            .setViewWindowGravity(Gravity.CENTER)
+            .setWindowFlag(DISABLED_BG_FLAG)
+            .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
+            .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
+            .setAutoDismiss(false)
+            .build();
+  }
+
+  // visible for testing
+  @Provides
+  @IntoMap
+  @StringKey(LayoutConfigKey.WEBVIEW_LANDSCAPE)
+  public InAppMessageLayoutConfig providesLandscapeWebViewLayoutConfig() {
+    return InAppMessageLayoutConfig.builder()
+            .setMaxDialogHeightRatio(0.9f)
+            .setMaxDialogWidthRatio(0.9f)
+            .setMaxImageWidthWeight(0.8f)
+            .setMaxImageHeightWeight(0.8f)
+            .setViewWindowGravity(Gravity.CENTER)
+            .setWindowFlag(DISABLED_BG_FLAG)
+            .setWindowWidth(ViewGroup.LayoutParams.MATCH_PARENT)
+            .setWindowHeight(ViewGroup.LayoutParams.MATCH_PARENT)
+            .setAutoDismiss(false)
+            .build();
   }
 }

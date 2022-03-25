@@ -40,6 +40,10 @@ public abstract class InAppMessage {
     @Nullable
     String getImageUrl();
   }
+  public interface InAppMessageWithWebView {
+    @Nullable
+    String getWebViewUrl();
+  }
 
   MessageType messageType;
   NotificationMetadata notificationMetadata;

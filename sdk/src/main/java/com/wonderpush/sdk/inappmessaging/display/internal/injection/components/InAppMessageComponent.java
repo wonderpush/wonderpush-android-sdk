@@ -18,6 +18,7 @@ import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.Banner
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.CardBindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.ImageBindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.ModalBindingWrapper;
+import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.WebViewBindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 
@@ -38,4 +39,7 @@ public interface InAppMessageComponent {
 
   @InAppMessageScope
   CardBindingWrapper cardBindingWrapper();
+
+  @InAppMessageScope
+  WebViewBindingWrapper webViewBindingWrapper();
 }

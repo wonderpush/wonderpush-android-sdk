@@ -120,6 +120,7 @@ public final class Campaign implements JSONSerializable {
     JSONObject bannerJson = contentJson.optJSONObject("banner");
     JSONObject modalJson = contentJson.optJSONObject("modal");
     JSONObject imageOnlyJson = contentJson.optJSONObject("imageOnly");
+    JSONObject webViewJson = contentJson.optJSONObject("webView");
 
     if (cardJson != null) {
       return CardMessage.create(notificationMetadata, payloadJson, cardJson);
@@ -129,6 +130,8 @@ public final class Campaign implements JSONSerializable {
       return ModalMessage.create(notificationMetadata, payloadJson, modalJson);
     } else if (imageOnlyJson != null) {
       return ImageOnlyMessage.create(notificationMetadata, payloadJson, imageOnlyJson);
+    } else if (webViewJson != null){
+      return WebViewMessage.create(notificationMetadata, payloadJson, webViewJson);
     }
     return null;
   }

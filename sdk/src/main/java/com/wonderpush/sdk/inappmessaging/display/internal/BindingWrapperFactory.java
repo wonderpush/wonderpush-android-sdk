@@ -44,6 +44,15 @@ public class BindingWrapperFactory {
     return inAppMessageComponent.imageBindingWrapper();
   }
 
+  public BindingWrapper createWebViewBindingWrapper(
+          Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+    InAppMessageComponent inAppMessageComponent =
+            DaggerInAppMessageComponent.builder()
+                    .inflaterModule(new InflaterModule(inAppMessage, config, activity))
+                    .build();
+    return inAppMessageComponent.webViewBindingWrapper();
+  }
+
   public BindingWrapper createModalBindingWrapper(
           Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
     InAppMessageComponent inAppMessageComponent =
