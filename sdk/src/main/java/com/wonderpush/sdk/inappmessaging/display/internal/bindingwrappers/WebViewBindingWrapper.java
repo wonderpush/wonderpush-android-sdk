@@ -1,6 +1,7 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -91,6 +92,7 @@ public class WebViewBindingWrapper extends BindingWrapper {
             View v = inflater.inflate(R.layout.wonderpush_android_sdk_webview, null);
             webViewRoot = v.findViewById(R.id.webview_root);
             webView = (WebView) v.findViewById(R.id.webview);
+            webView.setBackgroundColor(Color.TRANSPARENT);
             collapseButton = v.findViewById(R.id.collapse_button);
 
             // Setup WebView.
