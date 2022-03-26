@@ -26,6 +26,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ScrollView;
@@ -125,10 +126,16 @@ public class ModalBindingWrapper extends BindingWrapper {
     return modalRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public ImageView getImageView() {
     return imageView;
+  }
+
+  @Nullable
+  @Override
+  public WebView getWebView() {
+    return null;
   }
 
   @NonNull

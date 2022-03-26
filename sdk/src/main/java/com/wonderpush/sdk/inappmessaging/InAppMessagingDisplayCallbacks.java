@@ -80,6 +80,9 @@ public interface InAppMessagingDisplayCallbacks {
     IMAGE_DISPLAY_ERROR,
 
     // Image has an unsupported format
-    IMAGE_UNSUPPORTED_FORMAT
+    IMAGE_UNSUPPORTED_FORMAT,
+
+    // Web view url failed to load
+    WEBVIEW_URL_FAILED_TO_LOAD
   }
 }

@@ -23,14 +23,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import android.graphics.Bitmap;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationManager;
-import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
@@ -64,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -78,9 +85,14 @@ import javax.inject.Provider;
 @Keep
 @InAppMessagingScope
 public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
+
+  static final String FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE = "web url failed to load";
+  static final long WEB_VIEW_LOAD_TIMEOUT_MILLIS = 2 * 1000; // timeout error after 2 seconds
+
   static final long IMPRESSION_THRESHOLD_MILLIS = 1 * 1000; // 1 second is a valid impression
-  static final long DISMISS_THRESHOLD_MILLIS =
-      12 * 1000; // auto dismiss after 12 seconds for banner
+
+  static final long DISMISS_THRESHOLD_MILLIS = 12 * 1000; // auto dismiss after 12 seconds for banner
+
   static final long INTERVAL_MILLIS = 1000;
 
   private static InAppMessagingDisplay instance;
@@ -109,15 +121,15 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
   @Inject
   InAppMessagingDisplay(
-      InAppMessaging headlessInAppMessaging,
-      Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs,
-      IamImageLoader imageLoader,
-      RenewableTimer impressionTimer,
-      RenewableTimer autoDismissTimer,
-      IamWindowManager windowManager,
-      Application application,
-      BindingWrapperFactory bindingWrapperFactory,
-      IamAnimator animator) {
+          InAppMessaging headlessInAppMessaging,
+          Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs,
+          IamImageLoader imageLoader,
+          RenewableTimer impressionTimer,
+          RenewableTimer autoDismissTimer,
+          IamWindowManager windowManager,
+          Application application,
+          BindingWrapperFactory bindingWrapperFactory,
+          IamAnimator animator) {
     super();
     this.headlessInAppMessaging = headlessInAppMessaging;
     this.layoutConfigs = layoutConfigs;
@@ -136,7 +148,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @NonNull
   @Keep
   public static void initialize(Application application,
-                                                  InAppMessaging inAppMessaging) {
+                                InAppMessaging inAppMessaging) {
     if (instance == null) {
       UniversalComponent universalComponent =
               DaggerUniversalComponent.builder()
@@ -167,9 +179,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
    */
   @Keep
   public void testMessage(
-      Activity activity,
-      InAppMessage inAppMessage,
-      InAppMessagingDisplayCallbacks callbacks) {
+          Activity activity,
+          InAppMessage inAppMessage,
+          InAppMessagingDisplayCallbacks callbacks) {
     this.inAppMessage = inAppMessage;
     this.impressionDetected = false;
     this.callbacks = callbacks;
@@ -313,14 +325,14 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     // The WindowManager LayoutParams.TYPE_APPLICATION_PANEL requires tokens from the activity
     // which does not become available until after all lifecycle methods are complete.
     activity
-        .findViewById(android.R.id.content)
-        .post(
-            new Runnable() {
-              @Override
-              public void run() {
-                inflateBinding(activity);
-              }
-            });
+            .findViewById(android.R.id.content)
+            .post(
+                    new Runnable() {
+                      @Override
+                      public void run() {
+                        inflateBinding(activity);
+                      }
+                    });
   }
 
   // Since we handle only touch outside events and let the underlying views handle all other events,
@@ -331,15 +343,15 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
     // On click listener when X button or collapse button is clicked
     final View.OnClickListener dismissListener =
-        new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            if (callbacks != null) {
-              callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
-            }
-            dismissIam(activity);
-          }
-        };
+            new View.OnClickListener() {
+              @Override
+              public void onClick(View v) {
+                if (callbacks != null) {
+                  callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+                }
+                dismissIam(activity);
+              }
+            };
 
     List<View.OnClickListener> actionListeners = new ArrayList<>();
     // If the message has an action, but not an action url, we dismiss when the action
@@ -351,35 +363,35 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
       if (actions.size() > 0) {
         actionListener =
-            new View.OnClickListener() {
-              @Override
-              public void onClick(View v) {
-                if (inAppMessage == null) return;
-                if (callbacks != null) {
-                  callbacks.messageClicked(actions);
-                }
+                new View.OnClickListener() {
+                  @Override
+                  public void onClick(View v) {
+                    if (inAppMessage == null) return;
+                    if (callbacks != null) {
+                      callbacks.messageClicked(actions);
+                    }
 
-                NotificationManager.handleActions(activity, inAppMessage.getNotificationMetadata(), actions);
+                    NotificationManager.handleActions(activity, inAppMessage.getNotificationMetadata(), actions);
 
-                notifyIamClick();
-                // Ensure that we remove the displayed IAM, and ensure that on re-load, the message
-                // isn't re-displayed
-                if (bindingWrapper != null && bindingWrapper.getExitAnimation() != null) {
-                  animator.executeExitAnimation(bindingWrapper.getExitAnimation(), application, bindingWrapper.getRootView(), new IamAnimator.AnimationCompleteListener() {
-                    @Override
-                    public void onComplete() {
+                    notifyIamClick();
+                    // Ensure that we remove the displayed IAM, and ensure that on re-load, the message
+                    // isn't re-displayed
+                    if (bindingWrapper != null && bindingWrapper.getExitAnimation() != null) {
+                      animator.executeExitAnimation(bindingWrapper.getExitAnimation(), application, bindingWrapper.getRootView(), new IamAnimator.AnimationCompleteListener() {
+                        @Override
+                        public void onComplete() {
+                          removeDisplayedIam(activity);
+                        }
+                      });
+                    } else {
                       removeDisplayedIam(activity);
                     }
-                  });
-                } else {
-                  removeDisplayedIam(activity);
-                }
-                inAppMessage = null;
-                impressionDetected = false;
-                callbacks = null;
-                bindingWrapper = null;
-              }
-            };
+                    inAppMessage = null;
+                    impressionDetected = false;
+                    callbacks = null;
+                    bindingWrapper = null;
+                  }
+                };
       } else {
         Logging.loge("No action url found for action.");
         actionListener = dismissListener;
@@ -387,111 +399,119 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       actionListeners.add(actionListener);
     }
 
-    final OnGlobalLayoutListener layoutListener =
-        bindingWrapper.inflate(actionListeners, dismissListener);
-    if (layoutListener != null) {
+    final OnGlobalLayoutListener layoutListener = bindingWrapper.inflate(actionListeners, dismissListener);
+
+    if (layoutListener != null)
+    {
       bindingWrapper.getImageView().getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
     }
 
-    // Show iam after image successfully loads
-    loadNullableImage(
-        activity,
-        bindingWrapper,
-        extractImageUrl(inAppMessage),
-        new Callback() {
-          @Override
-          public void onSuccess() {
-            // Setup dismiss on touch outside
-            if (bindingWrapper.getDismissView() != null) {
-              bindingWrapper
-                  .getDismissView()
-                  .setOnClickListener(
-                      new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                          if (callbacks != null) {
-                            callbacks.messageDismissed(
-                                InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    // Show iam after image or webview url successfully loads
+    loadNullableMedia(
+            activity,
+            bindingWrapper,
+            extractImageUrl(inAppMessage),
+            extractWebViewUrlOf(inAppMessage),
+            new Callback() {
+              @Override
+              public void onSuccess() {
+                // Setup dismiss on touch outside
+                if (bindingWrapper.getDismissView() != null) {
+                  bindingWrapper
+                          .getDismissView()
+                          .setOnClickListener(
+                                  new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                      if (callbacks != null) {
+                                        callbacks.messageDismissed(
+                                                InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+                                      }
+                                      dismissIam(activity);
+                                    }
+                                  });
+                }
+
+                // Setup impression timer
+                impressionTimer.start(
+                        new RenewableTimer.Callback() {
+                          @Override
+                          public void onFinish() {
+                            if (inAppMessage != null && callbacks != null && !impressionDetected) {
+                              Logging.logi(
+                                      "Impression timer onFinish for: "
+                                              + inAppMessage.getNotificationMetadata().getCampaignId());
+                              impressionDetected = true;
+                              callbacks.impressionDetected();
+                            }
                           }
-                          dismissIam(activity);
-                        }
-                      });
-            }
+                        },
+                        IMPRESSION_THRESHOLD_MILLIS,
+                        INTERVAL_MILLIS);
 
-            // Setup impression timer
-            impressionTimer.start(
-                new RenewableTimer.Callback() {
-                  @Override
-                  public void onFinish() {
-                    if (inAppMessage != null && callbacks != null && !impressionDetected) {
-                      Logging.logi(
-                          "Impression timer onFinish for: "
-                              + inAppMessage.getNotificationMetadata().getCampaignId());
-                      impressionDetected = true;
-                      callbacks.impressionDetected();
-                    }
-                  }
-                },
-                IMPRESSION_THRESHOLD_MILLIS,
-                INTERVAL_MILLIS);
+                // Setup auto dismiss timer
+                if (bindingWrapper.getConfig().autoDismiss()) {
+                  autoDismissTimer.start(
+                          new RenewableTimer.Callback() {
+                            @Override
+                            public void onFinish() {
+                              if (inAppMessage != null && callbacks != null) {
+                                callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
+                              }
 
-            // Setup auto dismiss timer
-            if (bindingWrapper.getConfig().autoDismiss()) {
-              autoDismissTimer.start(
-                  new RenewableTimer.Callback() {
-                    @Override
-                    public void onFinish() {
-                      if (inAppMessage != null && callbacks != null) {
-                        callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
-                      }
+                              dismissIam(activity);
+                            }
+                          },
+                          DISMISS_THRESHOLD_MILLIS,
+                          INTERVAL_MILLIS);
+                }
 
-                      dismissIam(activity);
-                    }
-                  },
-                  DISMISS_THRESHOLD_MILLIS,
-                  INTERVAL_MILLIS);
-            }
-
-            activity.runOnUiThread(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    windowManager.show(bindingWrapper, activity);
-                    if (bindingWrapper.getEntryAnimation() != null) {
-                      animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
-                    }
-                  }
-                });
-          }
-
-          @Override
-          public void onError(Exception e) {
-            Logging.loge("Image download failure ");
-            if (layoutListener != null) {
-              bindingWrapper
-                      .getImageView()
-                      .getViewTreeObserver()
-                      .removeOnGlobalLayoutListener(layoutListener);
-            }
-            cancelTimers(); // Not strictly necessary.
-
-            // Report the error to the developer
-            if (callbacks != null) {
-              if (e instanceof IOException && e.getLocalizedMessage().contains("Failed to decode")) {
-                callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
-              } else {
-                callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+                activity.runOnUiThread(
+                        new Runnable() {
+                          @Override
+                          public void run() {
+                            windowManager.show(bindingWrapper, activity);
+                            if (bindingWrapper.getEntryAnimation() != null) {
+                              animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
+                            }
+                          }
+                        });
               }
-            }
 
-            // Reset ourselves
-            inAppMessage = null;
-            impressionDetected = false;
-            callbacks = null;
-            bindingWrapper = null;
+              @Override
+              public void onError(Exception e) {
 
-          }
-        });
+                Logging.loge("Media download failure ");
+
+                if (layoutListener != null) {
+                  bindingWrapper
+                          .getImageView()
+                          .getViewTreeObserver()
+                          .removeOnGlobalLayoutListener(layoutListener);
+                }
+
+                cancelTimers(); // Not strictly necessary.
+
+                // Report the error to the developer
+                if (callbacks != null) {
+                  if (e instanceof IOException && e.getLocalizedMessage() != null &&  e.getLocalizedMessage().contains("Failed to decode")) {
+                    callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
+                  }
+                  else if (e.getMessage() != null && e.getMessage().contains(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE)){
+                    callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.WEBVIEW_URL_FAILED_TO_LOAD);
+                  }
+                  else {
+                    callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+                  }
+                }
+
+                // Reset ourselves
+                inAppMessage = null;
+                impressionDetected = false;
+                callbacks = null;
+                bindingWrapper = null;
+              }
+            });
   }
 
   /**
@@ -525,6 +545,14 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     return result;
   }
 
+  private String extractWebViewUrlOf(InAppMessage message){
+    if (message instanceof InAppMessage.InAppMessageWithWebView) {
+      return ((InAppMessage.InAppMessageWithWebView) message).getWebViewUrl();
+    }
+
+    return null;
+  }
+
   // TODO: Factor this into the InAppMessage API.
   private String extractImageUrl(InAppMessage message) {
     // Handle getting image data for card type
@@ -553,14 +581,129 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     return null;
   }
 
-  private void loadNullableImage(
-          Activity activity, BindingWrapper iam, String imageUrl, Callback callback) {
-    if (imageUrl != null) {
+  private void loadNullableMedia(
+          Activity activity,
+          BindingWrapper iam,
+          String imageUrl,
+          String webViewUrl,
+          Callback callback)
+  {
+    if (imageUrl != null)
+    {
       imageLoader
-          .load(imageUrl)
-          .tag(activity.getClass())
-          .into(iam.getImageView(), callback);
-    } else {
+              .load(imageUrl)
+              .tag(activity.getClass())
+              .into(iam.getImageView(), callback);
+    }
+    else if (webViewUrl != null && iam.getWebView() != null)
+    {
+      iam.getWebView().setWebViewClient(new WebViewClient() {
+
+        boolean callbackDone = false;
+        final Semaphore webViewEventSemaphore = new Semaphore(1);
+
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+          try {
+            super.onPageStarted(view, url, favicon);
+
+            new Thread(() -> {
+              try
+              {
+                Thread.sleep(WEB_VIEW_LOAD_TIMEOUT_MILLIS);
+              }
+              catch (Exception e)
+              {
+                //TODO : manage exception
+              }
+
+              try
+              {
+                webViewEventSemaphore.acquire();
+
+                if (!callbackDone) {
+                  //use the webview thread
+                  iam.getWebView().post(() -> {
+                    try{
+                      //remove listeners from webview
+                      iam.getWebView().setWebViewClient(null);
+                      Logging.loge("WebView timeout reached");
+                      callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
+                    }
+                    catch(Exception exception){
+                      //TODO : manage exception
+                    }
+                  });
+                  callbackDone = true;
+                }
+              }
+              catch(Exception exception){
+                //TODO : manage exception
+              }
+              finally {
+                webViewEventSemaphore.release();
+              }
+            }).start();
+          }
+          catch(Exception exception){
+            //TODO : manage exception
+          }
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+          try {
+            webViewEventSemaphore.acquire();
+
+            if (callbackDone){
+              return;
+            }
+
+            super.onPageFinished(view, url);
+            callback.onSuccess();
+            callbackDone = true;
+            //remove listeners from webview
+            iam.getWebView().setWebViewClient(null);
+          }
+          catch(Exception exception){
+            //TODO : manage exception
+          }
+          finally {
+            webViewEventSemaphore.release();
+          }
+        }
+
+        @Override
+        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+          try {
+            webViewEventSemaphore.acquire();
+
+            if (callbackDone){
+              return;
+            }
+
+            super.onReceivedError(view, request, error);
+            callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
+            callbackDone = true;
+            //remove listeners from webview
+            iam.getWebView().setWebViewClient(null);
+          }
+          catch(Exception exception){
+            //TODO : manage exception
+          }
+          finally {
+            webViewEventSemaphore.release();
+          }
+        }
+      });
+
+      //check nullability again to avoid warning on loadUrl
+      if (iam.getWebView() != null){
+        iam.getWebView().loadUrl(webViewUrl);
+      }
+    }
+    else
+    {
       callback.onSuccess();
     }
   }

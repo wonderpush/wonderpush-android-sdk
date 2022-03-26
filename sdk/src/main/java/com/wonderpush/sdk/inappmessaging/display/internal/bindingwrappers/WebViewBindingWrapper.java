@@ -54,10 +54,10 @@ public class WebViewBindingWrapper extends BindingWrapper {
         return webViewRoot;
     }
 
-    @NonNull
+    @Nullable
     @Override
     public ImageView getImageView() {
-        return new ImageView(webViewRoot.getContext());
+        return null;
     }
 
     @NonNull
@@ -77,7 +77,8 @@ public class WebViewBindingWrapper extends BindingWrapper {
         return collapseButton;
     }
 
-    @NonNull
+    @Nullable
+    @Override
     public WebView getWebView() {
         return webView;
     }
@@ -112,10 +113,6 @@ public class WebViewBindingWrapper extends BindingWrapper {
             // Setup dismiss button.
             webViewRoot.setDismissListener(dismissOnClickListener);
             collapseButton.setOnClickListener(dismissOnClickListener);
-
-            if (message instanceof WebViewMessage){
-                webView.loadUrl(((WebViewMessage) message).getWebViewUrl());
-            }
 
             if (message instanceof WebViewMessage
                     && collapseButton.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
