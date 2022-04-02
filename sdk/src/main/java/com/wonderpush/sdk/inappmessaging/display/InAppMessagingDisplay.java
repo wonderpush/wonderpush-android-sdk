@@ -24,8 +24,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
@@ -57,6 +55,8 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.Appl
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
+import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridge;
+import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridgeInterface;
 import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
 import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;
@@ -699,6 +699,14 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
       //check nullability again to avoid warning on loadUrl
       if (iam.getWebView() != null){
+        iam.getWebView().addJavascriptInterface(new InAppWebViewBridge(iam.getWebView(), () -> {
+          try{
+            dismissIam(activity);
+          }
+          catch(Exception exception){
+            //TODO : manage exception
+          }
+        }), "WonderPushInAppSDK");
         iam.getWebView().loadUrl(webViewUrl);
       }
     }

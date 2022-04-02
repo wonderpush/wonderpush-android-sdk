@@ -411,4 +411,18 @@ public class JSONUtil {
         return rtn;
     }
 
+    public static boolean isJSONValid(String test) {
+        try {
+            new JSONObject(test);
+        } catch (JSONException ex) {
+            // e.g. in case JSONArray is valid as well...
+            try {
+                new JSONArray(test);
+            } catch (JSONException jsonException) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
