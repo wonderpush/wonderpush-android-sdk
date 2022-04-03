@@ -12,14 +12,16 @@ import com.wonderpush.sdk.WonderPush;
 
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
+
 public class InAppWebViewBridge
 {
-    private final WebView concernedWebView;
+    private final WeakReference<WebView> concernedWebViewReference;
     private final InAppWebViewBridgeInterface inAppWebViewBridgeInterface;
     private final Gson gsonInstance;
 
     public InAppWebViewBridge(WebView concernedWebViewExternalInstance, InAppWebViewBridgeInterface externalInAppWebViewBridgeInterface) {
-        concernedWebView = concernedWebViewExternalInstance;
+        concernedWebViewReference = new WeakReference(concernedWebViewExternalInstance);
         inAppWebViewBridgeInterface = externalInAppWebViewBridgeInterface;
         gsonInstance = new Gson();
     }
@@ -81,13 +83,19 @@ public class InAppWebViewBridge
     {
         try
         {
+            WebView functionLocalReferenceToWebview = concernedWebViewReference.get();
+
+            if (null == functionLocalReferenceToWebview){
+                return;
+            }
+
             switch(mode){
                 case EXTERNAL:
-                    concernedWebView.post(() -> {
+                    functionLocalReferenceToWebview.post(() -> {
                         try {
                             //require browser does not work
                             Intent externalWebViewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                            concernedWebView.getContext().startActivity(externalWebViewIntent);
+                            functionLocalReferenceToWebview.getContext().startActivity(externalWebViewIntent);
                         }
                         catch(Exception exception){
                             //TODO : manage exception
@@ -100,9 +108,9 @@ public class InAppWebViewBridge
                     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         externalWebViewIntent.setFlags(Intent.FLAG_ACTIVITY_REQUIRE_NON_BROWSER);
                     }
-                    concernedWebView.post(() -> {
+                    functionLocalReferenceToWebview.post(() -> {
                             try {
-                                concernedWebView.getContext().startActivity(externalWebViewIntent);
+                                functionLocalReferenceToWebview.getContext().startActivity(externalWebViewIntent);
                             }
                             catch(Exception exception){
                                 //TODO : manage exception
@@ -110,9 +118,9 @@ public class InAppWebViewBridge
                     });
                     break;
                 default:
-                    concernedWebView.post(() -> {
+                    functionLocalReferenceToWebview.post(() -> {
                         try {
-                            concernedWebView.loadUrl(url);
+                            functionLocalReferenceToWebview.loadUrl(url);
                         }
                         catch(Exception exception){
                             //TODO : manage exception
@@ -311,8 +319,8 @@ public class InAppWebViewBridge
     public void removeTag(String encodedTagToRemove){
         try{
             if (JSONUtil.isJSONValid(encodedTagToRemove)) {
-                String[] decodedTagToAdd = gsonInstance.fromJson(encodedTagToRemove, String[].class);
-                WonderPush.removeTag(decodedTagToAdd);
+                String[] decodedTagToRemove = gsonInstance.fromJson(encodedTagToRemove, String[].class);
+                WonderPush.removeTag(decodedTagToRemove);
             }
             else {
                 WonderPush.removeTag(encodedTagToRemove);
