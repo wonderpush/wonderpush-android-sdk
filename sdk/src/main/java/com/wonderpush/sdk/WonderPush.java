@@ -1915,7 +1915,7 @@ public class WonderPush {
                 }
             });
         }
-        InAppMessagingDisplay.initialize(application, sInAppMessaging);
+        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::logError);
     }
     /**
      * @see #ensureInitialized(Context, boolean)

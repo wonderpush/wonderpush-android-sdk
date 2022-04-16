@@ -3,6 +3,7 @@ package com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers;
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.os.Build;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,8 +19,10 @@ import androidx.annotation.RestrictTo;
 
 import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
+import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessageScope;
 import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout;
+import com.wonderpush.sdk.inappmessaging.display.internal.layout.util.MeasureUtils;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.MessageType;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
@@ -96,14 +99,27 @@ public class WebViewBindingWrapper extends BindingWrapper {
             webView.setBackgroundColor(Color.TRANSPARENT);
             collapseButton = v.findViewById(R.id.collapse_button);
 
+            //Set status bar padding
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    MeasureUtils.getStatusBarHeightFor(v.getContext()),
+                    v.getPaddingRight(),
+                    v.getPaddingBottom());
+
             // Setup WebView.
             webView.getSettings().setJavaScriptEnabled(true);
             webView.getSettings().setDomStorageEnabled(true);
+            webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+
+            //following settings require api 23
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                webView.getSettings().setOffscreenPreRaster(true);
+            }
 
             if (message.getMessageType().equals(MessageType.WEBVIEW)) {
                 WebViewMessage msg = (WebViewMessage) message;
                 webView.setVisibility(
-                        (msg.getWebViewUrl() == null || TextUtils.isEmpty(msg.getWebViewUrl()))
+                       TextUtils.isEmpty(msg.getWebViewUrl())
                                 ? View.GONE
                                 : View.VISIBLE);
                 if (actionListeners.size() > 0)
@@ -118,26 +134,23 @@ public class WebViewBindingWrapper extends BindingWrapper {
                     && collapseButton.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
                 ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) collapseButton.getLayoutParams();
                 float density = inflater.getContext().getResources().getDisplayMetrics().density;
-                switch (((WebViewMessage) message).getCloseButtonPosition()) {
-                    case NONE:
-                        collapseButton.setVisibility(View.GONE);
-                        break;
-                    case INSIDE:
-                        collapseButton.setVisibility(View.VISIBLE);
-                        layoutParams.topMargin = (int) (density * 5);
-                        layoutParams.rightMargin = (int) (density * 5);
-                        break;
-                    case OUTSIDE:
-                        collapseButton.setVisibility(View.VISIBLE);
-                        layoutParams.topMargin = (int) (density * -12);
-                        layoutParams.rightMargin = (int) (density * -12);
-                        break;
+
+                if (((WebViewMessage) message).getCloseButtonPosition() == InAppMessage.CloseButtonPosition.NONE)
+                {
+                    collapseButton.setVisibility(View.GONE);
                 }
+                else {
+                    //inside and outside are the same cause of fullscreen
+                    collapseButton.setVisibility(View.VISIBLE);
+                    layoutParams.topMargin = (int) (density * 5);
+                    layoutParams.rightMargin = (int) (density * 5);
+                }
+
                 collapseButton.setLayoutParams(layoutParams);
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            Logging.loge(exception.getLocalizedMessage());
         }
 
         return null;

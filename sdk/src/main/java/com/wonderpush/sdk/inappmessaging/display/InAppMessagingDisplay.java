@@ -24,17 +24,23 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import android.graphics.Bitmap;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.LogErrorProvider;
 import com.wonderpush.sdk.NotificationManager;
+import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
@@ -72,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -115,6 +122,12 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   private InAppMessagingDisplayCallbacks callbacks;
   private com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay inAppMessagingDisplay;
 
+  @Nonnull
+  private SafeDeferProvider safeDeferProvider;
+
+  @NonNull
+  private LogErrorProvider logErrorProvider;
+
   public @Nullable com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay getDefaultInAppMessagingDisplay() {
     return inAppMessagingDisplay;
   }
@@ -148,7 +161,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @NonNull
   @Keep
   public static void initialize(Application application,
-                                InAppMessaging inAppMessaging) {
+                                InAppMessaging inAppMessaging,
+                                SafeDeferProvider safeDeferProvider,
+                                LogErrorProvider logErrorProvider) {
     if (instance == null) {
       UniversalComponent universalComponent =
               DaggerUniversalComponent.builder()
@@ -161,6 +176,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                       .build();
       instance = appComponent.providesInAppMessagingUI();
       application.registerActivityLifecycleCallbacks(instance);
+      instance.safeDeferProvider = safeDeferProvider;
+      instance.logErrorProvider = logErrorProvider;
     }
   }
 
@@ -401,7 +418,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
     final OnGlobalLayoutListener layoutListener = bindingWrapper.inflate(actionListeners, dismissListener);
 
-    if (layoutListener != null)
+    if (layoutListener != null && bindingWrapper.getImageView() != null)
     {
       bindingWrapper.getImageView().getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
     }
@@ -597,76 +614,92 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
     else if (webViewUrl != null && iam.getWebView() != null)
     {
-      iam.getWebView().setWebViewClient(new WebViewClient() {
+      WebView functionWebViewLocalFunctionInstance = iam.getWebView();
+
+      functionWebViewLocalFunctionInstance.setWebViewClient(new WebViewClient() {
 
         boolean callbackDone = false;
         final Semaphore webViewEventSemaphore = new Semaphore(1);
 
         @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+        public void onPageStarted(WebView webView, String url, Bitmap favicon) {
           try {
-            super.onPageStarted(view, url, favicon);
+            super.onPageStarted(webView, url, favicon);
 
-            new Thread(() -> {
-              try
-              {
-                Thread.sleep(WEB_VIEW_LOAD_TIMEOUT_MILLIS);
-              }
-              catch (Exception e)
-              {
-                //TODO : manage exception
-              }
-
+            safeDeferProvider.safeDefer(() -> {
               try
               {
                 webViewEventSemaphore.acquire();
 
                 if (!callbackDone) {
-                  //use the webview thread
-                  iam.getWebView().post(() -> {
+                  //view.post has a bug => https://stackoverflow.com/questions/12544732/view-post-not-called
+                  new Handler(Looper.getMainLooper()).post(() -> {
                     try{
                       //remove listeners from webview
-                      iam.getWebView().setWebViewClient(null);
+                      webView.setWebViewClient(null);
                       Logging.loge("WebView timeout reached");
                       callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
                     }
                     catch(Exception exception){
-                      //TODO : manage exception
+                      logErrorProvider.logError(exception.getLocalizedMessage());
                     }
                   });
                   callbackDone = true;
                 }
               }
               catch(Exception exception){
-                //TODO : manage exception
+                logErrorProvider.logError(exception.getLocalizedMessage());
               }
               finally {
                 webViewEventSemaphore.release();
               }
-            }).start();
+            }, WEB_VIEW_LOAD_TIMEOUT_MILLIS);
           }
           catch(Exception exception){
-            //TODO : manage exception
+            logErrorProvider.logError(exception.getLocalizedMessage());
           }
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
           try {
+            super.onPageFinished(view, url);
+
             webViewEventSemaphore.acquire();
 
             if (callbackDone){
               return;
             }
-
-            super.onPageFinished(view, url);
             callback.onSuccess();
             callbackDone = true;
             //remove listeners from webview
             iam.getWebView().setWebViewClient(null);
           }
           catch(Exception exception){
-            //TODO : manage exception
+            logErrorProvider.logError(exception.getLocalizedMessage());
+          }
+          finally {
+            webViewEventSemaphore.release();
+          }
+        }
+
+        @Override
+        public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+          try {
+            super.onReceivedHttpError(view, request, errorResponse);
+
+            webViewEventSemaphore.acquire();
+
+            if (callbackDone){
+              return;
+            }
+            callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
+            callbackDone = true;
+            //remove listeners from webview
+            iam.getWebView().setWebViewClient(null);
+          }
+          catch(Exception exception){
+            logErrorProvider.logError(exception.getLocalizedMessage());
           }
           finally {
             webViewEventSemaphore.release();
@@ -676,20 +709,21 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
           try {
+            super.onReceivedError(view, request, error);
+
             webViewEventSemaphore.acquire();
 
             if (callbackDone){
               return;
             }
 
-            super.onReceivedError(view, request, error);
             callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
             callbackDone = true;
             //remove listeners from webview
             iam.getWebView().setWebViewClient(null);
           }
           catch(Exception exception){
-            //TODO : manage exception
+            logErrorProvider.logError(exception.getLocalizedMessage());
           }
           finally {
             webViewEventSemaphore.release();
@@ -697,18 +731,15 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         }
       });
 
-      //check nullability again to avoid warning on loadUrl
-      if (iam.getWebView() != null){
-        iam.getWebView().addJavascriptInterface(new InAppWebViewBridge(iam.getWebView(), () -> {
+      functionWebViewLocalFunctionInstance.addJavascriptInterface(new InAppWebViewBridge(iam.getWebView(), () -> {
           try{
             dismissIam(activity);
           }
           catch(Exception exception){
-            //TODO : manage exception
+            logErrorProvider.logError(exception.getLocalizedMessage());
           }
-        }), "WonderPushInAppSDK");
-        iam.getWebView().loadUrl(webViewUrl);
-      }
+        }, instance.logErrorProvider), "WonderPushInAppSDK");
+      functionWebViewLocalFunctionInstance.loadUrl(webViewUrl);
     }
     else
     {

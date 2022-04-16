@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.JSONUtil;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 
@@ -29,7 +30,7 @@ public class WebViewMessage extends InAppMessage implements InAppMessage.InAppMe
 
     public static WebViewMessage create(NotificationMetadata notificationMetadata, JSONObject payloadJson, JSONObject webViewJson) throws Campaign.InvalidJsonException {
         // WebView
-        String webViewUrlString = webViewJson.optString("url", null);
+        String webViewUrlString = JSONUtil.optString(webViewJson, "url");
         if (TextUtils.isEmpty(webViewUrlString)) {
             throw new Campaign.InvalidJsonException("Missing url in webViewJson payload:" + webViewJson.toString());
         }

@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_gravity="center"
-    android:paddingTop="24dp"
     android:clickable="true"
     android:clipToPadding="false"
     android:focusable="true">

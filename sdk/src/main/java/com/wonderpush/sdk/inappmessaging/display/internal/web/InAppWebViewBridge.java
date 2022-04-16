@@ -6,9 +6,10 @@ import android.os.Build;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
-import com.google.gson.Gson;
 import com.wonderpush.sdk.JSONUtil;
+import com.wonderpush.sdk.LogErrorProvider;
 import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.inappmessaging.internal.Logging;
 
 import org.json.JSONObject;
 
@@ -18,12 +19,29 @@ public class InAppWebViewBridge
 {
     private final WeakReference<WebView> concernedWebViewReference;
     private final InAppWebViewBridgeInterface inAppWebViewBridgeInterface;
-    private final Gson gsonInstance;
+    private final WeakReference<LogErrorProvider> logErrorProviderWeakReference;
 
-    public InAppWebViewBridge(WebView concernedWebViewExternalInstance, InAppWebViewBridgeInterface externalInAppWebViewBridgeInterface) {
+    public InAppWebViewBridge(WebView concernedWebViewExternalInstance, InAppWebViewBridgeInterface externalInAppWebViewBridgeInterface, LogErrorProvider logErrorProvider) {
         concernedWebViewReference = new WeakReference(concernedWebViewExternalInstance);
         inAppWebViewBridgeInterface = externalInAppWebViewBridgeInterface;
-        gsonInstance = new Gson();
+        logErrorProviderWeakReference = new WeakReference<>(logErrorProvider);
+    }
+
+    private void logException(Exception exception){
+        try{
+            LogErrorProvider logErrorProviderInWeakReferenceInstance = logErrorProviderWeakReference.get();
+
+            if (logErrorProviderInWeakReferenceInstance == null){
+                Logging.loge(exception.getLocalizedMessage());
+                return;
+            }
+
+            logErrorProviderInWeakReferenceInstance.logError(exception.getLocalizedMessage());
+        }
+        catch(Exception exceptionInstance){
+            //use default method if weakreference is empty
+            Logging.loge(exceptionInstance.getLocalizedMessage());
+        }
     }
 
 
@@ -44,7 +62,7 @@ public class InAppWebViewBridge
             inAppWebViewBridgeInterface.onDimissCalled();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -64,18 +82,14 @@ public class InAppWebViewBridge
 
                 if (paramsDecoded.has("mode")) {
                     onUserWantToOpenTargetUrl(url, InAppWebViewBridgeOpenTargetUrlMode.getInAppWebViewBridgeOpenTargetUrlModeFor(paramsDecoded.getString("mode")));
-                }
-                else
-                {
-                    onUserWantToOpenTargetUrl(url, InAppWebViewBridgeOpenTargetUrlMode.CURRENT);
+                    return;
                 }
             }
-            else {
-                onUserWantToOpenTargetUrl(url, InAppWebViewBridgeOpenTargetUrlMode.CURRENT);
-            }
+
+            onUserWantToOpenTargetUrl(url, InAppWebViewBridgeOpenTargetUrlMode.CURRENT);
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -98,7 +112,7 @@ public class InAppWebViewBridge
                             functionLocalReferenceToWebview.getContext().startActivity(externalWebViewIntent);
                         }
                         catch(Exception exception){
-                            //TODO : manage exception
+                            logException(exception);
                         }
                     });
                     break;
@@ -113,7 +127,7 @@ public class InAppWebViewBridge
                                 functionLocalReferenceToWebview.getContext().startActivity(externalWebViewIntent);
                             }
                             catch(Exception exception){
-                                //TODO : manage exception
+                                logException(exception);
                             }
                     });
                     break;
@@ -123,14 +137,14 @@ public class InAppWebViewBridge
                             functionLocalReferenceToWebview.loadUrl(url);
                         }
                         catch(Exception exception){
-                            //TODO : manage exception
+                            logException(exception);
                         }
                     });
                     break;
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -142,7 +156,7 @@ public class InAppWebViewBridge
             WonderPush.subscribeToNotifications();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -152,7 +166,7 @@ public class InAppWebViewBridge
             WonderPush.subscribeToNotifications();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -164,7 +178,7 @@ public class InAppWebViewBridge
             WonderPush.unsubscribeFromNotifications();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -176,7 +190,7 @@ public class InAppWebViewBridge
             return WonderPush.isSubscribedToNotifications();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return false;
@@ -190,7 +204,7 @@ public class InAppWebViewBridge
             return WonderPush.getUserId();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";
@@ -204,7 +218,7 @@ public class InAppWebViewBridge
             return WonderPush.getInstallationId();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";
@@ -218,7 +232,7 @@ public class InAppWebViewBridge
             return WonderPush.getCountry();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";
@@ -233,7 +247,7 @@ public class InAppWebViewBridge
            return WonderPush.getCurrency();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";
@@ -247,7 +261,7 @@ public class InAppWebViewBridge
             return WonderPush.getLocale();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";
@@ -261,7 +275,7 @@ public class InAppWebViewBridge
             return WonderPush.getTimeZone();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";
@@ -275,7 +289,7 @@ public class InAppWebViewBridge
             WonderPush.trackEvent(type);
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -291,7 +305,7 @@ public class InAppWebViewBridge
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -301,7 +315,7 @@ public class InAppWebViewBridge
     public void addTag(String encodedTagToAdd){
         try{
             if (JSONUtil.isJSONValid(encodedTagToAdd)) {
-                String[] decodedTagToAdd = gsonInstance.fromJson(encodedTagToAdd, String[].class);
+                String[] decodedTagToAdd = JSONUtil.jsonStringToStringArray(encodedTagToAdd);
                 WonderPush.addTag(decodedTagToAdd);
             }
             else {
@@ -309,7 +323,7 @@ public class InAppWebViewBridge
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -319,7 +333,7 @@ public class InAppWebViewBridge
     public void removeTag(String encodedTagToRemove){
         try{
             if (JSONUtil.isJSONValid(encodedTagToRemove)) {
-                String[] decodedTagToRemove = gsonInstance.fromJson(encodedTagToRemove, String[].class);
+                String[] decodedTagToRemove = JSONUtil.jsonStringToStringArray(encodedTagToRemove);
                 WonderPush.removeTag(decodedTagToRemove);
             }
             else {
@@ -327,7 +341,7 @@ public class InAppWebViewBridge
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -339,7 +353,7 @@ public class InAppWebViewBridge
             WonderPush.removeAllTags();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -351,7 +365,7 @@ public class InAppWebViewBridge
             return WonderPush.hasTag(tag);
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return false;
@@ -362,10 +376,10 @@ public class InAppWebViewBridge
     @JavascriptInterface
     public String getTags(){
         try{
-            return gsonInstance.toJson(WonderPush.getTags());
+            return JSONUtil.JSONArray(WonderPush.getTags().toArray(new String[0])).toString();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";
@@ -383,15 +397,12 @@ public class InAppWebViewBridge
                 //we have a string
                 return (String) propertyValueResult;
             }
-            else {
-                return "";
-            }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
-        return "";
+        return null;
     }
 
     /********************************************************************/
@@ -399,14 +410,13 @@ public class InAppWebViewBridge
     @JavascriptInterface
     public String getPropertyValues(String field){
         try{
-            return gsonInstance.toJson(WonderPush.getPropertyValues(field));
+            return JSONUtil.JSONArray(WonderPush.getPropertyValues(field).toArray(new Object[0])).toString();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
-        String[] emptyArray = {};
-        return gsonInstance.toJson(emptyArray);
+        return "{[]}";
     }
 
     /********************************************************************/
@@ -416,7 +426,7 @@ public class InAppWebViewBridge
         try
         {
             if (JSONUtil.isJSONValid(encodedValue)) {
-                String[] decodedPropertyToAdd = gsonInstance.fromJson(encodedValue, String[].class);
+                String[] decodedPropertyToAdd = JSONUtil.jsonStringToStringArray(encodedValue);
                 WonderPush.addProperty(field, decodedPropertyToAdd);
             }
             else {
@@ -424,7 +434,7 @@ public class InAppWebViewBridge
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -434,7 +444,7 @@ public class InAppWebViewBridge
     public void removeProperty(String field, String encodedValue){
         try{
             if (JSONUtil.isJSONValid(encodedValue)) {
-                String[] decodedPropertyToRemove = gsonInstance.fromJson(encodedValue, String[].class);
+                String[] decodedPropertyToRemove = JSONUtil.jsonStringToStringArray(encodedValue);
                 WonderPush.removeProperty(field, decodedPropertyToRemove);
             }
             else {
@@ -442,7 +452,7 @@ public class InAppWebViewBridge
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -455,7 +465,7 @@ public class InAppWebViewBridge
                 WonderPush.unsetProperty(field);
             }
             else if (JSONUtil.isJSONValid(value)){
-                Object[] decodedObjects = gsonInstance.fromJson(value, Object[].class);
+                Object[] decodedObjects = JSONUtil.jsonStringToObjectArray(value);
                 WonderPush.setProperty(field, decodedObjects);
             }
             else if ("true".equals(value) || "false".equals(value)){
@@ -466,7 +476,7 @@ public class InAppWebViewBridge
             }
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -478,7 +488,7 @@ public class InAppWebViewBridge
             WonderPush.unsetProperty(field);
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -488,14 +498,11 @@ public class InAppWebViewBridge
     public void putProperties(String properties){
         try
         {
-            if (JSONUtil.isJSONValid(properties))
-            {
-                JSONObject decodedProperties = new JSONObject(properties);
-                WonderPush.putProperties(decodedProperties);
-            }
+            JSONObject decodedProperties = new JSONObject(properties);
+            WonderPush.putProperties(decodedProperties);
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
     }
 
@@ -507,7 +514,7 @@ public class InAppWebViewBridge
             return WonderPush.getProperties().toString();
         }
         catch(Exception exception){
-            //TODO : manage exception
+            logException(exception);
         }
 
         return "";

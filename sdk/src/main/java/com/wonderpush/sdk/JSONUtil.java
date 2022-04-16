@@ -4,6 +4,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.wonderpush.sdk.inappmessaging.internal.Logging;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -423,6 +425,44 @@ public class JSONUtil {
             }
         }
         return true;
+    }
+
+    public static String[] jsonStringToStringArray(String jsonString){
+        try{
+            ArrayList<String> stringArray = new ArrayList<String>();
+
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                stringArray.add(jsonArray.getString(i));
+            }
+
+            return stringArray.toArray(new String[0]);
+        }
+        catch(Exception exception){
+            Logging.loge(exception.getLocalizedMessage());
+        }
+
+        return new String[]{};
+    }
+
+    public static Object[] jsonStringToObjectArray(String jsonString){
+        try{
+            ArrayList<Object> objectArray = new ArrayList<Object>();
+
+            JSONArray jsonArray = new JSONArray(jsonString);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                objectArray.add(jsonArray.get(i));
+            }
+
+            return objectArray.toArray(new Object[0]);
+        }
+        catch(Exception exception){
+            Logging.loge(exception.getLocalizedMessage());
+        }
+
+        return new Object[]{};
     }
 
 }
