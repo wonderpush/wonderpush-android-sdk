@@ -22,8 +22,11 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -94,7 +97,7 @@ import javax.inject.Provider;
 public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
   static final String FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE = "web url failed to load";
-  static final long WEB_VIEW_LOAD_TIMEOUT_MILLIS = 2 * 1000; // timeout error after 2 seconds
+  static final long WEB_VIEW_LOAD_TIMEOUT_MILLIS = 2000; // timeout error after 2 seconds
 
   static final long IMPRESSION_THRESHOLD_MILLIS = 1 * 1000; // 1 second is a valid impression
 
@@ -614,132 +617,129 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
     else if (webViewUrl != null && iam.getWebView() != null)
     {
-      WebView functionWebViewLocalFunctionInstance = iam.getWebView();
+      new Handler(Looper.getMainLooper()).post(() -> {
+        try
+        {
+          WebView functionWebViewLocalFunctionInstance = iam.getWebView();
 
-      functionWebViewLocalFunctionInstance.setWebViewClient(new WebViewClient() {
+          functionWebViewLocalFunctionInstance.setWebViewClient(new WebViewClient() {
 
-        boolean callbackDone = false;
-        final Semaphore webViewEventSemaphore = new Semaphore(1);
+            boolean callbackDone = false;
 
-        @Override
-        public void onPageStarted(WebView webView, String url, Bitmap favicon) {
-          try {
-            super.onPageStarted(webView, url, favicon);
+            @Override
+            public void onPageStarted(WebView webView, String url, Bitmap favicon) {
+              try {
+                super.onPageStarted(webView, url, favicon);
 
-            safeDeferProvider.safeDefer(() -> {
-              try
-              {
-                webViewEventSemaphore.acquire();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && WebViewFeature.isFeatureSupported(WebViewFeature.VISUAL_STATE_CALLBACK)) {
+                  long webViewVisualStateCallbackId = 4636;
 
-                if (!callbackDone) {
-                  //view.post has a bug => https://stackoverflow.com/questions/12544732/view-post-not-called
-                  new Handler(Looper.getMainLooper()).post(() -> {
-                    try{
+                  WebViewCompat.postVisualStateCallback(functionWebViewLocalFunctionInstance, webViewVisualStateCallbackId, requestId -> {
+                    if (requestId == webViewVisualStateCallbackId) {
+                      if (callbackDone) {
+                        return;
+                      }
+                      callbackDone = true;
+                      callback.onSuccess();
                       //remove listeners from webview
-                      webView.setWebViewClient(null);
-                      Logging.loge("WebView timeout reached");
-                      callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
-                    }
-                    catch(Exception exception){
-                      logErrorProvider.logError(exception.getLocalizedMessage());
+                      iam.getWebView().setWebViewClient(null);
                     }
                   });
-                  callbackDone = true;
                 }
-              }
-              catch(Exception exception){
+
+                safeDeferProvider.safeDefer(() -> {
+                  try {
+                    //view.post has a bug => https://stackoverflow.com/questions/12544732/view-post-not-called
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                      try {
+                        if (!callbackDone) {
+                          callbackDone = true;
+                          //remove listeners from webview
+                          webView.setWebViewClient(null);
+                          Logging.loge("WebView timeout reached");
+                          callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
+                        }
+                      } catch (Exception exception) {
+                        logErrorProvider.logError(exception.getLocalizedMessage());
+                      }
+                    });
+                  } catch (Exception exception) {
+                    logErrorProvider.logError(exception.getLocalizedMessage());
+                  }
+                }, WEB_VIEW_LOAD_TIMEOUT_MILLIS);
+              } catch (Exception exception) {
                 logErrorProvider.logError(exception.getLocalizedMessage());
               }
-              finally {
-                webViewEventSemaphore.release();
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+              try {
+                super.onReceivedHttpError(view, request, errorResponse);
+
+                if (callbackDone) {
+                  return;
+                }
+                callbackDone = true;
+                callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
+                //remove listeners from webview
+                iam.getWebView().setWebViewClient(null);
+              } catch (Exception exception) {
+                logErrorProvider.logError(exception.getLocalizedMessage());
               }
-            }, WEB_VIEW_LOAD_TIMEOUT_MILLIS);
-          }
-          catch(Exception exception){
-            logErrorProvider.logError(exception.getLocalizedMessage());
-          }
-        }
-
-        @Override
-        public void onPageFinished(WebView view, String url) {
-          try {
-            super.onPageFinished(view, url);
-
-            webViewEventSemaphore.acquire();
-
-            if (callbackDone){
-              return;
-            }
-            callback.onSuccess();
-            callbackDone = true;
-            //remove listeners from webview
-            iam.getWebView().setWebViewClient(null);
-          }
-          catch(Exception exception){
-            logErrorProvider.logError(exception.getLocalizedMessage());
-          }
-          finally {
-            webViewEventSemaphore.release();
-          }
-        }
-
-        @Override
-        public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-          try {
-            super.onReceivedHttpError(view, request, errorResponse);
-
-            webViewEventSemaphore.acquire();
-
-            if (callbackDone){
-              return;
-            }
-            callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
-            callbackDone = true;
-            //remove listeners from webview
-            iam.getWebView().setWebViewClient(null);
-          }
-          catch(Exception exception){
-            logErrorProvider.logError(exception.getLocalizedMessage());
-          }
-          finally {
-            webViewEventSemaphore.release();
-          }
-        }
-
-        @Override
-        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-          try {
-            super.onReceivedError(view, request, error);
-
-            webViewEventSemaphore.acquire();
-
-            if (callbackDone){
-              return;
             }
 
-            callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
-            callbackDone = true;
-            //remove listeners from webview
-            iam.getWebView().setWebViewClient(null);
-          }
-          catch(Exception exception){
-            logErrorProvider.logError(exception.getLocalizedMessage());
-          }
-          finally {
-            webViewEventSemaphore.release();
-          }
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+              try {
+                super.onReceivedError(view, request, error);
+
+                if (callbackDone) {
+                  return;
+                }
+
+                callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
+                callbackDone = true;
+                //remove listeners from webview
+                iam.getWebView().setWebViewClient(null);
+              } catch (Exception exception) {
+                logErrorProvider.logError(exception.getLocalizedMessage());
+              }
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+              try {
+              super.onPageFinished(view, url);
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !WebViewFeature.isFeatureSupported(WebViewFeature.VISUAL_STATE_CALLBACK)) {
+                  if (callbackDone) {
+                    return;
+                  }
+                  callbackDone = true;
+                  callback.onSuccess();
+                  //remove listeners from webview
+                  iam.getWebView().setWebViewClient(null);
+                }
+              } catch (Exception exception) {
+                logErrorProvider.logError(exception.getLocalizedMessage());
+              }
+            }
+          });
+
+          functionWebViewLocalFunctionInstance.addJavascriptInterface(new InAppWebViewBridge(iam.getWebView(), () -> {
+            try {
+              dismissIam(activity);
+            } catch (Exception exception) {
+              logErrorProvider.logError(exception.getLocalizedMessage());
+            }
+          }, instance.logErrorProvider), "WonderPushInAppSDK");
+          functionWebViewLocalFunctionInstance.loadUrl(webViewUrl);
+        }
+        catch (Exception exception) {
+          logErrorProvider.logError(exception.getLocalizedMessage());
+          callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
         }
       });
-
-      functionWebViewLocalFunctionInstance.addJavascriptInterface(new InAppWebViewBridge(iam.getWebView(), () -> {
-          try{
-            dismissIam(activity);
-          }
-          catch(Exception exception){
-            logErrorProvider.logError(exception.getLocalizedMessage());
-          }
-        }, instance.logErrorProvider), "WonderPushInAppSDK");
-      functionWebViewLocalFunctionInstance.loadUrl(webViewUrl);
     }
     else
     {
