@@ -1915,7 +1915,17 @@ public class WonderPush {
                 }
             });
         }
-        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::logError);
+        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, new LogErrorProvider() {
+            @Override
+            public void logError(String msg) {
+                WonderPush.logError(msg);
+            }
+
+            @Override
+            public void logError(String msg, Exception e) {
+                WonderPush.logError(msg, e);
+            }
+        });
     }
     /**
      * @see #ensureInitialized(Context, boolean)
