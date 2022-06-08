@@ -2,6 +2,7 @@ package com.wonderpush.sdk.inappmessaging.model;
 
 import android.text.TextUtils;
 
+import android.util.Patterns;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -31,8 +32,11 @@ public class WebViewMessage extends InAppMessage implements InAppMessage.InAppMe
     public static WebViewMessage create(NotificationMetadata notificationMetadata, JSONObject payloadJson, JSONObject webViewJson) throws Campaign.InvalidJsonException {
         // WebView
         String webViewUrlString = JSONUtil.optString(webViewJson, "url");
+
         if (TextUtils.isEmpty(webViewUrlString)) {
-            throw new Campaign.InvalidJsonException("Missing url in webViewJson payload:" + webViewJson.toString());
+            throw new Campaign.InvalidJsonException("Missing url in webViewJson payload: " + webViewJson.toString());
+        } else if (!Patterns.WEB_URL.matcher(webViewUrlString).matches()) { // Validate url
+            throw new Campaign.InvalidJsonException("Invalid url in webViewJson payload: " + webViewUrlString);
         }
 
         // Actions
