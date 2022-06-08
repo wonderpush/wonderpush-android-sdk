@@ -75,10 +75,7 @@ import com.wonderpush.sdk.inappmessaging.model.ModalMessage;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 
 import javax.annotation.Nonnull;
@@ -96,8 +93,7 @@ import javax.inject.Provider;
 @InAppMessagingScope
 public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
-  static final String FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE = "web url failed to load";
-  static final long WEB_VIEW_LOAD_TIMEOUT_MILLIS = 2000; // timeout error after 2 seconds
+  static final long WEB_VIEW_LOAD_TIMEOUT_MILLIS = 10 * 1000; // timeout error after 10 seconds
 
   static final long IMPRESSION_THRESHOLD_MILLIS = 1 * 1000; // 1 second is a valid impression
 
@@ -501,7 +497,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
               @Override
               public void onError(Exception e) {
 
-                Logging.loge("Media download failure ");
+                logErrorProvider.logError("Could not load media", e);
 
                 if (layoutListener != null) {
                   bindingWrapper
@@ -517,7 +513,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                   if (e instanceof IOException && e.getLocalizedMessage() != null &&  e.getLocalizedMessage().contains("Failed to decode")) {
                     callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
                   }
-                  else if (e.getMessage() != null && e.getMessage().contains(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE)){
+                  else if (e instanceof WebViewLoadingException){
                     callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.WEBVIEW_URL_FAILED_TO_LOAD);
                   }
                   else {
@@ -601,6 +597,12 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     return null;
   }
 
+  private static class WebViewLoadingException extends Exception {
+    public WebViewLoadingException(Exception wrapped) {
+      super(wrapped != null ? wrapped.getMessage() : null);
+    }
+  }
+
   private void loadNullableMedia(
           Activity activity,
           BindingWrapper iam,
@@ -608,6 +610,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
           String webViewUrl,
           Callback callback)
   {
+    final WebView webView = iam.getWebView();
     if (imageUrl != null)
     {
       imageLoader
@@ -615,57 +618,58 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
               .tag(activity.getClass())
               .into(iam.getImageView(), callback);
     }
-    else if (webViewUrl != null && iam.getWebView() != null)
+    else if (webViewUrl != null && webView != null)
     {
       new Handler(Looper.getMainLooper()).post(() -> {
         try
         {
-          WebView functionWebViewLocalFunctionInstance = iam.getWebView();
 
-          functionWebViewLocalFunctionInstance.setWebViewClient(new WebViewClient() {
+          webView.setWebViewClient(new WebViewClient() {
 
             boolean callbackDone = false;
+            final boolean useVisualStateCallback = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && WebViewFeature.isFeatureSupported(WebViewFeature.VISUAL_STATE_CALLBACK);
+            final long webViewVisualStateCallbackId = new Random().nextLong();
 
+            private void callOnSuccess() {
+              if (callbackDone) {
+                return;
+              }
+              callbackDone = true;
+              callback.onSuccess();
+              webView.setWebViewClient(null);
+            }
+
+            private void callOnError(Exception err) {
+              if (callbackDone) {
+                return;
+              }
+              callbackDone = true;
+              webView.setWebViewClient(null);
+              callback.onError(new WebViewLoadingException(err));
+            }
+
+            @SuppressLint("RequiresFeature")
             @Override
             public void onPageStarted(WebView webView, String url, Bitmap favicon) {
               try {
                 super.onPageStarted(webView, url, favicon);
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && WebViewFeature.isFeatureSupported(WebViewFeature.VISUAL_STATE_CALLBACK)) {
-                  long webViewVisualStateCallbackId = 4636;
-
-                  WebViewCompat.postVisualStateCallback(functionWebViewLocalFunctionInstance, webViewVisualStateCallbackId, requestId -> {
+                if (useVisualStateCallback) {
+                  WebViewCompat.postVisualStateCallback(webView, webViewVisualStateCallbackId, requestId -> {
                     if (requestId == webViewVisualStateCallbackId) {
-                      if (callbackDone) {
-                        return;
-                      }
-                      callbackDone = true;
-                      callback.onSuccess();
-                      //remove listeners from webview
-                      iam.getWebView().setWebViewClient(null);
+                      callOnSuccess();
                     }
                   });
                 }
 
                 safeDeferProvider.safeDefer(() -> {
-                  try {
-                    //view.post has a bug => https://stackoverflow.com/questions/12544732/view-post-not-called
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                      try {
-                        if (!callbackDone) {
-                          callbackDone = true;
-                          //remove listeners from webview
-                          webView.setWebViewClient(null);
-                          Logging.loge("WebView timeout reached");
-                          callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
-                        }
-                      } catch (Exception exception) {
-                        logErrorProvider.logError(exception.getLocalizedMessage());
-                      }
-                    });
-                  } catch (Exception exception) {
-                    logErrorProvider.logError(exception.getLocalizedMessage());
-                  }
+                  new Handler(Looper.getMainLooper()).post(() -> {
+                    try {
+                      callOnError(new Exception("WebView timeout reached"));
+                    } catch (Exception e) {
+                      logErrorProvider.logError("Unexpected error", e);
+                    }
+                  });
                 }, WEB_VIEW_LOAD_TIMEOUT_MILLIS);
               } catch (Exception exception) {
                 logErrorProvider.logError(exception.getLocalizedMessage());
@@ -676,14 +680,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
               try {
                 super.onReceivedHttpError(view, request, errorResponse);
-
-                if (callbackDone) {
-                  return;
-                }
-                callbackDone = true;
-                callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
-                //remove listeners from webview
-                iam.getWebView().setWebViewClient(null);
+                callOnError(new Exception("HTTP error loading webView with status " + errorResponse.getStatusCode()));
               } catch (Exception exception) {
                 logErrorProvider.logError(exception.getLocalizedMessage());
               }
@@ -693,17 +690,13 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
               try {
                 super.onReceivedError(view, request, error);
-
-                if (callbackDone) {
-                  return;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  callOnError(new Exception(String.format(Locale.ENGLISH, "Error loading webView with code: %d description: %s", error.getErrorCode(), error.getDescription())));
+                } else {
+                  callOnError(new Exception("Error loading webView (code and description unavailable)"));
                 }
-
-                callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
-                callbackDone = true;
-                //remove listeners from webview
-                iam.getWebView().setWebViewClient(null);
-              } catch (Exception exception) {
-                logErrorProvider.logError(exception.getLocalizedMessage());
+              } catch (Exception e) {
+                logErrorProvider.logError("Unexpected webView error", e);
               }
             }
 
@@ -711,14 +704,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             public void onPageFinished(WebView view, String url) {
               try {
               super.onPageFinished(view, url);
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !WebViewFeature.isFeatureSupported(WebViewFeature.VISUAL_STATE_CALLBACK)) {
-                  if (callbackDone) {
-                    return;
-                  }
-                  callbackDone = true;
-                  callback.onSuccess();
-                  //remove listeners from webview
-                  iam.getWebView().setWebViewClient(null);
+                if (!useVisualStateCallback) {
+                  callOnSuccess();
                 }
               } catch (Exception exception) {
                 logErrorProvider.logError(exception.getLocalizedMessage());
@@ -726,18 +713,18 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             }
           });
 
-          functionWebViewLocalFunctionInstance.addJavascriptInterface(new InAppWebViewBridge(iam.getWebView(), () -> {
+          webView.addJavascriptInterface(new InAppWebViewBridge(webView, () -> {
             try {
               dismissIam(activity);
             } catch (Exception exception) {
               logErrorProvider.logError(exception.getLocalizedMessage());
             }
           }, instance.logErrorProvider), "WonderPushInAppSDK");
-          functionWebViewLocalFunctionInstance.loadUrl(webViewUrl);
+          webView.loadUrl(webViewUrl);
         }
         catch (Exception exception) {
-          logErrorProvider.logError(exception.getLocalizedMessage());
-          callback.onError(new Exception(FAILED_TO_LOAD_WEB_VIEW_URL_MESSAGE));
+          logErrorProvider.logError("Unexpected error loading webView", exception);
+          callback.onError(exception);
         }
       });
     }
