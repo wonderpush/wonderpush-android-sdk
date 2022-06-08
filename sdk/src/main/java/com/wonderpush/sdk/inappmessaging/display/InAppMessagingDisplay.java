@@ -687,6 +687,16 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             }
 
             @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+              try {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                callOnError(new Exception("Error loading webView " + (description != null ? description : "(no description)") + " failing URL: " + (failingUrl != null ? failingUrl : "(no url)")));
+              } catch (Exception e) {
+                logErrorProvider.logError("Unexpected webView error", e);
+              }
+            }
+
+            @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
               try {
                 super.onReceivedError(view, request, error);
