@@ -18,11 +18,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.res.Configuration;
-import androidx.annotation.Keep;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-import androidx.webkit.WebViewCompat;
+import androidx.annotation.*;
 import androidx.webkit.WebViewFeature;
 
 import android.graphics.Bitmap;
@@ -77,7 +73,6 @@ import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Semaphore;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -669,15 +664,19 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
               return super.shouldInterceptRequest(view, url);
             }
 
+            @SuppressLint({"RequiresFeature", "NewApi"})
             @Override
             public void onPageStarted(WebView webView, String url, Bitmap favicon) {
               try {
                 super.onPageStarted(webView, url, favicon);
 
                 if (useVisualStateCallback) {
-                  WebViewCompat.postVisualStateCallback(webView, webViewVisualStateCallbackId, requestId -> {
-                    if (requestId == webViewVisualStateCallbackId) {
-                      callOnSuccess();
+                  webView.postVisualStateCallback(webViewVisualStateCallbackId, new WebView.VisualStateCallback() {
+                    @Override
+                    public void onComplete(long requestId) {
+                      if (requestId == webViewVisualStateCallbackId) {
+                        callOnSuccess();
+                      }
                     }
                   });
                 }
