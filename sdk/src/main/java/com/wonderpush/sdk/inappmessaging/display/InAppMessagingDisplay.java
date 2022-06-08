@@ -26,7 +26,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.webkit.WebResourceError;
@@ -407,7 +406,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                   }
                 };
       } else {
-        Logging.loge("No action url found for action.");
         actionListener = dismissListener;
       }
       actionListeners.add(actionListener);
@@ -699,7 +697,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
               try {
                 super.onReceivedHttpError(view, request, errorResponse);
-                callOnError(new Exception("HTTP error loading webView with status " + errorResponse.getStatusCode()));
+                callOnError(new Exception("HTTP error loading webView with status " + errorResponse.getStatusCode() + " for url: " + request.getUrl().toString()));
               } catch (Exception exception) {
                 logErrorProvider.logError(exception.getLocalizedMessage());
               }
