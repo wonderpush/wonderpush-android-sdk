@@ -18,6 +18,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.res.Configuration;
+import android.webkit.*;
 import androidx.annotation.*;
 import androidx.webkit.WebViewFeature;
 
@@ -28,11 +29,6 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.ActionModel;
@@ -697,7 +693,10 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
               try {
                 super.onReceivedHttpError(view, request, errorResponse);
-                callOnError(new Exception("HTTP error loading webView with status " + errorResponse.getStatusCode() + " for url: " + request.getUrl().toString()));
+                // Only fail for the main document
+                if (request.isForMainFrame()) {
+                  callOnError(new Exception("HTTP error loading webView with status " + errorResponse.getStatusCode() + " for url: " + request.getUrl().toString()));
+                }
               } catch (Exception exception) {
                 logErrorProvider.logError(exception.getLocalizedMessage());
               }
@@ -707,6 +706,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
               try {
                 super.onReceivedError(view, errorCode, description, failingUrl);
+                // Note: we don't have the luxury of testing request.isForMainFrame() here,
+                // and we can't compare failingUrl with webViewUrl because they may be different as we follow redirects
                 callOnError(new Exception("Error loading webView " + (description != null ? description : "(no description)") + " failing URL: " + (failingUrl != null ? failingUrl : "(no url)")));
               } catch (Exception e) {
                 logErrorProvider.logError("Unexpected webView error", e);
@@ -717,10 +718,13 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
               try {
                 super.onReceivedError(view, request, error);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                  callOnError(new Exception(String.format(Locale.ENGLISH, "Error loading webView with code: %d description: %s", error.getErrorCode(), error.getDescription())));
-                } else {
-                  callOnError(new Exception("Error loading webView (code and description unavailable)"));
+                // Only fail for the main document
+                if (request.isForMainFrame()) {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    callOnError(new Exception(String.format(Locale.ENGLISH, "Error loading webView with code: %d description: %s", error.getErrorCode(), error.getDescription())));
+                  } else {
+                    callOnError(new Exception("Error loading webView (code and description unavailable)"));
+                  }
                 }
               } catch (Exception e) {
                 logErrorProvider.logError("Unexpected webView error", e);
