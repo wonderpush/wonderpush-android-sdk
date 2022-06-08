@@ -74,6 +74,7 @@ import com.wonderpush.sdk.inappmessaging.model.MessageType;
 import com.wonderpush.sdk.inappmessaging.model.ModalMessage;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Semaphore;
@@ -100,6 +101,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   static final long DISMISS_THRESHOLD_MILLIS = 12 * 1000; // auto dismiss after 12 seconds for banner
 
   static final long INTERVAL_MILLIS = 1000;
+
+  static final String HTML_INAPP_SDK_URL = "https://cdn.by.wonderpush.com/inapp-sdk/1.0/wonderpush-loader.min.js";
 
   private static InAppMessagingDisplay instance;
 
@@ -648,7 +651,24 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
               callback.onError(new WebViewLoadingException(err));
             }
 
-            @SuppressLint("RequiresFeature")
+            @Nullable
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+              if (request != null && request.getUrl() != null && request.getUrl().toString().startsWith(HTML_INAPP_SDK_URL)) {
+                return new WebResourceResponse("text/javascript", "utf-8", new ByteArrayInputStream(new byte[0]));
+              }
+              return super.shouldInterceptRequest(view, request);
+            }
+
+            @Nullable
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+              if (url != null && url.startsWith(HTML_INAPP_SDK_URL)) {
+                return new WebResourceResponse("text/javascript", "utf-8", new ByteArrayInputStream(new byte[0]));
+              }
+              return super.shouldInterceptRequest(view, url);
+            }
+
             @Override
             public void onPageStarted(WebView webView, String url, Bitmap favicon) {
               try {
