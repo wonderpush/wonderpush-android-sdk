@@ -20,7 +20,6 @@ import android.os.Build;
 import android.view.View;
 import android.widget.ImageView;
 
-import com.wonderpush.sdk.LogErrorProvider;
 import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
 
 /** @hide */

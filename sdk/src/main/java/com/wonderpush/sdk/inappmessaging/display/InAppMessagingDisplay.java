@@ -26,7 +26,6 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 
 import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.ActionModel;
-import com.wonderpush.sdk.LogErrorProvider;
 import com.wonderpush.sdk.NotificationManager;
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
@@ -97,9 +96,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @Nonnull
   private SafeDeferProvider safeDeferProvider;
 
-  @NonNull
-  private LogErrorProvider logErrorProvider;
-
   public @Nullable com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay getDefaultInAppMessagingDisplay() {
     return inAppMessagingDisplay;
   }
@@ -134,8 +130,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @Keep
   public static void initialize(Application application,
                                 InAppMessaging inAppMessaging,
-                                SafeDeferProvider safeDeferProvider,
-                                LogErrorProvider logErrorProvider) {
+                                SafeDeferProvider safeDeferProvider) {
     if (instance == null) {
       UniversalComponent universalComponent =
               DaggerUniversalComponent.builder()
@@ -149,7 +144,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       instance = appComponent.providesInAppMessagingUI();
       application.registerActivityLifecycleCallbacks(instance);
       instance.safeDeferProvider = safeDeferProvider;
-      instance.logErrorProvider = logErrorProvider;
     }
   }
 
@@ -395,7 +389,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
 
     // Show iam after image or webview url successfully loads
-    new MediaLoader(this.imageLoader, this.safeDeferProvider, this.logErrorProvider, this::dismissIam)
+    new MediaLoader(this.imageLoader, this.safeDeferProvider, this::dismissIam)
             .loadNullableMedia(
             activity,
             bindingWrapper,
@@ -470,7 +464,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
               @Override
               public void onError(Exception e) {
 
-                logErrorProvider.logError("Could not load media", e);
+                Logging.loge("Could not load media", e);
 
                 if (layoutListener != null) {
                   bindingWrapper

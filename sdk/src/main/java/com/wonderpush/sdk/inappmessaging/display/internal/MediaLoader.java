@@ -11,7 +11,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.WebViewFeature;
 import com.squareup.picasso.Callback;
-import com.wonderpush.sdk.LogErrorProvider;
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridge;
@@ -39,18 +38,15 @@ public class MediaLoader {
 
     final private IamImageLoader imageLoader;
     final private SafeDeferProvider safeDeferProvider;
-    final private LogErrorProvider logErrorProvider;
     final private DismissProvider dismissProvider;
 
     public MediaLoader(
             IamImageLoader imageLoader,
             SafeDeferProvider safeDeferProvider,
-            LogErrorProvider logErrorProvider,
             DismissProvider dismissProvider
             ) {
         this.imageLoader = imageLoader;
         this.safeDeferProvider = safeDeferProvider;
-        this.logErrorProvider = logErrorProvider;
         this.dismissProvider = dismissProvider;
     }
 
@@ -93,12 +89,12 @@ public class MediaLoader {
                         try {
                             callOnError(webView, new Exception("WebView timeout reached"));
                         } catch (Exception e) {
-                            logErrorProvider.logError("Unexpected error", e);
+                            Logging.loge("Unexpected error", e);
                         }
                     });
                 }, WEB_VIEW_LOAD_TIMEOUT_MILLIS);
             } catch (Exception exception) {
-                logErrorProvider.logError(exception.getLocalizedMessage());
+                Logging.loge(exception.getLocalizedMessage());
             }
         }
 
@@ -144,7 +140,7 @@ public class MediaLoader {
                     callOnError(view, new Exception("HTTP error loading webView with status " + errorResponse.getStatusCode() + " for url: " + request.getUrl().toString()));
                 }
             } catch (Exception exception) {
-                logErrorProvider.logError(exception.getLocalizedMessage());
+                Logging.loge(exception.getLocalizedMessage());
             }
         }
 
@@ -161,7 +157,7 @@ public class MediaLoader {
                     }
                 }
             } catch (Exception e) {
-                logErrorProvider.logError("Unexpected webView error", e);
+                Logging.loge("Unexpected webView error", e);
             }
         }
 
@@ -190,7 +186,7 @@ public class MediaLoader {
                 // and we can't compare failingUrl with webViewUrl because they may be different as we follow redirects
                 callOnError(view, new Exception("Error loading webView " + (description != null ? description : "(no description)") + " failing URL: " + (failingUrl != null ? failingUrl : "(no url)")));
             } catch (Exception e) {
-                logErrorProvider.logError("Unexpected webView error", e);
+                Logging.loge("Unexpected webView error", e);
             }
         }
 
@@ -200,7 +196,7 @@ public class MediaLoader {
                 super.onPageFinished(view, url);
                 callOnSuccess(view);
             } catch (Exception exception) {
-                logErrorProvider.logError(exception.getLocalizedMessage());
+                Logging.loge(exception.getLocalizedMessage());
             }
         }
 
@@ -223,13 +219,13 @@ public class MediaLoader {
                         try {
                             this.dismissProvider.dismissIam(activity);
                         } catch (Exception exception) {
-                            logErrorProvider.logError(exception.getLocalizedMessage());
+                            Logging.loge(exception.getLocalizedMessage());
                         }
-                    }, this.logErrorProvider), "WonderPushInAppSDK");
+                    }), "WonderPushInAppSDK");
                     webView.loadUrl(webViewUrl);
                 }
                 catch (Exception exception) {
-                    logErrorProvider.logError("Unexpected error loading webView", exception);
+                    Logging.loge("Unexpected error loading webView", exception);
                     if (callback != null) callback.onError(exception);
                 }
             });

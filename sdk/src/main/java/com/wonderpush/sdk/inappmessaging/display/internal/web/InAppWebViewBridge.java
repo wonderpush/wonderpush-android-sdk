@@ -7,9 +7,8 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
 import com.wonderpush.sdk.JSONUtil;
-import com.wonderpush.sdk.LogErrorProvider;
 import com.wonderpush.sdk.WonderPush;
-import com.wonderpush.sdk.inappmessaging.internal.Logging;
+import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
 
 import org.json.JSONObject;
 
@@ -19,29 +18,14 @@ public class InAppWebViewBridge
 {
     private final WeakReference<WebView> concernedWebViewReference;
     private final InAppWebViewBridgeInterface inAppWebViewBridgeInterface;
-    private final WeakReference<LogErrorProvider> logErrorProviderWeakReference;
 
-    public InAppWebViewBridge(WebView concernedWebViewExternalInstance, InAppWebViewBridgeInterface externalInAppWebViewBridgeInterface, LogErrorProvider logErrorProvider) {
+    public InAppWebViewBridge(WebView concernedWebViewExternalInstance, InAppWebViewBridgeInterface externalInAppWebViewBridgeInterface) {
         concernedWebViewReference = new WeakReference(concernedWebViewExternalInstance);
         inAppWebViewBridgeInterface = externalInAppWebViewBridgeInterface;
-        logErrorProviderWeakReference = new WeakReference<>(logErrorProvider);
     }
 
     private void logException(Exception exception){
-        try{
-            LogErrorProvider logErrorProviderInWeakReferenceInstance = logErrorProviderWeakReference.get();
-
-            if (logErrorProviderInWeakReferenceInstance == null){
-                Logging.loge(exception.getLocalizedMessage());
-                return;
-            }
-
-            logErrorProviderInWeakReferenceInstance.logError(exception.getLocalizedMessage());
-        }
-        catch(Exception exceptionInstance){
-            //use default method if weakreference is empty
-            Logging.loge(exceptionInstance.getLocalizedMessage());
-        }
+        Logging.loge(exception.getLocalizedMessage(), exception);
     }
 
 
