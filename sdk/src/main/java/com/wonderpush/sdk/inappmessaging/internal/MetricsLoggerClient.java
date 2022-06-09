@@ -72,8 +72,8 @@ public class MetricsLoggerClient {
 
   /** Log click */
   public void logMessageClick(InAppMessage message, List<ActionModel> actions) {
-    Map<String, Object> data = new HashMap<>();
     InAppMessage.ButtonType buttonType = message.getButtonType(actions);
+    Map<String, Object> data = new HashMap<>();
     if (buttonType == InAppMessage.ButtonType.PRIMARY) data.put("buttonLabel", "primary");
     if (buttonType == InAppMessage.ButtonType.SECONDARY) data.put("buttonLabel", "secondary");
     JSONObject eventData = this.eventData(message.getNotificationMetadata(), data);
@@ -85,6 +85,20 @@ public class MetricsLoggerClient {
 
     // No matter what, always trigger developer callbacks
     developerListenerManager.messageClicked(message, actions);
+  }
+
+  public void logMessageClick(InAppMessage message, String buttonLabel) {
+    Map<String, Object> data = new HashMap<>();
+    if (buttonLabel != null) data.put("buttonLabel", buttonLabel);
+    JSONObject eventData = this.eventData(message.getNotificationMetadata(), data);
+    if (this.internalEventTracker.isSubscriptionStatusOptIn()) {
+      this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
+    } else {
+      this.internalEventTracker.countInternalEvent("@INAPP_CLICKED", eventData);
+    }
+
+    // No matter what, always trigger developer callbacks
+    developerListenerManager.messageClicked(message, buttonLabel);
   }
 
   /** Log Rendering error */

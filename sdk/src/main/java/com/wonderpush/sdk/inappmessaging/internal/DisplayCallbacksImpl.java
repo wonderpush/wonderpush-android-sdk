@@ -14,6 +14,7 @@
 
 package com.wonderpush.sdk.inappmessaging.internal;
 
+import androidx.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
@@ -123,12 +124,33 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
   }
 
   private void logMessageClick(List<ActionModel> actions) {
-
     Logging.logd("Attempting to record: " + MESSAGE_CLICK);
     Completable completable =
-        Completable.fromAction(() -> metricsLoggerClient.logMessageClick(inAppMessage, actions));
+            Completable.fromAction(() -> metricsLoggerClient.logMessageClick(inAppMessage, actions));
 
     logImpressionIfNeeded(completable);
+  }
+
+  private void logMessageClick(String buttonLabel) {
+    Logging.logd("Attempting to record: " + MESSAGE_CLICK);
+    Completable completable =
+        Completable.fromAction(() -> metricsLoggerClient.logMessageClick(inAppMessage, buttonLabel));
+
+    logImpressionIfNeeded(completable);
+  }
+
+  @Override
+  public void messageClicked(@Nullable String buttonLabel) {
+    /**
+     * NOTE: While the api is passing us the campaign id via the IAM, we pul the campaignId from
+     * the cache to ensure that we're only logging events for campaigns that we've fetched - to
+     * avoid implicitly trusting an id that is provided through the app
+     */
+    if (shouldLog()) {
+      logMessageClick(buttonLabel);
+      return;
+    }
+    logActionNotTaken(MESSAGE_CLICK);
   }
 
   @Override

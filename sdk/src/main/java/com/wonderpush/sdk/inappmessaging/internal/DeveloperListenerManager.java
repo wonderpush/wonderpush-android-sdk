@@ -100,6 +100,15 @@ public class DeveloperListenerManager {
     }
   }
 
+  public void messageClicked(InAppMessage inAppMessage, String buttonLabel) {
+    List<ClicksExecutorAndListener> listeners = new ArrayList<>(registeredClickListeners.values());
+    for (ClicksExecutorAndListener listener : listeners) {
+      listener
+              .withExecutor(CALLBACK_QUEUE_EXECUTOR)
+              .execute(() -> listener.getListener().messageClicked(inAppMessage, buttonLabel));
+    }
+  }
+
   // pass through from InAppMessaging public api
   public void addImpressionListener(InAppMessagingImpressionListener impressionListener) {
     registeredImpressionListeners.put(

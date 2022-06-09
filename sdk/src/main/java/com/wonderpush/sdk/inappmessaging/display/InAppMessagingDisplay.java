@@ -18,6 +18,9 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import androidx.annotation.*;
 
 import android.text.TextUtils;
@@ -41,6 +44,7 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.Appl
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
+import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridge;
 import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
 import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;
@@ -72,6 +76,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   static final long DISMISS_THRESHOLD_MILLIS = 12 * 1000; // auto dismiss after 12 seconds for banner
 
   static final long INTERVAL_MILLIS = 1000;
+
+  static final String JAVASCRIPT_INTERFACE_NAME = "_wpiam";
 
   private static InAppMessagingDisplay instance;
 
@@ -388,8 +394,30 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       bindingWrapper.getImageView().getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
     }
 
+    final WebView webView = bindingWrapper.getWebView();
+    if (webView != null) {
+      webView.addJavascriptInterface(new InAppWebViewBridge(webView, new InAppWebViewBridge.Callbacks() {
+        @Override
+        public void onDismiss() {
+          callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+          dismissIam(activity);
+        }
+
+        @Override
+        public void onClick(String buttonLabel) {
+          if (callbacks != null) {
+            callbacks.messageClicked(buttonLabel);
+          }
+          notifyIamClick();
+        }
+      }), JAVASCRIPT_INTERFACE_NAME);
+
+      //NOCOMMIT
+      WebView.setWebContentsDebuggingEnabled(true);
+    }
+
     // Show iam after image or webview url successfully loads
-    new MediaLoader(this.imageLoader, this.safeDeferProvider, this::dismissIam)
+    new MediaLoader(this.imageLoader, this.safeDeferProvider)
             .loadNullableMedia(
             activity,
             bindingWrapper,
@@ -449,6 +477,18 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                           INTERVAL_MILLIS);
                 }
 
+                // Set up a new webView client that will disable the Javascript interface after first navigation
+                if (webView != null) {
+                  webView.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                      super.onPageStarted(view, url, favicon);
+                      view.removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME);
+                    }
+                  });
+                }
+
+                // Show the message
                 activity.runOnUiThread(
                         new Runnable() {
                           @Override

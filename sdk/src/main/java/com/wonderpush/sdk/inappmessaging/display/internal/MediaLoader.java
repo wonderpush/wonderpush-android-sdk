@@ -2,6 +2,7 @@ package com.wonderpush.sdk.inappmessaging.display.internal;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Handler;
@@ -9,14 +10,14 @@ import android.os.Looper;
 import android.webkit.*;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.webkit.WebViewFeature;
 import com.squareup.picasso.Callback;
+import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridge;
 
 import java.io.ByteArrayInputStream;
-import java.lang.ref.WeakReference;
+import java.io.InputStream;
 import java.util.Locale;
 import java.util.Random;
 
@@ -32,30 +33,25 @@ public class MediaLoader {
         }
     }
 
-    public interface DismissProvider {
-        void dismissIam(Activity activity);
-    }
-
     final private IamImageLoader imageLoader;
     final private SafeDeferProvider safeDeferProvider;
-    final private DismissProvider dismissProvider;
 
     public MediaLoader(
             IamImageLoader imageLoader,
-            SafeDeferProvider safeDeferProvider,
-            DismissProvider dismissProvider
+            SafeDeferProvider safeDeferProvider
             ) {
         this.imageLoader = imageLoader;
         this.safeDeferProvider = safeDeferProvider;
-        this.dismissProvider = dismissProvider;
     }
 
     private class BaseClient extends WebViewClient {
 
         private Callback callback;
+        private Resources resources;
 
-        BaseClient(Callback callback) {
+        BaseClient(Callback callback, Resources resources) {
             this.callback = callback;
+            this.resources = resources;
         }
 
         private boolean callbackDone = false;
@@ -98,19 +94,24 @@ public class MediaLoader {
             }
         }
 
+        protected InputStream getJavascriptSDKInputStream() {
+            InputStream result = this.resources.openRawResource(R.raw.wonderpush_inapp_sdk);
+            return result;
+        }
+
     }
 
     private class ModernClient extends BaseClient {
 
-        ModernClient(Callback callback) {
-            super(callback);
+        ModernClient(Callback callback, Resources resources) {
+            super(callback, resources);
         }
 
         @Nullable
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
             if (request != null && request.getUrl() != null && request.getUrl().toString().startsWith(HTML_INAPP_SDK_URL)) {
-                return new WebResourceResponse("text/javascript", "utf-8", new ByteArrayInputStream(new byte[0]));
+                return new WebResourceResponse("text/javascript", "utf-8", getJavascriptSDKInputStream());
             }
             return super.shouldInterceptRequest(view, request);
         }
@@ -165,15 +166,15 @@ public class MediaLoader {
 
     private class LegacyClient extends BaseClient {
 
-        LegacyClient(Callback callback) {
-            super(callback);
+        LegacyClient(Callback callback, Resources resources) {
+            super(callback, resources);
         }
 
         @Nullable
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
             if (url != null && url.startsWith(HTML_INAPP_SDK_URL)) {
-                return new WebResourceResponse("text/javascript", "utf-8", new ByteArrayInputStream(new byte[0]));
+                return new WebResourceResponse("text/javascript", "utf-8", getJavascriptSDKInputStream());
             }
             return super.shouldInterceptRequest(view, url);
         }
@@ -213,15 +214,8 @@ public class MediaLoader {
                 try
                 {
 
-                    WebViewClient client = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? new ModernClient(callback) : new LegacyClient(callback);
+                    WebViewClient client = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? new ModernClient(callback, activity.getResources()) : new LegacyClient(callback, activity.getResources());
                     webView.setWebViewClient(client);
-                    webView.addJavascriptInterface(new InAppWebViewBridge(webView, () -> {
-                        try {
-                            this.dismissProvider.dismissIam(activity);
-                        } catch (Exception exception) {
-                            Logging.loge(exception.getLocalizedMessage());
-                        }
-                    }), "WonderPushInAppSDK");
                     webView.loadUrl(webViewUrl);
                 }
                 catch (Exception exception) {

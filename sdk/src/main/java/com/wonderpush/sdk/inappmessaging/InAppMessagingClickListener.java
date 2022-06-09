@@ -16,6 +16,7 @@ package com.wonderpush.sdk.inappmessaging;
 
 import androidx.annotation.NonNull;
 
+import androidx.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
@@ -32,4 +33,11 @@ public interface InAppMessagingClickListener {
    * @param actions
    */
   void messageClicked(@NonNull InAppMessage inAppMessage, @NonNull List<ActionModel> actions);
+
+  /**
+   * Triggered when a message is tapped (ie: button, in the modal view) and which buttonLabel triggered it.
+   * @param inAppMessage
+   * @param buttonLabel
+   */
+  void messageClicked(@NonNull InAppMessage inAppMessage, @Nullable String buttonLabel);
 }

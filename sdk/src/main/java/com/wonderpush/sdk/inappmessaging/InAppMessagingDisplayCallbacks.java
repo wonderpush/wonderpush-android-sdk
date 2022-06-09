@@ -15,7 +15,7 @@
 package com.wonderpush.sdk.inappmessaging;
 
 import androidx.annotation.NonNull;
-
+import androidx.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 
 import java.util.List;
@@ -42,6 +42,12 @@ public interface InAppMessagingDisplayCallbacks {
    * @param actions
    */
   void messageClicked(@NonNull List<ActionModel> actions);
+
+  /**
+   * Log the click, passing along the corresponding buttonLabel.
+   * @param buttonLabel
+   */
+  void messageClicked(@Nullable String buttonLabel);
 
   /**
    * Report display errors.

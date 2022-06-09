@@ -14,14 +14,17 @@ import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 
-public class InAppWebViewBridge
-{
-    private final WeakReference<WebView> concernedWebViewReference;
-    private final InAppWebViewBridgeInterface inAppWebViewBridgeInterface;
+public class InAppWebViewBridge {
+    public interface Callbacks {
+        void onDismiss();
+        void onClick(String buttonLabel);
+    }
+    private final WeakReference<WebView> webViewRef;
+    private final Callbacks callbacks;
 
-    public InAppWebViewBridge(WebView concernedWebViewExternalInstance, InAppWebViewBridgeInterface externalInAppWebViewBridgeInterface) {
-        concernedWebViewReference = new WeakReference(concernedWebViewExternalInstance);
-        inAppWebViewBridgeInterface = externalInAppWebViewBridgeInterface;
+    public InAppWebViewBridge(WebView concernedWebViewExternalInstance, Callbacks callbacks) {
+        webViewRef = new WeakReference<>(concernedWebViewExternalInstance);
+        this.callbacks = callbacks;
     }
 
     private void logException(Exception exception){
@@ -41,9 +44,14 @@ public class InAppWebViewBridge
         onUserCallDismissMethod();
     }
 
+    @JavascriptInterface
+    public void trackClick(String buttonLabel) {
+        if (callbacks != null) callbacks.onClick(buttonLabel);
+    }
+
     private void onUserCallDismissMethod(){
         try{
-            inAppWebViewBridgeInterface.onDimissCalled();
+            callbacks.onDismiss();
         }
         catch(Exception exception){
             logException(exception);
@@ -81,7 +89,7 @@ public class InAppWebViewBridge
     {
         try
         {
-            WebView functionLocalReferenceToWebview = concernedWebViewReference.get();
+            WebView functionLocalReferenceToWebview = webViewRef.get();
 
             if (null == functionLocalReferenceToWebview){
                 return;
