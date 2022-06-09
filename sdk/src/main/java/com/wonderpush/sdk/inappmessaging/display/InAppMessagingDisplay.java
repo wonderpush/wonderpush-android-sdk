@@ -411,9 +411,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
           notifyIamClick();
         }
       }), JAVASCRIPT_INTERFACE_NAME);
-
-      //NOCOMMIT
-      WebView.setWebContentsDebuggingEnabled(true);
     }
 
     // Show iam after image or webview url successfully loads
