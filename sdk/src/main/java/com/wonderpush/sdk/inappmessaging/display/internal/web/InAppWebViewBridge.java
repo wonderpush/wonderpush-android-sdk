@@ -1,20 +1,32 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.web;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
+import android.util.Patterns;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
-import com.wonderpush.sdk.JSONUtil;
+import androidx.annotation.Nullable;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
+import java.util.Set;
 
 public class InAppWebViewBridge {
+    private static final String ARRAY_RETURN_TYPE_PREFIX = "__array__";
+    private static final String OBJECT_RETURN_TYPE_PREFIX = "__object__";
+    private static final String OBJECT_ARG_TYPE_PREFIX = "__object__";
+    private static final String NUMBER_ARG_TYPE_PREFIX = "__number__";
+    private static final String BOOLEAN_ARG_TYPE_PREFIX = "__boolean__";
     public interface Callbacks {
         void onDismiss();
         void onClick(String buttonLabel);
@@ -27,21 +39,112 @@ public class InAppWebViewBridge {
         this.callbacks = callbacks;
     }
 
-    private void logException(Exception exception){
+    private void logException(Exception exception) {
         Logging.loge(exception.getLocalizedMessage(), exception);
     }
 
+    private String toJavascriptResultArray(JSONArray a) {
+        return ARRAY_RETURN_TYPE_PREFIX + a.toString();
+    }
 
-    /********************************************************************/
-    /*                       DISMISS                                    */
-    @JavascriptInterface
-    public void dismiss() {
-        onUserCallDismissMethod();
+    private String toJavascriptResultObject(JSONObject a) {
+        return OBJECT_RETURN_TYPE_PREFIX + a.toString();
+    }
+
+    private @Nullable Object argToObject(String arg) {
+        return argToObject(arg, null);
+    }
+
+    private @Nullable Object argToObject(String arg, Object defaultValue) {
+        if (arg == null) return null;
+        if (arg.startsWith(BOOLEAN_ARG_TYPE_PREFIX)) {
+            return arg.equals("__boolean__true");
+        }
+        if (arg.startsWith(NUMBER_ARG_TYPE_PREFIX)) {
+            try {
+                return NumberFormat.getInstance().parse(arg.substring(NUMBER_ARG_TYPE_PREFIX.length()));
+            } catch (ParseException e) {
+                return null;
+            }
+        }
+        if (arg.startsWith(OBJECT_ARG_TYPE_PREFIX)) {
+            String sub = arg.substring(OBJECT_ARG_TYPE_PREFIX.length());
+            try {
+                return new JSONObject(sub);
+            } catch (JSONException e) {
+                try {
+                    return new JSONArray(sub);
+                } catch (JSONException e1) {
+                    return null;
+                }
+            }
+        }
+        return arg;
+    }
+
+    private @Nullable Number argToNumber(String arg) {
+        return argToNumber(arg, null);
+    }
+
+    private @Nullable Number argToNumber(String arg, Number defaultValue) {
+        Object result = argToObject(arg);
+        return result instanceof Number ? (Number)result : defaultValue;
+    }
+
+    private @Nullable JSONObject argToJSONObject(String arg) {
+        return argToJSONObject(arg, null);
+    }
+
+    private @Nullable JSONObject argToJSONObject(String arg, JSONObject defaultValue) {
+        Object result = argToObject(arg);
+        return result instanceof JSONObject ? (JSONObject)result : defaultValue;
+    }
+
+    private @Nullable JSONArray argToJSONArray(String arg) {
+        return argToJSONArray(arg, null);
+    }
+
+    private @Nullable JSONArray argToJSONArray(String arg, JSONArray defaultValue) {
+        Object result = argToObject(arg);
+        return result instanceof JSONArray ? (JSONArray)result : defaultValue;
+    }
+
+    private @Nullable JSONObject parseJSONObject(String s, JSONObject defaultValue) {
+        if (s == null) return defaultValue;
+        try {
+            return new JSONObject(s);
+        } catch (JSONException e) {
+            return defaultValue;
+        }
+    }
+
+    private @Nullable JSONArray parseJSONArray(String s, JSONArray defaultValue) {
+        if (s == null) return defaultValue;
+        try {
+            return new JSONArray(s);
+        } catch (JSONException e) {
+            return defaultValue;
+        }
+    }
+
+    private void throwJavascriptError(String msg) {
+        final WebView webView = webViewRef.get();
+        if (webView != null) {
+            webView.post(new Runnable() {
+                @Override
+                public void run() {
+                    String js = String.format(Locale.ENGLISH, "console.error(%s)", JSONObject.quote(msg));
+                    String console = "javascript:" + Uri.encode(js);
+                    webView.loadUrl(console);
+                }
+            });
+        }
+        throw new RuntimeException(msg);
     }
 
     @JavascriptInterface
-    public void dismiss(String buttonId) {
-        onUserCallDismissMethod();
+    public void dismiss() {
+        if (callbacks != null) callbacks.onDismiss();
     }
 
     @JavascriptInterface
@@ -49,466 +152,208 @@ public class InAppWebViewBridge {
         if (callbacks != null) callbacks.onClick(buttonLabel);
     }
 
-    private void onUserCallDismissMethod(){
-        try{
-            callbacks.onDismiss();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                       OPEN TARGET URL                            */
     @JavascriptInterface
-    public void openTargetUrl(String url) {
-        onUserWantToOpenTargetUrl(url, InAppWebViewBridgeOpenTargetUrlMode.CURRENT);
+    public void openTargetUrl(String urlString) {
+        openTargetUrl(urlString, "{}");
     }
 
     @JavascriptInterface
-    public void openTargetUrl(String url, String params) {
-        try
-        {
-            if (JSONUtil.isJSONValid(params)) {
-                JSONObject paramsDecoded = new JSONObject(params);
+    public void openTargetUrl(String urlString, String optionString) {
+        JSONObject options = argToJSONObject(optionString, new JSONObject());
+        final String mode = options.optString("mode", "current");
 
-                if (paramsDecoded.has("mode")) {
-                    onUserWantToOpenTargetUrl(url, InAppWebViewBridgeOpenTargetUrlMode.getInAppWebViewBridgeOpenTargetUrlModeFor(paramsDecoded.getString("mode")));
-                    return;
-                }
-            }
-
-            onUserWantToOpenTargetUrl(url, InAppWebViewBridgeOpenTargetUrlMode.CURRENT);
+        // Check url
+        if (!Patterns.WEB_URL.matcher(urlString).matches()) {
+            throwJavascriptError("openTargetUrl: Invalid url");
         }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    private void onUserWantToOpenTargetUrl(String url, InAppWebViewBridgeOpenTargetUrlMode mode)
-    {
-        try
-        {
-            WebView functionLocalReferenceToWebview = webViewRef.get();
-
-            if (null == functionLocalReferenceToWebview){
-                return;
-            }
-
-            switch(mode){
-                case EXTERNAL:
-                    functionLocalReferenceToWebview.post(() -> {
+        final WebView webView = webViewRef.get();
+        if (webView != null) {
+            webView.post(new Runnable() {
+                @Override
+                public void run() {
+                    if ("current".equals(mode)) {
+                        webView.loadUrl(urlString);
+                    } else {
+                        Uri uri = Uri.parse(urlString);
+                        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                         try {
-                            //require browser does not work
-                            Intent externalWebViewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                            functionLocalReferenceToWebview.getContext().startActivity(externalWebViewIntent);
+                            webView.getContext().startActivity(intent);
+                        } catch (ActivityNotFoundException e) {
+                            Logging.loge("No service for intent " + intent, e);
                         }
-                        catch(Exception exception){
-                            logException(exception);
-                        }
-                    });
-                    break;
-                case PARENT:
-                    //works, you can test with "googlechrome://navigate?url=" + url
-                    Intent externalWebViewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        externalWebViewIntent.setFlags(Intent.FLAG_ACTIVITY_REQUIRE_NON_BROWSER);
                     }
-                    functionLocalReferenceToWebview.post(() -> {
-                            try {
-                                functionLocalReferenceToWebview.getContext().startActivity(externalWebViewIntent);
-                            }
-                            catch(Exception exception){
-                                logException(exception);
-                            }
-                    });
-                    break;
-                default:
-                    functionLocalReferenceToWebview.post(() -> {
-                        try {
-                            functionLocalReferenceToWebview.loadUrl(url);
-                        }
-                        catch(Exception exception){
-                            logException(exception);
-                        }
-                    });
-                    break;
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                       SUBSCRIBE TO NOTIFICATIONS                 */
-    @JavascriptInterface
-    public void subscribeToNotifications(){
-        try{
-            WonderPush.subscribeToNotifications();
-        }
-        catch(Exception exception){
-            logException(exception);
+                }
+            });
         }
     }
 
     @JavascriptInterface
-    public void subscribeToNotifications(String encodedEvent){
-        try{
-            WonderPush.subscribeToNotifications();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                       UNSUBSCRIBE TO NOTIFICATIONS               */
-    @JavascriptInterface
-    public void unsubscribeFromNotifications(){
-        try{
-            WonderPush.unsubscribeFromNotifications();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                     IS SUBSCRIBED TO NOTIFICATIONS               */
-    @JavascriptInterface
-    public boolean isSubscribedToNotifications(){
-        try{
-            return WonderPush.isSubscribedToNotifications();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return false;
-    }
-
-    /********************************************************************/
-    /*                          GET USER ID                             */
-    @JavascriptInterface
-    public String getUserId(){
-        try{
-            return WonderPush.getUserId();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
-    }
-
-    /********************************************************************/
-    /*                          GET INSTALLATION ID                     */
-    @JavascriptInterface
-    public String getInstallationId(){
-        try{
-            return WonderPush.getInstallationId();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
-    }
-
-    /********************************************************************/
-    /*                          GET COUNTRY                             */
-    @JavascriptInterface
-    public String getCountry(){
-        try{
-            return WonderPush.getCountry();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
-    }
-
-    /********************************************************************/
-    /*                          GET CURRENCY                             */
-    @JavascriptInterface
-    public String getCurrency(){
-        try
-        {
-           return WonderPush.getCurrency();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
-    }
-
-    /********************************************************************/
-    /*                          GET LOCALE                              */
-    @JavascriptInterface
-    public String getLocale(){
-        try{
-            return WonderPush.getLocale();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
-    }
-
-    /********************************************************************/
-    /*                          GET TIMEZONE                            */
-    @JavascriptInterface
-    public String getTimeZone(){
-        try{
-            return WonderPush.getTimeZone();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
-    }
-
-    /********************************************************************/
-    /*                         TRACK EVENT                              */
-    @JavascriptInterface
-    public void trackEvent(String type){
-        try{
-            WonderPush.trackEvent(type);
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
+    public void subscribeToNotifications() {
+        WonderPush.subscribeToNotifications();
     }
 
     @JavascriptInterface
-    public void trackEvent(String type, String attributes){
-        try{
-            if (JSONUtil.isJSONValid(attributes)) {
-                JSONObject attributesDecoded = new JSONObject(attributes);
-                WonderPush.trackEvent(type, (JSONObject) attributesDecoded);
-            }
-            else {
-                WonderPush.trackEvent(type);
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
+    public void unsubscribeFromNotifications() {
+        WonderPush.unsubscribeFromNotifications();
+    }
+
+    @JavascriptInterface
+    public boolean isSubscribedToNotifications() {
+        return WonderPush.isSubscribedToNotifications();
+    }
+
+    @JavascriptInterface
+    public String getUserId() {
+        return WonderPush.getUserId();
+    }
+
+    @JavascriptInterface
+    public String getInstallationId() {
+        return WonderPush.getInstallationId();
+    }
+
+    @JavascriptInterface
+    public String getCountry() {
+        return WonderPush.getCountry();
+    }
+
+    @JavascriptInterface
+    public String getCurrency() {
+        return WonderPush.getCurrency();
+    }
+
+    @JavascriptInterface
+    public String getLocale() {
+        return WonderPush.getLocale();
+    }
+
+    @JavascriptInterface
+    public String getTimeZone() {
+        return WonderPush.getTimeZone();
+    }
+
+    @JavascriptInterface
+    public void trackEvent(String type) {
+        WonderPush.trackEvent(type);
+    }
+
+    @JavascriptInterface
+    public void trackEvent(String type, String attributeString) {
+        JSONObject attributes = argToJSONObject(attributeString, new JSONObject());
+        WonderPush.trackEvent(type, attributes);
+    }
+
+    @JavascriptInterface
+    public void addTag(String t1) {
+        WonderPush.addTag(t1);
+    }
+
+    @JavascriptInterface
+    public void addTag(String t1, String t2) {
+        WonderPush.addTag(t1, t2);
+    }
+
+    @JavascriptInterface
+    public void addTag(String t1, String t2, String t3) {
+        WonderPush.addTag(t1, t2, t3);
+    }
+
+    @JavascriptInterface
+    public void addTag(String t1, String t2, String t3, String t4) {
+        WonderPush.addTag(t1, t2, t3, t4);
+    }
+
+    @JavascriptInterface
+    public void addTag(String t1, String t2, String t3, String t4, String t5) {
+        WonderPush.addTag(t1, t2, t3, t4, t5);
+    }
+
+    @JavascriptInterface
+    public void removeTag(String t1) {
+        WonderPush.removeTag(t1);
+    }
+
+    @JavascriptInterface
+    public void removeTag(String t1, String t2) {
+        WonderPush.removeTag(t1, t2);
+    }
+
+    @JavascriptInterface
+    public void removeTag(String t1, String t2, String t3) {
+        WonderPush.removeTag(t1, t2, t3);
+    }
+
+    @JavascriptInterface
+    public void removeTag(String t1, String t2, String t3, String t4) {
+        WonderPush.removeTag(t1, t2, t3, t4);
+    }
+
+    @JavascriptInterface
+    public void removeTag(String t1, String t2, String t3, String t4, String t5) {
+        WonderPush.removeTag(t1, t2, t3, t4, t5);
+    }
+
+    @JavascriptInterface
+    public void removeAllTags() {
+        WonderPush.removeAllTags();
+    }
+
+    @JavascriptInterface
+    public boolean hasTag(String tag) {
+        return WonderPush.hasTag(tag);
+    }
+
+    @JavascriptInterface
+    public String getTags() {
+        Set<String> tags = WonderPush.getTags();
+        return toJavascriptResultArray(new JSONArray(tags));
+    }
+
+    @JavascriptInterface
+    public Object getPropertyValue(String field) {
+        Object result = WonderPush.getPropertyValue(field);
+        if (result == JSONObject.NULL) return null;
+        return result;
+    }
+
+    @JavascriptInterface
+    public String getPropertyValues(String field) {
+        return toJavascriptResultArray(new JSONArray(WonderPush.getPropertyValues(field)));
+    }
+
+    @JavascriptInterface
+    public void addProperty(String field, String valString) {
+        Object val = argToObject(valString, null);
+        WonderPush.addProperty(field, val);
+    }
+
+    @JavascriptInterface
+    public void removeProperty(String field, String encodedValue) {
+        Object val = argToObject(encodedValue, null);
+        WonderPush.removeProperty(field, val);
+    }
+
+    @JavascriptInterface
+    public void setProperty(String field, String encodedValue) {
+        Object val = argToObject(encodedValue, null);
+        WonderPush.setProperty(field, val);
+    }
+
+    @JavascriptInterface
+    public void unsetProperty(String field) {
+        WonderPush.unsetProperty(field);
+    }
+
+    @JavascriptInterface
+    public void putProperties(String encodedProperties) {
+        JSONObject properties = argToJSONObject(encodedProperties);
+        if (properties != null) {
+            WonderPush.putProperties(properties);
         }
     }
 
-    /********************************************************************/
-    /*                         ADD TAG                                  */
     @JavascriptInterface
-    public void addTag(String encodedTagToAdd){
-        try{
-            if (JSONUtil.isJSONValid(encodedTagToAdd)) {
-                String[] decodedTagToAdd = JSONUtil.jsonStringToStringArray(encodedTagToAdd);
-                WonderPush.addTag(decodedTagToAdd);
-            }
-            else {
-                WonderPush.addTag(encodedTagToAdd);
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                         REMOVE TAG                               */
-    @JavascriptInterface
-    public void removeTag(String encodedTagToRemove){
-        try{
-            if (JSONUtil.isJSONValid(encodedTagToRemove)) {
-                String[] decodedTagToRemove = JSONUtil.jsonStringToStringArray(encodedTagToRemove);
-                WonderPush.removeTag(decodedTagToRemove);
-            }
-            else {
-                WonderPush.removeTag(encodedTagToRemove);
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                         REMOVE ALL TAGS                          */
-    @JavascriptInterface
-    public void removeAllTags(){
-        try{
-            WonderPush.removeAllTags();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                           HAS TAG                                */
-    @JavascriptInterface
-    public boolean hasTag(String tag){
-        try{
-            return WonderPush.hasTag(tag);
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return false;
-    }
-
-    /********************************************************************/
-    /*                           GET TAGS                               */
-    @JavascriptInterface
-    public String getTags(){
-        try{
-            return JSONUtil.JSONArray(WonderPush.getTags().toArray(new String[0])).toString();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
-    }
-
-    /********************************************************************/
-    /*                           GET PROPERTY VALUE                     */
-    @JavascriptInterface
-    public String getPropertyValue(String field){
-        try{
-
-            Object propertyValueResult = WonderPush.getPropertyValue(field);
-
-            if (propertyValueResult instanceof String){
-                //we have a string
-                return (String) propertyValueResult;
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return null;
-    }
-
-    /********************************************************************/
-    /*                           GET PROPERTY VALUES                    */
-    @JavascriptInterface
-    public String getPropertyValues(String field){
-        try{
-            return JSONUtil.JSONArray(WonderPush.getPropertyValues(field).toArray(new Object[0])).toString();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "{[]}";
-    }
-
-    /********************************************************************/
-    /*                           ADD PROPERTY VALUE                     */
-    @JavascriptInterface
-    public void addProperty(String field, String encodedValue){
-        try
-        {
-            if (JSONUtil.isJSONValid(encodedValue)) {
-                String[] decodedPropertyToAdd = JSONUtil.jsonStringToStringArray(encodedValue);
-                WonderPush.addProperty(field, decodedPropertyToAdd);
-            }
-            else {
-                WonderPush.addProperty(field, encodedValue);
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                           REMOVE PROPERTY VALUE                  */
-    @JavascriptInterface
-    public void removeProperty(String field, String encodedValue){
-        try{
-            if (JSONUtil.isJSONValid(encodedValue)) {
-                String[] decodedPropertyToRemove = JSONUtil.jsonStringToStringArray(encodedValue);
-                WonderPush.removeProperty(field, decodedPropertyToRemove);
-            }
-            else {
-                WonderPush.removeProperty(field, encodedValue);
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                           SET PROPERTY                           */
-    @JavascriptInterface
-    public void setProperty(String field, String value){
-        try{
-            if (value == null || value.equals("undefined")){
-                WonderPush.unsetProperty(field);
-            }
-            else if (JSONUtil.isJSONValid(value)){
-                Object[] decodedObjects = JSONUtil.jsonStringToObjectArray(value);
-                WonderPush.setProperty(field, decodedObjects);
-            }
-            else if ("true".equals(value) || "false".equals(value)){
-                WonderPush.setProperty(field, "true".equals(value));
-            }
-            else {
-                WonderPush.setProperty(field, value);
-            }
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                           UNSET PROPERTY                         */
-    @JavascriptInterface
-    public void unsetProperty(String field){
-        try{
-            WonderPush.unsetProperty(field);
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                          PUT PROPERTIES                          */
-    @JavascriptInterface
-    public void putProperties(String properties){
-        try
-        {
-            JSONObject decodedProperties = new JSONObject(properties);
-            WonderPush.putProperties(decodedProperties);
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-    }
-
-    /********************************************************************/
-    /*                          GET PROPERTIES                          */
-    @JavascriptInterface
-    public String getProperties(){
-        try{
-            return WonderPush.getProperties().toString();
-        }
-        catch(Exception exception){
-            logException(exception);
-        }
-
-        return "";
+    public String getProperties() {
+        return toJavascriptResultObject(WonderPush.getProperties());
     }
 }
