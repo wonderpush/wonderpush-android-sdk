@@ -38,14 +38,7 @@ import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
-import com.wonderpush.sdk.inappmessaging.display.internal.BindingWrapperFactory;
-import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
-import com.wonderpush.sdk.inappmessaging.display.internal.IamImageLoader;
-import com.wonderpush.sdk.inappmessaging.display.internal.IamWindowManager;
-import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
-import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessagingDisplayImpl;
-import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
-import com.wonderpush.sdk.inappmessaging.display.internal.RenewableTimer;
+import com.wonderpush.sdk.inappmessaging.display.internal.*;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.components.AppComponent;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.components.DaggerAppComponent;
@@ -84,15 +77,11 @@ import javax.inject.Provider;
 @InAppMessagingScope
 public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
-  static final long WEB_VIEW_LOAD_TIMEOUT_MILLIS = 10 * 1000; // timeout error after 10 seconds
-
   static final long IMPRESSION_THRESHOLD_MILLIS = 1 * 1000; // 1 second is a valid impression
 
   static final long DISMISS_THRESHOLD_MILLIS = 12 * 1000; // auto dismiss after 12 seconds for banner
 
   static final long INTERVAL_MILLIS = 1000;
-
-  static final String HTML_INAPP_SDK_URL = "https://cdn.by.wonderpush.com/inapp-sdk/1.0/wonderpush-loader.min.js";
 
   private static InAppMessagingDisplay instance;
 
@@ -415,7 +404,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
 
     // Show iam after image or webview url successfully loads
-    loadNullableMedia(
+    new MediaLoader(this.imageLoader, this.safeDeferProvider, this.logErrorProvider, this::dismissIam)
+            .loadNullableMedia(
             activity,
             bindingWrapper,
             extractImageUrl(inAppMessage),
@@ -505,7 +495,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                   if (e instanceof IOException && e.getLocalizedMessage() != null &&  e.getLocalizedMessage().contains("Failed to decode")) {
                     callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
                   }
-                  else if (e instanceof WebViewLoadingException){
+                  else if (e instanceof MediaLoader.WebViewLoadingException){
                     callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.WEBVIEW_URL_FAILED_TO_LOAD);
                   }
                   else {
@@ -587,182 +577,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       return imageUrl;
     }
     return null;
-  }
-
-  private static class WebViewLoadingException extends Exception {
-    public WebViewLoadingException(Exception wrapped) {
-      super(wrapped != null ? wrapped.getMessage() : null);
-    }
-  }
-
-  private void loadNullableMedia(
-          Activity activity,
-          BindingWrapper iam,
-          String imageUrl,
-          String webViewUrl,
-          Callback callback)
-  {
-    final WebView webView = iam.getWebView();
-    if (imageUrl != null)
-    {
-      imageLoader
-              .load(imageUrl)
-              .tag(activity.getClass())
-              .into(iam.getImageView(), callback);
-    }
-    else if (webViewUrl != null && webView != null)
-    {
-      new Handler(Looper.getMainLooper()).post(() -> {
-        try
-        {
-
-          webView.setWebViewClient(new WebViewClient() {
-
-            boolean callbackDone = false;
-            final boolean useVisualStateCallback = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && WebViewFeature.isFeatureSupported(WebViewFeature.VISUAL_STATE_CALLBACK);
-            final long webViewVisualStateCallbackId = new Random().nextLong();
-
-            private void callOnSuccess() {
-              if (callbackDone) {
-                return;
-              }
-              callbackDone = true;
-              callback.onSuccess();
-              webView.setWebViewClient(null);
-            }
-
-            private void callOnError(Exception err) {
-              if (callbackDone) {
-                return;
-              }
-              callbackDone = true;
-              webView.setWebViewClient(null);
-              callback.onError(new WebViewLoadingException(err));
-            }
-
-            @Nullable
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-              if (request != null && request.getUrl() != null && request.getUrl().toString().startsWith(HTML_INAPP_SDK_URL)) {
-                return new WebResourceResponse("text/javascript", "utf-8", new ByteArrayInputStream(new byte[0]));
-              }
-              return super.shouldInterceptRequest(view, request);
-            }
-
-            @Nullable
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-              if (url != null && url.startsWith(HTML_INAPP_SDK_URL)) {
-                return new WebResourceResponse("text/javascript", "utf-8", new ByteArrayInputStream(new byte[0]));
-              }
-              return super.shouldInterceptRequest(view, url);
-            }
-
-            @SuppressLint({"RequiresFeature", "NewApi"})
-            @Override
-            public void onPageStarted(WebView webView, String url, Bitmap favicon) {
-              try {
-                super.onPageStarted(webView, url, favicon);
-
-                if (useVisualStateCallback) {
-                  webView.postVisualStateCallback(webViewVisualStateCallbackId, new WebView.VisualStateCallback() {
-                    @Override
-                    public void onComplete(long requestId) {
-                      if (requestId == webViewVisualStateCallbackId) {
-                        callOnSuccess();
-                      }
-                    }
-                  });
-                }
-
-                safeDeferProvider.safeDefer(() -> {
-                  new Handler(Looper.getMainLooper()).post(() -> {
-                    try {
-                      callOnError(new Exception("WebView timeout reached"));
-                    } catch (Exception e) {
-                      logErrorProvider.logError("Unexpected error", e);
-                    }
-                  });
-                }, WEB_VIEW_LOAD_TIMEOUT_MILLIS);
-              } catch (Exception exception) {
-                logErrorProvider.logError(exception.getLocalizedMessage());
-              }
-            }
-
-            @Override
-            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-              try {
-                super.onReceivedHttpError(view, request, errorResponse);
-                // Only fail for the main document
-                if (request.isForMainFrame()) {
-                  callOnError(new Exception("HTTP error loading webView with status " + errorResponse.getStatusCode() + " for url: " + request.getUrl().toString()));
-                }
-              } catch (Exception exception) {
-                logErrorProvider.logError(exception.getLocalizedMessage());
-              }
-            }
-
-            @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-              try {
-                super.onReceivedError(view, errorCode, description, failingUrl);
-                // Note: we don't have the luxury of testing request.isForMainFrame() here,
-                // and we can't compare failingUrl with webViewUrl because they may be different as we follow redirects
-                callOnError(new Exception("Error loading webView " + (description != null ? description : "(no description)") + " failing URL: " + (failingUrl != null ? failingUrl : "(no url)")));
-              } catch (Exception e) {
-                logErrorProvider.logError("Unexpected webView error", e);
-              }
-            }
-
-            @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-              try {
-                super.onReceivedError(view, request, error);
-                // Only fail for the main document
-                if (request.isForMainFrame()) {
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    callOnError(new Exception(String.format(Locale.ENGLISH, "Error loading webView with code: %d description: %s", error.getErrorCode(), error.getDescription())));
-                  } else {
-                    callOnError(new Exception("Error loading webView (code and description unavailable)"));
-                  }
-                }
-              } catch (Exception e) {
-                logErrorProvider.logError("Unexpected webView error", e);
-              }
-            }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-              try {
-              super.onPageFinished(view, url);
-                if (!useVisualStateCallback) {
-                  callOnSuccess();
-                }
-              } catch (Exception exception) {
-                logErrorProvider.logError(exception.getLocalizedMessage());
-              }
-            }
-          });
-
-          webView.addJavascriptInterface(new InAppWebViewBridge(webView, () -> {
-            try {
-              dismissIam(activity);
-            } catch (Exception exception) {
-              logErrorProvider.logError(exception.getLocalizedMessage());
-            }
-          }, instance.logErrorProvider), "WonderPushInAppSDK");
-          webView.loadUrl(webViewUrl);
-        }
-        catch (Exception exception) {
-          logErrorProvider.logError("Unexpected error loading webView", exception);
-          callback.onError(exception);
-        }
-      });
-    }
-    else
-    {
-      callback.onSuccess();
-    }
   }
 
   // This action needs to be idempotent since multiple callbacks compete to dismiss.
