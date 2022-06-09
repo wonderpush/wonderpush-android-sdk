@@ -18,14 +18,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.res.Configuration;
-import android.webkit.*;
 import androidx.annotation.*;
-import androidx.webkit.WebViewFeature;
 
-import android.graphics.Bitmap;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
@@ -48,8 +42,6 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.Appl
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
-import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridge;
-import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridgeInterface;
 import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
 import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;
@@ -58,7 +50,6 @@ import com.wonderpush.sdk.inappmessaging.model.MessageType;
 import com.wonderpush.sdk.inappmessaging.model.ModalMessage;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.*;
 
