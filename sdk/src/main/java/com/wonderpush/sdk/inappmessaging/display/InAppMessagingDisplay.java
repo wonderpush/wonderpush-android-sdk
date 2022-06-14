@@ -44,7 +44,7 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.Appl
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
-import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridge;
+import com.wonderpush.sdk.inappmessaging.display.internal.InAppWebViewBridge;
 import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
 import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;

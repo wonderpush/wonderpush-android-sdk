@@ -1,4 +1,4 @@
-package com.wonderpush.sdk.inappmessaging.display.internal.web;
+package com.wonderpush.sdk.inappmessaging.display.internal;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;

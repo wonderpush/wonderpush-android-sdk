@@ -14,9 +14,7 @@ import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
-import com.wonderpush.sdk.inappmessaging.display.internal.web.InAppWebViewBridge;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Locale;
 import java.util.Random;
