@@ -164,19 +164,19 @@ public class BannerBindingWrapper extends BindingWrapper {
     return null;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public ImageView getImageView() {
     return bannerImage;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public ViewGroup getRootView() {
     return bannerRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public View getDialogView() {
     return bannerContentRoot;

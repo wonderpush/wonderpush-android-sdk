@@ -59,13 +59,13 @@ public abstract class BindingWrapper {
   @Nullable
   public abstract View getDismissView();
 
-  @NonNull
+  @Nullable
   public abstract ImageView getImageView();
 
-  @NonNull
+  @Nullable
   public abstract ViewGroup getRootView();
 
-  @NonNull
+  @Nullable
   public abstract View getDialogView();
 
   @Nullable

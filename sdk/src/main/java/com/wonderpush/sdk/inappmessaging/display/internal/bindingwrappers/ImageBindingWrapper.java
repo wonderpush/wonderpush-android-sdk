@@ -117,25 +117,25 @@ public class ImageBindingWrapper extends BindingWrapper {
     return imageRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public ImageView getImageView() {
     return imageView;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public ViewGroup getRootView() {
     return imageRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public View getDialogView() {
     return imageContentRoot;
   }
 
-  @NonNull
+  @Nullable
   public View getCollapseButton() {
     return collapseButton;
   }
