@@ -98,6 +98,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   private IamListener iamListener;
   private InAppMessage inAppMessage;
   private boolean impressionDetected;
+  private boolean activityForeground;
   private BindingWrapper bindingWrapper;
   private InAppMessagingDisplayCallbacks callbacks;
   private com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay inAppMessagingDisplay;
@@ -209,6 +210,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
     imageLoader.cancelTag(activity.getClass());
     removeDisplayedIam(activity);
+    activityForeground = false;
     super.onActivityPaused(activity);
   }
 
@@ -221,6 +223,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @Override
   public void onActivityResumed(Activity activity) {
     super.onActivityResumed(activity);
+    activityForeground = true;
 
     // Register IAM listener with the headless sdk.
     this.inAppMessagingDisplay = (iam, cb, delay) -> {
@@ -238,7 +241,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         activity.findViewById(android.R.id.content).postDelayed(
                 new Runnable() {
                   public void run() {
-                    showActiveIam(activity);
+                    if (activityForeground) {
+                      showActiveIam(activity);
+                    }
                   }
                 },
                 delay);
