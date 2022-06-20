@@ -268,6 +268,10 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       Logging.loge("No active message found to render");
       return;
     }
+    if (windowManager.isIamDisplayed()) {
+      Logging.logi("Message already displayed");
+      return;
+    }
 
     if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       Logging.loge("The message being triggered is not supported by this version of the sdk.");
