@@ -1,8 +1,13 @@
 package com.wonderpush.sdk.inappmessaging.display.internal;
 
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Patterns;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -19,10 +24,7 @@ import org.json.JSONObject;
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 public class InAppWebViewBridge {
     private static final String ARRAY_RETURN_TYPE_PREFIX = "__array__";
@@ -35,10 +37,12 @@ public class InAppWebViewBridge {
         void onClick(String buttonLabel);
     }
     private final WeakReference<WebView> webViewRef;
+    private final WeakReference<Activity> activityRef;
     private final Callbacks callbacks;
 
-    public InAppWebViewBridge(WebView concernedWebViewExternalInstance, Callbacks callbacks) {
-        webViewRef = new WeakReference<>(concernedWebViewExternalInstance);
+    public InAppWebViewBridge(WebView webView, Activity activity, Callbacks callbacks) {
+        webViewRef = new WeakReference<>(webView);
+        activityRef = new WeakReference<>(activity);
         this.callbacks = callbacks;
     }
 
@@ -336,5 +340,56 @@ public class InAppWebViewBridge {
     @JavascriptInterface
     public String getProperties() {
         return toJavascriptResultObject(WonderPush.getProperties());
+    }
+
+    private static int checkSelfPermission(@NonNull Context context, @NonNull String permission) {
+        // Catch for rare "Unknown exception code: 1 msg null" exception
+        // See https://github.com/one-signal/OneSignal-Android-SDK/issues/48 for more details.
+        try {
+            return context.checkPermission(permission, android.os.Process.myPid(), android.os.Process.myUid());
+        } catch (Throwable t) {
+            Logging.loge("checkSelfPermission failed, returning PERMISSION_DENIED");
+            return PackageManager.PERMISSION_DENIED;
+        }
+    }
+    @JavascriptInterface
+    public void triggerLocationPrompt() {
+        Activity activity = this.activityRef.get();
+        if (activity == null) {
+            throwJavascriptError("Activity not available");
+            return;
+        }
+        Context context = activity;
+
+        int coarsePermission = checkSelfPermission(context, "android.permission.ACCESS_COARSE_LOCATION");
+        int finePermission = checkSelfPermission(context, "android.permission.ACCESS_FINE_LOCATION");
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            if (finePermission != PackageManager.PERMISSION_GRANTED && coarsePermission != PackageManager.PERMISSION_GRANTED) {
+                throwJavascriptError("Permissions missing in manifest");
+            }
+            // Granted
+            return;
+        }
+
+        if (coarsePermission == PackageManager.PERMISSION_GRANTED || finePermission == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        List<String> permissionsToRequest = new ArrayList<>();
+        try {
+            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
+            List<String> permissionList = Arrays.asList(packageInfo.requestedPermissions);
+            if (permissionList.contains("android.permission.ACCESS_FINE_LOCATION")) {
+                permissionsToRequest.add("android.permission.ACCESS_FINE_LOCATION");
+            } else if (permissionList.contains("android.permission.ACCESS_COARSE_LOCATION")) {
+                permissionsToRequest.add("android.permission.ACCESS_COARSE_LOCATION");
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            throwJavascriptError("Error: " + e.getMessage());
+        }
+        if (permissionsToRequest.size() > 0) {
+            activity.requestPermissions(permissionsToRequest.toArray(new String[permissionsToRequest.size()]), 123);
+        }
     }
 }

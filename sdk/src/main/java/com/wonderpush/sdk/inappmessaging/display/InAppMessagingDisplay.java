@@ -396,7 +396,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
     final WebView webView = bindingWrapper.getWebView();
     if (webView != null) {
-      webView.addJavascriptInterface(new InAppWebViewBridge(webView, new InAppWebViewBridge.Callbacks() {
+      webView.addJavascriptInterface(new InAppWebViewBridge(webView, activity, new InAppWebViewBridge.Callbacks() {
         @Override
         public void onDismiss() {
           callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
