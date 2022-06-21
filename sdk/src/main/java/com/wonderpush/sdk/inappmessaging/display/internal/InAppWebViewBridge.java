@@ -7,6 +7,7 @@ import android.util.Patterns;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
@@ -18,6 +19,8 @@ import org.json.JSONObject;
 import java.lang.ref.WeakReference;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -80,6 +83,20 @@ public class InAppWebViewBridge {
             }
         }
         return arg;
+    }
+
+    private @NonNull <T> List<T> argToList(String arg) {
+        List<T> result = new ArrayList<>();
+        JSONArray array = argToJSONArray(arg, new JSONArray());
+        for (int i = 0; i < array.length(); i++) {
+            Object elt = array.opt(i);
+            if (elt != null) {
+                try {
+                    result.add((T)elt);
+                } catch (ClassCastException e) {}
+            }
+        }
+        return result;
     }
 
     private @Nullable Number argToNumber(String arg) {
@@ -245,52 +262,16 @@ public class InAppWebViewBridge {
 
     @JavascriptInterface
     public void addTag(String t1) {
-        WonderPush.addTag(t1);
-    }
-
-    @JavascriptInterface
-    public void addTag(String t1, String t2) {
-        WonderPush.addTag(t1, t2);
-    }
-
-    @JavascriptInterface
-    public void addTag(String t1, String t2, String t3) {
-        WonderPush.addTag(t1, t2, t3);
-    }
-
-    @JavascriptInterface
-    public void addTag(String t1, String t2, String t3, String t4) {
-        WonderPush.addTag(t1, t2, t3, t4);
-    }
-
-    @JavascriptInterface
-    public void addTag(String t1, String t2, String t3, String t4, String t5) {
-        WonderPush.addTag(t1, t2, t3, t4, t5);
+        List<String> tags = argToList(t1);
+        String[] tagArray = tags.toArray(new String[tags.size()]);
+        WonderPush.addTag(tagArray);
     }
 
     @JavascriptInterface
     public void removeTag(String t1) {
-        WonderPush.removeTag(t1);
-    }
-
-    @JavascriptInterface
-    public void removeTag(String t1, String t2) {
-        WonderPush.removeTag(t1, t2);
-    }
-
-    @JavascriptInterface
-    public void removeTag(String t1, String t2, String t3) {
-        WonderPush.removeTag(t1, t2, t3);
-    }
-
-    @JavascriptInterface
-    public void removeTag(String t1, String t2, String t3, String t4) {
-        WonderPush.removeTag(t1, t2, t3, t4);
-    }
-
-    @JavascriptInterface
-    public void removeTag(String t1, String t2, String t3, String t4, String t5) {
-        WonderPush.removeTag(t1, t2, t3, t4, t5);
+        List<String> tags = argToList(t1);
+        String[] tagArray = tags.toArray(new String[tags.size()]);
+        WonderPush.removeTag(tagArray);
     }
 
     @JavascriptInterface
