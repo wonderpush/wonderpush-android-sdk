@@ -77,8 +77,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
   static final long INTERVAL_MILLIS = 1000;
 
-  static final String JAVASCRIPT_INTERFACE_NAME = "_wpiam";
-
   private static InAppMessagingDisplay instance;
 
   private final InAppMessaging headlessInAppMessaging;
@@ -395,23 +393,21 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
 
     final WebView webView = bindingWrapper.getWebView();
-    if (webView != null) {
-      webView.addJavascriptInterface(new InAppWebViewBridge(webView, activity, new InAppWebViewBridge.Callbacks() {
-        @Override
-        public void onDismiss() {
-          callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
-          dismissIam(activity);
-        }
+    final InAppWebViewBridge bridge = new InAppWebViewBridge(webView, activity, new InAppWebViewBridge.Callbacks() {
+      @Override
+      public void onDismiss() {
+        callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+        dismissIam(activity);
+      }
 
-        @Override
-        public void onClick(String buttonLabel) {
-          if (callbacks != null) {
-            callbacks.messageClicked(buttonLabel);
-          }
-          notifyIamClick();
+      @Override
+      public void onClick(String buttonLabel) {
+        if (callbacks != null) {
+          callbacks.messageClicked(buttonLabel);
         }
-      }), JAVASCRIPT_INTERFACE_NAME);
-    }
+        notifyIamClick();
+      }
+    });;
 
     // Show iam after image or webview url successfully loads
     new MediaLoader(this.imageLoader, this.safeDeferProvider)
@@ -474,15 +470,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                           INTERVAL_MILLIS);
                 }
 
-                // Set up a new webView client that will disable the Javascript interface after first navigation
+                // Set the webViewClient from the bridge
                 if (webView != null) {
-                  webView.setWebViewClient(new WebViewClient() {
-                    @Override
-                    public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                      super.onPageStarted(view, url, favicon);
-                      view.removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME);
-                    }
-                  });
+                  webView.setWebViewClient(bridge.webViewClient);
                 }
 
                 // Show the message

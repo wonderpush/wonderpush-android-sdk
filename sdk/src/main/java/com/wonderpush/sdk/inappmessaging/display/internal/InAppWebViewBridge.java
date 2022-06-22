@@ -6,12 +6,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Message;
 import android.util.Patterns;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 
+import android.webkit.WebViewClient;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.wonderpush.sdk.WonderPush;
@@ -27,6 +31,8 @@ import java.text.ParseException;
 import java.util.*;
 
 public class InAppWebViewBridge {
+    static final String JAVASCRIPT_INTERFACE_NAME = "_wpiam";
+
     private static final String ARRAY_RETURN_TYPE_PREFIX = "__array__";
     private static final String OBJECT_RETURN_TYPE_PREFIX = "__object__";
     private static final String OBJECT_ARG_TYPE_PREFIX = "__object__";
@@ -39,11 +45,50 @@ public class InAppWebViewBridge {
     private final WeakReference<WebView> webViewRef;
     private final WeakReference<Activity> activityRef;
     private final Callbacks callbacks;
+    public final WebViewClient webViewClient;
 
     public InAppWebViewBridge(WebView webView, Activity activity, Callbacks callbacks) {
         webViewRef = new WeakReference<>(webView);
         activityRef = new WeakReference<>(activity);
         this.callbacks = callbacks;
+        webViewClient = new WebViewClient() {
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                view.removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (!url.startsWith("http:") && !url.startsWith("https:")) {
+                    openDeepLink(url);
+                    return true;
+                }
+                return super.shouldOverrideUrlLoading(view, url);
+            }
+        };
+        if (webView != null) {
+            webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE_NAME);
+            // Set up a new webView client that will disable the Javascript interface after first navigation
+            webView.setWebViewClient(webViewClient);
+            // Support target="_blank"
+            webView.getSettings().setSupportMultipleWindows(true);
+            webView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                    if (!isDialog && isUserGesture) {
+                        WebView.HitTestResult hitTestResult = view.getHitTestResult();
+                        if (hitTestResult.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
+                            String url = hitTestResult.getExtra();
+                            openExternalUrl(url);
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            });
+
+        }
     }
 
     private void logException(Exception exception) {
