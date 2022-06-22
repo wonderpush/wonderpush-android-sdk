@@ -174,34 +174,42 @@ public class InAppWebViewBridge {
     }
 
     @JavascriptInterface
-    public void openTargetUrl(String urlString) {
-        openTargetUrl(urlString, "{}");
+    public void openExternalUrl(String urlString) {
+        final WebView webView = webViewRef.get();
+        Uri uri = Uri.parse(urlString);
+
+        if (webView != null) {
+            webView.post(new Runnable() {
+                @Override
+                public void run() {
+                    dismiss();
+                    Intent intent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER);
+                    intent.setData(uri);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        webView.getContext().startActivity(intent);
+                    } catch (ActivityNotFoundException e) {
+                        Logging.loge("No activity for intent " + intent, e);
+                    }
+                }
+            });
+        }
     }
 
     @JavascriptInterface
-    public void openTargetUrl(String urlString, String optionString) {
-        JSONObject options = argToJSONObject(optionString, new JSONObject());
-        final String mode = options.optString("mode", "current");
-
-        // Check url
-        if (!Patterns.WEB_URL.matcher(urlString).matches()) {
-            throwJavascriptError("openTargetUrl: Invalid url");
-        }
+    public void openDeepLink(String urlString) {
+        Uri uri = Uri.parse(urlString);
         final WebView webView = webViewRef.get();
         if (webView != null) {
             webView.post(new Runnable() {
                 @Override
                 public void run() {
-                    if ("current".equals(mode)) {
-                        webView.loadUrl(urlString);
-                    } else {
-                        Uri uri = Uri.parse(urlString);
-                        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                        try {
-                            webView.getContext().startActivity(intent);
-                        } catch (ActivityNotFoundException e) {
-                            Logging.loge("No service for intent " + intent, e);
-                        }
+                    dismiss();
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    try {
+                        webView.getContext().startActivity(intent);
+                    } catch (ActivityNotFoundException e) {
+                        Logging.loge("No activity for intent " + intent, e);
                     }
                 }
             });
