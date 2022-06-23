@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
 
+import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
+import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,64 +33,25 @@ import java.text.ParseException;
 import java.util.*;
 
 public class InAppWebViewBridge {
-    static final String JAVASCRIPT_INTERFACE_NAME = "_wpiam";
+
+    public interface Controller {
+        void sendError(String msg);
+        void openExternalUrl(String url);
+        void openDeepLink(String url);
+        void triggerLocationPrompt();
+        void dismiss();
+        void trackClick(String buttonLabel);
+    }
 
     private static final String ARRAY_RETURN_TYPE_PREFIX = "__array__";
     private static final String OBJECT_RETURN_TYPE_PREFIX = "__object__";
     private static final String OBJECT_ARG_TYPE_PREFIX = "__object__";
     private static final String NUMBER_ARG_TYPE_PREFIX = "__number__";
     private static final String BOOLEAN_ARG_TYPE_PREFIX = "__boolean__";
-    public interface Callbacks {
-        void onDismiss();
-        void onClick(String buttonLabel);
-    }
-    private final WeakReference<WebView> webViewRef;
-    private final WeakReference<Activity> activityRef;
-    private final Callbacks callbacks;
-    public final WebViewClient webViewClient;
+    private final WeakReference<Controller> controllerRef;
 
-    public InAppWebViewBridge(WebView webView, Activity activity, Callbacks callbacks) {
-        webViewRef = new WeakReference<>(webView);
-        activityRef = new WeakReference<>(activity);
-        this.callbacks = callbacks;
-        webViewClient = new WebViewClient() {
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
-                view.removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME);
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (!url.startsWith("http:") && !url.startsWith("https:")) {
-                    openDeepLink(url);
-                    return true;
-                }
-                return super.shouldOverrideUrlLoading(view, url);
-            }
-        };
-        if (webView != null) {
-            webView.addJavascriptInterface(this, JAVASCRIPT_INTERFACE_NAME);
-            // Set up a new webView client that will disable the Javascript interface after first navigation
-            webView.setWebViewClient(webViewClient);
-            // Support target="_blank"
-            webView.getSettings().setSupportMultipleWindows(true);
-            webView.setWebChromeClient(new WebChromeClient() {
-                @Override
-                public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-                    if (!isDialog && isUserGesture) {
-                        WebView.HitTestResult hitTestResult = view.getHitTestResult();
-                        if (hitTestResult.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
-                            String url = hitTestResult.getExtra();
-                            openExternalUrl(url);
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            });
-
-        }
+    public InAppWebViewBridge(Controller controller) {
+        this.controllerRef = new WeakReference<>(controller);
     }
 
     private void logException(Exception exception) {
@@ -193,72 +156,34 @@ public class InAppWebViewBridge {
         }
     }
 
-    private void throwJavascriptError(String msg) {
-        final WebView webView = webViewRef.get();
-        if (webView != null) {
-            webView.post(new Runnable() {
-                @Override
-                public void run() {
-                    String js = String.format(Locale.ENGLISH, "console.error(%s)", JSONObject.quote(msg));
-                    String console = "javascript:" + Uri.encode(js);
-                    webView.loadUrl(console);
-                }
-            });
-        }
+    protected void throwJavascriptError(String msg) {
+        Controller controller = controllerRef.get();
+        if (controller != null) controller.sendError(msg);
         throw new RuntimeException(msg);
     }
 
     @JavascriptInterface
     public void dismiss() {
-        if (callbacks != null) callbacks.onDismiss();
+        Controller controller = controllerRef.get();
+        if (controller != null) controller.dismiss();
     }
 
     @JavascriptInterface
     public void trackClick(String buttonLabel) {
-        if (callbacks != null) callbacks.onClick(buttonLabel);
+        Controller controller = controllerRef.get();
+        if (controller != null) controller.trackClick(buttonLabel);
     }
 
     @JavascriptInterface
     public void openExternalUrl(String urlString) {
-        final WebView webView = webViewRef.get();
-        Uri uri = Uri.parse(urlString);
-
-        if (webView != null) {
-            webView.post(new Runnable() {
-                @Override
-                public void run() {
-                    dismiss();
-                    Intent intent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER);
-                    intent.setData(uri);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    try {
-                        webView.getContext().startActivity(intent);
-                    } catch (ActivityNotFoundException e) {
-                        Logging.loge("No activity for intent " + intent, e);
-                    }
-                }
-            });
-        }
+        Controller controller = controllerRef.get();
+        if (controller != null) controller.openExternalUrl(urlString);
     }
 
     @JavascriptInterface
     public void openDeepLink(String urlString) {
-        Uri uri = Uri.parse(urlString);
-        final WebView webView = webViewRef.get();
-        if (webView != null) {
-            webView.post(new Runnable() {
-                @Override
-                public void run() {
-                    dismiss();
-                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                    try {
-                        webView.getContext().startActivity(intent);
-                    } catch (ActivityNotFoundException e) {
-                        Logging.loge("No activity for intent " + intent, e);
-                    }
-                }
-            });
-        }
+        Controller controller = controllerRef.get();
+        if (controller != null) controller.openDeepLink(urlString);
     }
 
     @JavascriptInterface
@@ -395,54 +320,9 @@ public class InAppWebViewBridge {
         return toJavascriptResultObject(WonderPush.getProperties());
     }
 
-    private static int checkSelfPermission(@NonNull Context context, @NonNull String permission) {
-        // Catch for rare "Unknown exception code: 1 msg null" exception
-        // See https://github.com/one-signal/OneSignal-Android-SDK/issues/48 for more details.
-        try {
-            return context.checkPermission(permission, android.os.Process.myPid(), android.os.Process.myUid());
-        } catch (Throwable t) {
-            Logging.loge("checkSelfPermission failed, returning PERMISSION_DENIED");
-            return PackageManager.PERMISSION_DENIED;
-        }
-    }
     @JavascriptInterface
     public void triggerLocationPrompt() {
-        Activity activity = this.activityRef.get();
-        if (activity == null) {
-            throwJavascriptError("Activity not available");
-            return;
-        }
-        Context context = activity;
-
-        int coarsePermission = checkSelfPermission(context, "android.permission.ACCESS_COARSE_LOCATION");
-        int finePermission = checkSelfPermission(context, "android.permission.ACCESS_FINE_LOCATION");
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            if (finePermission != PackageManager.PERMISSION_GRANTED && coarsePermission != PackageManager.PERMISSION_GRANTED) {
-                throwJavascriptError("Permissions missing in manifest");
-            }
-            // Granted
-            return;
-        }
-
-        if (coarsePermission == PackageManager.PERMISSION_GRANTED || finePermission == PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-
-        List<String> permissionsToRequest = new ArrayList<>();
-        try {
-            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
-            List<String> permissionList = Arrays.asList(packageInfo.requestedPermissions);
-            if (permissionList.contains("android.permission.ACCESS_FINE_LOCATION")) {
-                permissionsToRequest.add("android.permission.ACCESS_FINE_LOCATION");
-            } else if (permissionList.contains("android.permission.ACCESS_COARSE_LOCATION")) {
-                permissionsToRequest.add("android.permission.ACCESS_COARSE_LOCATION");
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            throwJavascriptError("Error: " + e.getMessage());
-        }
-        if (permissionsToRequest.size() > 0) {
-            activity.requestPermissions(permissionsToRequest.toArray(new String[permissionsToRequest.size()]), 123);
-        }
+        Controller controller = controllerRef.get();
+        if (controller != null) controller.triggerLocationPrompt();
     }
 }

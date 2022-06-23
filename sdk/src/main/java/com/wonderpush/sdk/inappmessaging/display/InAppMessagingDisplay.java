@@ -18,16 +18,12 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import androidx.annotation.*;
 
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 
-import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationManager;
 import com.wonderpush.sdk.SafeDeferProvider;
@@ -44,7 +40,6 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.Appl
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
-import com.wonderpush.sdk.inappmessaging.display.internal.InAppWebViewBridge;
 import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
 import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;
@@ -392,136 +387,129 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       bindingWrapper.getImageView().getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
     }
 
-    final WebView webView = bindingWrapper.getWebView();
-    final InAppWebViewBridge bridge = new InAppWebViewBridge(webView, activity, new InAppWebViewBridge.Callbacks() {
-      @Override
-      public void onDismiss() {
-        callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
-        dismissIam(activity);
+    // onError loading resources
+    Consumer<Exception> onError = (Exception e) -> {
+      Logging.loge("Could not load media", e);
+
+      if (layoutListener != null) {
+        bindingWrapper
+                .getImageView()
+                .getViewTreeObserver()
+                .removeOnGlobalLayoutListener(layoutListener);
       }
 
-      @Override
-      public void onClick(String buttonLabel) {
-        if (callbacks != null) {
-          callbacks.messageClicked(buttonLabel);
+      cancelTimers(); // Not strictly necessary.
+
+      // Report the error to the developer
+      if (callbacks != null) {
+        if (e instanceof IOException && e.getLocalizedMessage() != null &&  e.getLocalizedMessage().contains("Failed to decode")) {
+          callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
         }
-        notifyIamClick();
+        else if (e instanceof InAppWebViewController.WebViewLoadingException){
+          callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.WEBVIEW_URL_FAILED_TO_LOAD);
+        }
+        else {
+          callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+        }
       }
-    });;
 
-    // Show iam after image or webview url successfully loads
-    new MediaLoader(this.imageLoader, this.safeDeferProvider)
-            .loadNullableMedia(
-            activity,
-            bindingWrapper,
-            extractImageUrl(inAppMessage),
-            extractWebViewUrlOf(inAppMessage),
-            new Callback() {
-              @Override
-              public void onSuccess() {
-                // Setup dismiss on touch outside
-                if (bindingWrapper.getDismissView() != null) {
-                  bindingWrapper
-                          .getDismissView()
-                          .setOnClickListener(
-                                  new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                      if (callbacks != null) {
-                                        callbacks.messageDismissed(
-                                                InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
-                                      }
-                                      dismissIam(activity);
-                                    }
-                                  });
-                }
+      // Reset ourselves
+      inAppMessage = null;
+      impressionDetected = false;
+      callbacks = null;
+      bindingWrapper = null;
+    };
 
-                // Setup impression timer
-                impressionTimer.start(
-                        new RenewableTimer.Callback() {
+    // onSuccess loading resources
+    Runnable onSuccess = () -> {
+      // Setup dismiss on touch outside
+      if (bindingWrapper.getDismissView() != null) {
+        bindingWrapper
+                .getDismissView()
+                .setOnClickListener(
+                        new View.OnClickListener() {
                           @Override
-                          public void onFinish() {
-                            if (inAppMessage != null && callbacks != null && !impressionDetected) {
-                              Logging.logi(
-                                      "Impression timer onFinish for: "
-                                              + inAppMessage.getNotificationMetadata().getCampaignId());
-                              impressionDetected = true;
-                              callbacks.impressionDetected();
+                          public void onClick(View v) {
+                            if (callbacks != null) {
+                              callbacks.messageDismissed(
+                                      InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
                             }
-                          }
-                        },
-                        IMPRESSION_THRESHOLD_MILLIS,
-                        INTERVAL_MILLIS);
-
-                // Setup auto dismiss timer
-                if (bindingWrapper.getConfig().autoDismiss()) {
-                  autoDismissTimer.start(
-                          new RenewableTimer.Callback() {
-                            @Override
-                            public void onFinish() {
-                              if (inAppMessage != null && callbacks != null) {
-                                callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
-                              }
-
-                              dismissIam(activity);
-                            }
-                          },
-                          DISMISS_THRESHOLD_MILLIS,
-                          INTERVAL_MILLIS);
-                }
-
-                // Set the webViewClient from the bridge
-                if (webView != null) {
-                  webView.setWebViewClient(bridge.webViewClient);
-                }
-
-                // Show the message
-                activity.runOnUiThread(
-                        new Runnable() {
-                          @Override
-                          public void run() {
-                            windowManager.show(bindingWrapper, activity);
-                            if (bindingWrapper.getEntryAnimation() != null) {
-                              animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
-                            }
+                            dismissIam(activity);
                           }
                         });
-              }
+      }
 
-              @Override
-              public void onError(Exception e) {
-
-                Logging.loge("Could not load media", e);
-
-                if (layoutListener != null) {
-                  bindingWrapper
-                          .getImageView()
-                          .getViewTreeObserver()
-                          .removeOnGlobalLayoutListener(layoutListener);
-                }
-
-                cancelTimers(); // Not strictly necessary.
-
-                // Report the error to the developer
-                if (callbacks != null) {
-                  if (e instanceof IOException && e.getLocalizedMessage() != null &&  e.getLocalizedMessage().contains("Failed to decode")) {
-                    callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
-                  }
-                  else if (e instanceof MediaLoader.WebViewLoadingException){
-                    callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.WEBVIEW_URL_FAILED_TO_LOAD);
-                  }
-                  else {
-                    callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+      // Setup impression timer
+      impressionTimer.start(
+              new RenewableTimer.Callback() {
+                @Override
+                public void onFinish() {
+                  if (inAppMessage != null && callbacks != null && !impressionDetected) {
+                    Logging.logi(
+                            "Impression timer onFinish for: "
+                                    + inAppMessage.getNotificationMetadata().getCampaignId());
+                    impressionDetected = true;
+                    callbacks.impressionDetected();
                   }
                 }
+              },
+              IMPRESSION_THRESHOLD_MILLIS,
+              INTERVAL_MILLIS);
 
-                // Reset ourselves
-                inAppMessage = null;
-                impressionDetected = false;
-                callbacks = null;
-                bindingWrapper = null;
-              }
-            });
+      // Setup auto dismiss timer
+      if (bindingWrapper.getConfig().autoDismiss()) {
+        autoDismissTimer.start(
+                new RenewableTimer.Callback() {
+                  @Override
+                  public void onFinish() {
+                    if (inAppMessage != null && callbacks != null) {
+                      callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
+                    }
+
+                    dismissIam(activity);
+                  }
+                },
+                DISMISS_THRESHOLD_MILLIS,
+                INTERVAL_MILLIS);
+      }
+
+      // Show the message
+      activity.runOnUiThread(
+              new Runnable() {
+                @Override
+                public void run() {
+                  windowManager.show(bindingWrapper, activity);
+                  if (bindingWrapper.getEntryAnimation() != null) {
+                    animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
+                  }
+                }
+              });
+    };
+
+    // Load web view
+    final InAppWebViewController controller = new InAppWebViewController(inAppMessage, bindingWrapper.getWebView(), activity, this.safeDeferProvider);
+    controller.setOnClick((String buttonLabel) -> {
+      if (callbacks != null) {
+        callbacks.messageClicked(buttonLabel);
+      }
+      notifyIamClick();
+    });
+    controller.setOnDismiss(() -> {
+      callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+      dismissIam(activity);
+    });
+    controller.load(extractWebViewUrlOf(inAppMessage), () -> {
+      // Load image
+      new MediaLoader(this.imageLoader)
+              .loadImage(
+                      activity,
+                      bindingWrapper,
+                      extractImageUrl(inAppMessage),
+                      onSuccess,
+                      onError);
+
+    }, onError);
+
   }
 
   /**
