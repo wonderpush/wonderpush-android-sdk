@@ -272,22 +272,6 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
                     });
                 }, WEB_VIEW_LOAD_TIMEOUT_MILLIS);
 
-                // On subsequent page loads, set the Javascript interface if the origin is the same
-                // as the original inApp, otherwise, remove the interface
-                if (webViewMessage != null
-                        && webViewMessage.getWebViewUrl() != null
-                        && url != null) {
-                    Uri inAppMessageUri = Uri.parse(webViewMessage.getWebViewUrl());
-                    Uri uri = Uri.parse(url);
-                    if (inAppMessageUri.getScheme().equals(uri.getScheme())
-                            && inAppMessageUri.getPort() == uri.getPort()
-                            && inAppMessageUri.getHost().equals(uri.getHost())) {
-                        webView.addJavascriptInterface(bridge, JAVASCRIPT_INTERFACE_NAME);
-                        return;
-                    }
-                }
-                webView.removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME);
-
             } catch (Exception exception) {
                 Logging.loge(exception.getLocalizedMessage());
             }
@@ -299,6 +283,27 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            // On subsequent page loads, set the Javascript interface if the origin is the same
+            // as the original inApp, otherwise, remove the interface
+            WebView webView = webViewRef.get();
+            if (webView != null) {
+                if (webViewMessage != null
+                        && webViewMessage.getWebViewUrl() != null
+                        && url != null) {
+                    Uri inAppMessageUri = Uri.parse(webViewMessage.getWebViewUrl());
+                    Uri uri = Uri.parse(url);
+                    if (inAppMessageUri.getScheme().equals(uri.getScheme())
+                            && inAppMessageUri.getPort() == uri.getPort()
+                            && inAppMessageUri.getHost().equals(uri.getHost())) {
+                        webView.addJavascriptInterface(bridge, JAVASCRIPT_INTERFACE_NAME);
+                    } else {
+                        webView.removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME);
+                    }
+                } else {
+                    webView.removeJavascriptInterface(JAVASCRIPT_INTERFACE_NAME);
+                }
+            }
+
             if (!url.startsWith("http:") && !url.startsWith("https:")) {
                 openDeepLink(url);
                 return true;
