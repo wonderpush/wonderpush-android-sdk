@@ -113,7 +113,7 @@ public class IamWindowManager {
       layoutParams.y = insetDimensions.top;
     }
 
-    layoutParams.dimAmount = 0.3f;
+    layoutParams.dimAmount = layoutConfig.windowDimAmount();
     layoutParams.gravity = layoutConfig.viewWindowGravity();
     layoutParams.windowAnimations = 0;
 

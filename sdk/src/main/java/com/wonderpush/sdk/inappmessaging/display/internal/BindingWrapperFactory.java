@@ -46,9 +46,14 @@ public class BindingWrapperFactory {
 
   public BindingWrapper createWebViewBindingWrapper(
           Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+    InAppMessageLayoutConfig updatedConfig = config;
+    try {
+      updatedConfig = new InAppMessageLayoutConfig.Builder(config).setWindowDimAmount(0f).build();
+    } catch (CloneNotSupportedException e) {
+    }
     InAppMessageComponent inAppMessageComponent =
             DaggerInAppMessageComponent.builder()
-                    .inflaterModule(new InflaterModule(inAppMessage, config, activity))
+                    .inflaterModule(new InflaterModule(inAppMessage, updatedConfig, activity))
                     .build();
     return inAppMessageComponent.webViewBindingWrapper();
   }
