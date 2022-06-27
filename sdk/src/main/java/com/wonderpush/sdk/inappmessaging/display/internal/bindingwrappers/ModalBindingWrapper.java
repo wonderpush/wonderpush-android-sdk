@@ -144,18 +144,18 @@ public class ModalBindingWrapper extends BindingWrapper {
     return modalRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public View getDialogView() {
     return modalContentRoot;
   }
 
-  @NonNull
+  @Nullable
   public View getScrollView() {
     return bodyScroll;
   }
 
-  @NonNull
+  @Nullable
   public View getTitleView() {
     return messageTitle;
   }
@@ -166,12 +166,12 @@ public class ModalBindingWrapper extends BindingWrapper {
     return config;
   }
 
-  @NonNull
+  @Nullable
   public Button getActionButton() {
     return button;
   }
 
-  @NonNull
+  @Nullable
   public View getCollapseButton() {
     return collapseImage;
   }

@@ -83,7 +83,7 @@ public class IamWindowManager {
   }
 
   public boolean isIamDisplayed() {
-    if (bindingWrapper == null) {
+    if (bindingWrapper == null || bindingWrapper.getRootView() == null) {
       return false;
     }
     return bindingWrapper.getRootView().isShown();
@@ -92,7 +92,9 @@ public class IamWindowManager {
   /** Removes the in app message from the surrounding window */
   public void destroy(@NonNull Activity activity) {
     if (isIamDisplayed()) {
-      getWindowManager(activity).removeViewImmediate(bindingWrapper.getRootView());
+      if (bindingWrapper.getRootView() != null) {
+        getWindowManager(activity).removeViewImmediate(bindingWrapper.getRootView());
+      }
       bindingWrapper = null;
     }
   }
@@ -220,7 +222,9 @@ public class IamWindowManager {
         @Override
         protected void setTranslationX(float translationX) {
           layoutParams.x = (int) translationX;
-          windowManager.updateViewLayout(bindingWrapper.getRootView(), layoutParams);
+          if (bindingWrapper.getRootView() != null) {
+            windowManager.updateViewLayout(bindingWrapper.getRootView(), layoutParams);
+          }
         }
       };
     }

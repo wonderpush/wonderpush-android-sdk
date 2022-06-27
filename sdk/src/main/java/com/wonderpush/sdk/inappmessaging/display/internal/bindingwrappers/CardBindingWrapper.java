@@ -116,7 +116,7 @@ public class CardBindingWrapper extends BindingWrapper {
     return bodyScroll;
   }
 
-  @NonNull
+  @Nullable
   public View getTitleView() {
     return messageTitle;
   }
@@ -127,13 +127,13 @@ public class CardBindingWrapper extends BindingWrapper {
     return cardRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public ViewGroup getRootView() {
     return cardRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public View getDialogView() {
     return cardContentRoot;
@@ -145,18 +145,18 @@ public class CardBindingWrapper extends BindingWrapper {
     return config;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public View.OnClickListener getDismissListener() {
     return dismissListener;
   }
 
-  @NonNull
+  @Nullable
   public Button getPrimaryButton() {
     return primaryButton;
   }
 
-  @NonNull
+  @Nullable
   public Button getSecondaryButton() {
     return secondaryButton;
   }

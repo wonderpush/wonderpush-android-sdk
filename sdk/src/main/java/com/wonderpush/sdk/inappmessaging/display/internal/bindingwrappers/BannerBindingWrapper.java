@@ -183,7 +183,7 @@ public class BannerBindingWrapper extends BindingWrapper {
     return bannerRoot;
   }
 
-  @NonNull
+  @Nullable
   @Override
   public View getDialogView() {
     return bannerContentRoot;

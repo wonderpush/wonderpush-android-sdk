@@ -69,7 +69,7 @@ public abstract class BindingWrapper {
   @NonNull
   public abstract ViewGroup getRootView();
 
-  @NonNull
+  @Nullable
   public abstract View getDialogView();
 
   @Nullable

@@ -76,7 +76,7 @@ public class IamAnimator {
   @Inject
   IamAnimator() {}
 
-  public void executeExitAnimation(ExitAnimation animation, final Application app, final View view, @Nullable final AnimationCompleteListener completeListener) {
+  public void executeExitAnimation(ExitAnimation animation, final Application app, @Nullable final View view, @Nullable final AnimationCompleteListener completeListener) {
     AnimationCompleteListener ourListener = new AnimationCompleteListener() {
       @Override
       public void onComplete() {
@@ -84,6 +84,10 @@ public class IamAnimator {
         if (completeListener != null) completeListener.onComplete();
       }
     };
+    if (view == null) {
+      ourListener.onComplete();
+      return;
+    }
     if (view instanceof DisableTouchLayout) ((DisableTouchLayout) view).setTouchDisabled(true);
     switch (animation) {
       case SLIDE_OUT_DOWN:
@@ -114,6 +118,10 @@ public class IamAnimator {
         if (completeListener != null) completeListener.onComplete();
       }
     };
+    if (view == null) {
+      ourListener.onComplete();
+      return;
+    }
     if (view instanceof DisableTouchLayout) ((DisableTouchLayout) view).setTouchDisabled(true);
     switch (animation) {
       case SLIDE_IN_FROM_BOTTOM:
