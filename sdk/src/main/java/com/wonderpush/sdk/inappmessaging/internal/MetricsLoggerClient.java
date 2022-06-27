@@ -24,8 +24,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -40,6 +42,7 @@ public class MetricsLoggerClient {
   private final DeveloperListenerManager developerListenerManager;
   private final InternalEventTracker internalEventTracker;
   private final InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate;
+  private final Set<String> campaignIdsImpressedWithoutClick = new HashSet<>();
 
   @Inject
   public MetricsLoggerClient(DeveloperListenerManager developerListenerManager,
@@ -68,6 +71,10 @@ public class MetricsLoggerClient {
     this.internalEventTracker.countInternalEvent("@INAPP_VIEWED", eventData);
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
+    if (message.getNotificationMetadata() != null
+      && message.getNotificationMetadata().getCampaignId() != null) {
+      this.campaignIdsImpressedWithoutClick.add(message.getNotificationMetadata().getCampaignId());
+    }
   }
 
   /** Log click */
@@ -77,10 +84,22 @@ public class MetricsLoggerClient {
     if (buttonType == InAppMessage.ButtonType.PRIMARY) data.put("buttonLabel", "primary");
     if (buttonType == InAppMessage.ButtonType.SECONDARY) data.put("buttonLabel", "secondary");
     JSONObject eventData = this.eventData(message.getNotificationMetadata(), data);
+    String campaignId = message.getNotificationMetadata() != null ? message.getNotificationMetadata().getCampaignId() : null;
+    boolean logInAppClicked = false;
+    if (campaignId != null) {
+      logInAppClicked = this.campaignIdsImpressedWithoutClick.contains(campaignId);
+      this.campaignIdsImpressedWithoutClick.remove(campaignId);
+    }
     if (this.internalEventTracker.isSubscriptionStatusOptIn()) {
-      this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
+      if (logInAppClicked) {
+        this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
+      }
+      this.internalEventTracker.trackInternalEvent("@INAPP_ITEM_CLICKED", eventData);
     } else {
-      this.internalEventTracker.countInternalEvent("@INAPP_CLICKED", eventData);
+      if (logInAppClicked) {
+        this.internalEventTracker.countInternalEvent("@INAPP_CLICKED", eventData);
+      }
+      this.internalEventTracker.countInternalEvent("@INAPP_ITEM_CLICKED", eventData);
     }
 
     // No matter what, always trigger developer callbacks
@@ -91,10 +110,22 @@ public class MetricsLoggerClient {
     Map<String, Object> data = new HashMap<>();
     if (buttonLabel != null) data.put("buttonLabel", buttonLabel);
     JSONObject eventData = this.eventData(message.getNotificationMetadata(), data);
+    String campaignId = message.getNotificationMetadata() != null ? message.getNotificationMetadata().getCampaignId() : null;
+    boolean logInAppClicked = false;
+    if (campaignId != null) {
+      logInAppClicked = this.campaignIdsImpressedWithoutClick.contains(campaignId);
+      this.campaignIdsImpressedWithoutClick.remove(campaignId);
+    }
     if (this.internalEventTracker.isSubscriptionStatusOptIn()) {
-      this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
+      if (logInAppClicked) {
+        this.internalEventTracker.trackInternalEvent("@INAPP_CLICKED", eventData);
+      }
+      this.internalEventTracker.trackInternalEvent("@INAPP_ITEM_CLICKED", eventData);
     } else {
-      this.internalEventTracker.countInternalEvent("@INAPP_CLICKED", eventData);
+      if (logInAppClicked) {
+        this.internalEventTracker.countInternalEvent("@INAPP_CLICKED", eventData);
+      }
+      this.internalEventTracker.countInternalEvent("@INAPP_ITEM_CLICKED", eventData);
     }
 
     // No matter what, always trigger developer callbacks
@@ -103,14 +134,21 @@ public class MetricsLoggerClient {
 
   /** Log Rendering error */
   public void logRenderError(InAppMessage message, InAppMessagingErrorReason errorReason) {
-    // TODO: log render error
+    String campaignId = message.getNotificationMetadata() != null ? message.getNotificationMetadata().getCampaignId() : null;
+    if (campaignId != null) {
+      this.campaignIdsImpressedWithoutClick.remove(campaignId);
+    }
     // No matter what, always trigger developer callbacks
     developerListenerManager.displayErrorEncountered(message, errorReason);
+    Logging.loge("Error rendering message with reason: " + errorReason);
   }
 
   /** Log dismiss */
   public void logDismiss(InAppMessage message, InAppMessagingDismissType dismissType) {
-    // TODO: log render dismiss
+    String campaignId = message.getNotificationMetadata() != null ? message.getNotificationMetadata().getCampaignId() : null;
+    if (campaignId != null) {
+      this.campaignIdsImpressedWithoutClick.remove(campaignId);
+    }
   }
 
 }
