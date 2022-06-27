@@ -220,6 +220,11 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
         if (onClick != null) onClick.accept(buttonLabel);
     }
 
+    @Override
+    public JSONObject getPayload() {
+        return this.webViewMessage.getData();
+    }
+
     public static class WebViewLoadingException extends Exception {
         public WebViewLoadingException(Exception wrapped) {
             super(wrapped != null ? wrapped.getMessage() : null);

@@ -41,6 +41,7 @@ public class InAppWebViewBridge {
         void triggerLocationPrompt();
         void dismiss();
         void trackClick(String buttonLabel);
+        JSONObject getPayload();
     }
 
     private static final String ARRAY_RETURN_TYPE_PREFIX = "__array__";
@@ -172,6 +173,16 @@ public class InAppWebViewBridge {
     public void trackClick(String buttonLabel) {
         Controller controller = controllerRef.get();
         if (controller != null) controller.trackClick(buttonLabel);
+    }
+
+    @JavascriptInterface
+    public String getPayload() {
+        Controller controller = controllerRef.get();
+        JSONObject payload = controller != null ? controller.getPayload() : null;
+        if (payload != null) {
+            return toJavascriptResultObject(payload);
+        }
+        return null;
     }
 
     @JavascriptInterface
