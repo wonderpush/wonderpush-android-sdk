@@ -34,7 +34,7 @@ import java.util.*;
  */
 public class InAppWebViewController implements InAppWebViewBridge.Controller {
 
-    static final String HTML_INAPP_SDK_URL = "https://cdn.by.wonderpush.com/inapp-sdk/1.0/wonderpush-loader.min.js";
+    static final String HTML_INAPP_SDK_URL = "https://cdn.by.wonderpush.com/inapp-sdk/1/wonderpush-loader.min.js";
     static final long WEB_VIEW_LOAD_TIMEOUT_MILLIS = 10 * 1000; // timeout error after 10 seconds
     static final String JAVASCRIPT_INTERFACE_NAME = "_wpiam";
 
