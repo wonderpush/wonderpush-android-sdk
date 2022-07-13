@@ -233,6 +233,11 @@ public class InAppWebViewBridge {
     }
 
     @JavascriptInterface
+    public String getDevicePlatform() {
+        return "Android";
+    }
+
+    @JavascriptInterface
     public void trackEvent(String type, String attributeString) {
         JSONObject attributes = argToJSONObject(attributeString, new JSONObject());
         WonderPush.trackEvent(type, attributes);
