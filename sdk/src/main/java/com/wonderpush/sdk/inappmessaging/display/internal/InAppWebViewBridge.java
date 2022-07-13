@@ -26,6 +26,8 @@ public class InAppWebViewBridge {
         void dismiss();
         void trackClick(String buttonLabel);
         void openAppRating();
+        void trackEvent(String type);
+        void trackEvent(String type, JSONObject attributes);
         JSONObject getPayload();
     }
 
@@ -229,7 +231,9 @@ public class InAppWebViewBridge {
 
     @JavascriptInterface
     public void trackEvent(String type) {
-        WonderPush.trackEvent(type);
+        Controller controller = controllerRef.get();
+        if (controller == null) throwJavascriptError("Null controller");
+        controller.trackEvent(type);
     }
 
     @JavascriptInterface
@@ -240,7 +244,9 @@ public class InAppWebViewBridge {
     @JavascriptInterface
     public void trackEvent(String type, String attributeString) {
         JSONObject attributes = argToJSONObject(attributeString, new JSONObject());
-        WonderPush.trackEvent(type, attributes);
+        Controller controller = controllerRef.get();
+        if (controller == null) throwJavascriptError("Null controller");
+        controller.trackEvent(type, attributes);
     }
 
     @JavascriptInterface

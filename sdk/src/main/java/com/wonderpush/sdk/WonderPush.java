@@ -1305,6 +1305,10 @@ public class WonderPush {
         trackInternalEvent(type, eventData, customData, null);
     }
 
+    static void trackInAppEvent(String type, JSONObject eventData, JSONObject customData) {
+        _trackEvent(type, eventData, customData, null);
+    }
+
     private static void _trackEvent(String type, JSONObject eventData, JSONObject customData, final Runnable sentCallback) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
@@ -1434,11 +1438,8 @@ public class WonderPush {
             }
             // Notification metadata
             NotificationMetadata metadata = NotificationManager.getLastClickedNotificationMetadata();
-            if (metadata != null && event.isNull("campaignId") && event.isNull("notificationId") && event.isNull("viewId") && event.isNull("reporting")) {
-                event.put("campaignId", metadata.getCampaignId());
-                event.put("notificationId", metadata.getNotificationId());
-                event.put("viewId", metadata.getViewId());
-                event.put("reporting", metadata.getReporting());
+            if (metadata != null) {
+                metadata.fill(event);
             }
         } catch (JSONException ex) {
             WonderPush.logError("Error building event object body", ex);
@@ -1915,7 +1916,7 @@ public class WonderPush {
                 }
             });
         }
-        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer);
+        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::trackInAppEvent);
     }
     /**
      * @see #ensureInitialized(Context, boolean)

@@ -14,6 +14,7 @@
 
 package com.wonderpush.sdk;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Provides the following about any message, */
@@ -55,6 +56,15 @@ public class NotificationMetadata {
 
   public JSONObject getReporting() {
     return reporting;
+  }
+
+  public void fill(JSONObject json) throws JSONException {
+    if (json != null && json.isNull("campaignId") && json.isNull("notificationId") && json.isNull("viewId") && json.isNull("reporting")) {
+      json.put("campaignId", getCampaignId());
+      json.put("notificationId", getNotificationId());
+      json.put("viewId", getViewId());
+      json.put("reporting", getReporting());
+    }
   }
 
   public boolean getIsTestMessage() {

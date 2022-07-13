@@ -48,6 +48,8 @@ import com.wonderpush.sdk.inappmessaging.model.MessageType;
 import com.wonderpush.sdk.inappmessaging.model.ModalMessage;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.*;
 
@@ -93,6 +95,12 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   private InAppMessagingDisplayCallbacks callbacks;
   private com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay inAppMessagingDisplay;
 
+  public interface TrackEventProvider {
+    void trackInAppEvent(String type, JSONObject eventData, JSONObject customData);
+  }
+  @NonNull
+  private TrackEventProvider trackEventProvider;
+
   @Nonnull
   private SafeDeferProvider safeDeferProvider;
 
@@ -130,7 +138,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @Keep
   public static void initialize(Application application,
                                 InAppMessaging inAppMessaging,
-                                SafeDeferProvider safeDeferProvider) {
+                                SafeDeferProvider safeDeferProvider,
+                                TrackEventProvider trackEventProvider) {
     if (instance == null) {
       UniversalComponent universalComponent =
               DaggerUniversalComponent.builder()
@@ -144,6 +153,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       instance = appComponent.providesInAppMessagingUI();
       application.registerActivityLifecycleCallbacks(instance);
       instance.safeDeferProvider = safeDeferProvider;
+      instance.trackEventProvider = trackEventProvider;
     }
   }
 
@@ -496,7 +506,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     };
 
     // Load web view
-    final InAppWebViewController controller = new InAppWebViewController(inAppMessage, bindingWrapper.getWebView(), activity, this.safeDeferProvider);
+    final InAppWebViewController controller = new InAppWebViewController(inAppMessage, bindingWrapper.getWebView(), activity, this.safeDeferProvider, this.trackEventProvider);
     controller.setOnClick((String buttonLabel) -> {
       if (callbacks != null) {
         callbacks.messageClicked(buttonLabel);

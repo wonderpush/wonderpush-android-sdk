@@ -23,10 +23,14 @@ import com.google.android.play.core.review.ReviewInfo;
 import com.google.android.play.core.review.ReviewManager;
 import com.google.android.play.core.review.ReviewManagerFactory;
 import com.google.android.play.core.review.testing.FakeReviewManager;
+import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.SafeDeferProvider;
+import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
@@ -49,17 +53,20 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
     private Runnable onDismiss;
     private Consumer<String> onClick;
     final private SafeDeferProvider safeDeferProvider;
+    final private InAppMessagingDisplay.TrackEventProvider trackEventProvider;
     final private InAppWebViewBridge bridge = new InAppWebViewBridge(this);
 
     public InAppWebViewController(
             InAppMessage inAppMessage,
             WebView webView,
             Activity activity,
-            SafeDeferProvider safeDeferProvider) {
+            SafeDeferProvider safeDeferProvider,
+            InAppMessagingDisplay.TrackEventProvider trackEventProvider) {
         webViewMessage = inAppMessage instanceof WebViewMessage ? (WebViewMessage) inAppMessage : null;
         webViewRef = new WeakReference<>(webView);
         activityRef = new WeakReference<>(activity);
         this.safeDeferProvider = safeDeferProvider;
+        this.trackEventProvider = trackEventProvider;
     }
 
     public void setOnDismiss(Runnable r) {
@@ -251,8 +258,25 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
                 Logging.loge("Could not get review info", task.getException());
             }
         });
+    }
 
+    @Override
+    public void trackEvent(String type) {
+        this.trackEvent(type, null);
+    }
 
+    @Override
+    public void trackEvent(String type, @Nullable JSONObject attributes) {
+        JSONObject eventData = new JSONObject();
+        NotificationMetadata metadata = webViewMessage.getNotificationMetadata();
+        if (metadata != null) {
+            try {
+                metadata.fill(eventData);
+            } catch (JSONException e) {
+                Logging.loge("Could not serialize notification metadata", e);
+            }
+        }
+        trackEventProvider.trackInAppEvent(type, eventData, attributes);
     }
 
     public static class WebViewLoadingException extends Exception {
