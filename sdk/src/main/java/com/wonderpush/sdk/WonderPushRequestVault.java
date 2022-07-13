@@ -18,32 +18,12 @@ class WonderPushRequestVault {
 
     private static final String TAG = WonderPush.TAG;
 
-    private static WonderPushRequestVault sDefaultVault;
-
     private static final int NORMAL_WAIT = 10 * 1000;
     private static final float BACKOFF_EXPONENT = 1.5f;
     private static final int MAXIMUM_WAIT = 5 * 60 * 1000;
     private static int sWait = NORMAL_WAIT;
     private static final int MAX_PARALLEL_CALLS = 1;
     private static Semaphore sParallelCalls = new Semaphore(MAX_PARALLEL_CALLS);
-
-    protected static WonderPushRequestVault getDefaultVault() {
-        return sDefaultVault;
-    }
-
-    /**
-     * Start the default vault.
-     */
-    protected static void initialize() {
-        if (null == sDefaultVault) {
-            sDefaultVault = new WonderPushRequestVault(WonderPushJobQueue.getDefaultQueue(), new RequestExecutor() {
-                @Override
-                public void execute(Request request) {
-                    ApiClient.requestAuthenticated(request);
-                }
-            });
-        }
-    }
 
     private static final AtomicInteger threadCounter = new AtomicInteger(1);
     private final WonderPushJobQueue mJobQueue;

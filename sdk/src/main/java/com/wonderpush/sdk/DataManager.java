@@ -64,7 +64,7 @@ class DataManager {
                 step1AccessToken.set(new Runnable() {
                     @Override
                     public void run() {
-                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/authentication/accessToken", null, new ResponseHandler() {
+                        ApiClient.getInstance().requestForUser(currentUserId.get(), HttpMethod.GET, "/authentication/accessToken", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"accessToken\":");
@@ -91,7 +91,7 @@ class DataManager {
                             WonderPush.safeDefer(step3Installation.get(), 0);
                             return;
                         }
-                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/user", null, new ResponseHandler() {
+                        ApiClient.getInstance().requestForUser(currentUserId.get(), HttpMethod.GET, "/user", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"user\":");
@@ -114,7 +114,7 @@ class DataManager {
                 step3Installation.set(new Runnable() {
                     @Override
                     public void run() {
-                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/installation", null, new ResponseHandler() {
+                        ApiClient.getInstance().requestForUser(currentUserId.get(), HttpMethod.GET, "/installation", null, new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"installation\":");
@@ -138,7 +138,7 @@ class DataManager {
                 step4EventPage.set(new Runnable() {
                     @Override
                     public void run() {
-                        ApiClient.requestForUser(currentUserId.get(), ApiClient.HttpMethod.GET, "/events", step4RequestParams.get(), new ResponseHandler() {
+                        ApiClient.getInstance().requestForUser(currentUserId.get(), HttpMethod.GET, "/events", step4RequestParams.get(), new ResponseHandler() {
                             @Override
                             public void onFailure(Throwable e, Response errorResponse) {
                                 sb.append("{\"eventsPage\":");
@@ -241,7 +241,7 @@ class DataManager {
     }
 
     private static void clearEventsHistory(String userId) {
-        ApiClient.requestForUser(userId, ApiClient.HttpMethod.DELETE, "/events", null, null);
+        ApiClient.getInstance().requestForUser(userId, HttpMethod.DELETE, "/events", null, null);
     }
 
     static void clearPreferences() {
@@ -263,12 +263,12 @@ class DataManager {
         }
 
         if (userId != null) {
-            ApiClient.requestForUser(userId, ApiClient.HttpMethod.PUT, "/user", new Request.Params("body", "{\"custom\":null}"), null);
+            ApiClient.getInstance().requestForUser(userId, HttpMethod.PUT, "/user", new Request.Params("body", "{\"custom\":null}"), null);
         }
     }
 
     private static void clearInstallation(String userId) {
-        ApiClient.requestForUser(userId, ApiClient.HttpMethod.DELETE, "/installation", null, null);
+        ApiClient.getInstance().requestForUser(userId, HttpMethod.DELETE, "/installation", null, null);
         WonderPushConfiguration.clearForUserId(userId);
         try {
             JSONSyncInstallation.forUser(userId).receiveState(null, true);

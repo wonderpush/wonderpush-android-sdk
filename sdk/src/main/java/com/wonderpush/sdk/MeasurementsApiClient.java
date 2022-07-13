@@ -29,7 +29,7 @@ public class MeasurementsApiClient {
             return;
         }
 
-        ApiClient.HttpMethod method = request.getMethod();
+        HttpMethod method = request.getMethod();
         String resource = request.getResource();
         String url = String.format("%s%s", WonderPush.MEASUREMENTS_API_URL, resource);
         String contentType = "application/x-www-form-urlencoded";
@@ -107,7 +107,7 @@ public class MeasurementsApiClient {
         MeasurementsApiClient.disabled = disabled;
     }
 
-    private static String humanReadableRequest(ApiClient.HttpMethod method, String resource, Request.Params params) {
+    private static String humanReadableRequest(HttpMethod method, String resource, Request.Params params) {
         return method + " " + resource + "?" + params.toHumanReadableString();
     }
 

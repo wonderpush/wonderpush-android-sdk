@@ -562,7 +562,7 @@ public class WonderPush {
      */
     protected static void get(String resource, Request.Params params,
             ResponseHandler responseHandler) {
-        ApiClient.get(resource, params, responseHandler);
+        ApiClient.getInstance().get(resource, params, responseHandler);
     }
 
     /**
@@ -577,7 +577,7 @@ public class WonderPush {
      */
     protected static void post(String resource, Request.Params params,
             ResponseHandler responseHandler) {
-        ApiClient.post(resource, params, responseHandler);
+        ApiClient.getInstance().post(resource, params, responseHandler);
     }
 
     /**
@@ -593,7 +593,7 @@ public class WonderPush {
      */
     protected static void postEventually(String resource,
             Request.Params params) {
-        ApiClient.postEventually(resource, params);
+        ApiClient.getInstance().postEventually(resource, params);
     }
 
     private static WonderPushRequestVault getMeasurementsApiRequestVault() {
@@ -617,7 +617,7 @@ public class WonderPush {
      * @param params
      */
     protected static void postEventuallyWithMeasurementsApiClient(String resource, Request.Params params) {
-        final Request request = new Request(WonderPushConfiguration.getUserId(), ApiClient.HttpMethod.POST, resource, params, null);
+        final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, null);
         getMeasurementsApiRequestVault().put(request, 0);
     }
 
@@ -633,7 +633,7 @@ public class WonderPush {
      */
     protected static void put(String resource, Request.Params params,
             ResponseHandler responseHandler) {
-        ApiClient.put(resource, params, responseHandler);
+        ApiClient.getInstance().put(resource, params, responseHandler);
     }
 
     /**
@@ -646,7 +646,7 @@ public class WonderPush {
      */
     protected static void delete(String resource,
             ResponseHandler responseHandler) {
-        ApiClient.delete(resource, responseHandler);
+        ApiClient.getInstance().delete(resource, responseHandler);
     }
 
     /**
@@ -1339,26 +1339,20 @@ public class WonderPush {
             Request.Params parameters = new Request.Params();
             parameters.put("body", event.toString());
 
-            Runnable post = new Runnable() {
-                @Override
-                public void run() {
-                    postEventually("/events/", parameters);
-                    if (sentCallback != null) {
-                        WonderPush.safeDefer(() -> {
-                            sentCallback.run();
-                        }, 0);
-                    }
+            Runnable post = () -> {
+                postEventually("/events/", parameters);
+                if (sentCallback != null) {
+                    WonderPush.safeDefer(() -> {
+                        sentCallback.run();
+                    }, 0);
                 }
             };
 
-            getRemoteConfigManager().read(new RemoteConfigHandler() {
-                @Override
-                public void handle(RemoteConfig config, Throwable error) {
-                    if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
-                        post.run();
-                    } else {
-                        safeDeferWithSubscription(post, null);
-                    }
+            getRemoteConfigManager().read((config, error1) -> {
+                if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
+                    post.run();
+                } else {
+                    safeDeferWithSubscription(post, null);
                 }
             });
 
@@ -1688,10 +1682,9 @@ public class WonderPush {
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallation.setDisabled(true);
-                ApiClient.setDisabled(true);
+                ApiClient.getInstance().setDisabled(true);
                 MeasurementsApiClient.setDisabled(true);
                 JSONSyncInstallation.initialize();
-                WonderPushRequestVault.initialize();
                 initializeInAppMessaging(context);
 
                 // Setup a remote config handler to execute as soon as we get the config
@@ -1703,7 +1696,7 @@ public class WonderPush {
                         JSONObject configData = config.getData();
                         JSONSyncInstallation.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_JSON_SYNC_KEY, false));
                         if (!JSONSyncInstallation.isDisabled()) JSONSyncInstallation.flushAll();
-                        ApiClient.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
+                        ApiClient.getInstance().setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
                         MeasurementsApiClient.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY, false));
 
                         WonderPushConfiguration.setMaximumUncollapsedTrackedEventsAgeMs(configData.optLong(Constants.REMOTE_CONFIG_TRACKED_EVENTS_UNCOLLAPSED_MAXIMUM_AGE_MS_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS));
@@ -1805,7 +1798,7 @@ public class WonderPush {
                             refreshPreferencesAndConfiguration(false);
                         }
                     };
-                    boolean isFetchingToken = ApiClient.fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
+                    boolean isFetchingToken = ApiClient.getInstance().fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
                         @Override
                         public void onFailure(Throwable e, Response errorResponse) {
                         }
