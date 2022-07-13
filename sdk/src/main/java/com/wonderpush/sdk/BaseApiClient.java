@@ -64,7 +64,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
      *            Response handler
      */
     protected void requestForUser(String userId, HttpMethod method, String resource, Request.Params params, ResponseHandler responseHandler) {
-        request(new Request(userId, method, resource, params, responseHandler));
+        execute(new Request(userId, method, resource, params, responseHandler));
     }
 
     /**
@@ -78,7 +78,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
      *            Response handler
      */
     protected void get(String resource, Request.Params params, ResponseHandler responseHandler) {
-        request(new Request(WonderPushConfiguration.getUserId(), HttpMethod.GET, resource, params, responseHandler));
+        execute(new Request(WonderPushConfiguration.getUserId(), HttpMethod.GET, resource, params, responseHandler));
     }
 
     /**
@@ -92,7 +92,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
      *            Response handler
      */
     protected void post(String resource, Request.Params params, ResponseHandler responseHandler) {
-        request(new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, responseHandler));
+        execute(new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, responseHandler));
     }
 
     /**
@@ -121,7 +121,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
      *            Response handler
      */
     protected void put(String resource, Request.Params params, ResponseHandler responseHandler) {
-        request(new Request(WonderPushConfiguration.getUserId(), HttpMethod.PUT, resource, params, responseHandler));
+        execute(new Request(WonderPushConfiguration.getUserId(), HttpMethod.PUT, resource, params, responseHandler));
     }
 
     /**
@@ -133,9 +133,8 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
      *            Response handler
      */
     protected void delete(String resource, ResponseHandler responseHandler) {
-        request(new Request(WonderPushConfiguration.getUserId(), HttpMethod.DELETE, resource, null, responseHandler));
+        execute(new Request(WonderPushConfiguration.getUserId(), HttpMethod.DELETE, resource, null, responseHandler));
     }
-
 
     /**
      * Runs the specified request.
@@ -175,7 +174,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
                     WonderPushConfiguration.invalidateCredentials();
 
                     // retry later now
-                    WonderPush.safeDefer(() -> request(request), RETRY_INTERVAL_BAD_AUTH);
+                    WonderPush.safeDefer(() -> execute(request), RETRY_INTERVAL_BAD_AUTH);
                 } else {
                     if (request.getHandler() != null) {
                         request.getHandler().onFailure(e, errorResponse);
