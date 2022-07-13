@@ -85,6 +85,7 @@ class WonderPushView extends FrameLayout {
         init();
     }
 
+    @SuppressLint("ResourceType")
     private void init() {
         // Create the error layout
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
