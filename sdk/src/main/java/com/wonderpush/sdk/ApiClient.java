@@ -33,6 +33,11 @@ class ApiClient extends BaseApiClient {
         params.put("accessToken", getAccessTokenForRequest(request));
     }
 
+    @Override
+    protected String getTag() {
+        return TAG;
+    }
+
     private String getAccessTokenForRequest(Request request) {
         return WonderPushConfiguration.getAccessTokenForUserId(request.getUserId());
     }

@@ -21,7 +21,6 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 
 public abstract class BaseApiClient implements WonderPushRequestVault.RequestExecutor {
-    private static final String TAG = "WonderPush." + BaseApiClient.class.getSimpleName();
 
     private static final int RETRY_INTERVAL_BAD_AUTH = 1 * 1000; // in milliseconds
     protected static final int ERROR_INVALID_CREDENTIALS = 11000;
@@ -37,6 +36,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
     private boolean disabled = false;
 
     protected abstract void decorate(Request request);
+    protected abstract String getTag();
 
     /**
      * A request that is guaranteed to be executed when a network connection
@@ -160,7 +160,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
         ResponseHandler wrapperHandler = new ResponseHandler() {
             @Override
             public void onSuccess(int status, Response response) {
-                WonderPush.logDebug(TAG, "Request successful: (" + status + ") " + response + " (for " + request.toHumanReadableString() + ")");
+                WonderPush.logDebug(getTag(), "Request successful: (" + status + ") " + response + " (for " + request.toHumanReadableString() + ")");
                 if (request.getHandler() != null) {
                     request.getHandler().onSuccess(status, response);
                 }
@@ -168,7 +168,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
 
             @Override
             public void onFailure(Throwable e, Response errorResponse) {
-                WonderPush.logError(TAG, "Request failed: " + errorResponse + " (for " + request.toHumanReadableString() + ")", e);
+                WonderPush.logError(getTag(), "Request failed: " + errorResponse + " (for " + request.toHumanReadableString() + ")", e);
                 if (errorResponse != null && ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
                     WonderPushConfiguration.invalidateCredentials();
@@ -184,7 +184,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
 
             @Override
             public void onSuccess(Response response) {
-                WonderPush.logDebug(TAG, "Request successful: " + response + " (for " + request.toHumanReadableString() + ")");
+                WonderPush.logDebug(getTag(), "Request successful: " + response + " (for " + request.toHumanReadableString() + ")");
                 if (request.getHandler() != null) {
                     request.getHandler().onSuccess(response);
                 }
@@ -202,7 +202,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
      */
     protected void request(final Request request) {
         if (null == request) {
-            WonderPush.logError(TAG, "Request with null request.");
+            WonderPush.logError(getTag(), "Request with null request.");
             return;
         }
 
@@ -214,7 +214,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
             // Generate signature
             Request.BasicNameValuePair authorizationHeader = request.getAuthorizationHeader();
 
-            WonderPush.logDebug(TAG, "Requesting: " + request.toHumanReadableString());
+            WonderPush.logDebug(getTag(), "Requesting: " + request.toHumanReadableString());
             // TODO: support other contentTypes such as "application/json"
             String contentType = "application/x-www-form-urlencoded";
 
@@ -256,9 +256,9 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
                         responseJson = new JSONObject(responseString);
                     } catch (JSONException e) {
                         if (WonderPush.getLogging()) {
-                            Log.e(TAG, "Unexpected string error answer: " + response.code() + " headers: " + response.headers() + " response: (" + responseString.length() + ") \"" + responseString + "\" (for " + request.toHumanReadableString() + ")", e);
+                            Log.e(getTag(), "Unexpected string error answer: " + response.code() + " headers: " + response.headers() + " response: (" + responseString.length() + ") \"" + responseString + "\" (for " + request.toHumanReadableString() + ")", e);
                         } else {
-                            Log.e(TAG, "Unexpected string error answer: " + response.code() + " headers: " + response.headers() + " response: (" + responseString.length() + ") \"" + responseString + "\"", e);
+                            Log.e(getTag(), "Unexpected string error answer: " + response.code() + " headers: " + response.headers() + " response: (" + responseString.length() + ") \"" + responseString + "\"", e);
                         }
                         handler.onFailure(e, new Response(responseString));
                         return;
@@ -268,9 +268,9 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
                     declareConfigVersion(responseJson);
                     if (!response.isSuccessful()) {
                         if (WonderPush.getLogging()) {
-                            Log.e(TAG, "Error answer: " + response.code() + " headers: " + response.headers() + " response: " + responseString + " (for " + request.toHumanReadableString() + ")");
+                            Log.e(getTag(), "Error answer: " + response.code() + " headers: " + response.headers() + " response: " + responseString + " (for " + request.toHumanReadableString() + ")");
                         } else {
-                            Log.e(TAG, "Error answer: " + response.code() + " headers: " + response.headers() + " response: " + responseString);
+                            Log.e(getTag(), "Error answer: " + response.code() + " headers: " + response.headers() + " response: " + responseString);
                         }
                         handler.onFailure(null, new Response(responseJson));
                     } else {
