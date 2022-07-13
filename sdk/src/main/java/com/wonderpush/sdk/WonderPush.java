@@ -609,6 +609,21 @@ public class WonderPush {
     }
 
     /**
+     * Sends request using the ApiClient when we have an accessToken,
+     * or using the AnonymousApiClient otherwise.
+     *
+     * @param request
+     */
+    protected static void requestEventuallyWithOptionalAccessToken(Request request) {
+        String accessToken = WonderPushConfiguration.getAccessToken();
+        if (accessToken != null) {
+            ApiClient.getInstance().requestEventually(request);
+        } else {
+            AnonymousApiClient.getInstance().requestEventually(request);
+        }
+    }
+
+    /**
      * A POST request that is guaranteed to be executed when a network
      * connection is present, surviving application reboot. The responseHandler
      * will be called only if the network is present when the request is first run.
@@ -1306,10 +1321,14 @@ public class WonderPush {
     }
 
     static void trackInAppEvent(String type, JSONObject eventData, JSONObject customData) {
-        _trackEvent(type, eventData, customData, null);
+        _trackEvent(type, eventData, customData, false, null);
     }
 
     private static void _trackEvent(String type, JSONObject eventData, JSONObject customData, final Runnable sentCallback) {
+        _trackEvent(type, eventData, customData, true, sentCallback);
+    }
+
+    private static void _trackEvent(String type, JSONObject eventData, JSONObject customData, boolean requiresSubscription, final Runnable sentCallback) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
             return;
@@ -1351,8 +1370,11 @@ public class WonderPush {
             getRemoteConfigManager().read((config, error1) -> {
                 if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
                     post.run();
-                } else {
+                } else if (requiresSubscription) {
                     safeDeferWithSubscription(post, null);
+                } else {
+                    final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, "/events/", parameters, null);
+                    WonderPush.requestEventuallyWithOptionalAccessToken(request);
                 }
             });
 
