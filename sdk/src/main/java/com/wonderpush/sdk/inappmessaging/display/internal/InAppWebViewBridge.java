@@ -1,28 +1,12 @@
 package com.wonderpush.sdk.inappmessaging.display.internal;
 
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Message;
-import android.util.Patterns;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebChromeClient;
-import android.webkit.WebView;
 
-import android.webkit.WebViewClient;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.wonderpush.sdk.WonderPush;
-import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
 
-import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
-import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,6 +25,7 @@ public class InAppWebViewBridge {
         void triggerLocationPrompt();
         void dismiss();
         void trackClick(String buttonLabel);
+        void openAppRating();
         JSONObject getPayload();
     }
 
@@ -335,5 +320,14 @@ public class InAppWebViewBridge {
     public void triggerLocationPrompt() {
         Controller controller = controllerRef.get();
         if (controller != null) controller.triggerLocationPrompt();
+    }
+
+    @JavascriptInterface
+    public void openAppRating() {
+        Controller controller = controllerRef.get();
+        if (controller == null) {
+            throwJavascriptError("Null controller");
+        }
+        controller.openAppRating();
     }
 }

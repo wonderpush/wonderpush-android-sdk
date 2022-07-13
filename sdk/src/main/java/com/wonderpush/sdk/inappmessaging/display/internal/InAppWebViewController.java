@@ -18,6 +18,11 @@ import android.webkit.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import com.google.android.gms.tasks.Task;
+import com.google.android.play.core.review.ReviewInfo;
+import com.google.android.play.core.review.ReviewManager;
+import com.google.android.play.core.review.ReviewManagerFactory;
+import com.google.android.play.core.review.testing.FakeReviewManager;
 import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
@@ -223,6 +228,31 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
     @Override
     public JSONObject getPayload() {
         return this.webViewMessage.getData();
+    }
+
+    @Override
+    public void openAppRating() {
+        Activity activity = activityRef.get();
+        if (activity == null) return;
+        ReviewManager manager = ReviewManagerFactory.create(activity);
+        Task<ReviewInfo> request = manager.requestReviewFlow();
+        request.addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                ReviewInfo reviewInfo = task.getResult();
+                Activity activity1 = activityRef.get();
+                if (activity1 == null) return;
+                Task<Void> flow = manager.launchReviewFlow(activity1, reviewInfo);
+                flow.addOnCompleteListener(task1 -> {
+                    if (!task1.isSuccessful()) {
+                        Logging.loge("Could not open app rating", task1.getException());
+                    }
+                });
+            } else {
+                Logging.loge("Could not get review info", task.getException());
+            }
+        });
+
+
     }
 
     public static class WebViewLoadingException extends Exception {

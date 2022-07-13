@@ -119,6 +119,7 @@
       "wonderpushSubscribeToNotifications",
       "wonderpushTrackEvent",
       "wonderpushTriggerLocationPrompt",
+      "wonderpushOpenAppRating",
       "wonderpushOpenDeepLink", // move somewhere else last
       "wonderpushOpenExternalUrl",
       "wonderpushDismiss",
@@ -178,6 +179,11 @@
           case "wonderpushTriggerLocationPrompt":
             fn = function () {
               window.WonderPushInAppSDK.triggerLocationPrompt();
+            };
+            break;
+          case "wonderpushOpenAppRating":
+            fn = function () {
+              window.WonderPushInAppSDK.openAppRating();
             };
             break;
           case "wonderpushUnsubscribeFromNotifications":

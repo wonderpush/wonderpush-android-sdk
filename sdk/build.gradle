@@ -67,6 +67,9 @@ dependencies {
     //needed for webview message
     implementation 'androidx.webkit:webkit:1.4.0'
 
+    // needed by openAppRating
+    implementation 'com.google.android.play:review:2.0.0'
+
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.hamcrest:hamcrest:2.2'
     testImplementation 'org.json:json:20160810'
