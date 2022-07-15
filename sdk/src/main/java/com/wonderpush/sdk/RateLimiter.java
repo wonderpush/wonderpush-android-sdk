@@ -19,9 +19,11 @@ import java.util.Map;
 public class RateLimiter {
 
     public static class RateLimit {
-        public @NonNull final String key;
+        @NonNull
+        public final String key;
         public final long timeToLive;
         public final int limit;
+
         public RateLimit(@NonNull String key, int timeToLive, int limit) {
             this.key = key;
             this.timeToLive = timeToLive;
@@ -30,12 +32,16 @@ public class RateLimiter {
     }
 
     private static class RateLimiterData {
-        public @NonNull final String key;
-        public @NonNull final List<Long> incrementDates;
+        @NonNull
+        public final String key;
+        @NonNull
+        public final List<Long> incrementDates;
+
         public RateLimiterData(@NonNull String key) {
             this.key = key;
             this.incrementDates = new ArrayList<>();
         }
+
         public void removeIncrementsOlderThan(long timeToLive) {
             long start = new Date().getTime() - timeToLive;
             while (incrementDates.size() > 0 && incrementDates.get(0) < start) {
@@ -44,7 +50,8 @@ public class RateLimiter {
         }
     }
 
-    public static class MissingSharedPreferencesException extends Exception {}
+    public static class MissingSharedPreferencesException extends Exception {
+    }
 
     private static RateLimiter sInstance;
 
@@ -57,8 +64,10 @@ public class RateLimiter {
         return sInstance;
     }
 
-    private @NonNull final SharedPreferences sharedPreferences;
-    private @NonNull final Map<String, RateLimiterData> limiterData;
+    @NonNull
+    private final SharedPreferences sharedPreferences;
+    @NonNull
+    private final Map<String, RateLimiterData> limiterData;
 
     protected RateLimiter(@NonNull SharedPreferences sharedPreferences) {
         this.sharedPreferences = sharedPreferences;
@@ -86,6 +95,7 @@ public class RateLimiter {
     }
 
     private static final String SharedPreferencesKey = "__RateLimiter";
+
     private synchronized void save() {
         try {
 

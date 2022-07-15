@@ -3,8 +3,6 @@ package com.wonderpush.sdk;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-
-import android.content.Context;
 import android.content.SharedPreferences;
 
 import org.junit.Test;
