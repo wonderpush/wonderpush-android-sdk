@@ -20,5 +20,7 @@ public class Constants {
     public static final String REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_LAST_BUILTIN_MAXIMUM_COUNT_KEY = "trackedEventsCollapsedLastBuiltinMaximumCount";
     public static final String REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_LAST_CUSTOM_MAXIMUM_COUNT_KEY = "trackedEventsCollapsedLastCustomMaximumCount";
     public static final String REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_OTHER_MAXIMUM_COUNT_KEY = "trackedEventsCollapsedOtherMaximumCount";
+    public static final String REMOTE_CONFIG_ANONYMOUS_API_CLIENT_RATE_LIMIT_LIMIT = "anonymousApiClientRateLimitLimit";
+    public static final String REMOTE_CONFIG_ANONYMOUS_API_CLIENT_RATE_LIMIT_TIME_TO_LIVE_MILLISECONDS = "anonymousApiClientRateLimitTimeToLiveMilliseconds";
 
 }
