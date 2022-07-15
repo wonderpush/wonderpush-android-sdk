@@ -253,7 +253,9 @@ public class InAppMessageStreamManager {
     if (!campaign.isTestCampaign() && (isAppForegroundEvent(event) || isAppLaunchEvent(event))) {
         try {
             RateLimiter limiter = RateLimiter.getInstance();
-            if (limiter.isRateLimited(appForegroundRateLimit)) return Maybe.empty();
+            if (limiter.isRateLimited(appForegroundRateLimit)) {
+                return Maybe.empty();
+            }
         } catch (RateLimiter.MissingSharedPreferencesException e) {
             Logging.loge("Could not get rate limiter", e);
         }
