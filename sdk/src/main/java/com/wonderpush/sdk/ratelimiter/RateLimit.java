@@ -8,7 +8,7 @@ public class RateLimit {
     public final long timeToLive;
     public final int limit;
 
-    public RateLimit(@NonNull String key, int timeToLive, int limit) {
+    public RateLimit(@NonNull String key, long timeToLive, int limit) {
         this.key = key;
         this.timeToLive = timeToLive;
         this.limit = limit;
