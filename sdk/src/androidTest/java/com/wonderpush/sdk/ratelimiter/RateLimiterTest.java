@@ -1,17 +1,22 @@
-package com.wonderpush.sdk;
+package com.wonderpush.sdk.ratelimiter;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.test.InstrumentationTestCase;
 
-import org.junit.Test;
+public class RateLimiterTest extends InstrumentationTestCase {
 
-public class RateLimiterTest {
+    public void setUp() {
+        RateLimiter.initialize(getSharedPreferences());
+    }
 
-    @Test
+    private SharedPreferences getSharedPreferences() {
+        Context context = getInstrumentation().getContext();
+        return context.getSharedPreferences("RateLimiterTest", Context.MODE_PRIVATE);
+    }
+
     public void testSimple() throws RateLimiter.MissingSharedPreferencesException, InterruptedException {
-        RateLimiter.RateLimit limit = new RateLimiter.RateLimit("testLimit", 1000, 5);
+        RateLimit limit = new RateLimit("testLimit", 1000, 5);
         RateLimiter limiter = RateLimiter.getInstance();
         limiter.clear(limit);
 
@@ -47,9 +52,8 @@ public class RateLimiterTest {
         assertFalse(limiter.isRateLimited(limit));
     }
 
-    @Test
     public void testFloatingWindow() throws RateLimiter.MissingSharedPreferencesException, InterruptedException {
-        RateLimiter.RateLimit limit = new RateLimiter.RateLimit("testLimit", 1000, 5);
+        RateLimit limit = new RateLimit("testLimit", 1000, 5);
         RateLimiter limiter = RateLimiter.getInstance();
         limiter.clear(limit);
 
@@ -92,11 +96,10 @@ public class RateLimiterTest {
         assertTrue(limiter.isRateLimited(limit)); // Rate limited
     }
 
-    @Test
     public void testStorage() throws InterruptedException {
-        SharedPreferences prefs = WonderPushConfiguration.getSharedPreferences();
+        SharedPreferences prefs = getSharedPreferences();
         RateLimiter limiter1 = new RateLimiter(prefs);
-        RateLimiter.RateLimit limit = new RateLimiter.RateLimit("testLimit", 500, 1);
+        RateLimit limit = new RateLimit("testLimit", 500, 1);
         limiter1.clear(limit);
         limiter1.increment(limit);
         RateLimiter limiter2 = new RateLimiter(prefs);

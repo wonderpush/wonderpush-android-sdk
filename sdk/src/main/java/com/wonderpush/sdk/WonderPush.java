@@ -23,6 +23,7 @@ import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
 
+import com.wonderpush.sdk.ratelimiter.RateLimiter;
 import com.wonderpush.sdk.remoteconfig.*;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -1701,6 +1702,7 @@ public class WonderPush {
 
                 PushServiceManager.initialize(getApplicationContext());
                 WonderPushConfiguration.initialize(getApplicationContext());
+                RateLimiter.initialize(WonderPushConfiguration.getSharedPreferences());
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallation.setDisabled(true);

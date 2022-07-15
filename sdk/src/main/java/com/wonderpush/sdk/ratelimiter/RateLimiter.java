@@ -1,4 +1,4 @@
-package com.wonderpush.sdk;
+package com.wonderpush.sdk.ratelimiter;
 
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -17,19 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 public class RateLimiter {
-
-    public static class RateLimit {
-        @NonNull
-        public final String key;
-        public final long timeToLive;
-        public final int limit;
-
-        public RateLimit(@NonNull String key, int timeToLive, int limit) {
-            this.key = key;
-            this.timeToLive = timeToLive;
-            this.limit = limit;
-        }
-    }
+    protected static final String TAG = "WonderPushRateLimiter";
 
     private static class RateLimiterData {
         @NonNull
@@ -54,12 +42,15 @@ public class RateLimiter {
     }
 
     private static RateLimiter sInstance;
+    private static SharedPreferences sSharedPreferences;
+
+    public static void initialize(SharedPreferences sharedPreferences) {
+        sSharedPreferences = sharedPreferences;
+    }
 
     public static RateLimiter getInstance() throws MissingSharedPreferencesException {
         if (sInstance == null) {
-            SharedPreferences sharedPreferences = WonderPushConfiguration.getSharedPreferences();
-            if (sharedPreferences == null) throw new MissingSharedPreferencesException();
-            sInstance = new RateLimiter(sharedPreferences);
+            sInstance = new RateLimiter(sSharedPreferences);
         }
         return sInstance;
     }
@@ -89,7 +80,7 @@ public class RateLimiter {
                 }
 
             } catch (JSONException e) {
-                Log.e(WonderPush.TAG, "Could not read rate limiter data", e);
+                Log.e(TAG, "Could not read rate limiter data", e);
             }
         }
     }
@@ -111,7 +102,7 @@ public class RateLimiter {
             editor.putString(SharedPreferencesKey, data.toString());
             editor.apply();
         } catch (JSONException e) {
-            Log.e(WonderPush.TAG, "Could not save rate limiter data", e);
+            Log.e(TAG, "Could not save rate limiter data", e);
         }
     }
 
