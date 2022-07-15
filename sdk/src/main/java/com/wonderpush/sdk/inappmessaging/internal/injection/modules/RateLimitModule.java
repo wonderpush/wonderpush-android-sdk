@@ -15,9 +15,7 @@
 package com.wonderpush.sdk.inappmessaging.internal.injection.modules;
 
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
-import com.wonderpush.sdk.inappmessaging.model.RateLimit;
-
-import java.util.concurrent.TimeUnit;
+import com.wonderpush.sdk.ratelimiter.RateLimit;
 
 import dagger.Module;
 import dagger.Provides;
@@ -35,6 +33,6 @@ public class RateLimitModule {
   @Provides
   @AppForeground
   public RateLimit providesAppForegroundRateLimit() {
-    return new RateLimit(APP_FOREGROUND_ONE_PER_DAY_LIMITER_KEY, 1, TimeUnit.MINUTES.toMillis(1));
+    return new RateLimit(APP_FOREGROUND_ONE_PER_DAY_LIMITER_KEY, 60000, 1);
   }
 }

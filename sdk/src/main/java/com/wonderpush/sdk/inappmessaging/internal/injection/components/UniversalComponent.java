@@ -21,7 +21,6 @@ import com.wonderpush.sdk.inappmessaging.internal.AnalyticsEventsManager;
 import com.wonderpush.sdk.inappmessaging.internal.DeveloperListenerManager;
 import com.wonderpush.sdk.inappmessaging.internal.ImpressionStorageClient;
 import com.wonderpush.sdk.inappmessaging.internal.ProgramaticContextualTriggers;
-import com.wonderpush.sdk.inappmessaging.internal.RateLimiterClient;
 import com.wonderpush.sdk.inappmessaging.internal.Schedulers;
 import com.wonderpush.sdk.inappmessaging.internal.injection.modules.AnalyticsEventsModule;
 import com.wonderpush.sdk.inappmessaging.internal.injection.modules.ApplicationModule;
@@ -37,7 +36,7 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForegr
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
-import com.wonderpush.sdk.inappmessaging.model.RateLimit;
+import com.wonderpush.sdk.ratelimiter.RateLimit;
 
 import javax.inject.Singleton;
 
@@ -84,8 +83,6 @@ public interface UniversalComponent {
   ImpressionStorageClient impressionStorageClient();
 
   Clock clock();
-
-  RateLimiterClient rateLimiterClient();
 
   Application application();
 

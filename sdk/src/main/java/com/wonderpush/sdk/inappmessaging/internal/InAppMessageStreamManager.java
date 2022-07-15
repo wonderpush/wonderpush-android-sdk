@@ -33,6 +33,8 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
+import com.wonderpush.sdk.ratelimiter.RateLimit;
+import com.wonderpush.sdk.ratelimiter.RateLimiter;
 import com.wonderpush.sdk.segmentation.Segmenter;
 import com.wonderpush.sdk.segmentation.parser.*;
 import io.reactivex.Flowable;
@@ -59,7 +61,6 @@ public class InAppMessageStreamManager {
   private final Clock clock;
   private final Schedulers schedulers;
   private final ImpressionStorageClient impressionStorageClient;
-  private final RateLimiterClient rateLimiterClient;
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
@@ -73,7 +74,6 @@ public class InAppMessageStreamManager {
           AnalyticsEventsManager analyticsEventsManager,
           Schedulers schedulers,
           ImpressionStorageClient impressionStorageClient,
-          RateLimiterClient rateLimiterClient,
           @AppForeground RateLimit appForegroundRateLimit,
           TestDeviceHelper testDeviceHelper,
           InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate) {
@@ -83,7 +83,6 @@ public class InAppMessageStreamManager {
     this.analyticsEventsManager = analyticsEventsManager;
     this.schedulers = schedulers;
     this.impressionStorageClient = impressionStorageClient;
-    this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
     this.inAppMessagingDelegate = inAppMessagingDelegate;
@@ -252,13 +251,12 @@ public class InAppMessageStreamManager {
 
   private Maybe<Campaign> getContentIfNotRateLimited(String event, Campaign campaign) {
     if (!campaign.isTestCampaign() && (isAppForegroundEvent(event) || isAppLaunchEvent(event))) {
-      return rateLimiterClient
-          .isRateLimited(appForegroundRateLimit)
-          .doOnSuccess(
-              isRateLimited -> Logging.logi("App foreground rate limited ? : " + isRateLimited))
-          .onErrorResumeNext(Single.just(false)) // Absorb rate limit errors
-          .filter(isRateLimited -> !isRateLimited)
-          .map(isRateLimited -> campaign);
+        try {
+            RateLimiter limiter = RateLimiter.getInstance();
+            if (limiter.isRateLimited(appForegroundRateLimit)) return Maybe.empty();
+        } catch (RateLimiter.MissingSharedPreferencesException e) {
+            Logging.loge("Could not get rate limiter", e);
+        }
     }
     return Maybe.just(campaign);
   }
