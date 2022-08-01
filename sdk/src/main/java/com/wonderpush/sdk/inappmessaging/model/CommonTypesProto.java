@@ -107,6 +107,7 @@ public final class CommonTypesProto {
       TriggeringCondition result = new TriggeringCondition();
       String systemEvent = triggerJson.optString("systemEvent");
       result.setDelay(triggerJson.optLong("delay", 0));
+      result.setMinOccurrences(triggerJson.optLong("minOccurrences", 0));
       JSONObject eventJson = triggerJson.optJSONObject("event");
       if (systemEvent != null) {
         if (systemEvent.equals("ON_FOREGROUND")) {
@@ -131,6 +132,16 @@ public final class CommonTypesProto {
 
     public long getDelay() {
       return delay;
+    }
+
+    private long minOccurrences;
+
+    public long getMinOccurrences() {
+      return minOccurrences;
+    }
+
+    public void setMinOccurrences(long minOccurrences) {
+      this.minOccurrences = minOccurrences;
     }
 
     private TriggeringCondition() {

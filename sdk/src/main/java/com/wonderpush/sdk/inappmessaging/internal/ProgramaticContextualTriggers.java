@@ -14,6 +14,8 @@
 
 package com.wonderpush.sdk.inappmessaging.internal;
 
+import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
+
 /**
  * The {@link ProgramaticContextualTriggers} notifies listeners set via {@link
  * #setListener(Listener)} when an contextual trigger has been programatically triggered via the
@@ -34,11 +36,13 @@ public class ProgramaticContextualTriggers {
 
   public void triggerEvent(String eventName) {
     Logging.logd("Programmatically trigger: " + eventName);
-    listener.onEventTrigger(eventName);
+    EventOccurrence eventOccurrence = new EventOccurrence();
+    eventOccurrence.eventType = eventName;
+    listener.onEventTrigger(eventOccurrence);
   }
 
   /** Listener to receive callbacks when the trigger is emitted */
   public interface Listener {
-    void onEventTrigger(String trigger);
+    void onEventTrigger(EventOccurrence eventOccurrence);
   }
 }

@@ -357,6 +357,11 @@ public class WonderPush {
     public static final String INTENT_EVENT_TRACKED_CUSTOM_DATA = "customData";
 
     /**
+     * Intent extra key holding occurences data serialized as JSON of event being tracked.
+     */
+    public static final String INTENT_EVENT_TRACKED_OCCURRENCES = "occurrences";
+
+    /**
      * Local intent broadcasted when a resource has been successfully preloaded.
      */
     protected static final String INTENT_RESOURCE_PRELOADED = "wonderpushResourcePreloaded";
@@ -1338,13 +1343,25 @@ public class WonderPush {
         final JSONObject event = getEventObject(type, eventData, customData);
 
         // Remember
-        WonderPushConfiguration.rememberTrackedEvent(event);
+        WonderPushConfiguration.Occurrences occurrences = WonderPushConfiguration.rememberTrackedEvent(event);
+        JSONObject occurrencesJSON = null;
+        if (occurrences != null) {
+            try {
+                occurrencesJSON = occurrences.toJSON();
+                event.put("occurrences", occurrencesJSON);
+            } catch (JSONException e) {
+                logError("Could not add occurrences to payload", e);
+            }
+        }
 
         // Broadcast locally that an event was tracked
         Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
         eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
         if (customData != null) {
             eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
+        }
+        if (occurrencesJSON != null) {
+            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_OCCURRENCES, occurrencesJSON.toString());
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
@@ -1398,13 +1415,25 @@ public class WonderPush {
         final JSONObject event = getEventObject(type, eventData, customData);
 
         // Remember
-        WonderPushConfiguration.rememberTrackedEvent(event);
+        WonderPushConfiguration.Occurrences occurrences = WonderPushConfiguration.rememberTrackedEvent(event);
+        JSONObject occurrencesJSON = null;
+        if (occurrences != null) {
+            try {
+                occurrencesJSON = occurrences.toJSON();
+                event.put("occurrences", occurrencesJSON);
+            } catch (JSONException e) {
+                logError("Could not add occurrences to payload", e);
+            }
+        }
 
         // Broadcast locally that an event was tracked
         Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
         eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
         if (customData != null) {
             eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
+        }
+        if (occurrencesJSON != null) {
+            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_OCCURRENCES, occurrencesJSON.toString());
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 

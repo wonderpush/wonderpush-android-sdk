@@ -56,8 +56,8 @@ import org.json.JSONObject;
 public class InAppMessageStreamManager {
   public static final String APP_LAUNCH = "APP_LAUNCH";
   public static final String ON_FOREGROUND = "ON_FOREGROUND";
-  private final ConnectableFlowable<String> appForegroundEventFlowable;
-  private final ConnectableFlowable<String> programmaticTriggerEventFlowable;
+  private final ConnectableFlowable<EventOccurrence> appForegroundEventFlowable;
+  private final ConnectableFlowable<EventOccurrence> programmaticTriggerEventFlowable;
   private final Clock clock;
   private final Schedulers schedulers;
   private final ImpressionStorageClient impressionStorageClient;
@@ -68,8 +68,8 @@ public class InAppMessageStreamManager {
 
   @Inject
   public InAppMessageStreamManager(
-          @AppForeground ConnectableFlowable<String> appForegroundEventFlowable,
-          @ProgrammaticTrigger ConnectableFlowable<String> programmaticTriggerEventFlowable,
+          @AppForeground ConnectableFlowable<EventOccurrence> appForegroundEventFlowable,
+          @ProgrammaticTrigger ConnectableFlowable<EventOccurrence> programmaticTriggerEventFlowable,
           Clock clock,
           AnalyticsEventsManager analyticsEventsManager,
           Schedulers schedulers,
@@ -88,12 +88,16 @@ public class InAppMessageStreamManager {
     this.inAppMessagingDelegate = inAppMessagingDelegate;
   }
 
-  private static boolean containsTriggeringCondition(String event, Campaign campaign) {
-    if (isAppForegroundEvent(event) && campaign.isTestCampaign()) {
+  private static boolean containsTriggeringCondition(EventOccurrence event, Campaign campaign) {
+    if (isAppForegroundEvent(event.eventType) && campaign.isTestCampaign()) {
       return true; // the triggering condition for test campaigns is always 'app foreground'
     }
     for (TriggeringCondition condition : campaign.getTriggeringConditions()) {
-      if (hasIamTrigger(condition, event) || hasAnalyticsTrigger(condition, event)) {
+      if (hasIamTrigger(condition, event.eventType) || hasAnalyticsTrigger(condition, event.eventType)) {
+        if (condition.getMinOccurrences() > 0 && condition.getMinOccurrences() > event.allTimeOccurrences) {
+          // Count criteria not met, skip to next trigger definition
+          continue;
+        }
         Logging.logd(String.format("The event %s is contained in the list of triggers", event));
         return true;
       }
@@ -187,7 +191,7 @@ public class InAppMessageStreamManager {
                               .map(isCapped -> campaign);
 
               Function<Campaign, Maybe<Campaign>> appForegroundRateLimitFilter =
-                  content -> getContentIfNotRateLimited(event, content);
+                  content -> getContentIfNotRateLimited(event.eventType, content);
 
               Function<Campaign, Maybe<Campaign>> filterDisplayable =
                   campaign -> {
@@ -271,7 +275,7 @@ public class InAppMessageStreamManager {
   }
 
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
-          String event,
+          EventOccurrence event,
           Function<Campaign, Maybe<Campaign>> filterAlreadyImpressed,
           Function<Campaign, Maybe<Campaign>> appForegroundRateLimitFilter,
           Function<Campaign, Maybe<Campaign>> filterDisplayable,
@@ -303,7 +307,7 @@ public class InAppMessageStreamManager {
         .flatMapMaybe(filterDisplayable)
         .sorted(InAppMessageStreamManager::compareByPriority)
         .firstElement()
-        .flatMap(campaign -> triggeredInAppMessage(campaign, event, delayForEvent(event, campaign)));
+        .flatMap(campaign -> triggeredInAppMessage(campaign, event.eventType, delayForEvent(event.eventType, campaign)));
   }
 
   private Maybe<TriggeredInAppMessage> triggeredInAppMessage(Campaign campaign, String event, long delay) {

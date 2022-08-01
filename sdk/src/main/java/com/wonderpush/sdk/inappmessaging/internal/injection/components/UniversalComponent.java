@@ -36,6 +36,7 @@ import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForegr
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
+import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
 import com.wonderpush.sdk.ratelimiter.RateLimit;
 
 import javax.inject.Singleton;
@@ -67,16 +68,16 @@ public interface UniversalComponent {
   Schedulers schedulers();
 
   @AppForeground
-  ConnectableFlowable<String> appForegroundEventFlowable();
+  ConnectableFlowable<EventOccurrence> appForegroundEventFlowable();
 
   @ProgrammaticTrigger
-  ConnectableFlowable<String> programmaticContextualTriggerFlowable();
+  ConnectableFlowable<EventOccurrence> programmaticContextualTriggerFlowable();
 
   @ProgrammaticTrigger
   ProgramaticContextualTriggers programmaticContextualTriggers();
 
   @AnalyticsListener
-  ConnectableFlowable<String> analyticsEventsFlowable();
+  ConnectableFlowable<EventOccurrence> analyticsEventsFlowable();
 
   AnalyticsEventsManager analyticsEventsManager();
 

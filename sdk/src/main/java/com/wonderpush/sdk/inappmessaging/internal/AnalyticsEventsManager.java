@@ -26,6 +26,10 @@ import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.inappmessaging.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.model.Campaign;
 import com.wonderpush.sdk.inappmessaging.model.CommonTypesProto;
+import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +50,7 @@ import io.reactivex.flowables.ConnectableFlowable;
  */
 @InAppMessagingScope
 public class AnalyticsEventsManager {
-  private final ConnectableFlowable<String> flowable;
+  private final ConnectableFlowable<EventOccurrence> flowable;
   private Set<String> analyticsEventNames;
   private Application application;
 
@@ -54,14 +58,14 @@ public class AnalyticsEventsManager {
   public AnalyticsEventsManager(Application application) {
     this.application = application;
     AnalyticsFlowableSubscriber subscriber = new AnalyticsFlowableSubscriber();
-    flowable = Flowable.<String>create(subscriber, BackpressureStrategy.BUFFER).publish();
+    flowable = Flowable.<EventOccurrence>create(subscriber, BackpressureStrategy.BUFFER).publish();
 
     // We ignore the subscription since this connected flowable is expected to last the lifetime of
     // the app, but this calls the 'subscribe' method of the subscriber, which registers the handle
     flowable.connect();
   }
 
-  public ConnectableFlowable<String> getAnalyticsEventsFlowable() {
+  public ConnectableFlowable<EventOccurrence> getAnalyticsEventsFlowable() {
     return flowable;
   }
 
@@ -84,19 +88,31 @@ public class AnalyticsEventsManager {
     analyticsEventNames = extractAnalyticsEventNames(campaigns);
   }
 
-  private class AnalyticsFlowableSubscriber implements FlowableOnSubscribe<String> {
+  private class AnalyticsFlowableSubscriber implements FlowableOnSubscribe<EventOccurrence> {
 
     AnalyticsFlowableSubscriber() {}
 
     @Override
-    public void subscribe(FlowableEmitter<String> emitter) {
+    public void subscribe(FlowableEmitter<EventOccurrence> emitter) {
       Logging.logd("Subscribing to analytics events.");
       LocalBroadcastManager.getInstance(application)
               .registerReceiver(new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                   String eventType = intent.getStringExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE);
-                  emitter.onNext(eventType);
+                  EventOccurrence occurrence = new EventOccurrence();
+                  occurrence.eventType = eventType;
+                  occurrence.allTimeOccurrences = 0l;
+                  String occurrencesJSONString = intent.getStringExtra(WonderPush.INTENT_EVENT_TRACKED_OCCURRENCES);
+                  if (occurrencesJSONString != null) {
+                    try {
+                      JSONObject occurrencesJSON = new JSONObject(occurrencesJSONString);
+                      occurrence.allTimeOccurrences = occurrencesJSON.optLong("allTime", 1L);
+                    } catch (JSONException e) {
+                      Logging.loge("Could not read occurrences data", e);
+                    }
+                  }
+                  emitter.onNext(occurrence);
                 }
               }, new IntentFilter(WonderPush.INTENT_EVENT_TRACKED));
     }
