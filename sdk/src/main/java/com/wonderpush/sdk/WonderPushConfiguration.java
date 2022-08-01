@@ -1190,10 +1190,12 @@ public class WonderPushConfiguration {
         for (JSONObject trackedEvent : collapsedLastBuiltinEvents) storeTrackedEvents.put(trackedEvent);
         for (JSONObject trackedEvent : collapsedLastCustomEvents) storeTrackedEvents.put(trackedEvent);
         for (JSONObject trackedEvent : collapsedOtherEvents) storeTrackedEvents.put(trackedEvent);
+        Long uncollapsedCount = 0L;
         for (JSONObject trackedEvent : uncollapsedEvents) {
             storeTrackedEvents.put(trackedEvent);
             String trackedEventType = trackedEvent.optString("type");
             if (type.equals(trackedEventType)) {
+                ++uncollapsedCount;
                 Long actionDate = trackedEvent.optLong("actionDate", now);
                 Long numberOfDaysSinceNow = (long)Math.floor((double)(now - actionDate) / 86400000d);
                 if (numberOfDaysSinceNow <= 1) ++last1days;
@@ -1207,7 +1209,7 @@ public class WonderPushConfiguration {
 
         }
 
-        occurrences.allTime = allTime;
+        occurrences.allTime = Math.max(allTime, uncollapsedCount);
         occurrences.last1days = last1days;
         occurrences.last3days = last3days;
         occurrences.last7days = last7days;

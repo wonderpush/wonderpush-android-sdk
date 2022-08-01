@@ -11,6 +11,7 @@ import android.util.Log;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -660,6 +661,22 @@ public class WonderPushConfigurationRememberTrackedEventsTest {
          }
          assertTrue(found);
       }
+   }
+
+   @Test
+   public void testMigration() throws JSONException {
+      // This checks that the allTime counter is always at least the number of uncollapsed events of the same type
+      // This is useful when the collapsed event doesn't hold the allTime info,
+      // which is most likely when people will upgrade to the new SDK that counts occurrences
+
+      JSONArray trackedEvents = new JSONArray();
+      trackedEvents.put(new JSONObject("{\"type\":\"test\", \"collapsing\": \"last\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+      for (int i = 0; i < 20; i++) {
+         trackedEvents.put(new JSONObject("{\"type\":\"test\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+      }
+      WonderPushConfiguration.setTrackedEvents(trackedEvents);
+      WonderPushConfiguration.Occurrences occurrences = WonderPushConfiguration.rememberTrackedEvent(new JSONObject("{\"type\":\"test\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+      assertEquals((Long)21L, occurrences.allTime);
    }
 
 }
