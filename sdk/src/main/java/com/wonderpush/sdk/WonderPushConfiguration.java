@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.annotation.Nullable;
+
 public class WonderPushConfiguration {
 
     private static final String PREF_FILE = "wonderpush";
@@ -1074,11 +1076,14 @@ public class WonderPushConfiguration {
         putString(TIME_ZONE_PREF_NAME, value);
     }
 
-    static void rememberTrackedEvent(JSONObject eventData) {
+    static @Nullable Occurrences rememberTrackedEvent(JSONObject eventData) {
         // Note: It is assumed that the given event is more recent than any other already stored events
 
         String type = JSONUtil.getString(eventData, "type");
-        if (type == null) return;
+        if (type == null) return null;
+        Occurrences occurrences = new Occurrences();
+        Long allTime = 0l;
+
         String campaignId = JSONUtil.optString(eventData, "campaignId");
         String collapsing = JSONUtil.optString(eventData, "collapsing");
 
@@ -1095,10 +1100,16 @@ public class WonderPushConfiguration {
             String oldTrackedEventType = oldTrackedEvent.optString("type");
             // Filter out the collapsing=last event of the same type as the new event we want to add
             if ((collapsing == null || "last".equals(collapsing)) && "last".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType)) {
+                JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
+                Long occsAllTime = occs != null ? occs.optLong("allTime", 1l) : 1;
+                allTime = Math.max(1, occsAllTime);
                 continue;
             }
             // Filter out the collapsing=campaign event of the same type and campaign as the new event we want to add
             if (campaignId != null && "campaign".equals(collapsing) && "campaign".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType) && campaignId.equals(oldTrackedEvent.optString("campaignId"))) {
+                JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
+                Long occsAllTime = occs != null ? occs.optLong("allTime", 1l) : 1;
+                allTime = Math.max(1, occsAllTime);
                 continue;
             }
             // Filter out old uncollapsed events
@@ -1121,11 +1132,12 @@ public class WonderPushConfiguration {
         }
 
         // Add the new event, uncollapsed
-        JSONObject copyOfEventData;
+        JSONObject collapsedEventData = null;
+        JSONObject uncollapsedEventData = null;
         if (collapsing == null) {
             try {
-                copyOfEventData = new JSONObject(eventData.toString());
-                uncollapsedEvents.add(copyOfEventData);
+                uncollapsedEventData = new JSONObject(eventData.toString());
+                uncollapsedEvents.add(uncollapsedEventData);
             } catch (JSONException e) {
                 Log.e(WonderPush.TAG, "Could not store uncollapsed tracked event", e);
             }
@@ -1134,19 +1146,20 @@ public class WonderPushConfiguration {
         // Add the new event with collapsing
         // We default to collapsing=last, but we otherwise keep any existing collapsing
         try {
-            copyOfEventData = new JSONObject(eventData.toString());
+            allTime += 1;
+            collapsedEventData = new JSONObject(eventData.toString());
             if (collapsing == null) {
-                copyOfEventData.put("collapsing", "last");
+                collapsedEventData.put("collapsing", "last");
                 collapsing = "last";
             }
             if ("last".equals(collapsing)) {
                 if (type.startsWith("@")) {
-                    collapsedLastBuiltinEvents.add(copyOfEventData);
+                    collapsedLastBuiltinEvents.add(collapsedEventData);
                 } else {
-                    collapsedLastCustomEvents.add(copyOfEventData);
+                    collapsedLastCustomEvents.add(collapsedEventData);
                 }
             } else {
-                collapsedOtherEvents.add(copyOfEventData);
+                collapsedOtherEvents.add(collapsedEventData);
             }
         } catch (JSONException e) {
             Log.e(WonderPush.TAG, "Could not store collapsed tracked event", e);
@@ -1163,20 +1176,60 @@ public class WonderPushConfiguration {
         WonderPushCompatibilityHelper.sort(collapsedLastBuiltinEvents, eventActionDateComparator);
         WonderPushCompatibilityHelper.sort(collapsedLastCustomEvents, eventActionDateComparator);
         WonderPushCompatibilityHelper.sort(collapsedOtherEvents, eventActionDateComparator);
+
         // Impose a limit on the maximum number of tracked events
         uncollapsedEvents = removeExcessEventsFromStart(uncollapsedEvents, getMaximumUncollapsedTrackedEventsCount());
         collapsedLastBuiltinEvents = removeExcessEventsFromStart(collapsedLastBuiltinEvents, getMaximumCollapsedLastBuiltinTrackedEventsCount());
         collapsedLastCustomEvents = removeExcessEventsFromStart(collapsedLastCustomEvents, getMaximumCollapsedLastCustomTrackedEventsCount());
         collapsedOtherEvents = removeExcessEventsFromStart(collapsedOtherEvents, getMaximumCollapsedOtherTrackedEventsCount());
+
+        Long last1days=0l, last3days=0l, last7days=0l, last15days=0l, last30days=0l, last60days=0l, last90days=0l;
+
         // Reconstruct the whole list
         JSONArray storeTrackedEvents = new JSONArray();
         for (JSONObject trackedEvent : collapsedLastBuiltinEvents) storeTrackedEvents.put(trackedEvent);
         for (JSONObject trackedEvent : collapsedLastCustomEvents) storeTrackedEvents.put(trackedEvent);
         for (JSONObject trackedEvent : collapsedOtherEvents) storeTrackedEvents.put(trackedEvent);
-        for (JSONObject trackedEvent : uncollapsedEvents) storeTrackedEvents.put(trackedEvent);
+        for (JSONObject trackedEvent : uncollapsedEvents) {
+            storeTrackedEvents.put(trackedEvent);
+            String trackedEventType = trackedEvent.optString("type");
+            if (type.equals(trackedEventType)) {
+                Long actionDate = trackedEvent.optLong("actionDate", now);
+                Long numberOfDaysSinceNow = (long)Math.floor((double)(now - actionDate) / 86400000d);
+                if (numberOfDaysSinceNow <= 1) ++last1days;
+                if (numberOfDaysSinceNow <= 3) ++last3days;
+                if (numberOfDaysSinceNow <= 7) ++last7days;
+                if (numberOfDaysSinceNow <= 15) ++last15days;
+                if (numberOfDaysSinceNow <= 30) ++last30days;
+                if (numberOfDaysSinceNow <= 60) ++last60days;
+                if (numberOfDaysSinceNow <= 90) ++last90days;
+            }
+
+        }
+
+        occurrences.allTime = allTime;
+        occurrences.last1days = last1days;
+        occurrences.last3days = last3days;
+        occurrences.last7days = last7days;
+        occurrences.last15days = last15days;
+        occurrences.last30days = last30days;
+        occurrences.last60days = last60days;
+        occurrences.last90days = last90days;
+
+        try {
+            if (collapsedEventData != null) {
+                collapsedEventData.put("occurrences", occurrences.toJSON());
+            }
+            if (uncollapsedEventData != null) {
+                uncollapsedEventData.put("occurrences", occurrences.toJSON());
+            }
+        } catch (JSONException e) {
+            Log.w(WonderPush.TAG, "Could not store occurrences", e);
+        }
 
         // Store the new list
         setTrackedEvents(storeTrackedEvents);
+        return occurrences;
     }
 
     private static <T> List<T> removeExcessEventsFromStart(List<T> list, int max) {
@@ -1244,6 +1297,29 @@ public class WonderPushConfiguration {
             result.add(event);
         }
         return result;
+    }
+
+    public static class Occurrences {
+        public Long allTime;
+        public Long last1days;
+        public Long last3days;
+        public Long last7days;
+        public Long last15days;
+        public Long last30days;
+        public Long last60days;
+        public Long last90days;
+        public JSONObject toJSON() throws JSONException {
+            JSONObject result = new JSONObject();
+            result.put("allTime", allTime);
+            result.put("last1days", last1days);
+            result.put("last3days", last3days);
+            result.put("last7days", last7days);
+            result.put("last15days", last15days);
+            result.put("last30days", last30days);
+            result.put("last60days", last60days);
+            result.put("last90days", last90days);
+            return result;
+        }
     }
 
 }
