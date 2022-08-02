@@ -671,11 +671,19 @@ public class WonderPushConfigurationRememberTrackedEventsTest {
 
       JSONArray trackedEvents = new JSONArray();
       trackedEvents.put(new JSONObject("{\"type\":\"test\", \"collapsing\": \"last\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+      trackedEvents.put(new JSONObject("{\"type\":\"another\", \"collapsing\": \"last\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
       for (int i = 0; i < 20; i++) {
          trackedEvents.put(new JSONObject("{\"type\":\"test\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+         trackedEvents.put(new JSONObject("{\"type\":\"another\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
       }
       WonderPushConfiguration.setTrackedEvents(trackedEvents);
-      WonderPushConfiguration.Occurrences occurrences = WonderPushConfiguration.rememberTrackedEvent(new JSONObject("{\"type\":\"test\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+
+      // Add an unrelated event, making sure this doesn't affect the occurrences of "test"
+      WonderPushConfiguration.Occurrences occurrences = WonderPushConfiguration.rememberTrackedEvent(new JSONObject("{\"type\":\"yetanother\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+      assertEquals((Long)1L, occurrences.allTime);
+
+      // Add a "test" event and verify that we take into account the existing history
+      occurrences = WonderPushConfiguration.rememberTrackedEvent(new JSONObject("{\"type\":\"test\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
       assertEquals((Long)21L, occurrences.allTime);
    }
 
