@@ -12,7 +12,6 @@
       if (elt === null) return null;
       if (elt === undefined) return null;
       if (typeof elt === 'function') return null;
-      if (typeof elt === 'string') return elt;
       var prefix = "__" + (typeof elt) + "__";
       if (typeof elt === 'object') return prefix + JSON.stringify(elt);
       return prefix + elt.toString();
@@ -48,7 +47,7 @@
         var result = func.apply(window._wpiam, convertArguments(args));
         // Array & Object results start with __array__ or __object__
         if (typeof result === 'string') {
-          var match = result.match(/^__(array|object)__/);
+          var match = result.match(/^__(array|object|string)__/);
           if (match) {
             try {
               result = JSON.parse(result.substring(match[0].length));

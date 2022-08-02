@@ -31,11 +31,17 @@ public class InAppWebViewBridge {
         JSONObject getPayload();
     }
 
+    // Return types
     private static final String ARRAY_RETURN_TYPE_PREFIX = "__array__";
     private static final String OBJECT_RETURN_TYPE_PREFIX = "__object__";
+    private static final String STRING_RETURN_TYPE_PREFIX = "__string__";
+
+    // Arg types
     private static final String OBJECT_ARG_TYPE_PREFIX = "__object__";
     private static final String NUMBER_ARG_TYPE_PREFIX = "__number__";
+    private static final String STRING_ARG_TYPE_PREFIX = "__string__";
     private static final String BOOLEAN_ARG_TYPE_PREFIX = "__boolean__";
+
     private final WeakReference<Controller> controllerRef;
 
     public InAppWebViewBridge(Controller controller) {
@@ -54,6 +60,10 @@ public class InAppWebViewBridge {
         return OBJECT_RETURN_TYPE_PREFIX + a.toString();
     }
 
+    private String toJavascriptResultString(String s) {
+        return STRING_RETURN_TYPE_PREFIX + JSONObject.quote(s);
+    }
+
     private @Nullable Object argToObject(String arg) {
         return argToObject(arg, null);
     }
@@ -69,6 +79,9 @@ public class InAppWebViewBridge {
             } catch (ParseException e) {
                 return null;
             }
+        }
+        if (arg.startsWith(STRING_ARG_TYPE_PREFIX)) {
+            return arg.substring(STRING_ARG_TYPE_PREFIX.length());
         }
         if (arg.startsWith(OBJECT_ARG_TYPE_PREFIX)) {
             String sub = arg.substring(OBJECT_ARG_TYPE_PREFIX.length());
@@ -97,6 +110,15 @@ public class InAppWebViewBridge {
             }
         }
         return result;
+    }
+
+    private @Nullable String argToString(String arg) {
+        return argToString(arg, null);
+    }
+
+    private @Nullable String argToString(String arg, String defaultValue) {
+        Object result = argToObject(arg);
+        return result instanceof String ? (String)result : defaultValue;
     }
 
     private @Nullable Number argToNumber(String arg) {
@@ -157,7 +179,8 @@ public class InAppWebViewBridge {
     }
 
     @JavascriptInterface
-    public void trackClick(String buttonLabel) {
+    public void trackClick(String buttonLabelArg) {
+        String buttonLabel = argToString(buttonLabelArg);
         Controller controller = controllerRef.get();
         if (controller != null) controller.trackClick(buttonLabel);
     }
@@ -173,13 +196,15 @@ public class InAppWebViewBridge {
     }
 
     @JavascriptInterface
-    public void openExternalUrl(String urlString) {
+    public void openExternalUrl(String urlStringArg) {
+        String urlString = argToString(urlStringArg);
         Controller controller = controllerRef.get();
         if (controller != null) controller.openExternalUrl(urlString);
     }
 
     @JavascriptInterface
-    public void openDeepLink(String urlString) {
+    public void openDeepLink(String urlStringArg) {
+        String urlString = argToString(urlStringArg);
         Controller controller = controllerRef.get();
         if (controller != null) controller.openDeepLink(urlString);
     }
@@ -201,36 +226,37 @@ public class InAppWebViewBridge {
 
     @JavascriptInterface
     public String getUserId() {
-        return WonderPush.getUserId();
+        return toJavascriptResultString(WonderPush.getUserId());
     }
 
     @JavascriptInterface
     public String getInstallationId() {
-        return WonderPush.getInstallationId();
+        return toJavascriptResultString(WonderPush.getInstallationId());
     }
 
     @JavascriptInterface
     public String getCountry() {
-        return WonderPush.getCountry();
+        return toJavascriptResultString(WonderPush.getCountry());
     }
 
     @JavascriptInterface
     public String getCurrency() {
-        return WonderPush.getCurrency();
+        return toJavascriptResultString(WonderPush.getCurrency());
     }
 
     @JavascriptInterface
     public String getLocale() {
-        return WonderPush.getLocale();
+        return toJavascriptResultString(WonderPush.getLocale());
     }
 
     @JavascriptInterface
     public String getTimeZone() {
-        return WonderPush.getTimeZone();
+        return toJavascriptResultString(WonderPush.getTimeZone());
     }
 
     @JavascriptInterface
-    public void trackEvent(String type) {
+    public void trackEvent(String typeArg) {
+        String type = argToString(typeArg);
         Controller controller = controllerRef.get();
         if (controller == null) throwJavascriptError("Null controller");
         controller.trackEvent(type);
@@ -238,11 +264,12 @@ public class InAppWebViewBridge {
 
     @JavascriptInterface
     public String getDevicePlatform() {
-        return "Android";
+        return toJavascriptResultString("Android");
     }
 
     @JavascriptInterface
-    public void trackEvent(String type, String attributeString) {
+    public void trackEvent(String typeArg, String attributeString) {
+        String type = argToString(typeArg);
         JSONObject attributes = argToJSONObject(attributeString, new JSONObject());
         Controller controller = controllerRef.get();
         if (controller == null) throwJavascriptError("Null controller");
@@ -270,7 +297,7 @@ public class InAppWebViewBridge {
 
     @JavascriptInterface
     public boolean hasTag(String tag) {
-        return WonderPush.hasTag(tag);
+        return WonderPush.hasTag(argToString(tag));
     }
 
     @JavascriptInterface
@@ -280,37 +307,43 @@ public class InAppWebViewBridge {
     }
 
     @JavascriptInterface
-    public Object getPropertyValue(String field) {
+    public Object getPropertyValue(String fieldArg) {
+        String field = argToString(fieldArg);
         Object result = WonderPush.getPropertyValue(field);
         if (result == JSONObject.NULL) return null;
         return result;
     }
 
     @JavascriptInterface
-    public String getPropertyValues(String field) {
+    public String getPropertyValues(String fieldArg) {
+        String field = argToString(fieldArg);
         return toJavascriptResultArray(new JSONArray(WonderPush.getPropertyValues(field)));
     }
 
     @JavascriptInterface
-    public void addProperty(String field, String valString) {
+    public void addProperty(String fieldArg, String valString) {
+        String field = argToString(fieldArg);
         Object val = argToObject(valString, null);
         WonderPush.addProperty(field, val);
     }
 
     @JavascriptInterface
-    public void removeProperty(String field, String encodedValue) {
+    public void removeProperty(String fieldArg, String encodedValue) {
+        String field = argToString(fieldArg);
         Object val = argToObject(encodedValue, null);
         WonderPush.removeProperty(field, val);
     }
 
     @JavascriptInterface
-    public void setProperty(String field, String encodedValue) {
+    public void setProperty(String fieldArg, String encodedValue) {
+        String field = argToString(fieldArg);
         Object val = argToObject(encodedValue, null);
         WonderPush.setProperty(field, val);
     }
 
     @JavascriptInterface
-    public void unsetProperty(String field) {
+    public void unsetProperty(String fieldArg) {
+        String field = argToString(fieldArg);
         WonderPush.unsetProperty(field);
     }
 
