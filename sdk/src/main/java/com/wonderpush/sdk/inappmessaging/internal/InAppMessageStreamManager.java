@@ -93,7 +93,11 @@ public class InAppMessageStreamManager {
       return true; // the triggering condition for test campaigns is always 'app foreground'
     }
     for (TriggeringCondition condition : campaign.getTriggeringConditions()) {
-      if (hasIamTrigger(condition, event.eventType) || hasAnalyticsTrigger(condition, event.eventType)) {
+      if (hasIamTrigger(condition, event.eventType)) {
+        // Min occurences are not supported for system events on Android
+        return true;
+      }
+      if (hasAnalyticsTrigger(condition, event.eventType)) {
         if (condition.getMinOccurrences() > 0 && condition.getMinOccurrences() > event.allTimeOccurrences) {
           // Count criteria not met, skip to next trigger definition
           continue;
