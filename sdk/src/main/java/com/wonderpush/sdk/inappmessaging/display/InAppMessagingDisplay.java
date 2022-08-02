@@ -509,7 +509,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     final InAppWebViewController controller = new InAppWebViewController(inAppMessage, bindingWrapper.getWebView(), activity, this.safeDeferProvider, this.trackEventProvider);
     controller.setOnClick((String buttonLabel) -> {
       if (callbacks != null) {
-        callbacks.messageClicked(buttonLabel);
+        callbacks.trackClick(buttonLabel);
       }
       notifyIamClick();
     });

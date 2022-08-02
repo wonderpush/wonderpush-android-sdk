@@ -138,7 +138,7 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
   }
 
   @Override
-  public void messageClicked(@Nullable String buttonLabel) {
+  public void trackClick(@Nullable String buttonLabel) {
     /**
      * NOTE: While the api is passing us the campaign id via the IAM, we pul the campaignId from
      * the cache to ensure that we're only logging events for campaigns that we've fetched - to

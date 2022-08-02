@@ -129,7 +129,7 @@ public class MetricsLoggerClient {
     }
 
     // No matter what, always trigger developer callbacks
-    developerListenerManager.messageClicked(message, buttonLabel);
+    developerListenerManager.clickTracked(message, buttonLabel);
   }
 
   /** Log Rendering error */

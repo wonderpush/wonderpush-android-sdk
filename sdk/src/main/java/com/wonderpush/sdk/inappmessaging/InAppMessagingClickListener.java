@@ -28,16 +28,16 @@ import java.util.List;
 public interface InAppMessagingClickListener {
 
   /**
-   * Triggered when a message is tapped (ie: button, in the modal view) and which actions were triggered.
+   * Called when a message is tapped (ie: button, in the modal view) and which actions were triggered.
    * @param inAppMessage
    * @param actions
    */
   void messageClicked(@NonNull InAppMessage inAppMessage, @NonNull List<ActionModel> actions);
 
   /**
-   * Triggered when a message is tapped (ie: button, in the modal view) and which buttonLabel triggered it.
+   * Called when `trackClick` was called on the display callback, along with the buttonLabel that triggered it.
    * @param inAppMessage
    * @param buttonLabel
    */
-  void messageClicked(@NonNull InAppMessage inAppMessage, @Nullable String buttonLabel);
+  void clickTracked(@NonNull InAppMessage inAppMessage, @Nullable String buttonLabel);
 }

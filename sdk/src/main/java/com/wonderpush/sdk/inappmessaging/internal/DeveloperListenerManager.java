@@ -100,12 +100,12 @@ public class DeveloperListenerManager {
     }
   }
 
-  public void messageClicked(InAppMessage inAppMessage, String buttonLabel) {
+  public void clickTracked(InAppMessage inAppMessage, String buttonLabel) {
     List<ClicksExecutorAndListener> listeners = new ArrayList<>(registeredClickListeners.values());
     for (ClicksExecutorAndListener listener : listeners) {
       listener
               .withExecutor(CALLBACK_QUEUE_EXECUTOR)
-              .execute(() -> listener.getListener().messageClicked(inAppMessage, buttonLabel));
+              .execute(() -> listener.getListener().clickTracked(inAppMessage, buttonLabel));
     }
   }
 

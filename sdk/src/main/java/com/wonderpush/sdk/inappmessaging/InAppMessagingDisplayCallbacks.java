@@ -38,16 +38,16 @@ public interface InAppMessagingDisplayCallbacks {
   void messageDismissed(@NonNull InAppMessagingDismissType dismissType);
 
   /**
-   * Log the click, passing along the corresponding actions.
+   * Log the click, passing along the corresponding actions. Dismisses the message.
    * @param actions
    */
   void messageClicked(@NonNull List<ActionModel> actions);
 
   /**
-   * Log the click, passing along the corresponding buttonLabel.
+   * Log the click, passing along the corresponding buttonLabel. Does NOT dismiss the message.
    * @param buttonLabel
    */
-  void messageClicked(@Nullable String buttonLabel);
+  void trackClick(@Nullable String buttonLabel);
 
   /**
    * Report display errors.
