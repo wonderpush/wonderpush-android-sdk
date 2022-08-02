@@ -46,7 +46,7 @@ public class RateLimiterTest extends InstrumentationTestCase {
         assertTrue(limiter.isRateLimited(limit)); // Rate limited!
         waitFor(100); // 0.2s left
         assertTrue(limiter.isRateLimited(limit)); // Rate limited!
-        waitFor(100); // 100s left
+        waitFor(100); // 100ms left
         assertTrue(limiter.isRateLimited(limit)); // Rate limited!
         waitFor(100); // 0s left
         assertFalse(limiter.isRateLimited(limit));
