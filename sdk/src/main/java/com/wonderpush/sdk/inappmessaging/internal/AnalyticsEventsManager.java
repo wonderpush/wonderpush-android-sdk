@@ -102,7 +102,7 @@ public class AnalyticsEventsManager {
                   String eventType = intent.getStringExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE);
                   EventOccurrence occurrence = new EventOccurrence();
                   occurrence.eventType = eventType;
-                  occurrence.allTimeOccurrences = 0l;
+                  occurrence.allTimeOccurrences = 0L;
                   String occurrencesJSONString = intent.getStringExtra(WonderPush.INTENT_EVENT_TRACKED_OCCURRENCES);
                   if (occurrencesJSONString != null) {
                     try {
