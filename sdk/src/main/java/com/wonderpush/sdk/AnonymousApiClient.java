@@ -41,13 +41,8 @@ public class AnonymousApiClient extends BaseApiClient {
     @Override
     public void execute(Request request) {
         WonderPush.getRemoteConfigManager().read((config, error) -> {
-            if (error != null) {
-                Log.e(WonderPush.TAG, "Could not get anonymous api client rate limit", error);
-                super.execute(request);
-                return;
-            }
-            int limit = config.getData().optInt(REMOTE_CONFIG_ANONYMOUS_API_CLIENT_RATE_LIMIT_LIMIT, ANONYMOUS_API_CLIENT_RATE_LIMIT_LIMIT);
-            long timeToLive = config.getData().optLong(REMOTE_CONFIG_ANONYMOUS_API_CLIENT_RATE_LIMIT_TIME_TO_LIVE_MILLISECONDS, ANONYMOUS_API_CLIENT_RATE_LIMIT_TIME_TO_LIVE_MILLISECONDS);
+            int limit = error != null ? ANONYMOUS_API_CLIENT_RATE_LIMIT_LIMIT : config.getData().optInt(REMOTE_CONFIG_ANONYMOUS_API_CLIENT_RATE_LIMIT_LIMIT, ANONYMOUS_API_CLIENT_RATE_LIMIT_LIMIT);
+            long timeToLive = error != null ? ANONYMOUS_API_CLIENT_RATE_LIMIT_TIME_TO_LIVE_MILLISECONDS : config.getData().optLong(REMOTE_CONFIG_ANONYMOUS_API_CLIENT_RATE_LIMIT_TIME_TO_LIVE_MILLISECONDS, ANONYMOUS_API_CLIENT_RATE_LIMIT_TIME_TO_LIVE_MILLISECONDS);
             RateLimit rateLimit = new RateLimit("AnonymousAPIClient", timeToLive, limit);
             try {
                 RateLimiter limiter = RateLimiter.getInstance();
@@ -63,7 +58,6 @@ public class AnonymousApiClient extends BaseApiClient {
             } catch (RateLimiter.MissingSharedPreferencesException e) {
                 Log.e(WonderPush.TAG, "Could not rate limit anonymous API client", e);
             }
-
         });
     }
 
