@@ -1,9 +1,8 @@
 package com.wonderpush.sdk.inappmessaging.display.internal;
 
-import android.content.Context;
+import android.net.Uri;
 import android.webkit.JavascriptInterface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.wonderpush.sdk.WonderPush;
 
@@ -12,8 +11,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
-import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.*;
 
 public class InAppWebViewBridge {
@@ -22,7 +19,7 @@ public class InAppWebViewBridge {
         void sendError(String msg);
         void openExternalUrl(String url);
         void openDeepLink(String url);
-        void triggerLocationPrompt();
+        void triggerLocationPrompt() throws Exception;
         void dismiss();
         void trackClick(String buttonLabel);
         void openAppRating();
@@ -31,37 +28,33 @@ public class InAppWebViewBridge {
         JSONObject getPayload();
     }
 
-    // Return types
-    private static final String ARRAY_RETURN_TYPE_PREFIX = "__array__";
-    private static final String OBJECT_RETURN_TYPE_PREFIX = "__object__";
-    private static final String STRING_RETURN_TYPE_PREFIX = "__string__";
-
-    // Arg types
-    private static final String OBJECT_ARG_TYPE_PREFIX = "__object__";
-    private static final String NUMBER_ARG_TYPE_PREFIX = "__number__";
-    private static final String STRING_ARG_TYPE_PREFIX = "__string__";
-    private static final String BOOLEAN_ARG_TYPE_PREFIX = "__boolean__";
-
     private final WeakReference<Controller> controllerRef;
 
     public InAppWebViewBridge(Controller controller) {
         this.controllerRef = new WeakReference<>(controller);
     }
 
-    private void logException(Exception exception) {
-        Logging.loge(exception.getLocalizedMessage(), exception);
+    private @Nullable String toJavascriptResult(Object o) {
+        try {
+            JSONObject out = new JSONObject();
+            out.put("result", o == null ? JSONObject.NULL : o);
+            String result = out.toString();
+            return result;
+        } catch (JSONException e) {
+            Logging.loge("Could not encode result", e);
+            return null;
+        }
     }
 
-    private String toJavascriptResultArray(JSONArray a) {
-        return ARRAY_RETURN_TYPE_PREFIX + a.toString();
-    }
-
-    private String toJavascriptResultObject(JSONObject a) {
-        return OBJECT_RETURN_TYPE_PREFIX + a.toString();
-    }
-
-    private String toJavascriptResultString(String s) {
-        return STRING_RETURN_TYPE_PREFIX + JSONObject.quote(s);
+    private @Nullable String toJavascriptError(String msg) {
+        try {
+            JSONObject out = new JSONObject();
+            out.put("error", msg == null ? "Unknown error" : msg);
+            return out.toString();
+        } catch (JSONException e) {
+            Logging.loge("Could not encode error", e);
+            return null;
+        }
     }
 
     private @Nullable Object argToObject(String arg) {
@@ -69,47 +62,14 @@ public class InAppWebViewBridge {
     }
 
     private @Nullable Object argToObject(String arg, Object defaultValue) {
-        if (arg == null) return null;
-        if (arg.startsWith(BOOLEAN_ARG_TYPE_PREFIX)) {
-            return arg.equals("__boolean__true");
+        try {
+            JSONObject result = new JSONObject(arg);
+            Object value = result.opt("value");
+            return value == null ? defaultValue : value;
+        } catch (JSONException e) {
+            Logging.loge("Could not decode arg", e);
+            return defaultValue;
         }
-        if (arg.startsWith(NUMBER_ARG_TYPE_PREFIX)) {
-            try {
-                return NumberFormat.getInstance().parse(arg.substring(NUMBER_ARG_TYPE_PREFIX.length()));
-            } catch (ParseException e) {
-                return null;
-            }
-        }
-        if (arg.startsWith(STRING_ARG_TYPE_PREFIX)) {
-            return arg.substring(STRING_ARG_TYPE_PREFIX.length());
-        }
-        if (arg.startsWith(OBJECT_ARG_TYPE_PREFIX)) {
-            String sub = arg.substring(OBJECT_ARG_TYPE_PREFIX.length());
-            try {
-                return new JSONObject(sub);
-            } catch (JSONException e) {
-                try {
-                    return new JSONArray(sub);
-                } catch (JSONException e1) {
-                    return null;
-                }
-            }
-        }
-        return arg;
-    }
-
-    private @NonNull <T> List<T> argToList(String arg) {
-        List<T> result = new ArrayList<>();
-        JSONArray array = argToJSONArray(arg, new JSONArray());
-        for (int i = 0; i < array.length(); i++) {
-            Object elt = array.opt(i);
-            if (elt != null) {
-                try {
-                    result.add((T)elt);
-                } catch (ClassCastException e) {}
-            }
-        }
-        return result;
     }
 
     private @Nullable String argToString(String arg) {
@@ -148,30 +108,6 @@ public class InAppWebViewBridge {
         return result instanceof JSONArray ? (JSONArray)result : defaultValue;
     }
 
-    private @Nullable JSONObject parseJSONObject(String s, JSONObject defaultValue) {
-        if (s == null) return defaultValue;
-        try {
-            return new JSONObject(s);
-        } catch (JSONException e) {
-            return defaultValue;
-        }
-    }
-
-    private @Nullable JSONArray parseJSONArray(String s, JSONArray defaultValue) {
-        if (s == null) return defaultValue;
-        try {
-            return new JSONArray(s);
-        } catch (JSONException e) {
-            return defaultValue;
-        }
-    }
-
-    protected void throwJavascriptError(String msg) {
-        Controller controller = controllerRef.get();
-        if (controller != null) controller.sendError(msg);
-        throw new RuntimeException(msg);
-    }
-
     @JavascriptInterface
     public void dismiss() {
         Controller controller = controllerRef.get();
@@ -179,10 +115,12 @@ public class InAppWebViewBridge {
     }
 
     @JavascriptInterface
-    public void trackClick(String buttonLabelArg) {
+    public String trackClick(String buttonLabelArg) {
         String buttonLabel = argToString(buttonLabelArg);
+        if (buttonLabel == null) return toJavascriptError("buttonLabel cannot be null");
         Controller controller = controllerRef.get();
         if (controller != null) controller.trackClick(buttonLabel);
+        return null;
     }
 
     @JavascriptInterface
@@ -190,23 +128,29 @@ public class InAppWebViewBridge {
         Controller controller = controllerRef.get();
         JSONObject payload = controller != null ? controller.getPayload() : null;
         if (payload != null) {
-            return toJavascriptResultObject(payload);
+            return toJavascriptResult(payload);
         }
         return null;
     }
 
     @JavascriptInterface
-    public void openExternalUrl(String urlStringArg) {
+    public @Nullable String openExternalUrl(String urlStringArg) {
         String urlString = argToString(urlStringArg);
+        if (urlString == null) return toJavascriptError("Url cannot be null");
+        if (Uri.parse(urlString) == null) return toJavascriptError("Invalid url");
         Controller controller = controllerRef.get();
         if (controller != null) controller.openExternalUrl(urlString);
+        return null;
     }
 
     @JavascriptInterface
-    public void openDeepLink(String urlStringArg) {
+    public @Nullable String openDeepLink(String urlStringArg) {
         String urlString = argToString(urlStringArg);
+        if (urlString == null) return toJavascriptError("Url cannot be null");
+        if (Uri.parse(urlString) == null) return toJavascriptError("Invalid url");
         Controller controller = controllerRef.get();
         if (controller != null) controller.openDeepLink(urlString);
+        return null;
     }
 
     @JavascriptInterface
@@ -226,67 +170,73 @@ public class InAppWebViewBridge {
 
     @JavascriptInterface
     public String getUserId() {
-        return toJavascriptResultString(WonderPush.getUserId());
+        return toJavascriptResult(WonderPush.getUserId());
     }
 
     @JavascriptInterface
     public String getInstallationId() {
-        return toJavascriptResultString(WonderPush.getInstallationId());
+        return toJavascriptResult(WonderPush.getInstallationId());
     }
 
     @JavascriptInterface
     public String getCountry() {
-        return toJavascriptResultString(WonderPush.getCountry());
+        return toJavascriptResult(WonderPush.getCountry());
     }
 
     @JavascriptInterface
     public String getCurrency() {
-        return toJavascriptResultString(WonderPush.getCurrency());
+        return toJavascriptResult(WonderPush.getCurrency());
     }
 
     @JavascriptInterface
     public String getLocale() {
-        return toJavascriptResultString(WonderPush.getLocale());
+        return toJavascriptResult(WonderPush.getLocale());
     }
 
     @JavascriptInterface
     public String getTimeZone() {
-        return toJavascriptResultString(WonderPush.getTimeZone());
+        return toJavascriptResult(WonderPush.getTimeZone());
     }
 
     @JavascriptInterface
-    public void trackEvent(String typeArg) {
+    public @Nullable String trackEvent(String typeArg) {
         String type = argToString(typeArg);
+        if (type == null) return toJavascriptError("Type cannot be null");
         Controller controller = controllerRef.get();
-        if (controller == null) throwJavascriptError("Null controller");
+        if (controller == null) return toJavascriptError("Null controller");
         controller.trackEvent(type);
+        return null;
     }
 
     @JavascriptInterface
     public String getDevicePlatform() {
-        return toJavascriptResultString("Android");
+        return toJavascriptResult("Android");
     }
 
     @JavascriptInterface
-    public void trackEvent(String typeArg, String attributeString) {
+    public @Nullable String trackEvent(String typeArg, String attributeString) {
         String type = argToString(typeArg);
+        if (type == null) return toJavascriptError("Type cannot be null");
         JSONObject attributes = argToJSONObject(attributeString, new JSONObject());
         Controller controller = controllerRef.get();
-        if (controller == null) throwJavascriptError("Null controller");
+        if (controller == null) return toJavascriptError("Null controller");
         controller.trackEvent(type, attributes);
+        return null;
     }
 
     @JavascriptInterface
     public void addTag(String t1) {
-        List<String> tags = argToList(t1);
-        String[] tagArray = tags.toArray(new String[tags.size()]);
+        JSONArray tags = argToJSONArray(t1);
+        String[] tagArray = new String[tags.length()];
+        for (int i = 0; i < tags.length(); i++) tagArray[i] = tags.optString(i);
         WonderPush.addTag(tagArray);
     }
 
     @JavascriptInterface
     public void removeTag(String t1) {
-        List<String> tags = argToList(t1);
-        String[] tagArray = tags.toArray(new String[tags.size()]);
+        JSONArray tags = argToJSONArray(t1);
+        String[] tagArray = new String[tags.length()];
+        for (int i = 0; i < tags.length(); i++) tagArray[i] = tags.optString(i);
         WonderPush.removeTag(tagArray);
     }
 
@@ -296,82 +246,100 @@ public class InAppWebViewBridge {
     }
 
     @JavascriptInterface
-    public boolean hasTag(String tag) {
-        return WonderPush.hasTag(argToString(tag));
+    public @Nullable String hasTag(String tagArg) {
+        String tag = argToString(tagArg);
+        if (tag == null) return toJavascriptError("Tag cannot be null");
+        return toJavascriptResult(WonderPush.hasTag(tag));
     }
 
     @JavascriptInterface
     public String getTags() {
         Set<String> tags = WonderPush.getTags();
-        return toJavascriptResultArray(new JSONArray(tags));
+        return toJavascriptResult(new JSONArray(tags));
     }
 
     @JavascriptInterface
-    public Object getPropertyValue(String fieldArg) {
+    public String getPropertyValue(String fieldArg) {
         String field = argToString(fieldArg);
-        Object result = WonderPush.getPropertyValue(field);
-        if (result == JSONObject.NULL) return null;
-        return result;
+        if (field == null) return toJavascriptError("Field cannot be null");
+        return toJavascriptResult(WonderPush.getPropertyValue(field));
     }
 
     @JavascriptInterface
     public String getPropertyValues(String fieldArg) {
         String field = argToString(fieldArg);
-        return toJavascriptResultArray(new JSONArray(WonderPush.getPropertyValues(field)));
+        if (field == null) return toJavascriptError("Field cannot be null");
+        return toJavascriptResult(WonderPush.getPropertyValues(field));
     }
 
     @JavascriptInterface
-    public void addProperty(String fieldArg, String valString) {
+    public @Nullable String addProperty(String fieldArg, String valString) {
         String field = argToString(fieldArg);
+        if (field == null) return toJavascriptError("Field cannot be null");
         Object val = argToObject(valString, null);
         WonderPush.addProperty(field, val);
+        return null;
     }
 
     @JavascriptInterface
-    public void removeProperty(String fieldArg, String encodedValue) {
+    public @Nullable String removeProperty(String fieldArg, String encodedValue) {
         String field = argToString(fieldArg);
+        if (field == null) return toJavascriptError("Field cannot be null");
         Object val = argToObject(encodedValue, null);
         WonderPush.removeProperty(field, val);
+        return null;
     }
 
     @JavascriptInterface
-    public void setProperty(String fieldArg, String encodedValue) {
+    public @Nullable String setProperty(String fieldArg, String encodedValue) {
         String field = argToString(fieldArg);
+        if (field == null) return toJavascriptError("Field cannot be null");
         Object val = argToObject(encodedValue, null);
         WonderPush.setProperty(field, val);
+        return null;
     }
 
     @JavascriptInterface
-    public void unsetProperty(String fieldArg) {
+    public @Nullable String unsetProperty(String fieldArg) {
         String field = argToString(fieldArg);
+        if (field == null) return toJavascriptError("Field cannot be null");
         WonderPush.unsetProperty(field);
+        return null;
     }
 
     @JavascriptInterface
-    public void putProperties(String encodedProperties) {
+    public @Nullable String putProperties(String encodedProperties) {
         JSONObject properties = argToJSONObject(encodedProperties);
-        if (properties != null) {
-            WonderPush.putProperties(properties);
-        }
+        if (properties == null) return toJavascriptError("Properties cannot be null");
+        WonderPush.putProperties(properties);
+        return null;
     }
 
     @JavascriptInterface
     public String getProperties() {
-        return toJavascriptResultObject(WonderPush.getProperties());
+        return toJavascriptResult(WonderPush.getProperties());
     }
 
     @JavascriptInterface
-    public void triggerLocationPrompt() {
+    public @Nullable String triggerLocationPrompt() {
         Controller controller = controllerRef.get();
-        if (controller != null) controller.triggerLocationPrompt();
+        if (controller != null) {
+            try {
+                controller.triggerLocationPrompt();
+            } catch (Exception e) {
+                return toJavascriptError(e.getMessage());
+            }
+        }
+        return null;
     }
 
     @JavascriptInterface
-    public void openAppRating() {
+    public @Nullable String openAppRating() {
         Controller controller = controllerRef.get();
         if (controller == null) {
-            throwJavascriptError("Null controller");
+            return toJavascriptError("Null controller");
         }
         controller.openAppRating();
+        return null;
     }
 }

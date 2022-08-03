@@ -9,12 +9,7 @@
   var convertArguments = function(args) {
     args = Array.from(args);
     return args.map(function(elt) {
-      if (elt === null) return null;
-      if (elt === undefined) return null;
-      if (typeof elt === 'function') return null;
-      var prefix = "__" + (typeof elt) + "__";
-      if (typeof elt === 'object') return prefix + JSON.stringify(elt);
-      return prefix + elt.toString();
+        return JSON.stringify({value: elt});
     });
   };
 
@@ -45,17 +40,18 @@
     var callNativeLayer = function(func, args) {
       try {
         var result = func.apply(window._wpiam, convertArguments(args));
-        // Array & Object results start with __array__ or __object__
+        if (result === null || result === undefined) {
+            return Promise.resolve();
+        }
         if (typeof result === 'string') {
-          var match = result.match(/^__(array|object|string)__/);
-          if (match) {
             try {
-              result = JSON.parse(result.substring(match[0].length));
+              var decoded = JSON.parse(result);
+              if ("result" in decoded) return Promise.resolve(decoded.result);
+              if ("error" in decoded) return Promise.reject(new Error(decoded.error));
             } catch (e) {
               console.error(e);
               // Return result as-is.
             }
-          }
         }
         return Promise.resolve(result);
       } catch (e) {

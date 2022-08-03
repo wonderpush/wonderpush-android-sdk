@@ -158,6 +158,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
         final WebView webView = webViewRef.get();
         if (webView != null && url != null) {
             Uri uri = Uri.parse(url);
+            if (uri == null) return;
             webView.post(() -> {
                 dismiss();
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
@@ -182,11 +183,10 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
     }
 
     @Override
-    public void triggerLocationPrompt() {
+    public void triggerLocationPrompt() throws Exception {
         Activity activity = this.activityRef.get();
         if (activity == null) {
-            bridge.throwJavascriptError("Activity not available");
-            return;
+            throw new Exception("Activity not available");
         }
         Context context = activity;
 
@@ -195,7 +195,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             if (finePermission != PackageManager.PERMISSION_GRANTED && coarsePermission != PackageManager.PERMISSION_GRANTED) {
-                bridge.throwJavascriptError("Permissions missing in manifest");
+                throw new Exception("Permissions missing in manifest");
             }
             // Granted
             return;
@@ -215,7 +215,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
                 permissionsToRequest.add("android.permission.ACCESS_COARSE_LOCATION");
             }
         } catch (PackageManager.NameNotFoundException e) {
-            bridge.throwJavascriptError("Error: " + e.getMessage());
+            throw new Exception("Error: " + e.getMessage());
         }
         if (permissionsToRequest.size() > 0) {
             activity.requestPermissions(permissionsToRequest.toArray(new String[0]), 123);
