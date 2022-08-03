@@ -18,6 +18,7 @@ import android.app.Application;
 
 import com.wonderpush.sdk.inappmessaging.internal.ForegroundNotifier;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
+import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
 
 import javax.inject.Singleton;
 
@@ -37,9 +38,9 @@ public class ForegroundFlowableModule {
   @Provides
   @Singleton
   @AppForeground
-  public ConnectableFlowable<String> providesAppForegroundEventStream(Application application) {
+  public ConnectableFlowable<EventOccurrence> providesAppForegroundEventStream(Application application) {
     ForegroundNotifier notifier = new ForegroundNotifier();
-    ConnectableFlowable<String> foregroundFlowable = notifier.foregroundFlowable();
+    ConnectableFlowable<EventOccurrence> foregroundFlowable = notifier.foregroundFlowable();
     foregroundFlowable.connect();
 
     application.registerActivityLifecycleCallbacks(notifier);

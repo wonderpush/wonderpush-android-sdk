@@ -40,6 +40,7 @@ public class InAppMessageLayoutConfig implements Cloneable {
   private Integer windowWidth;
   private Integer windowHeight;
   private Boolean autoDismiss;
+  private Float windowDimAmount = 0.3f;
 
   @NonNull
   public static Builder builder() {
@@ -108,6 +109,9 @@ public class InAppMessageLayoutConfig implements Cloneable {
     return maxBodyWidthWeight() * maxDialogWidthRatio();
   }
 
+  public float windowDimAmount() {
+    return windowDimAmount;
+  }
   public static class Builder {
 
     private final InAppMessageLayoutConfig config;
@@ -117,6 +121,11 @@ public class InAppMessageLayoutConfig implements Cloneable {
     }
     public Builder(InAppMessageLayoutConfig orig) throws CloneNotSupportedException {
       config = (InAppMessageLayoutConfig)orig.clone();
+    }
+
+    public Builder setWindowDimAmount(Float windowDimAmount) {
+      config.windowDimAmount = windowDimAmount;
+      return this;
     }
 
     public Builder setMaxImageHeightWeight(Float maxImageHeightWeight) {

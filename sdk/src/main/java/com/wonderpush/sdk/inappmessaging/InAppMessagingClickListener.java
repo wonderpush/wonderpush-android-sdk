@@ -16,6 +16,7 @@ package com.wonderpush.sdk.inappmessaging;
 
 import androidx.annotation.NonNull;
 
+import androidx.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 
@@ -27,9 +28,16 @@ import java.util.List;
 public interface InAppMessagingClickListener {
 
   /**
-   * Triggered when a message is tapped (ie: button, in the modal view) and which actions were triggered.
+   * Called when a message is tapped (ie: button, in the modal view) and which actions were triggered.
    * @param inAppMessage
    * @param actions
    */
   void messageClicked(@NonNull InAppMessage inAppMessage, @NonNull List<ActionModel> actions);
+
+  /**
+   * Called when `trackClick` was called on the display callback, along with the buttonLabel that triggered it.
+   * @param inAppMessage
+   * @param buttonLabel
+   */
+  void clickTracked(@NonNull InAppMessage inAppMessage, @Nullable String buttonLabel);
 }

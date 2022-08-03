@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/webview_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center"
+    android:clickable="true"
+    android:clipToPadding="false"
+    android:focusable="true">
+
+    <WebView
+        android:id="@+id/webview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true"
+        tools:visibility="visible" />
+
+    <Button
+        android:id="@+id/collapse_button"
+        style="@style/WPIamUI.CollapseButton"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true" />
+
+</com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout>

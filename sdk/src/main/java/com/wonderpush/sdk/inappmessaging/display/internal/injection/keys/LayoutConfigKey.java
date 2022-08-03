@@ -29,5 +29,7 @@ public class LayoutConfigKey {
   public static final String IMAGE_ONLY_LANDSCAPE = "IMAGE_ONLY_LANDSCAPE";
   public static final String BANNER_PORTRAIT = "BANNER_PORTRAIT";
   public static final String BANNER_LANDSCAPE = "BANNER_LANDSCAPE";
+  public static final String WEBVIEW_PORTRAIT = "WEBVIEW_PORTRAIT";
+  public static final String WEBVIEW_LANDSCAPE = "WEBVIEW_LANDSCAPE";
   public static final String UNSUPPORTED = "UNSUPPORTED";
 }

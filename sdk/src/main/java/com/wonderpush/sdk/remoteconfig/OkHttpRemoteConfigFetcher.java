@@ -3,6 +3,7 @@ package com.wonderpush.sdk.remoteconfig;
 import android.net.TrafficStats;
 import android.os.Process;
 
+import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.SafeOkHttpCallback;
 
 import okhttp3.*;
@@ -32,10 +33,6 @@ public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
     public OkHttpRemoteConfigFetcher(String clientId, SafeDeferProvider safeDeferProvider) {
         this.clientId = clientId;
         this.safeDeferProvider = safeDeferProvider;
-    }
-
-    public interface SafeDeferProvider {
-        void safeDefer(Runnable r, long defer);
     }
 
     @Override

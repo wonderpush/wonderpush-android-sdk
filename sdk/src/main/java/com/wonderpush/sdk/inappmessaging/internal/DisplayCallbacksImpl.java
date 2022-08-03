@@ -14,11 +14,13 @@
 
 package com.wonderpush.sdk.inappmessaging.internal;
 
+import androidx.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
-import com.wonderpush.sdk.inappmessaging.model.RateLimit;
+import com.wonderpush.sdk.ratelimiter.RateLimit;
+import com.wonderpush.sdk.ratelimiter.RateLimiter;
 
 import java.util.List;
 
@@ -29,7 +31,6 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
 
   private final ImpressionStorageClient impressionStorageClient;
   private final Clock clock;
-  private final RateLimiterClient rateLimiterClient;
   private final RateLimit appForegroundRateLimit;
   private final MetricsLoggerClient metricsLoggerClient;
   private final InAppMessage inAppMessage;
@@ -41,14 +42,12 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
   DisplayCallbacksImpl(
       ImpressionStorageClient impressionStorageClient,
       Clock clock,
-      RateLimiterClient rateLimiterClient,
       RateLimit appForegroundRateLimit,
       MetricsLoggerClient metricsLoggerClient,
       InAppMessage inAppMessage,
       String triggeringEvent) {
     this.impressionStorageClient = impressionStorageClient;
     this.clock = clock;
-    this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.metricsLoggerClient = metricsLoggerClient;
     this.inAppMessage = inAppMessage;
@@ -123,12 +122,33 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
   }
 
   private void logMessageClick(List<ActionModel> actions) {
-
     Logging.logd("Attempting to record: " + MESSAGE_CLICK);
     Completable completable =
-        Completable.fromAction(() -> metricsLoggerClient.logMessageClick(inAppMessage, actions));
+            Completable.fromAction(() -> metricsLoggerClient.logMessageClick(inAppMessage, actions));
 
     logImpressionIfNeeded(completable);
+  }
+
+  private void logMessageClick(String buttonLabel) {
+    Logging.logd("Attempting to record: " + MESSAGE_CLICK);
+    Completable completable =
+        Completable.fromAction(() -> metricsLoggerClient.logMessageClick(inAppMessage, buttonLabel));
+
+    logImpressionIfNeeded(completable);
+  }
+
+  @Override
+  public void trackClick(@Nullable String buttonLabel) {
+    /**
+     * NOTE: While the api is passing us the campaign id via the IAM, we pul the campaignId from
+     * the cache to ensure that we're only logging events for campaigns that we've fetched - to
+     * avoid implicitly trusting an id that is provided through the app
+     */
+    if (shouldLog()) {
+      logMessageClick(buttonLabel);
+      return;
+    }
+    logActionNotTaken(MESSAGE_CLICK);
   }
 
   @Override
@@ -203,13 +223,12 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
                     .doOnComplete(() -> Logging.logd("Impression store write success"));
     if (InAppMessageStreamManager.isAppForegroundEvent(triggeringEvent)
         || InAppMessageStreamManager.isAppLaunchEvent(triggeringEvent)) {
-      Completable incrementAppForegroundRateLimit =
-              rateLimiterClient
-                      .increment(appForegroundRateLimit)
-                      .doOnError(e -> Logging.loge("Rate limiter client write failure"))
-                      .doOnComplete(() -> Logging.logd("Rate limiter client write success"))
-                      .onErrorComplete(); // Absorb rate limiter write errors
-      return incrementAppForegroundRateLimit.andThen(storeCampaignImpression);
+      try {
+        RateLimiter limiter = RateLimiter.getInstance();
+        limiter.increment(appForegroundRateLimit);
+      } catch (RateLimiter.MissingSharedPreferencesException e) {
+        Logging.loge("Could not rate limit app foreground", e);
+      }
     }
     return storeCampaignImpression;
   }

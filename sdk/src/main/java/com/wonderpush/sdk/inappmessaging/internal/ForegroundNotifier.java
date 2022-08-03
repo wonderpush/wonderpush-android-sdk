@@ -31,6 +31,8 @@ import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManag
 
 import androidx.annotation.NonNull;
 
+import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
+
 /**
  * The {@link ForegroundNotifier} notifies listeners via {@link #foregroundFlowable()} when an
  * application comes to the foreground.
@@ -77,10 +79,10 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   private boolean paused = true;
   private boolean firstActivity = true;
   private Runnable check;
-  private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
+  private final BehaviorSubject<EventOccurrence> foregroundSubject = BehaviorSubject.create();
 
   /** @return a {@link ConnectableFlowable} representing a stream of foreground events */
-  public ConnectableFlowable<String> foregroundFlowable() {
+  public ConnectableFlowable<EventOccurrence> foregroundFlowable() {
     return foregroundSubject.toFlowable(BackpressureStrategy.BUFFER).publish();
   }
 
@@ -127,12 +129,16 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
     if (doAppLaunch) {
       heldBackAppLaunch = false;
       Logging.logi("app launch");
-      foregroundSubject.onNext(APP_LAUNCH);
+      EventOccurrence event = new EventOccurrence();
+      event.eventType = APP_LAUNCH;
+      foregroundSubject.onNext(event);
     }
     if (doForeground) {
       heldBackForeground = false;
       Logging.logi("went foreground");
-      foregroundSubject.onNext(ON_FOREGROUND);
+      EventOccurrence event = new EventOccurrence();
+      event.eventType = ON_FOREGROUND;
+      foregroundSubject.onNext(event);
     }
   }
 

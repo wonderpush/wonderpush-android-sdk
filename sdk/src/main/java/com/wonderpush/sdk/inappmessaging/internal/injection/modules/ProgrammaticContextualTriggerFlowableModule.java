@@ -17,6 +17,7 @@ package com.wonderpush.sdk.inappmessaging.internal.injection.modules;
 import com.wonderpush.sdk.inappmessaging.internal.ForegroundNotifier;
 import com.wonderpush.sdk.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
+import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
 
 import javax.inject.Singleton;
 
@@ -50,10 +51,10 @@ public class ProgrammaticContextualTriggerFlowableModule {
   @Provides
   @Singleton
   @ProgrammaticTrigger
-  public ConnectableFlowable<String> providesProgramaticContextualTriggerStream() {
+  public ConnectableFlowable<EventOccurrence> providesProgramaticContextualTriggerStream() {
 
-    ConnectableFlowable<String> flowable =
-        Flowable.<String>create(e -> triggers.setListener((trigger) -> e.onNext(trigger)), BUFFER)
+    ConnectableFlowable<EventOccurrence> flowable =
+        Flowable.<EventOccurrence>create(e -> triggers.setListener((trigger) -> e.onNext(trigger)), BUFFER)
             .publish();
 
     flowable.connect();

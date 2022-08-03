@@ -18,6 +18,7 @@ import android.app.Application;
 
 import com.wonderpush.sdk.inappmessaging.internal.AnalyticsEventsManager;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AnalyticsListener;
+import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
 
 import javax.inject.Singleton;
 
@@ -36,7 +37,7 @@ public class AnalyticsEventsModule {
   @Provides
   @AnalyticsListener
   @Singleton
-  ConnectableFlowable<String> providesAnalyticsConnectorEvents(
+  ConnectableFlowable<EventOccurrence> providesAnalyticsConnectorEvents(
       AnalyticsEventsManager analyticsEventsManager) {
     return analyticsEventsManager.getAnalyticsEventsFlowable();
   }

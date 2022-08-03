@@ -15,6 +15,7 @@
 package com.wonderpush.sdk.inappmessaging.display.internal.layout.util;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.os.Build;
 import android.view.View;
 import android.widget.ImageView;
@@ -94,4 +95,17 @@ public class MeasureUtils {
     return defaultIfUnsupported;
   }
 
+  public static int getStatusBarHeightFor(Context context) {
+    int result = 0;
+    try {
+      int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+      if (resourceId > 0) {
+        result = context.getResources().getDimensionPixelSize(resourceId);
+      }
+    }
+    catch(Exception exception){
+      Logging.loge(exception.getLocalizedMessage());
+    }
+    return result;
+  }
 }

@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
 
@@ -63,6 +64,9 @@ public abstract class BindingWrapper {
   public abstract ImageView getImageView();
 
   @Nullable
+  public abstract WebView getWebView();
+
+  @NonNull
   public abstract ViewGroup getRootView();
 
   @Nullable

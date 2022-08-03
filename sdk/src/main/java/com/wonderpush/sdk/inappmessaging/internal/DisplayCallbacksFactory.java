@@ -18,7 +18,7 @@ import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.wonderpush.sdk.inappmessaging.internal.time.Clock;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
-import com.wonderpush.sdk.inappmessaging.model.RateLimit;
+import com.wonderpush.sdk.ratelimiter.RateLimit;
 
 import javax.inject.Inject;
 
@@ -26,7 +26,6 @@ public class DisplayCallbacksFactory {
 
   private final ImpressionStorageClient impressionStorageClient;
   private final Clock clock;
-  private final RateLimiterClient rateLimiterClient;
   private final RateLimit appForegroundRateLimit;
   private final MetricsLoggerClient metricsLoggerClient;
 
@@ -34,12 +33,10 @@ public class DisplayCallbacksFactory {
   public DisplayCallbacksFactory(
       ImpressionStorageClient impressionStorageClient,
       Clock clock,
-      RateLimiterClient rateLimiterClient,
       @AppForeground RateLimit appForegroundRateLimit,
       MetricsLoggerClient metricsLoggerClient) {
     this.impressionStorageClient = impressionStorageClient;
     this.clock = clock;
-    this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.metricsLoggerClient = metricsLoggerClient;
   }
@@ -50,7 +47,6 @@ public class DisplayCallbacksFactory {
     return new DisplayCallbacksImpl(
         impressionStorageClient,
         clock,
-        rateLimiterClient,
         appForegroundRateLimit,
         metricsLoggerClient,
         inAppMessage,

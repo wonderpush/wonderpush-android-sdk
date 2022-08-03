@@ -48,6 +48,11 @@ public class Logging {
     Log.e(TAG, message);
   }
 
+  /** Log error messages normally but add a consistent TAG */
+  public static void loge(String message, Throwable t) {
+    Log.e(TAG, message, t);
+  }
+
   /** Log info messages normally but add a consistent TAG */
   public static void logi(String message) {
     if (Log.isLoggable(TAG, Log.INFO)) {

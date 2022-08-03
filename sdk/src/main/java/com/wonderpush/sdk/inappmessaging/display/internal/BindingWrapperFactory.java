@@ -44,6 +44,20 @@ public class BindingWrapperFactory {
     return inAppMessageComponent.imageBindingWrapper();
   }
 
+  public BindingWrapper createWebViewBindingWrapper(
+          Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
+    InAppMessageLayoutConfig updatedConfig = config;
+    try {
+      updatedConfig = new InAppMessageLayoutConfig.Builder(config).setWindowDimAmount(0f).build();
+    } catch (CloneNotSupportedException e) {
+    }
+    InAppMessageComponent inAppMessageComponent =
+            DaggerInAppMessageComponent.builder()
+                    .inflaterModule(new InflaterModule(inAppMessage, updatedConfig, activity))
+                    .build();
+    return inAppMessageComponent.webViewBindingWrapper();
+  }
+
   public BindingWrapper createModalBindingWrapper(
           Activity activity, InAppMessageLayoutConfig config, InAppMessage inAppMessage) {
     InAppMessageComponent inAppMessageComponent =

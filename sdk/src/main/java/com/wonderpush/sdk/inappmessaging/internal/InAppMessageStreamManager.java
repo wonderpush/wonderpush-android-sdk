@@ -33,6 +33,8 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
+import com.wonderpush.sdk.ratelimiter.RateLimit;
+import com.wonderpush.sdk.ratelimiter.RateLimiter;
 import com.wonderpush.sdk.segmentation.Segmenter;
 import com.wonderpush.sdk.segmentation.parser.*;
 import io.reactivex.Flowable;
@@ -54,12 +56,11 @@ import org.json.JSONObject;
 public class InAppMessageStreamManager {
   public static final String APP_LAUNCH = "APP_LAUNCH";
   public static final String ON_FOREGROUND = "ON_FOREGROUND";
-  private final ConnectableFlowable<String> appForegroundEventFlowable;
-  private final ConnectableFlowable<String> programmaticTriggerEventFlowable;
+  private final ConnectableFlowable<EventOccurrence> appForegroundEventFlowable;
+  private final ConnectableFlowable<EventOccurrence> programmaticTriggerEventFlowable;
   private final Clock clock;
   private final Schedulers schedulers;
   private final ImpressionStorageClient impressionStorageClient;
-  private final RateLimiterClient rateLimiterClient;
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
@@ -67,13 +68,12 @@ public class InAppMessageStreamManager {
 
   @Inject
   public InAppMessageStreamManager(
-          @AppForeground ConnectableFlowable<String> appForegroundEventFlowable,
-          @ProgrammaticTrigger ConnectableFlowable<String> programmaticTriggerEventFlowable,
+          @AppForeground ConnectableFlowable<EventOccurrence> appForegroundEventFlowable,
+          @ProgrammaticTrigger ConnectableFlowable<EventOccurrence> programmaticTriggerEventFlowable,
           Clock clock,
           AnalyticsEventsManager analyticsEventsManager,
           Schedulers schedulers,
           ImpressionStorageClient impressionStorageClient,
-          RateLimiterClient rateLimiterClient,
           @AppForeground RateLimit appForegroundRateLimit,
           TestDeviceHelper testDeviceHelper,
           InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate) {
@@ -83,18 +83,25 @@ public class InAppMessageStreamManager {
     this.analyticsEventsManager = analyticsEventsManager;
     this.schedulers = schedulers;
     this.impressionStorageClient = impressionStorageClient;
-    this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
     this.inAppMessagingDelegate = inAppMessagingDelegate;
   }
 
-  private static boolean containsTriggeringCondition(String event, Campaign campaign) {
-    if (isAppForegroundEvent(event) && campaign.isTestCampaign()) {
+  private static boolean containsTriggeringCondition(EventOccurrence event, Campaign campaign) {
+    if (isAppForegroundEvent(event.eventType) && campaign.isTestCampaign()) {
       return true; // the triggering condition for test campaigns is always 'app foreground'
     }
     for (TriggeringCondition condition : campaign.getTriggeringConditions()) {
-      if (hasIamTrigger(condition, event) || hasAnalyticsTrigger(condition, event)) {
+      if (hasIamTrigger(condition, event.eventType)) {
+        // Min occurences are not supported for system events on Android
+        return true;
+      }
+      if (hasAnalyticsTrigger(condition, event.eventType)) {
+        if (condition.getMinOccurrences() > 0 && condition.getMinOccurrences() > event.allTimeOccurrences) {
+          // Count criteria not met, skip to next trigger definition
+          continue;
+        }
         Logging.logd(String.format("The event %s is contained in the list of triggers", event));
         return true;
       }
@@ -188,7 +195,7 @@ public class InAppMessageStreamManager {
                               .map(isCapped -> campaign);
 
               Function<Campaign, Maybe<Campaign>> appForegroundRateLimitFilter =
-                  content -> getContentIfNotRateLimited(event, content);
+                  content -> getContentIfNotRateLimited(event.eventType, content);
 
               Function<Campaign, Maybe<Campaign>> filterDisplayable =
                   campaign -> {
@@ -252,13 +259,14 @@ public class InAppMessageStreamManager {
 
   private Maybe<Campaign> getContentIfNotRateLimited(String event, Campaign campaign) {
     if (!campaign.isTestCampaign() && (isAppForegroundEvent(event) || isAppLaunchEvent(event))) {
-      return rateLimiterClient
-          .isRateLimited(appForegroundRateLimit)
-          .doOnSuccess(
-              isRateLimited -> Logging.logi("App foreground rate limited ? : " + isRateLimited))
-          .onErrorResumeNext(Single.just(false)) // Absorb rate limit errors
-          .filter(isRateLimited -> !isRateLimited)
-          .map(isRateLimited -> campaign);
+        try {
+            RateLimiter limiter = RateLimiter.getInstance();
+            if (limiter.isRateLimited(appForegroundRateLimit)) {
+                return Maybe.empty();
+            }
+        } catch (RateLimiter.MissingSharedPreferencesException e) {
+            Logging.loge("Could not get rate limiter", e);
+        }
     }
     return Maybe.just(campaign);
   }
@@ -271,7 +279,7 @@ public class InAppMessageStreamManager {
   }
 
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
-          String event,
+          EventOccurrence event,
           Function<Campaign, Maybe<Campaign>> filterAlreadyImpressed,
           Function<Campaign, Maybe<Campaign>> appForegroundRateLimitFilter,
           Function<Campaign, Maybe<Campaign>> filterDisplayable,
@@ -303,7 +311,7 @@ public class InAppMessageStreamManager {
         .flatMapMaybe(filterDisplayable)
         .sorted(InAppMessageStreamManager::compareByPriority)
         .firstElement()
-        .flatMap(campaign -> triggeredInAppMessage(campaign, event, delayForEvent(event, campaign)));
+        .flatMap(campaign -> triggeredInAppMessage(campaign, event.eventType, delayForEvent(event.eventType, campaign)));
   }
 
   private Maybe<TriggeredInAppMessage> triggeredInAppMessage(Campaign campaign, String event, long delay) {

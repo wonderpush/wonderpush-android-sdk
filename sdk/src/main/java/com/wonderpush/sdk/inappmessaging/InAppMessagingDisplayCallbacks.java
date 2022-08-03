@@ -15,7 +15,7 @@
 package com.wonderpush.sdk.inappmessaging;
 
 import androidx.annotation.NonNull;
-
+import androidx.annotation.Nullable;
 import com.wonderpush.sdk.ActionModel;
 
 import java.util.List;
@@ -38,10 +38,16 @@ public interface InAppMessagingDisplayCallbacks {
   void messageDismissed(@NonNull InAppMessagingDismissType dismissType);
 
   /**
-   * Log the click, passing along the corresponding actions.
+   * Log the click, passing along the corresponding actions. Dismisses the message.
    * @param actions
    */
   void messageClicked(@NonNull List<ActionModel> actions);
+
+  /**
+   * Log the click, passing along the corresponding buttonLabel. Does NOT dismiss the message.
+   * @param buttonLabel
+   */
+  void trackClick(@Nullable String buttonLabel);
 
   /**
    * Report display errors.
@@ -80,6 +86,9 @@ public interface InAppMessagingDisplayCallbacks {
     IMAGE_DISPLAY_ERROR,
 
     // Image has an unsupported format
-    IMAGE_UNSUPPORTED_FORMAT
+    IMAGE_UNSUPPORTED_FORMAT,
+
+    // Web view url failed to load
+    WEBVIEW_URL_FAILED_TO_LOAD
   }
 }

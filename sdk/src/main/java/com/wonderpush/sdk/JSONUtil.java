@@ -4,6 +4,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.wonderpush.sdk.inappmessaging.internal.Logging;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

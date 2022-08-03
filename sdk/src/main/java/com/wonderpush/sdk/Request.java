@@ -26,12 +26,12 @@ class Request {
     private static final String TAG = "WonderPush." + Request.class.getSimpleName();
 
     String mUserId;
-    ApiClient.HttpMethod mMethod;
+    HttpMethod mMethod;
     Params mParams;
     ResponseHandler mHandler;
     String mResource;
 
-    public Request(String userId, ApiClient.HttpMethod method, String resource, Params params, ResponseHandler handler) {
+    public Request(String userId, HttpMethod method, String resource, Params params, ResponseHandler handler) {
         mUserId = userId;
         mMethod = method;
         mParams = params;
@@ -42,9 +42,9 @@ class Request {
     public Request(JSONObject data) throws JSONException {
         mUserId = data.has("userId") ? JSONUtil.getString(data, "userId") : WonderPushConfiguration.getUserId();
         try {
-            mMethod = ApiClient.HttpMethod.valueOf(JSONUtil.getString(data, "method"));
+            mMethod = HttpMethod.valueOf(JSONUtil.getString(data, "method"));
         } catch (IllegalArgumentException ex) {
-            mMethod = ApiClient.HttpMethod.values()[data.getInt("method")];
+            mMethod = HttpMethod.values()[data.getInt("method")];
         }
         mResource = data.getString("resource");
         JSONObject paramsJson = data.getJSONObject("params");
@@ -81,7 +81,7 @@ class Request {
         return mUserId;
     }
 
-    public ApiClient.HttpMethod getMethod() {
+    public HttpMethod getMethod() {
         return mMethod;
     }
 
@@ -97,7 +97,7 @@ class Request {
         return mResource;
     }
 
-    public void setMethod(ApiClient.HttpMethod mMethod) {
+    public void setMethod(HttpMethod mMethod) {
         this.mMethod = mMethod;
     }
 
@@ -127,7 +127,7 @@ class Request {
         return getAuthorizationHeader(mMethod, Uri.parse(String.format("%s%s", WonderPush.getBaseURL(), mResource)), mParams);
     }
 
-    protected static BasicNameValuePair getAuthorizationHeader(ApiClient.HttpMethod method, Uri uri, Params params) {
+    protected static BasicNameValuePair getAuthorizationHeader(HttpMethod method, Uri uri, Params params) {
         try {
             StringBuilder sb = new StringBuilder();
 

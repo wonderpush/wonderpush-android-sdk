@@ -28,5 +28,7 @@ public enum MessageType {
   @Keep
   BANNER,
   @Keep
-  CARD
+  CARD,
+  @Keep
+  WEBVIEW
 }

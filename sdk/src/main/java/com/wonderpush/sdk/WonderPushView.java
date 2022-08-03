@@ -85,6 +85,7 @@ class WonderPushView extends FrameLayout {
         init();
     }
 
+    @SuppressLint("ResourceType")
     private void init() {
         // Create the error layout
         LayoutInflater inflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -498,7 +499,7 @@ class WonderPushView extends FrameLayout {
             WonderPushConfiguration.invalidateCredentials();
 
             // Request a new anonymous access token
-            ApiClient.fetchAnonymousAccessTokenIfNeeded(WonderPushConfiguration.getUserId());
+            ApiClient.getInstance().fetchAnonymousAccessTokenIfNeeded(WonderPushConfiguration.getUserId());
 
             return true;
         }

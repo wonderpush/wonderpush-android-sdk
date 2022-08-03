@@ -23,6 +23,7 @@ import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.push.PushServiceManager;
 import com.wonderpush.sdk.push.PushServiceResult;
 
+import com.wonderpush.sdk.ratelimiter.RateLimiter;
 import com.wonderpush.sdk.remoteconfig.*;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -356,6 +357,11 @@ public class WonderPush {
     public static final String INTENT_EVENT_TRACKED_CUSTOM_DATA = "customData";
 
     /**
+     * Intent extra key holding occurences data serialized as JSON of event being tracked.
+     */
+    public static final String INTENT_EVENT_TRACKED_OCCURRENCES = "occurrences";
+
+    /**
      * Local intent broadcasted when a resource has been successfully preloaded.
      */
     protected static final String INTENT_RESOURCE_PRELOADED = "wonderpushResourcePreloaded";
@@ -562,7 +568,7 @@ public class WonderPush {
      */
     protected static void get(String resource, Request.Params params,
             ResponseHandler responseHandler) {
-        ApiClient.get(resource, params, responseHandler);
+        ApiClient.getInstance().get(resource, params, responseHandler);
     }
 
     /**
@@ -577,7 +583,7 @@ public class WonderPush {
      */
     protected static void post(String resource, Request.Params params,
             ResponseHandler responseHandler) {
-        ApiClient.post(resource, params, responseHandler);
+        ApiClient.getInstance().post(resource, params, responseHandler);
     }
 
     /**
@@ -593,7 +599,7 @@ public class WonderPush {
      */
     protected static void postEventually(String resource,
             Request.Params params) {
-        ApiClient.postEventually(resource, params);
+        ApiClient.getInstance().postEventually(resource, params);
     }
 
     private static WonderPushRequestVault getMeasurementsApiRequestVault() {
@@ -609,6 +615,21 @@ public class WonderPush {
     }
 
     /**
+     * Sends request using the ApiClient when we have an accessToken,
+     * or using the AnonymousApiClient otherwise.
+     *
+     * @param request
+     */
+    protected static void requestEventuallyWithOptionalAccessToken(Request request) {
+        String accessToken = WonderPushConfiguration.getAccessToken();
+        if (accessToken != null) {
+            ApiClient.getInstance().requestEventually(request);
+        } else {
+            AnonymousApiClient.getInstance().requestEventually(request);
+        }
+    }
+
+    /**
      * A POST request that is guaranteed to be executed when a network
      * connection is present, surviving application reboot. The responseHandler
      * will be called only if the network is present when the request is first run.
@@ -617,7 +638,7 @@ public class WonderPush {
      * @param params
      */
     protected static void postEventuallyWithMeasurementsApiClient(String resource, Request.Params params) {
-        final Request request = new Request(WonderPushConfiguration.getUserId(), ApiClient.HttpMethod.POST, resource, params, null);
+        final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, resource, params, null);
         getMeasurementsApiRequestVault().put(request, 0);
     }
 
@@ -633,7 +654,7 @@ public class WonderPush {
      */
     protected static void put(String resource, Request.Params params,
             ResponseHandler responseHandler) {
-        ApiClient.put(resource, params, responseHandler);
+        ApiClient.getInstance().put(resource, params, responseHandler);
     }
 
     /**
@@ -646,7 +667,7 @@ public class WonderPush {
      */
     protected static void delete(String resource,
             ResponseHandler responseHandler) {
-        ApiClient.delete(resource, responseHandler);
+        ApiClient.getInstance().delete(resource, responseHandler);
     }
 
     /**
@@ -1305,7 +1326,15 @@ public class WonderPush {
         trackInternalEvent(type, eventData, customData, null);
     }
 
+    static void trackInAppEvent(String type, JSONObject eventData, JSONObject customData) {
+        _trackEvent(type, eventData, customData, false, null);
+    }
+
     private static void _trackEvent(String type, JSONObject eventData, JSONObject customData, final Runnable sentCallback) {
+        _trackEvent(type, eventData, customData, true, sentCallback);
+    }
+
+    private static void _trackEvent(String type, JSONObject eventData, JSONObject customData, boolean requiresSubscription, final Runnable sentCallback) {
         if (!hasUserConsent()) {
             logError("Not tracking event without user consent. type=" + type + ", data=" + eventData + " custom=" + customData);
             return;
@@ -1314,13 +1343,25 @@ public class WonderPush {
         final JSONObject event = getEventObject(type, eventData, customData);
 
         // Remember
-        WonderPushConfiguration.rememberTrackedEvent(event);
+        WonderPushConfiguration.Occurrences occurrences = WonderPushConfiguration.rememberTrackedEvent(event);
+        JSONObject occurrencesJSON = null;
+        if (occurrences != null) {
+            try {
+                occurrencesJSON = occurrences.toJSON();
+                event.put("occurrences", occurrencesJSON);
+            } catch (JSONException e) {
+                logError("Could not add occurrences to payload", e);
+            }
+        }
 
         // Broadcast locally that an event was tracked
         Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
         eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
         if (customData != null) {
             eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
+        }
+        if (occurrencesJSON != null) {
+            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_OCCURRENCES, occurrencesJSON.toString());
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
@@ -1335,26 +1376,23 @@ public class WonderPush {
             Request.Params parameters = new Request.Params();
             parameters.put("body", event.toString());
 
-            Runnable post = new Runnable() {
-                @Override
-                public void run() {
-                    postEventually("/events/", parameters);
-                    if (sentCallback != null) {
-                        WonderPush.safeDefer(() -> {
-                            sentCallback.run();
-                        }, 0);
-                    }
+            Runnable post = () -> {
+                postEventually("/events/", parameters);
+                if (sentCallback != null) {
+                    WonderPush.safeDefer(() -> {
+                        sentCallback.run();
+                    }, 0);
                 }
             };
 
-            getRemoteConfigManager().read(new RemoteConfigHandler() {
-                @Override
-                public void handle(RemoteConfig config, Throwable error) {
-                    if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
-                        post.run();
-                    } else {
-                        safeDeferWithSubscription(post, null);
-                    }
+            getRemoteConfigManager().read((config, error1) -> {
+                if (config != null && config.getData().optBoolean(Constants.REMOTE_CONFIG_TRACK_EVENTS_FOR_NON_SUBSCRIBERS_KEY)) {
+                    post.run();
+                } else if (requiresSubscription) {
+                    safeDeferWithSubscription(post, null);
+                } else {
+                    final Request request = new Request(WonderPushConfiguration.getUserId(), HttpMethod.POST, "/events/", parameters, null);
+                    WonderPush.requestEventuallyWithOptionalAccessToken(request);
                 }
             });
 
@@ -1377,13 +1415,25 @@ public class WonderPush {
         final JSONObject event = getEventObject(type, eventData, customData);
 
         // Remember
-        WonderPushConfiguration.rememberTrackedEvent(event);
+        WonderPushConfiguration.Occurrences occurrences = WonderPushConfiguration.rememberTrackedEvent(event);
+        JSONObject occurrencesJSON = null;
+        if (occurrences != null) {
+            try {
+                occurrencesJSON = occurrences.toJSON();
+                event.put("occurrences", occurrencesJSON);
+            } catch (JSONException e) {
+                logError("Could not add occurrences to payload", e);
+            }
+        }
 
         // Broadcast locally that an event was tracked
         Intent eventTrackedIntent = new Intent(WonderPush.INTENT_EVENT_TRACKED);
         eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_EVENT_TYPE, type);
         if (customData != null) {
             eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_CUSTOM_DATA, customData.toString());
+        }
+        if (occurrencesJSON != null) {
+            eventTrackedIntent.putExtra(WonderPush.INTENT_EVENT_TRACKED_OCCURRENCES, occurrencesJSON.toString());
         }
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(eventTrackedIntent);
 
@@ -1434,11 +1484,8 @@ public class WonderPush {
             }
             // Notification metadata
             NotificationMetadata metadata = NotificationManager.getLastClickedNotificationMetadata();
-            if (metadata != null && event.isNull("campaignId") && event.isNull("notificationId") && event.isNull("viewId") && event.isNull("reporting")) {
-                event.put("campaignId", metadata.getCampaignId());
-                event.put("notificationId", metadata.getNotificationId());
-                event.put("viewId", metadata.getViewId());
-                event.put("reporting", metadata.getReporting());
+            if (metadata != null) {
+                metadata.fill(event);
             }
         } catch (JSONException ex) {
             WonderPush.logError("Error building event object body", ex);
@@ -1684,13 +1731,13 @@ public class WonderPush {
 
                 PushServiceManager.initialize(getApplicationContext());
                 WonderPushConfiguration.initialize(getApplicationContext());
+                RateLimiter.initialize(WonderPushConfiguration.getSharedPreferences());
                 WonderPushUserPreferences.initialize();
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallation.setDisabled(true);
-                ApiClient.setDisabled(true);
+                ApiClient.getInstance().setDisabled(true);
                 MeasurementsApiClient.setDisabled(true);
                 JSONSyncInstallation.initialize();
-                WonderPushRequestVault.initialize();
                 initializeInAppMessaging(context);
 
                 // Setup a remote config handler to execute as soon as we get the config
@@ -1702,7 +1749,7 @@ public class WonderPush {
                         JSONObject configData = config.getData();
                         JSONSyncInstallation.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_JSON_SYNC_KEY, false));
                         if (!JSONSyncInstallation.isDisabled()) JSONSyncInstallation.flushAll();
-                        ApiClient.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
+                        ApiClient.getInstance().setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_API_CLIENT_KEY, false));
                         MeasurementsApiClient.setDisabled(configData.optBoolean(Constants.REMOTE_CONFIG_DISABLE_MEASUREMENTS_API_CLIENT_KEY, false));
 
                         WonderPushConfiguration.setMaximumUncollapsedTrackedEventsAgeMs(configData.optLong(Constants.REMOTE_CONFIG_TRACKED_EVENTS_UNCOLLAPSED_MAXIMUM_AGE_MS_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS));
@@ -1804,7 +1851,7 @@ public class WonderPush {
                             refreshPreferencesAndConfiguration(false);
                         }
                     };
-                    boolean isFetchingToken = ApiClient.fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
+                    boolean isFetchingToken = ApiClient.getInstance().fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
                         @Override
                         public void onFailure(Throwable e, Response errorResponse) {
                         }
@@ -1915,7 +1962,7 @@ public class WonderPush {
                 }
             });
         }
-        InAppMessagingDisplay.initialize(application, sInAppMessaging);
+        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::trackInAppEvent);
     }
     /**
      * @see #ensureInitialized(Context, boolean)

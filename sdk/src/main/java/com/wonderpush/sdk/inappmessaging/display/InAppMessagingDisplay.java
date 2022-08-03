@@ -18,30 +18,19 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.res.Configuration;
-import androidx.annotation.Keep;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
+import androidx.annotation.*;
 
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 
-import com.squareup.picasso.Callback;
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationManager;
-import com.wonderpush.sdk.WonderPushCompatibilityHelper;
+import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
-import com.wonderpush.sdk.inappmessaging.display.internal.BindingWrapperFactory;
-import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
-import com.wonderpush.sdk.inappmessaging.display.internal.IamImageLoader;
-import com.wonderpush.sdk.inappmessaging.display.internal.IamWindowManager;
-import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
-import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessagingDisplayImpl;
-import com.wonderpush.sdk.inappmessaging.display.internal.Logging;
-import com.wonderpush.sdk.inappmessaging.display.internal.RenewableTimer;
+import com.wonderpush.sdk.inappmessaging.display.internal.*;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.components.AppComponent;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.components.DaggerAppComponent;
@@ -57,13 +46,14 @@ import com.wonderpush.sdk.inappmessaging.model.ImageOnlyMessage;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.MessageType;
 import com.wonderpush.sdk.inappmessaging.model.ModalMessage;
+import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
+
+import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -77,9 +67,11 @@ import javax.inject.Provider;
 @Keep
 @InAppMessagingScope
 public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
+
   static final long IMPRESSION_THRESHOLD_MILLIS = 1 * 1000; // 1 second is a valid impression
-  static final long DISMISS_THRESHOLD_MILLIS =
-      12 * 1000; // auto dismiss after 12 seconds for banner
+
+  static final long DISMISS_THRESHOLD_MILLIS = 12 * 1000; // auto dismiss after 12 seconds for banner
+
   static final long INTERVAL_MILLIS = 1000;
 
   private static InAppMessagingDisplay instance;
@@ -103,21 +95,30 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   private InAppMessagingDisplayCallbacks callbacks;
   private com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay inAppMessagingDisplay;
 
+  public interface TrackEventProvider {
+    void trackInAppEvent(String type, JSONObject eventData, JSONObject customData);
+  }
+  @NonNull
+  private TrackEventProvider trackEventProvider;
+
+  @Nonnull
+  private SafeDeferProvider safeDeferProvider;
+
   public @Nullable com.wonderpush.sdk.inappmessaging.InAppMessagingDisplay getDefaultInAppMessagingDisplay() {
     return inAppMessagingDisplay;
   }
 
   @Inject
   InAppMessagingDisplay(
-      InAppMessaging headlessInAppMessaging,
-      Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs,
-      IamImageLoader imageLoader,
-      RenewableTimer impressionTimer,
-      RenewableTimer autoDismissTimer,
-      IamWindowManager windowManager,
-      Application application,
-      BindingWrapperFactory bindingWrapperFactory,
-      IamAnimator animator) {
+          InAppMessaging headlessInAppMessaging,
+          Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs,
+          IamImageLoader imageLoader,
+          RenewableTimer impressionTimer,
+          RenewableTimer autoDismissTimer,
+          IamWindowManager windowManager,
+          Application application,
+          BindingWrapperFactory bindingWrapperFactory,
+          IamAnimator animator) {
     super();
     this.headlessInAppMessaging = headlessInAppMessaging;
     this.layoutConfigs = layoutConfigs;
@@ -136,7 +137,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   @NonNull
   @Keep
   public static void initialize(Application application,
-                                                  InAppMessaging inAppMessaging) {
+                                InAppMessaging inAppMessaging,
+                                SafeDeferProvider safeDeferProvider,
+                                TrackEventProvider trackEventProvider) {
     if (instance == null) {
       UniversalComponent universalComponent =
               DaggerUniversalComponent.builder()
@@ -149,6 +152,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                       .build();
       instance = appComponent.providesInAppMessagingUI();
       application.registerActivityLifecycleCallbacks(instance);
+      instance.safeDeferProvider = safeDeferProvider;
+      instance.trackEventProvider = trackEventProvider;
     }
   }
 
@@ -167,9 +172,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
    */
   @Keep
   public void testMessage(
-      Activity activity,
-      InAppMessage inAppMessage,
-      InAppMessagingDisplayCallbacks callbacks) {
+          Activity activity,
+          InAppMessage inAppMessage,
+          InAppMessagingDisplayCallbacks callbacks) {
     this.inAppMessage = inAppMessage;
     this.impressionDetected = false;
     this.callbacks = callbacks;
@@ -307,6 +312,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         case CARD:
           bindingWrapper = bindingWrapperFactory.createCardBindingWrapper(activity, config, inAppMessage);
           break;
+        case WEBVIEW:
+          bindingWrapper = bindingWrapperFactory.createWebViewBindingWrapper(activity, config, inAppMessage);
+          break;
         default:
           Logging.loge("No bindings found for this message type");
           // so we should break out completely and not attempt to show anything
@@ -318,14 +326,14 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     // The WindowManager LayoutParams.TYPE_APPLICATION_PANEL requires tokens from the activity
     // which does not become available until after all lifecycle methods are complete.
     activity
-        .findViewById(android.R.id.content)
-        .post(
-            new Runnable() {
-              @Override
-              public void run() {
-                inflateBinding(activity);
-              }
-            });
+            .findViewById(android.R.id.content)
+            .post(
+                    new Runnable() {
+                      @Override
+                      public void run() {
+                        inflateBinding(activity);
+                      }
+                    });
   }
 
   // Since we handle only touch outside events and let the underlying views handle all other events,
@@ -336,15 +344,15 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
     // On click listener when X button or collapse button is clicked
     final View.OnClickListener dismissListener =
-        new View.OnClickListener() {
-          @Override
-          public void onClick(View v) {
-            if (callbacks != null) {
-              callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
-            }
-            dismissIam(activity);
-          }
-        };
+            new View.OnClickListener() {
+              @Override
+              public void onClick(View v) {
+                if (callbacks != null) {
+                  callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+                }
+                dismissIam(activity);
+              }
+            };
 
     List<View.OnClickListener> actionListeners = new ArrayList<>();
     // If the message has an action, but not an action url, we dismiss when the action
@@ -356,147 +364,171 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
       if (actions.size() > 0) {
         actionListener =
-            new View.OnClickListener() {
-              @Override
-              public void onClick(View v) {
-                if (inAppMessage == null) return;
-                if (callbacks != null) {
-                  callbacks.messageClicked(actions);
-                }
+                new View.OnClickListener() {
+                  @Override
+                  public void onClick(View v) {
+                    if (inAppMessage == null) return;
+                    if (callbacks != null) {
+                      callbacks.messageClicked(actions);
+                    }
 
-                NotificationManager.handleActions(activity, inAppMessage.getNotificationMetadata(), actions);
+                    NotificationManager.handleActions(activity, inAppMessage.getNotificationMetadata(), actions);
 
-                notifyIamClick();
-                // Ensure that we remove the displayed IAM, and ensure that on re-load, the message
-                // isn't re-displayed
-                if (bindingWrapper != null && bindingWrapper.getExitAnimation() != null) {
-                  animator.executeExitAnimation(bindingWrapper.getExitAnimation(), application, bindingWrapper.getRootView(), new IamAnimator.AnimationCompleteListener() {
-                    @Override
-                    public void onComplete() {
+                    notifyIamClick();
+                    // Ensure that we remove the displayed IAM, and ensure that on re-load, the message
+                    // isn't re-displayed
+                    if (bindingWrapper != null && bindingWrapper.getExitAnimation() != null) {
+                      animator.executeExitAnimation(bindingWrapper.getExitAnimation(), application, bindingWrapper.getRootView(), new IamAnimator.AnimationCompleteListener() {
+                        @Override
+                        public void onComplete() {
+                          removeDisplayedIam(activity);
+                        }
+                      });
+                    } else {
                       removeDisplayedIam(activity);
                     }
-                  });
-                } else {
-                  removeDisplayedIam(activity);
-                }
-                inAppMessage = null;
-                impressionDetected = false;
-                callbacks = null;
-                bindingWrapper = null;
-              }
-            };
+                    inAppMessage = null;
+                    impressionDetected = false;
+                    callbacks = null;
+                    bindingWrapper = null;
+                  }
+                };
       } else {
-        Logging.loge("No action url found for action.");
         actionListener = dismissListener;
       }
       actionListeners.add(actionListener);
     }
 
-    final OnGlobalLayoutListener layoutListener =
-        bindingWrapper.inflate(actionListeners, dismissListener);
-    if (layoutListener != null) {
+    final OnGlobalLayoutListener layoutListener = bindingWrapper.inflate(actionListeners, dismissListener);
+
+    if (layoutListener != null && bindingWrapper.getImageView() != null)
+    {
       bindingWrapper.getImageView().getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
     }
 
-    // Show iam after image successfully loads
-    loadNullableImage(
-        activity,
-        bindingWrapper,
-        extractImageUrl(inAppMessage),
-        new Callback() {
-          @Override
-          public void onSuccess() {
-            // Setup dismiss on touch outside
-            if (bindingWrapper.getDismissView() != null) {
-              bindingWrapper
-                  .getDismissView()
-                  .setOnClickListener(
-                      new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                          if (callbacks != null) {
-                            callbacks.messageDismissed(
-                                InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
-                          }
-                          dismissIam(activity);
-                        }
-                      });
-            }
+    // onError loading resources
+    Consumer<Exception> onError = (Exception e) -> {
+      Logging.loge("Could not load media", e);
 
-            // Setup impression timer
-            impressionTimer.start(
+      if (layoutListener != null) {
+        bindingWrapper
+                .getImageView()
+                .getViewTreeObserver()
+                .removeOnGlobalLayoutListener(layoutListener);
+      }
+
+      cancelTimers(); // Not strictly necessary.
+
+      // Report the error to the developer
+      if (callbacks != null) {
+        if (e instanceof IOException && e.getLocalizedMessage() != null &&  e.getLocalizedMessage().contains("Failed to decode")) {
+          callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
+        }
+        else if (e instanceof InAppWebViewController.WebViewLoadingException){
+          callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.WEBVIEW_URL_FAILED_TO_LOAD);
+        }
+        else {
+          callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+        }
+      }
+
+      // Reset ourselves
+      inAppMessage = null;
+      impressionDetected = false;
+      callbacks = null;
+      bindingWrapper = null;
+    };
+
+    // onSuccess loading resources
+    Runnable onSuccess = () -> {
+      // Setup dismiss on touch outside
+      if (bindingWrapper.getDismissView() != null) {
+        bindingWrapper
+                .getDismissView()
+                .setOnClickListener(
+                        new View.OnClickListener() {
+                          @Override
+                          public void onClick(View v) {
+                            if (callbacks != null) {
+                              callbacks.messageDismissed(
+                                      InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+                            }
+                            dismissIam(activity);
+                          }
+                        });
+      }
+
+      // Setup impression timer
+      impressionTimer.start(
+              new RenewableTimer.Callback() {
+                @Override
+                public void onFinish() {
+                  if (inAppMessage != null && callbacks != null && !impressionDetected) {
+                    Logging.logi(
+                            "Impression timer onFinish for: "
+                                    + inAppMessage.getNotificationMetadata().getCampaignId());
+                    impressionDetected = true;
+                    callbacks.impressionDetected();
+                  }
+                }
+              },
+              IMPRESSION_THRESHOLD_MILLIS,
+              INTERVAL_MILLIS);
+
+      // Setup auto dismiss timer
+      if (bindingWrapper.getConfig().autoDismiss()) {
+        autoDismissTimer.start(
                 new RenewableTimer.Callback() {
                   @Override
                   public void onFinish() {
-                    if (inAppMessage != null && callbacks != null && !impressionDetected) {
-                      Logging.logi(
-                          "Impression timer onFinish for: "
-                              + inAppMessage.getNotificationMetadata().getCampaignId());
-                      impressionDetected = true;
-                      callbacks.impressionDetected();
+                    if (inAppMessage != null && callbacks != null) {
+                      callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
                     }
+
+                    dismissIam(activity);
                   }
                 },
-                IMPRESSION_THRESHOLD_MILLIS,
+                DISMISS_THRESHOLD_MILLIS,
                 INTERVAL_MILLIS);
+      }
 
-            // Setup auto dismiss timer
-            if (bindingWrapper.getConfig().autoDismiss()) {
-              autoDismissTimer.start(
-                  new RenewableTimer.Callback() {
-                    @Override
-                    public void onFinish() {
-                      if (inAppMessage != null && callbacks != null) {
-                        callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
-                      }
-
-                      dismissIam(activity);
-                    }
-                  },
-                  DISMISS_THRESHOLD_MILLIS,
-                  INTERVAL_MILLIS);
-            }
-
-            activity.runOnUiThread(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    windowManager.show(bindingWrapper, activity);
-                    if (bindingWrapper.getEntryAnimation() != null) {
-                      animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
-                    }
+      // Show the message
+      activity.runOnUiThread(
+              new Runnable() {
+                @Override
+                public void run() {
+                  windowManager.show(bindingWrapper, activity);
+                  if (bindingWrapper.getEntryAnimation() != null) {
+                    animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
                   }
-                });
-          }
+                }
+              });
+    };
 
-          @Override
-          public void onError(Exception e) {
-            Logging.loge("Image download failure ");
-            if (layoutListener != null) {
-              bindingWrapper
-                      .getImageView()
-                      .getViewTreeObserver()
-                      .removeOnGlobalLayoutListener(layoutListener);
-            }
-            cancelTimers(); // Not strictly necessary.
+    // Load web view
+    final InAppWebViewController controller = new InAppWebViewController(inAppMessage, bindingWrapper.getWebView(), activity, this.safeDeferProvider, this.trackEventProvider);
+    controller.setOnClick((String buttonLabel) -> {
+      if (callbacks != null) {
+        callbacks.trackClick(buttonLabel);
+      }
+      notifyIamClick();
+    });
+    controller.setOnDismiss(() -> {
+      callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+      dismissIam(activity);
+    });
+    controller.load(extractWebViewUrlOf(inAppMessage), () -> {
+      // Load image
+      new MediaLoader(this.imageLoader)
+              .loadImage(
+                      activity,
+                      bindingWrapper,
+                      extractImageUrl(inAppMessage),
+                      onSuccess,
+                      onError);
 
-            // Report the error to the developer
-            if (callbacks != null) {
-              if (e instanceof IOException && e.getLocalizedMessage().contains("Failed to decode")) {
-                callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
-              } else {
-                callbacks.displayErrorEncountered(InAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
-              }
-            }
+    }, onError);
 
-            // Reset ourselves
-            inAppMessage = null;
-            impressionDetected = false;
-            callbacks = null;
-            bindingWrapper = null;
-
-          }
-        });
   }
 
   /**
@@ -514,6 +546,9 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         result.add(((CardMessage) message).getPrimaryActions());
         result.add(((CardMessage) message).getSecondaryActions());
         break;
+      case WEBVIEW:
+        result.add(((WebViewMessage) message).getActions());
+        break;
       case IMAGE_ONLY:
         result.add(((ImageOnlyMessage) message).getActions());
         break;
@@ -525,6 +560,14 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         result.add(Collections.emptyList());
     }
     return result;
+  }
+
+  private String extractWebViewUrlOf(InAppMessage message){
+    if (message instanceof InAppMessage.InAppMessageWithWebView) {
+      return ((InAppMessage.InAppMessageWithWebView) message).getWebViewUrl();
+    }
+
+    return null;
   }
 
   // TODO: Factor this into the InAppMessage API.
@@ -553,18 +596,6 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       return imageUrl;
     }
     return null;
-  }
-
-  private void loadNullableImage(
-          Activity activity, BindingWrapper iam, String imageUrl, Callback callback) {
-    if (imageUrl != null) {
-      imageLoader
-          .load(imageUrl)
-          .tag(activity.getClass())
-          .into(iam.getImageView(), callback);
-    } else {
-      callback.onSuccess();
-    }
   }
 
   // This action needs to be idempotent since multiple callbacks compete to dismiss.

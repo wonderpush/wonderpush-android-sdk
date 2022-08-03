@@ -24,6 +24,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
 
@@ -124,6 +125,12 @@ public class ImageBindingWrapper extends BindingWrapper {
   }
 
   @Nullable
+  @Override
+  public WebView getWebView() {
+    return null;
+  }
+
+  @NonNull
   @Override
   public ViewGroup getRootView() {
     return imageRoot;
