@@ -35,6 +35,7 @@ interface IWonderPush {
     boolean getNotificationEnabled();
     @Deprecated
     void setNotificationEnabled(boolean status);
+    void refreshSubscriptionStatus();
 
     //
     // Segmentation

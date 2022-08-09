@@ -149,6 +149,8 @@ class ActivityLifecycleMonitor {
             updatePresence(true);
             WonderPush.showPotentialNotification(activity, activity.getIntent());
             WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
+            NotificationPermissionController.getInstance().onAppForegrounded();
+            WonderPush.refreshSubscriptionStatus();
             callOnNextResumeListeners(activity);
         }
 

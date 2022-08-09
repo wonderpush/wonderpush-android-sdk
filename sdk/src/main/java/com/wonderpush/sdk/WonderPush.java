@@ -1916,11 +1916,8 @@ public class WonderPush {
         if (force) {
             WonderPushConfiguration.setNotificationEnabled(!notificationEnabled);
         }
-        if (notificationEnabled) {
-            WonderPush.subscribeToNotifications();
-        } else {
-            WonderPush.unsubscribeFromNotifications();
-        }
+
+        WonderPush.refreshSubscriptionStatus();
     }
 
     static void initializeInAppMessaging(Context context) {
@@ -2586,6 +2583,14 @@ public class WonderPush {
             sApiImpl.setNotificationEnabled(status);
         } catch (Exception e) {
             Log.d(TAG, "Unexpected error while setting notifications enabled", e);
+        }
+    }
+
+    static void refreshSubscriptionStatus() {
+        try {
+            sApiImpl.refreshSubscriptionStatus();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while refreshing subscription status", e);
         }
     }
 

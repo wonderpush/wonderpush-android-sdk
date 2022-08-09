@@ -2,6 +2,7 @@
     package="com.wonderpush.sdk">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <!-- Using these permissions ultimately is the choice of the developer, do not include them here
          or they'll get automatically merged into the final application. -->
@@ -25,6 +26,14 @@
         <!-- Required to properly track notification clicks -->
         <activity
             android:name="com.wonderpush.sdk.WonderPushNotificationTrackingReceiver"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="false" />
+
+        <!-- Required to prompt permissions -->
+        <activity
+            android:name="com.wonderpush.sdk.PermissionsActivity"
             android:noHistory="true"
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"

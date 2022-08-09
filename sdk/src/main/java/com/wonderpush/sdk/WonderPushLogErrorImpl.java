@@ -80,6 +80,11 @@ abstract class WonderPushLogErrorImpl implements IWonderPush {
     }
 
     @Override
+    public void refreshSubscriptionStatus() {
+        this.log("refreshSubscriptionStatus");
+    }
+
+    @Override
     public JSONObject getProperties() {
         this.log("getProperties");
         return new JSONObject();
