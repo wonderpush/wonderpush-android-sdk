@@ -9,7 +9,6 @@ import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.WeakHashMap;
 
@@ -149,7 +148,7 @@ class ActivityLifecycleMonitor {
             updatePresence(true);
             WonderPush.showPotentialNotification(activity, activity.getIntent());
             WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
-            NotificationPermissionController.getInstance().onAppForegrounded();
+            NotificationPromptController.getInstance().onAppForeground();
             WonderPush.refreshSubscriptionStatus();
             callOnNextResumeListeners(activity);
         }

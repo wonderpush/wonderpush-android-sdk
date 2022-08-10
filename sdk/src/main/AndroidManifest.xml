@@ -33,7 +33,7 @@
 
         <!-- Required to prompt permissions -->
         <activity
-            android:name="com.wonderpush.sdk.PermissionsActivity"
+            android:name="com.wonderpush.sdk.PromptActivity"
             android:noHistory="true"
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"

@@ -6,7 +6,6 @@ import androidx.core.app.NotificationManagerCompat;
 import android.util.Log;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
@@ -124,7 +123,7 @@ class WonderPushImpl implements IWonderPush {
         WonderPush.logDebug("Set notification enabled: " + status);
         WonderPushConfiguration.setNotificationEnabled(status);
         refreshSubscriptionStatus();
-        NotificationPermissionController.getInstance().prompt(fallbackToSetting, null);
+        NotificationPromptController.getInstance().prompt(fallbackToSetting, null);
     }
 
     public void refreshSubscriptionStatus() {

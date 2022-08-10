@@ -2087,7 +2087,7 @@ public class WonderPush {
 
         // Create the notification channel we if are running on Android 12- or if we target Android 12-
         // A fresh install on Android 13 for an app targeting less will trigger a prompt on app start
-        if (!NotificationPermissionController.supportsNativePrompt()) {
+        if (!NotificationPromptController.supportsPrompt()) {
             WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists();
         }
 

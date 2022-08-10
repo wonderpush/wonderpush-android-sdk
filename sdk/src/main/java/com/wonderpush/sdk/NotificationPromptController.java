@@ -17,27 +17,27 @@ import java.util.HashSet;
 import java.util.Set;
 
 
-public class NotificationPermissionController implements PermissionsActivity.PermissionCallback {
+public class NotificationPromptController implements PromptActivity.Callback {
     private static final String PERMISSION_TYPE = "NOTIFICATION";
     private static final String ANDROID_PERMISSION_STRING = "android.permission.POST_NOTIFICATIONS";
-    public interface PromptForPushNotificationPermissionResponseHandler {
+    public interface Handler {
         void response(boolean accepted);
     }
 
-    private static NotificationPermissionController sInstance = new NotificationPermissionController();
+    private static NotificationPromptController sInstance = new NotificationPromptController();
 
-    private NotificationPermissionController() {
-        PermissionsActivity.registerAsCallback(PERMISSION_TYPE, this);
+    private NotificationPromptController() {
+        PromptActivity.registerCallback(PERMISSION_TYPE, this);
     }
 
-    private Set<PromptForPushNotificationPermissionResponseHandler> callbacks = new HashSet<>();
+    private Set<Handler> callbacks = new HashSet<>();
     private boolean awaitingForReturnFromSystemSettings = false;
 
     /**
      * Returns true when running on Android 13+ with targetSdkVersion >= 33
      * @return
      */
-    protected static boolean supportsNativePrompt() {
+    protected static boolean supportsPrompt() {
         if (Build.VERSION.SDK_INT <= 32) return false;
 
         Context context = WonderPush.getApplicationContext();
@@ -54,28 +54,28 @@ public class NotificationPermissionController implements PermissionsActivity.Per
         return false;
     }
 
-    private boolean notificationsEnabled() {
+    private boolean areNotificationsEnabled() {
         Context context = WonderPush.getApplicationContext();
         if (context == null) return false;
         return NotificationManagerCompat.from(context).areNotificationsEnabled();
     }
 
-    public void prompt(boolean fallbackToSettings, @Nullable PromptForPushNotificationPermissionResponseHandler callback) {
+    public void prompt(boolean fallbackToSettings, @Nullable Handler callback) {
         if (callback != null) callbacks.add(callback);
-        boolean areNotificationsEnabled = notificationsEnabled();
+        boolean areNotificationsEnabled = areNotificationsEnabled();
         if (areNotificationsEnabled) {
             fireCallBacks(true);
             return;
         }
-        if (!supportsNativePrompt()) {
+        if (!supportsPrompt()) {
             if (fallbackToSettings) {
-                showFallbackAlertDialog();
+                fallbackToDialog();
             } else {
                 fireCallBacks(false);
             }
             return;
         }
-        PermissionsActivity.startPrompt(
+        PromptActivity.prompt(
                 fallbackToSettings,
                 PERMISSION_TYPE,
                 ANDROID_PERMISSION_STRING,
@@ -85,13 +85,13 @@ public class NotificationPermissionController implements PermissionsActivity.Per
 
     // Fires callbacks and clears them to ensure each is only called once.
     private void fireCallBacks(boolean accepted) {
-        for (PromptForPushNotificationPermissionResponseHandler callback : callbacks) {
+        for (Handler callback : callbacks) {
             callback.response(accepted);
         }
         callbacks.clear();
     }
 
-    public static NotificationPermissionController getInstance() {
+    public static NotificationPromptController getInstance() {
         return sInstance;
     }
 
@@ -104,13 +104,13 @@ public class NotificationPermissionController implements PermissionsActivity.Per
     @Override
     public void onReject(boolean fallbackToSettings) {
         WonderPush.refreshSubscriptionStatus();
-        boolean fallbackShown = fallbackToSettings && showFallbackAlertDialog();
+        boolean fallbackShown = fallbackToSettings && fallbackToDialog();
         if (!fallbackShown) {
             fireCallBacks(false);
         }
     }
 
-    private boolean showFallbackAlertDialog() {
+    private boolean fallbackToDialog() {
         Activity activity = ActivityLifecycleMonitor.getCurrentActivity();
         if (activity == null) return false;
         String titleTemplate = activity.getString(R.string.wonderpush_android_sdk_permission_not_available_title);
@@ -148,9 +148,9 @@ public class NotificationPermissionController implements PermissionsActivity.Per
         return true;
     }
 
-    public void onAppForegrounded() {
+    public void onAppForeground() {
         if (!awaitingForReturnFromSystemSettings) return;
         awaitingForReturnFromSystemSettings = false;
-        fireCallBacks(notificationsEnabled());
+        fireCallBacks(areNotificationsEnabled());
     }
 }
