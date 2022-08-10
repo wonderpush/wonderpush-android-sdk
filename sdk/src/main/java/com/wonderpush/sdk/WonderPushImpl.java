@@ -146,7 +146,6 @@ class WonderPushImpl implements IWonderPush {
             preferences.put("disabledAndroidChannels", new JSONArray(disabledChannels));
             JSONSyncInstallation.forCurrentUser().put(diff);
 
-            WonderPushConfiguration.setNotificationEnabled(subscribedToNotifications);
             WonderPushConfiguration.setCachedOsAreNotificationsEnabled(osAreNotificationsEnabled);
             WonderPushConfiguration.setCachedOsAreNotificationsEnabledDate(TimeSync.getTime());
             WonderPushConfiguration.setCachedDisabledNotificationChannelIds(disabledChannels);
