@@ -2501,6 +2501,18 @@ public class WonderPush {
     }
 
     /**
+     * Enables push notifications for the current device
+     * @param fallbackToSettings Shows a dialog that leads user to the settings should he refuse the permission
+     */
+    public static void subscribeToNotifications(boolean fallbackToSettings) {
+        try {
+            sApiImpl.subscribeToNotifications(fallbackToSettings);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while subscribing to notifications", e);
+        }
+    }
+
+    /**
      * Enables push notifications for the current device.
      *
      * <p>Does nothing if called without required user consent.</p>

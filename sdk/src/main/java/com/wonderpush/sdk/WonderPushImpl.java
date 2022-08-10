@@ -89,8 +89,13 @@ class WonderPushImpl implements IWonderPush {
     }
 
     @Override
+    public void subscribeToNotifications(boolean fallbackToSettings) {
+        setNotificationEnabled(true, fallbackToSettings);
+    }
+
+    @Override
     public void subscribeToNotifications() {
-        setNotificationEnabled(true);
+        subscribeToNotifications(false);
     }
 
     @Override
@@ -112,10 +117,14 @@ class WonderPushImpl implements IWonderPush {
     @Override
     @Deprecated
     public void setNotificationEnabled(boolean status) {
+        setNotificationEnabled(status, false);
+    }
+
+    private void setNotificationEnabled(boolean status, boolean fallbackToSetting) {
         WonderPush.logDebug("Set notification enabled: " + status);
         WonderPushConfiguration.setNotificationEnabled(status);
         refreshSubscriptionStatus();
-        NotificationPermissionController.getInstance().prompt(true, null);
+        NotificationPermissionController.getInstance().prompt(fallbackToSetting, null);
     }
 
     public void refreshSubscriptionStatus() {

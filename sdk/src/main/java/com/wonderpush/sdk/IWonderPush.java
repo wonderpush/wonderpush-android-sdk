@@ -28,6 +28,7 @@ interface IWonderPush {
     // Subscribing users
     //
 
+    void subscribeToNotifications(boolean fallbackToSettings);
     void subscribeToNotifications();
     void unsubscribeFromNotifications();
     boolean isSubscribedToNotifications();

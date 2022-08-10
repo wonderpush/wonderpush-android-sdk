@@ -51,6 +51,11 @@ abstract class WonderPushLogErrorImpl implements IWonderPush {
     }
 
     @Override
+    public void subscribeToNotifications(boolean fallbackToSettings) {
+        this.log("subscribeToNotifications");
+    }
+
+    @Override
     public void subscribeToNotifications() {
         this.log("subscribeToNotifications");
     }
