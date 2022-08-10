@@ -37,7 +37,7 @@ public class NotificationPermissionController implements PermissionsActivity.Per
      * Returns true when running on Android 13+ with targetSdkVersion >= 33
      * @return
      */
-    private boolean supportsNativePrompt() {
+    protected static boolean supportsNativePrompt() {
         if (Build.VERSION.SDK_INT <= 32) return false;
 
         Context context = WonderPush.getApplicationContext();
