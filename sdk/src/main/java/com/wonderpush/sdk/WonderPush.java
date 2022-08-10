@@ -1916,11 +1916,8 @@ public class WonderPush {
         if (force) {
             WonderPushConfiguration.setNotificationEnabled(!notificationEnabled);
         }
-        if (notificationEnabled) {
-            WonderPush.subscribeToNotifications();
-        } else {
-            WonderPush.unsubscribeFromNotifications();
-        }
+
+        WonderPush.refreshSubscriptionStatus();
     }
 
     static void initializeInAppMessaging(Context context) {
@@ -2086,6 +2083,12 @@ public class WonderPush {
             if (!foundBuildConfig) {
                 Log.w(TAG, "No BuildConfig class found. You probably need to give the value of your gradle defaultConfig.applicationId as the a \"wonderpush_buildConfigPackage\" string resource or a \"com.wonderpush.sdk.buildConfigPackage\" manifest <meta-data>.");
             }
+        }
+
+        // Create the notification channel we if are running on Android 12- or if we target Android 12-
+        // A fresh install on Android 13 for an app targeting less will trigger a prompt on app start
+        if (!NotificationPromptController.supportsPrompt()) {
+            WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists();
         }
 
         return isInitialized();
@@ -2504,6 +2507,18 @@ public class WonderPush {
     }
 
     /**
+     * Enables push notifications for the current device
+     * @param fallbackToSettings Shows a dialog that leads user to the settings should he refuse the permission
+     */
+    public static void subscribeToNotifications(boolean fallbackToSettings) {
+        try {
+            sApiImpl.subscribeToNotifications(fallbackToSettings);
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while subscribing to notifications", e);
+        }
+    }
+
+    /**
      * Enables push notifications for the current device.
      *
      * <p>Does nothing if called without required user consent.</p>
@@ -2586,6 +2601,14 @@ public class WonderPush {
             sApiImpl.setNotificationEnabled(status);
         } catch (Exception e) {
             Log.d(TAG, "Unexpected error while setting notifications enabled", e);
+        }
+    }
+
+    static void refreshSubscriptionStatus() {
+        try {
+            sApiImpl.refreshSubscriptionStatus();
+        } catch (Exception e) {
+            Log.d(TAG, "Unexpected error while refreshing subscription status", e);
         }
     }
 

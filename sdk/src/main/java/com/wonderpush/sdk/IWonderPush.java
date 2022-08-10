@@ -28,6 +28,7 @@ interface IWonderPush {
     // Subscribing users
     //
 
+    void subscribeToNotifications(boolean fallbackToSettings);
     void subscribeToNotifications();
     void unsubscribeFromNotifications();
     boolean isSubscribedToNotifications();
@@ -35,6 +36,7 @@ interface IWonderPush {
     boolean getNotificationEnabled();
     @Deprecated
     void setNotificationEnabled(boolean status);
+    void refreshSubscriptionStatus();
 
     //
     // Segmentation

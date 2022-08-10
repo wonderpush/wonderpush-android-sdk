@@ -8,6 +8,11 @@
     <string name="wonderpush_android_sdk_network_error">Could not load this page, please check your Internet connectivity.</string>
     <string name="wonderpush_android_sdk_could_not_open_location">Could not open location. Do you have Google Maps installed?</string>
     <string name="wonderpush_android_sdk_export_data_chooser">Export data to</string>
+    <string name="wonderpush_android_sdk_permission_not_available_title">Enable %s</string>
+    <string name="wonderpush_android_sdk_permission_not_available_message">You previously denied %s. Please go to settings to enable.</string>
+    <string name="wonderpush_android_sdk_permission_not_available_open_settings_option">Settings</string>
+    <string name="wonderpush_android_sdk_notification_permission_name_for_title">Notifications</string>
+    <string name="wonderpush_android_sdk_notification_permission_settings_message">Notifications</string>
 
     <!-- In-app messaging -->
 

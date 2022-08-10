@@ -88,8 +88,13 @@ class WonderPushImpl implements IWonderPush {
     }
 
     @Override
+    public void subscribeToNotifications(boolean fallbackToSettings) {
+        setNotificationEnabled(true, fallbackToSettings);
+    }
+
+    @Override
     public void subscribeToNotifications() {
-        setNotificationEnabled(true);
+        subscribeToNotifications(false);
     }
 
     @Override
@@ -111,13 +116,23 @@ class WonderPushImpl implements IWonderPush {
     @Override
     @Deprecated
     public void setNotificationEnabled(boolean status) {
-        try {
-            WonderPush.logDebug("Set notification enabled: " + status);
+        setNotificationEnabled(status, false);
+    }
 
+    private void setNotificationEnabled(boolean status, boolean fallbackToSetting) {
+        WonderPush.logDebug("Set notification enabled: " + status);
+        WonderPushConfiguration.setNotificationEnabled(status);
+        refreshSubscriptionStatus();
+        NotificationPromptController.getInstance().prompt(fallbackToSetting, null);
+    }
+
+    public void refreshSubscriptionStatus() {
+        try {
+            boolean subscribedToNotifications = WonderPushConfiguration.getNotificationEnabled();
             WonderPush.SubscriptionStatus previousSubscriptionStatus = WonderPush.getSubscriptionStatus();
             boolean osAreNotificationsEnabled = NotificationManagerCompat.from(WonderPush.getApplicationContext()).areNotificationsEnabled();
             Set<String> disabledChannels = WonderPushUserPreferences.getDisabledChannelIds();
-            String value = status && osAreNotificationsEnabled
+            String value = subscribedToNotifications && osAreNotificationsEnabled
                     ? WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTIN
                     : WonderPush.INSTALLATION_PREFERENCES_SUBSCRIPTION_STATUS_OPTOUT;
 
@@ -125,12 +140,11 @@ class WonderPushImpl implements IWonderPush {
             JSONObject preferences = new JSONObject();
             diff.put("preferences", preferences);
             preferences.put("subscriptionStatus", value);
-            preferences.put("subscribedToNotifications", status);
+            preferences.put("subscribedToNotifications", subscribedToNotifications);
             preferences.put("osNotificationsVisible", osAreNotificationsEnabled);
             preferences.put("disabledAndroidChannels", new JSONArray(disabledChannels));
             JSONSyncInstallation.forCurrentUser().put(diff);
 
-            WonderPushConfiguration.setNotificationEnabled(status);
             WonderPushConfiguration.setCachedOsAreNotificationsEnabled(osAreNotificationsEnabled);
             WonderPushConfiguration.setCachedOsAreNotificationsEnabledDate(TimeSync.getTime());
             WonderPushConfiguration.setCachedDisabledNotificationChannelIds(disabledChannels);
@@ -141,7 +155,7 @@ class WonderPushImpl implements IWonderPush {
             }
 
         } catch (Exception e) {
-            Log.e(WonderPush.TAG, "Unexpected error while setting notification enabled to " + status, e);
+            Log.e(WonderPush.TAG, "Unexpected error while refreshing subscription status", e);
         }
     }
 
