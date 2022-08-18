@@ -70,6 +70,14 @@
         return undefined;
       }
       return function() {
+        // Delay dismiss
+        if (prop === 'dismiss') {
+            return new Promise(function (res, rej) {
+                setTimeout(function() {
+                    callNativeLayer(func, arguments).then(res, rej);
+                }, 10);
+            });
+        }
         return callNativeLayer(func, arguments);
       };
     }.bind(this);
