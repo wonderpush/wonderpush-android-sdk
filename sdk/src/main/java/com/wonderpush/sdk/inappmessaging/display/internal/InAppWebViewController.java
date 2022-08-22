@@ -147,7 +147,13 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
                 try {
                     webView.getContext().startActivity(intent);
                 } catch (ActivityNotFoundException e) {
-                    Logging.loge("No activity for intent " + intent, e);
+                    try {
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+                        browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        webView.getContext().startActivity(browserIntent);
+                    } catch (ActivityNotFoundException e1) {
+                        Logging.loge("No activity for intent " + intent, e1);
+                    }
                 }
             });
         }
