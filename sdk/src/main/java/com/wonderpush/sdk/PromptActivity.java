@@ -140,7 +140,7 @@ public class PromptActivity extends Activity {
             activity.startActivity(intent);
             activity.overridePendingTransition(R.anim.wonderpush_fade_in, R.anim.wonderpush_fade_out);
         } else {
-            Log.e(WonderPush.TAG, "Could not start permission activity");
+            Log.w(WonderPush.TAG, "Could not start permission activity, probably because you are calling subscribeToNotifications too early, like the onCreate() method of your Application class. You must wait to have an activity resumed before calling this method.");
         }
     }
 }
