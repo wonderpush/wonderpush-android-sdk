@@ -26,7 +26,7 @@
     }, []);
   };
 
-  window.WonderPushInAppSDK = new Proxy({}, new function() {
+  window.WonderPushInAppSDK = window.WonderPushPopupSDK = new Proxy({}, new function() {
 
     /**
      * Calls the provided func of the native layer:
@@ -136,62 +136,62 @@
         switch (key) {
           case "wonderpushAddTag":
             fn = function () {
-              window.WonderPushInAppSDK.addTag(val);
+              window.WonderPushPopupSDK.addTag(val);
             };
             break;
           case "wonderpushButtonLabel":
             fn = function () {
-              window.WonderPushInAppSDK.trackClick(val);
+              window.WonderPushPopupSDK.trackClick(val);
             };
             break;
           case "wonderpushDismiss":
             fn = function () {
-              window.WonderPushInAppSDK.dismiss();
+              window.WonderPushPopupSDK.dismiss();
             };
             break;
           case "wonderpushOpenDeepLink":
             fn = function () {
-              window.WonderPushInAppSDK.openDeepLink(val);
+              window.WonderPushPopupSDK.openDeepLink(val);
             };
             break;
           case "wonderpushOpenExternalUrl":
             fn = function () {
-              window.WonderPushInAppSDK.openExternalUrl(val);
+              window.WonderPushPopupSDK.openExternalUrl(val);
             };
             break;
           case "wonderpushRemoveAllTags":
             fn = function () {
-              window.WonderPushInAppSDK.removeAllTags();
+              window.WonderPushPopupSDK.removeAllTags();
             };
             break;
           case "wonderpushRemoveTag":
             fn = function () {
-              window.WonderPushInAppSDK.removeTag(val);
+              window.WonderPushPopupSDK.removeTag(val);
             };
             break;
           case "wonderpushSubscribeToNotifications":
             fn = function () {
-              window.WonderPushInAppSDK.subscribeToNotifications();
+              window.WonderPushPopupSDK.subscribeToNotifications();
             };
             break;
           case "wonderpushTrackEvent":
             fn = function () {
-              window.WonderPushInAppSDK.trackEvent(val);
+              window.WonderPushPopupSDK.trackEvent(val);
             };
             break;
           case "wonderpushTriggerLocationPrompt":
             fn = function () {
-              window.WonderPushInAppSDK.triggerLocationPrompt();
+              window.WonderPushPopupSDK.triggerLocationPrompt();
             };
             break;
           case "wonderpushOpenAppRating":
             fn = function () {
-              window.WonderPushInAppSDK.openAppRating();
+              window.WonderPushPopupSDK.openAppRating();
             };
             break;
           case "wonderpushUnsubscribeFromNotifications":
             fn = function () {
-              window.WonderPushInAppSDK.unsubscribeFromNotifications();
+              window.WonderPushPopupSDK.unsubscribeFromNotifications();
             };
             break;
         }
