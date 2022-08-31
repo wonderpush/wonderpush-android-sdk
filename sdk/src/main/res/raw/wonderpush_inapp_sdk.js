@@ -114,6 +114,7 @@
   var onload = function() {
     // Register event listeners on data-wonderpush-* elements
     var keys = [ // Order matters: we try to dismiss last
+      "wonderpushCallMethod",
       "wonderpushButtonLabel",
       "wonderpushRemoveAllTags", // remove tags before adding them
       "wonderpushRemoveTag",
@@ -134,6 +135,11 @@
         var val = elt.dataset[key];
         var fn;
         switch (key) {
+          case "wonderpushCallMethod":
+            fn = function () {
+              window.WonderPushPopupSDK.callMethod(val);
+            };
+            break;
           case "wonderpushAddTag":
             fn = function () {
               window.WonderPushPopupSDK.addTag(val);

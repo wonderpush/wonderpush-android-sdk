@@ -18,6 +18,8 @@ import android.webkit.*;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.play.core.review.ReviewInfo;
 import com.google.android.play.core.review.ReviewManager;
@@ -26,6 +28,7 @@ import com.google.android.play.core.review.testing.FakeReviewManager;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.SafeDeferProvider;
+import com.wonderpush.sdk.WonderPush;
 import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
@@ -264,6 +267,24 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
                 Logging.loge("Could not get review info", task.getException());
             }
         });
+    }
+
+    @Override
+    public void callMethod(String methodName, String methodArg) {
+        WebView webView = this.webViewRef.get();
+        if (webView == null) return;
+        Context context = webView.getContext().getApplicationContext();
+        Intent intent = new Intent();
+        intent.setPackage(context.getPackageName());
+        intent.setAction(WonderPush.INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_ACTION);
+        intent.setData(new Uri.Builder()
+                .scheme(WonderPush.INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_SCHEME)
+                .authority(WonderPush.INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_AUTHORITY)
+                .appendPath(methodName)
+                .build());
+        intent.putExtra(WonderPush.INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_METHOD, methodName);
+        intent.putExtra(WonderPush.INTENT_NOTIFICATION_BUTTON_ACTION_METHOD_EXTRA_ARG, methodArg);
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 
     @Override

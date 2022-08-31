@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.webkit.JavascriptInterface;
 
 import androidx.annotation.Nullable;
+
 import com.wonderpush.sdk.WonderPush;
 
 import org.json.JSONArray;
@@ -25,6 +26,7 @@ public class InAppWebViewBridge {
         void openAppRating();
         void trackEvent(String type);
         void trackEvent(String type, JSONObject attributes);
+        void callMethod(String methodName, String methodArg);
         JSONObject getPayload();
     }
 
@@ -340,6 +342,27 @@ public class InAppWebViewBridge {
             return toJavascriptError("Null controller");
         }
         controller.openAppRating();
+        return null;
+    }
+
+    @JavascriptInterface
+    public @Nullable String callMethod(String methodNameArg) {
+        String methodName = argToString(methodNameArg);
+        if (methodName == null) return toJavascriptError("Method name cannot be null");
+        Controller controller = controllerRef.get();
+        if (controller == null) return toJavascriptError("Null controller");
+        controller.callMethod(methodName, null);
+        return null;
+    }
+
+    @JavascriptInterface
+    public @Nullable String callMethod(String methodNameArg, String methodArgArg) {
+        String methodName = argToString(methodNameArg);
+        if (methodName == null) return toJavascriptError("Method name cannot be null");
+        String methodArg = argToString(methodArgArg);
+        Controller controller = controllerRef.get();
+        if (controller == null) return toJavascriptError("Null controller");
+        controller.callMethod(methodName, methodArg);
         return null;
     }
 }
