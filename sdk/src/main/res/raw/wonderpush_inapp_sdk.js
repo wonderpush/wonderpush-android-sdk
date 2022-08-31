@@ -67,7 +67,7 @@
       if (this.hasOwnProperty(prop)) return this[prop];
       var func = window._wpiam[prop];
       if (!func) {
-        return undefined;
+        return function() { return Promise.reject(new Error('Unknown method '+prop)); };
       }
       return function() {
         // Delay dismiss
