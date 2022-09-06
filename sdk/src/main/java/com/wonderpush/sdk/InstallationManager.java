@@ -268,6 +268,7 @@ public class InstallationManager {
                     JSONObject device = new JSONObject();
                     device.put("id", WonderPush.getDeviceId());
                     device.put("platform", "Android");
+                    device.put("category", "mobile");
                     device.put("osVersion", getOsVersion());
                     device.put("brand", getDeviceBrand());
                     device.put("model", getDeviceModel());
