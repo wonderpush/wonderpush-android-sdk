@@ -239,13 +239,17 @@ public class JSONUtil {
     }
 
     public static String optString(JSONObject object, String field) {
-        if (object == null) return null;
-        if (!object.has(field) || object.isNull(field)) return null;
+        return optString(object, field, null);
+    }
+
+    public static String optString(JSONObject object, String field, String fallback) {
+        if (object == null) return fallback;
+        if (!object.has(field) || object.isNull(field)) return fallback;
         Object value = object.opt(field);
         if (value instanceof String) {
             return (String) value;
         }
-        return null;
+        return fallback;
     }
 
     public static Boolean optBoolean(JSONObject object, String field) {
