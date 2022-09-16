@@ -32,7 +32,7 @@ public class MediaLoader {
 
                         @Override
                         public void onError(Exception e) {
-                            if (onError != null) onError(e);
+                            if (onError != null) onError.accept(e);
                         }
                     });
         } else if (onSuccess != null) {
