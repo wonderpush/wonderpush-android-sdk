@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.JSONUtil;
 import com.wonderpush.sdk.NotificationMetadata;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
@@ -57,11 +58,11 @@ public class CardMessage extends InAppMessage {
     Text bodyText = Text.fromJSON(content.optJSONObject("body"));
 
     // Images
-    String portraitImageUrl =content.optString("portraitImageUrl", null);
-    String landscapeImageUrl = content.optString("landscapeImageUrl", null);
+    String portraitImageUrl = JSONUtil.optString(content, "portraitImageUrl");
+    String landscapeImageUrl = JSONUtil.optString(content, "landscapeImageUrl");
 
     // Background (mandatory)
-    String backgroundHexColor = content.optString("backgroundHexColor", "#FFFFFF");
+    String backgroundHexColor = JSONUtil.optString(content, "backgroundHexColor", "#FFFFFF");
 
     // Actions & buttons
     Button primaryActionButton = Button.fromJSON(content.optJSONObject("primaryActionButton"));

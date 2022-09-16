@@ -42,7 +42,7 @@ public class WebViewMessage extends InAppMessage implements InAppMessage.InAppMe
         // Actions
         List <ActionModel> actions = ActionModel.from(webViewJson.optJSONArray("actions"));
 
-        String closeButtonPositionString = webViewJson.optString("closeButtonPosition", "inside");
+        String closeButtonPositionString = JSONUtil.optString(webViewJson, "closeButtonPosition", "inside");
         InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
         if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;
 

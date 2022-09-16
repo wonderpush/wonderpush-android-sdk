@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.JSONUtil;
 import com.wonderpush.sdk.NotificationMetadata;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
@@ -50,17 +51,17 @@ public class ModalMessage extends InAppMessage implements InAppMessage.InAppMess
     Text bodyText = Text.fromJSON(modalJson.optJSONObject("body"));
 
     // Image
-    String imageUrl = modalJson.optString("imageUrl", null);
+    String imageUrl = JSONUtil.optString(modalJson, "imageUrl");
 
     // Background color
-    String backgroundHexColor = modalJson.optString("backgroundHexColor", "#FFFFFF");
+    String backgroundHexColor = JSONUtil.optString(modalJson, "backgroundHexColor", "#FFFFFF");
 
     // Action & button
     Button actionButton = Button.fromJSON(modalJson.optJSONObject("actionButton"));
 
     List<ActionModel> actions = ActionModel.from(modalJson.optJSONArray("actions"));
 
-    String closeButtonPositionString = modalJson.optString("closeButtonPosition", "outside");
+    String closeButtonPositionString = JSONUtil.optString(modalJson, "closeButtonPosition", "outside");
     InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
     if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
     if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;

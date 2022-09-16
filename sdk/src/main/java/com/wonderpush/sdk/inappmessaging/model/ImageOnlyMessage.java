@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 
 import android.text.TextUtils;
 import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.JSONUtil;
 import com.wonderpush.sdk.NotificationMetadata;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
@@ -40,7 +41,7 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
 
   public static ImageOnlyMessage create(NotificationMetadata notificationMetadata, JSONObject payloadJson, JSONObject imageOnlyJson) throws Campaign.InvalidJsonException {
     // Image
-    String imageUrlString = imageOnlyJson.optString("imageUrl", null);
+    String imageUrlString = JSONUtil.optString(imageOnlyJson, "imageUrl");
     if (TextUtils.isEmpty(imageUrlString)) {
       throw new Campaign.InvalidJsonException("Missing image in imageOnly payload:" + imageOnlyJson.toString());
     }
@@ -48,7 +49,7 @@ public class ImageOnlyMessage extends InAppMessage implements InAppMessage.InApp
     // Actions
     List <ActionModel> actions = ActionModel.from(imageOnlyJson.optJSONArray("actions"));
 
-    String closeButtonPositionString = imageOnlyJson.optString("closeButtonPosition", "outside");
+    String closeButtonPositionString = JSONUtil.optString(imageOnlyJson, "closeButtonPosition", "outside");
     InAppMessage.CloseButtonPosition closeButtonPosition = InAppMessage.CloseButtonPosition.OUTSIDE;
     if ("inside".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.INSIDE;
     if ("none".equals(closeButtonPositionString)) closeButtonPosition = InAppMessage.CloseButtonPosition.NONE;

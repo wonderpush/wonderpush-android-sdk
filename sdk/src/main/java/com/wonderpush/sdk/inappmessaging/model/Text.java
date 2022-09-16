@@ -70,7 +70,7 @@ public class Text {
 
   public static Text fromJSON(JSONObject data) {
     if (data == null) return null;
-    String text = data.optString("text");
+    String text = JSONUtil.optString(data, "text");
     String hexColor = data.optString("hexColor");
     if (text == null) return null;
     return new Text(text, hexColor);

@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.wonderpush.sdk.ActionModel;
+import com.wonderpush.sdk.JSONUtil;
 import com.wonderpush.sdk.NotificationMetadata;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
@@ -49,12 +50,12 @@ public class BannerMessage extends InAppMessage implements InAppMessage.InAppMes
     Text bodyText = Text.fromJSON(bannerJson.optJSONObject("body"));
 
     // Image
-    String imageUrl = bannerJson.optString("imageUrl", null);
+    String imageUrl = JSONUtil.optString(bannerJson, "imageUrl");
 
     // Background color
-    String backgroundHexColor = bannerJson.optString("backgroundHexColor", "#FFFFFF");
+    String backgroundHexColor = JSONUtil.optString(bannerJson, "backgroundHexColor", "#FFFFFF");
 
-    String bannerPositionString = bannerJson.optString("bannerPosition", "top");
+    String bannerPositionString = JSONUtil.optString(bannerJson, "bannerPosition", "top");
     InAppMessage.BannerPosition bannerPosition = InAppMessage.BannerPosition.TOP;
     if ("bottom".equals(bannerPositionString)) bannerPosition = InAppMessage.BannerPosition.BOTTOM;
 
