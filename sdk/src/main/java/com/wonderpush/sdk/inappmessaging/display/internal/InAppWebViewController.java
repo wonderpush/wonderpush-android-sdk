@@ -9,6 +9,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -304,6 +305,15 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
             }
         }
         trackEventProvider.trackInAppEvent(type, eventData, attributes);
+    }
+
+    @Override
+    public void setClipPath(Rect clipPath) {
+        WebView webView = this.webViewRef.get();
+        if (webView == null) return;
+        if (webView instanceof InAppWebView) {
+            ((InAppWebView)webView).setClipPath(clipPath);
+        }
     }
 
     public static class WebViewLoadingException extends Exception {

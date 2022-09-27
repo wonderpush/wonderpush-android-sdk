@@ -29,6 +29,7 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
+import com.wonderpush.sdk.inappmessaging.display.internal.layout.IamRelativeLayout;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -61,6 +62,9 @@ public class IamWindowManager {
 
     final WindowManager windowManager = getWindowManager(activity);
     final View rootView = bindingWrapper.getRootView();
+    if (rootView instanceof IamRelativeLayout) {
+      ((IamRelativeLayout)rootView).setActivity(activity);
+    }
     windowManager.addView(rootView, layoutParams);
 
     // Set 'window' left and right padding from the inset, this prevents

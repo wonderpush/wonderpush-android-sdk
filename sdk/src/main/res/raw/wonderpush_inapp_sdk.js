@@ -1,4 +1,4 @@
-(function() {
+(function () {
   if (typeof window === 'undefined') return;
 
   /**
@@ -6,10 +6,10 @@
    * @param args
    * @returns {unknown[]}
    */
-  var convertArguments = function(args) {
+  var convertArguments = function (args) {
     args = Array.from(args);
-    return args.map(function(elt) {
-        return JSON.stringify({value: elt});
+    return args.map(function (elt) {
+      return JSON.stringify({value: elt});
     });
   };
 
@@ -18,65 +18,76 @@
    * @param array
    * @returns array
    */
-  var flatten = function(array) {
-    return array.reduce(function(acc, cur) {
-      if (Array.isArray(cur)) cur.forEach(function(elt) { acc.push(elt); });
+  var flatten = function (array) {
+    return array.reduce(function (acc, cur) {
+      if (Array.isArray(cur)) cur.forEach(function (elt) {
+        acc.push(elt);
+      });
       else acc.push(cur);
       return acc;
     }, []);
   };
 
-  window.WonderPushInAppSDK = window.WonderPushPopupSDK = new Proxy({}, new function() {
-
-    /**
-     * Calls the provided func of the native layer:
-     * - handles argument serialization
-     * - handles result deserialization
-     * - handles errors
-     * @param func
-     * @param args
-     * @returns {Promise<any>}
-     */
-    var callNativeLayer = function(func, args) {
-      try {
-        var result = func.apply(window._wpiam, convertArguments(args));
-        if (result === null || result === undefined) {
-            return Promise.resolve();
-        }
-        if (typeof result === 'string') {
-            try {
-              var decoded = JSON.parse(result);
-              if ("result" in decoded) return Promise.resolve(decoded.result);
-              if ("error" in decoded) return Promise.reject(new Error(decoded.error));
-            } catch (e) {
-              console.error(e);
-              // Return result as-is.
-            }
-        }
-        return Promise.resolve(result);
-      } catch (e) {
-        return Promise.reject(e);
+  /**
+   * Calls the provided func of the native layer:
+   * - handles argument serialization
+   * - handles result deserialization
+   * - handles errors
+   * @param func
+   * @param args
+   * @returns {Promise<any>}
+   */
+  var callNativeLayer = function (func, args) {
+    try {
+      var result = func.apply(window._wpiam, convertArguments(args));
+      if (result === null || result === undefined) {
+        return Promise.resolve();
       }
-    };
+      if (typeof result === 'string') {
+        try {
+          var decoded = JSON.parse(result);
+          if ("result" in decoded) return Promise.resolve(decoded.result);
+          if ("error" in decoded) return Promise.reject(new Error(decoded.error));
+        } catch (e) {
+          console.error(e);
+          // Return result as-is.
+        }
+      }
+      return Promise.resolve(result);
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+  /**
+   * Send clipPath messages
+   */
+  var sendClipPathMessage = function () {
+    var rect = document.body.getBoundingClientRect();
+    callNativeLayer(window._wpiam.setClipPath, [{rect: JSON.parse(JSON.stringify(rect))}]);
+  };
+
+  window.WonderPushInAppSDK = window.WonderPushPopupSDK = new Proxy({}, new function () {
 
     /**
      * The main Proxy method
      * @type {any}
      */
-    this.get = function(target, prop, receiver) {
+    this.get = function (target, prop, receiver) {
       if (this.hasOwnProperty(prop)) return this[prop];
       var func = window._wpiam[prop];
       if (!func) {
-        return function() { return Promise.reject(new Error('Unknown method '+prop)); };
+        return function () {
+          return Promise.reject(new Error('Unknown method ' + prop));
+        };
       }
-      return function() {
+      return function () {
         // Delay dismiss
         if (prop === 'dismiss') {
-            return new Promise(function (res, rej) {
-                setTimeout(function() {
-                    callNativeLayer(func, arguments).then(res, rej);
-                }, 10);
-            });
+          return new Promise(function (res, rej) {
+            setTimeout(function () {
+              callNativeLayer(func, arguments).then(res, rej);
+            }, 10);
+          });
         }
         return callNativeLayer(func, arguments);
       };
@@ -88,7 +99,7 @@
      * - a variable argument signature with multiple strings
      * @returns {Promise<void>}
      */
-    this.addTag = function() {
+    this.addTag = function () {
       // Flatten to accept variable arguments or an array of tags as first arg
       // always calling the native layer with a flat array of strings
       var tags = flatten(Array.from(arguments));
@@ -101,7 +112,7 @@
      * - a variable argument signature with multiple strings
      * @returns {Promise<void>}
      */
-    this.removeTag = function() {
+    this.removeTag = function () {
       // Flatten to accept variable arguments or an array of tags as first arg.
       // always calling the native layer with a flat array of strings
       var tags = flatten(Array.from(arguments));
@@ -111,7 +122,11 @@
   });
 
   // Executed when the window is loaded
-  var onload = function() {
+  var onload = function () {
+    // Register resize handler
+    window.addEventListener('resize', sendClipPathMessage);
+    sendClipPathMessage();
+
     // Register event listeners on data-wonderpush-* elements
     var keys = [ // Order matters: we try to dismiss last
       "wonderpushCallMethod",
@@ -128,7 +143,7 @@
       "wonderpushOpenExternalUrl",
       "wonderpushDismiss",
     ];
-    document.querySelectorAll('*').forEach(function(elt) {
+    document.querySelectorAll('*').forEach(function (elt) {
       if (!elt.dataset) return;
       keys.forEach(function (key) {
         if (!(key in elt.dataset)) return;

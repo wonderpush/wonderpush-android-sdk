@@ -1,5 +1,6 @@
 package com.wonderpush.sdk.inappmessaging.display.internal;
 
+import android.graphics.Rect;
 import android.net.Uri;
 import android.webkit.JavascriptInterface;
 
@@ -27,6 +28,7 @@ public class InAppWebViewBridge {
         void trackEvent(String type);
         void trackEvent(String type, JSONObject attributes);
         void callMethod(String methodName, String methodArg);
+        void setClipPath(Rect clipPath);
         JSONObject getPayload();
     }
 
@@ -364,5 +366,29 @@ public class InAppWebViewBridge {
         if (controller == null) return toJavascriptError("Null controller");
         controller.callMethod(methodName, methodArg);
         return null;
+    }
+
+    @JavascriptInterface
+    public void setClipPath(String encodedClipPath) {
+        JSONObject clipPathJson = argToJSONObject(encodedClipPath);
+        if (clipPathJson == null) return;
+        Controller controller = controllerRef.get();
+        if (controller == null) return;
+        if (clipPathJson.isNull("rect")) {
+            controller.setClipPath(null);
+            return;
+        }
+        JSONObject rectJson = clipPathJson.optJSONObject("rect");
+        if (rectJson == null) return;
+
+        int left=0, top=0, right=0, bottom=0;
+        left = rectJson.optInt("left", left);
+        top = rectJson.optInt("top", top);
+        right = rectJson.optInt("right", right);
+        bottom = rectJson.optInt("bottom", bottom);
+        if (!(left == 0 && right == 0 && top == 0 && bottom == 0)) {
+            Rect clipPath = new Rect(left, top, right, bottom);
+            controller.setClipPath(clipPath);
+        }
     }
 }

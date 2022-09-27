@@ -4,4 +4,7 @@
     <attr name="maxWidthPct" format="float" type="dimen" />
     <attr name="maxHeightPct" format="float" type="dimen" />
   </declare-styleable>
+  <declare-styleable name="IamRelativeLayout">
+    <attr name="forwardTouchEventsToApplicationWindow" format="boolean" type="boolean" />
+  </declare-styleable>
 </resources>

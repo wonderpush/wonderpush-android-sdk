@@ -54,7 +54,7 @@ public class WebViewBindingWrapper extends BindingWrapper {
     @Nullable
     @Override
     public View getDismissView() {
-        return webViewRoot;
+        return null;
     }
 
     @Nullable
