@@ -10,6 +10,8 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import java.util.ArrayList;
+
 public class WonderPushNotificationTrackingReceiver extends Activity {
 
     @Override
@@ -19,6 +21,7 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
         try {
             // Track the notification click
             track(getIntent());
+            jumpToDestination(getIntent());
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Failed to track notification", ex);
         }
@@ -35,6 +38,7 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
         try {
             // Track the notification click
             track(getIntent());
+            jumpToDestination(getIntent());
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Failed to track notification", ex);
         }
@@ -77,6 +81,24 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX,
                             intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1));
                     LocalBroadcastManager.getInstance(this).sendBroadcast(notificationWillOpenIntent);
+                }
+            }
+        }
+    }
+
+    private void jumpToDestination(Intent intent) {
+        if (intent != null) {
+            Parcelable[] destinationIntentsParcelables = intent.getParcelableArrayExtra("destinationIntents");
+            if (destinationIntentsParcelables != null) {
+                ArrayList<Intent> destinationIntents = new ArrayList<>(destinationIntentsParcelables.length);
+                for (Parcelable destinationIntentsParcelable : destinationIntentsParcelables) {
+                    if (destinationIntentsParcelable instanceof Intent) {
+                        destinationIntents.add((Intent) destinationIntentsParcelable);
+                    }
+                }
+                if (!destinationIntents.isEmpty()) {
+                    Intent[] intents = destinationIntents.toArray(new Intent[0]);
+                    this.startActivities(intents);
                 }
             }
         }

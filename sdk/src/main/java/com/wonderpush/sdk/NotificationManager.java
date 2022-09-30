@@ -441,10 +441,9 @@ public class NotificationManager {
             }
 
             // Create the composite PendingIntent
-            Intent[] intents;
+            Intent[] intents = null;
             if (destinationIntent == null) {
                 wpTrackingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); // avoid bringing the background app to the front
-                intents = new Intent[] { wpTrackingIntent };
             } else {
                 TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
                 stackBuilder.addNextIntentWithParentStack(destinationIntent);
@@ -453,7 +452,6 @@ public class NotificationManager {
                         Log.w(TAG, "Before Android 23 there is a known bug preventing from tracking opens when the deeplink opens an external application. Contact us if needed.");
                     } else {
                         wpTrackingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); // avoid bringing the background app to the front
-                        stackBuilder.addNextIntent(wpTrackingIntent);
                     }
                 } else {
                     if (stackBuilder.getIntentCount() == 1) {
@@ -472,7 +470,6 @@ public class NotificationManager {
                             } // else: the target activity is already the default activity, don't add anything to the parent stack
                         }
                     }
-                    stackBuilder.addNextIntent(wpTrackingIntent);
                 }
                 intents = stackBuilder.getIntents();
                 // Clear the first intent of any flags added by TaskStackBuilder
@@ -480,7 +477,12 @@ public class NotificationManager {
                     intents[0].setFlags(intents[0].getFlags() & (Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED));
                 }
             }
-            return PendingIntent.getActivities(context, 0, intents,
+
+            if (intents != null) {
+                wpTrackingIntent.putExtra("destinationIntents", intents);
+            }
+
+            return PendingIntent.getActivity(context, 0, wpTrackingIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT
                     | WonderPushCompatibilityHelper.getPendingIntentFlagImmutable());
         }
