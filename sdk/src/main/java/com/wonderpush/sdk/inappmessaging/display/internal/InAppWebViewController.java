@@ -299,7 +299,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
         NotificationMetadata metadata = webViewMessage.getNotificationMetadata();
         if (metadata != null) {
             try {
-                metadata.fill(eventData);
+                metadata.fill(eventData, NotificationMetadata.AttributionReason.INAPP_VIEWED);
             } catch (JSONException e) {
                 Logging.loge("Could not serialize notification metadata", e);
             }

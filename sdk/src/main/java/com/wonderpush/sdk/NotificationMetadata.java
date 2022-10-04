@@ -59,15 +59,29 @@ public class NotificationMetadata {
   }
 
   public void fill(JSONObject json) throws JSONException {
+    fill(json, null);
+  }
+  public void fill(JSONObject json, String reportingAttributionReason) throws JSONException {
     if (json != null && json.isNull("campaignId") && json.isNull("notificationId") && json.isNull("viewId") && json.isNull("reporting")) {
-      json.put("campaignId", getCampaignId());
-      json.put("notificationId", getNotificationId());
-      json.put("viewId", getViewId());
-      json.put("reporting", getReporting());
+      json.putOpt("campaignId", getCampaignId());
+      json.putOpt("notificationId", getNotificationId());
+      json.putOpt("viewId", getViewId());
+      JSONObject reporting = getReporting();
+      if (reportingAttributionReason != null) {
+        reporting = reporting == null ? new JSONObject() : reporting;
+        reporting.put("attributionReason", reportingAttributionReason);
+      }
+      json.putOpt("reporting", reporting);
     }
   }
 
   public boolean getIsTestMessage() {
     return isTestMessage;
+  }
+
+  public static class AttributionReason {
+    public static final String INAPP_VIEWED = "inAppViewed";
+    public static final String NOTIFICATION_OPENED = "notificationOpened";
+    public static final String RECENT_NOTIFICATION_OPENED = "recentNotificationOpened";
   }
 }

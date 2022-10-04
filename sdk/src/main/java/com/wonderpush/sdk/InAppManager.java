@@ -84,10 +84,8 @@ class InAppManager {
             eventData.put("buttonLabel", buttonClicked == null ? null : buttonClicked.label);
             eventData.put("reactionTime", dialog.getShownDuration());
             eventData.putOpt("custom", dialog.getInteractionEventCustom());
-            eventData.put("campaignId", dialog.getNotificationModel().getCampaignId());
-            eventData.put("notificationId", dialog.getNotificationModel().getNotificationId());
-            eventData.put("viewId", dialog.getNotificationModel().getViewId());
-            eventData.put("reporting", dialog.getNotificationModel().getReporting());
+            NotificationMetadata metadata = new NotificationMetadata(dialog.getNotificationModel());
+            metadata.fill(eventData);
         } catch (JSONException e) {
             WonderPush.logError("Failed to fill the @NOTIFICATION_ACTION event", e);
         }
@@ -99,7 +97,7 @@ class InAppManager {
         }
         Context context = dialog.getContext();
         try {
-            NotificationManager.handleActions(context, new NotificationMetadata(dialog.getNotificationModel()), buttonClicked.actions);
+            NotificationManager.handleActions(context, new NotificationMetadata(dialog.getNotificationModel()), buttonClicked.actions, null);
         } catch (Exception ex) {
             Log.e(NotificationManager.TAG, "Unexpected error while handling button actions", ex);
         }

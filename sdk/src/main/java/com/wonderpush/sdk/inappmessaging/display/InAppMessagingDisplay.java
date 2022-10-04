@@ -26,6 +26,7 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 
 import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationManager;
+import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
@@ -372,7 +373,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                       callbacks.messageClicked(actions);
                     }
 
-                    NotificationManager.handleActions(activity, inAppMessage.getNotificationMetadata(), actions);
+                    NotificationManager.handleActions(activity, inAppMessage.getNotificationMetadata(), actions, NotificationMetadata.AttributionReason.INAPP_VIEWED);
 
                     notifyIamClick();
                     // Ensure that we remove the displayed IAM, and ensure that on re-load, the message

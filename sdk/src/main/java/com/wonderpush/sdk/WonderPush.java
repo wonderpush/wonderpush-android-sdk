@@ -1485,7 +1485,7 @@ public class WonderPush {
             // Notification metadata
             NotificationMetadata metadata = NotificationManager.getLastClickedNotificationMetadata();
             if (metadata != null) {
-                metadata.fill(event);
+                metadata.fill(event, NotificationMetadata.AttributionReason.RECENT_NOTIFICATION_OPENED);
             }
         } catch (JSONException ex) {
             WonderPush.logError("Error building event object body", ex);
@@ -1615,21 +1615,19 @@ public class WonderPush {
             }
             NotificationManager.setLastClickedNotificationMetadata(null);
             // Add the information of the clicked notification
-            if (now - lastOpenedNotificationDate < 10 * 1000) { // allow a few seconds between click on the notification and the call to this method
+            if (now - lastOpenedNotificationDate < 10 * 1000 && lastOpenedNotificationInfo.length() > 0) { // allow a few seconds between click on the notification and the call to this method
                 String notificationId = JSONUtil.optString(lastOpenedNotificationInfo, "notificationId");
                 String campaignId = JSONUtil.optString(lastOpenedNotificationInfo, "campaignId");
                 String viewId = JSONUtil.optString(lastOpenedNotificationInfo, "viewId");
                 JSONObject reporting = lastOpenedNotificationInfo.optJSONObject("reporting");
+                NotificationMetadata metadata = new NotificationMetadata(campaignId, notificationId, viewId, reporting, false);
                 try {
-                    openInfo.putOpt("notificationId", notificationId);
-                    openInfo.putOpt("campaignId", campaignId);
-                    openInfo.putOpt("viewId", viewId);
-                    openInfo.putOpt("reporting", reporting);
+                    metadata.fill(openInfo, NotificationMetadata.AttributionReason.RECENT_NOTIFICATION_OPENED);
                 } catch (JSONException e) {
                     logDebug("Failed to fill @APP_OPEN opened notification information", e);
                 }
                 if (campaignId != null || notificationId != null || viewId != null || reporting != null) {
-                    NotificationManager.setLastClickedNotificationMetadata(new NotificationMetadata(campaignId, notificationId, viewId, reporting, false));
+                    NotificationManager.setLastClickedNotificationMetadata(metadata);
                 }
             }
             // Presence

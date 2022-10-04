@@ -56,10 +56,7 @@ public class MetricsLoggerClient {
   private JSONObject eventData(NotificationMetadata metadata, @Nullable Map<String, Object> data) {
     JSONObject eventData = data != null ? new JSONObject(data) : new JSONObject();
     try {
-      if (metadata.getCampaignId() != null) eventData.put("campaignId", metadata.getCampaignId());
-      if (metadata.getNotificationId() != null) eventData.put("notificationId", metadata.getNotificationId());
-      if (metadata.getViewId() != null) eventData.put("viewId", metadata.getViewId());
-      if (metadata.getReporting() != null) eventData.put("reporting", metadata.getReporting());
+      metadata.fill(eventData, NotificationMetadata.AttributionReason.INAPP_VIEWED);
       eventData.put("actionDate", TimeSync.getTime());
     } catch (JSONException e) {}
     return eventData;

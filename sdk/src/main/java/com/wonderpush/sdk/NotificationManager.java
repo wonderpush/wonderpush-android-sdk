@@ -64,14 +64,12 @@ public class NotificationManager {
             return;
         }
 
-        handleActions(context, new NotificationMetadata(notif), notif.getReceiveActions());
+        NotificationMetadata metadata = new NotificationMetadata(notif);
+        handleActions(context, metadata, notif.getReceiveActions(), null);
 
         try {
             final JSONObject trackData = new JSONObject();
-            trackData.put("campaignId", notif.getCampaignId());
-            trackData.put("notificationId", notif.getNotificationId());
-            trackData.put("viewId", notif.getViewId());
-            trackData.put("reporting", notif.getReporting());
+            metadata.fill(trackData);
             trackData.put("actionDate", TimeSync.getTime());
             boolean notifReceipt = notif.getReceipt();
             boolean receiptUsingMeasurements = notif.getReceiptUsingMeasurements();
@@ -981,16 +979,13 @@ public class NotificationManager {
         int clickedButtonIndex = intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1);
         try {
             JSONObject trackData = new JSONObject();
-            trackData.put("campaignId", notif.getCampaignId());
-            trackData.put("notificationId", notif.getNotificationId());
-            trackData.put("viewId", notif.getViewId());
-            trackData.put("reporting", notif.getReporting());
+            NotificationMetadata metadata = new NotificationMetadata(notif);
+            metadata.fill(trackData, NotificationMetadata.AttributionReason.NOTIFICATION_OPENED);
             trackData.put("actionDate", TimeSync.getTime());
             if (clickedButtonIndex >= 0 && notif.getAlert() != null && notif.getAlert().getButtons() != null && clickedButtonIndex < notif.getAlert().getButtons().size()) {
                 NotificationButtonModel button = notif.getAlert().getButtons().get(clickedButtonIndex);
                 trackData.put("buttonLabel", button.label);
             }
-            NotificationMetadata metadata = new NotificationMetadata(notif);
             sLastClickedNotificationMetadata = metadata;
             if (WonderPush.isSubscriptionStatusOptIn()) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
@@ -1032,23 +1027,23 @@ public class NotificationManager {
             // Notification button-specific actions
             actions = notif.getAlert().getButtons().get(clickedButtonIndex).actions;
         }
-        handleActions(context, new NotificationMetadata(notif), actions);
+        handleActions(context, new NotificationMetadata(notif), actions, NotificationMetadata.AttributionReason.NOTIFICATION_OPENED);
     }
 
-    public static void handleActions(Context context, NotificationMetadata notificationMetadata, List<ActionModel> actions) {
+    public static void handleActions(Context context, NotificationMetadata notificationMetadata, List<ActionModel> actions, String reportingAttributionReason) {
         if (actions == null)
             return;
 
         try {
             for (ActionModel action : actions) {
-                handleAction(context, notificationMetadata, action);
+                handleAction(context, notificationMetadata, action, reportingAttributionReason);
             }
         } catch (Exception ex) {
             Log.e(TAG, "Unexpected error while handling actions", ex);
         }
     }
 
-    protected static void handleAction(Context context, NotificationMetadata notificationMetadata, ActionModel action) {
+    protected static void handleAction(Context context, NotificationMetadata notificationMetadata, ActionModel action, String reportingAttributionReason) {
         try {
             if (action == null || action.getType() == null) {
                 // Skip unrecognized action types
@@ -1069,7 +1064,7 @@ public class NotificationManager {
                     handleRatingAction(context, action);
                     break;
                 case TRACK_EVENT:
-                    handleTrackEventAction(notificationMetadata, action);
+                    handleTrackEventAction(notificationMetadata, action, reportingAttributionReason);
                     break;
                 case UPDATE_INSTALLATION:
                     handleUpdateInstallationAction(action);
@@ -1164,7 +1159,7 @@ public class NotificationManager {
         }
     }
 
-    protected static void handleTrackEventAction(NotificationMetadata notificationMetadata, ActionModel action) {
+    protected static void handleTrackEventAction(NotificationMetadata notificationMetadata, ActionModel action, String reportingAttributionReason) {
         JSONObject event = action.getEvent();
         if (event == null) {
             Log.e(TAG, "Got no event to track for a " + ActionModel.Type.TRACK_EVENT + " action");
@@ -1176,10 +1171,7 @@ public class NotificationManager {
         }
         JSONObject trackingData = new JSONObject();
         try {
-            trackingData.putOpt("campaignId", notificationMetadata.getCampaignId());
-            trackingData.putOpt("notificationId", notificationMetadata.getNotificationId());
-            trackingData.putOpt("viewId", notificationMetadata.getViewId());
-            trackingData.putOpt("reporting", notificationMetadata.getReporting());
+            notificationMetadata.fill(trackingData, reportingAttributionReason);
         } catch (JSONException ex) {
             Log.e(TAG, "Unexpected error while adding notification tracking info in trackEvent", ex);
         }
