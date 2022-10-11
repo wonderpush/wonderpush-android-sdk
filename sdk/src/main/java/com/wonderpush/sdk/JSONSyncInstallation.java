@@ -155,11 +155,11 @@ public class JSONSyncInstallation {
         }
     }
 
-    public static void setDisabled(boolean disabled) {
+    public static synchronized void setDisabled(boolean disabled) {
         JSONSyncInstallation.disabled = disabled;
     }
 
-    public static boolean isDisabled() {
+    public static synchronized boolean isDisabled() {
         return disabled;
     }
 
@@ -262,7 +262,7 @@ public class JSONSyncInstallation {
             handler.onFailure();
             return;
         }
-        if (disabled) {
+        if (isDisabled()) {
             WonderPush.logDebug("JsonSync PATCH calls disabled");
             handler.onFailure();
             return;
