@@ -163,7 +163,9 @@ public class JSONSyncInstallation extends JSONSync {
                 sScheduledPatchCallDelayedTaskPerUserId.remove(userId);
             }
         }
-        performScheduledPatchCall();
+        WonderPush.safeDefer(() -> {
+            performScheduledPatchCall();
+        }, 0);
     }
 
     @Override
