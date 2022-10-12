@@ -117,7 +117,7 @@ public class RateLimiterTest {
         limiter1.increment(limit);
         RateLimiter limiter2 = new RateLimiter(prefs);
         assertTrue(limiter2.isRateLimited(limit));
-        waitFor(500);
+        waitFor(510);
         assertFalse(limiter2.isRateLimited(limit));
     }
 
