@@ -147,7 +147,9 @@ abstract class JSONSync {
         if (diff == null) diff = new JSONObject();
         JSONUtil.merge(sdkState, diff);
         JSONUtil.merge(putAccumulator, diff, false);
-        schedulePatchCallAndSave();
+        WonderPush.safeDefer(() -> {
+            schedulePatchCallAndSave();
+        }, 0);
     }
 
     public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
