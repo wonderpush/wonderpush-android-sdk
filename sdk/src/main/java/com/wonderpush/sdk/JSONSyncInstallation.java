@@ -26,7 +26,7 @@ public class JSONSyncInstallation {
     private long firstDelayedWriteDate;
     private static boolean disabled = false;
 
-    private static ScheduledFuture<Void> scheduledPatchCallDelayedTask;
+    private ScheduledFuture<Void> scheduledPatchCallDelayedTask;
 
     private class Callbacks implements JSONSync.Callbacks {
         @Override
