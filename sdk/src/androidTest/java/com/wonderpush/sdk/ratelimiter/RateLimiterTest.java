@@ -2,19 +2,30 @@ package com.wonderpush.sdk.ratelimiter;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.test.InstrumentationTestCase;
 
-public class RateLimiterTest extends InstrumentationTestCase {
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import static org.junit.Assert.*;
+
+@RunWith(AndroidJUnit4.class)
+public class RateLimiterTest {
+
+    @Before
     public void setUp() {
         RateLimiter.initialize(getSharedPreferences());
     }
 
     private SharedPreferences getSharedPreferences() {
-        Context context = getInstrumentation().getContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         return context.getSharedPreferences("RateLimiterTest", Context.MODE_PRIVATE);
     }
 
+    @Test
     public void testSimple() throws RateLimiter.MissingSharedPreferencesException, InterruptedException {
         RateLimit limit = new RateLimit("testLimit", 1000, 5);
         RateLimiter limiter = RateLimiter.getInstance();
@@ -52,6 +63,7 @@ public class RateLimiterTest extends InstrumentationTestCase {
         assertFalse(limiter.isRateLimited(limit));
     }
 
+    @Test
     public void testFloatingWindow() throws RateLimiter.MissingSharedPreferencesException, InterruptedException {
         RateLimit limit = new RateLimit("testLimit", 1000, 5);
         RateLimiter limiter = RateLimiter.getInstance();
@@ -96,6 +108,7 @@ public class RateLimiterTest extends InstrumentationTestCase {
         assertTrue(limiter.isRateLimited(limit)); // Rate limited
     }
 
+    @Test
     public void testStorage() throws InterruptedException {
         SharedPreferences prefs = getSharedPreferences();
         RateLimiter limiter1 = new RateLimiter(prefs);
