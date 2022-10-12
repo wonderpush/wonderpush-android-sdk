@@ -26,7 +26,7 @@ public class JSONSyncInstallation {
     private long firstDelayedWriteDate;
     private static boolean disabled = false;
 
-    private static ScheduledFuture<Void> scheduledPatchCallDelayedTask;
+    private static final Map<String, ScheduledFuture<Void>> sScheduledPatchCallDelayedTaskPerUserId = new HashMap<>();
 
     private class Callbacks implements JSONSync.Callbacks {
         @Override
@@ -185,9 +185,12 @@ public class JSONSyncInstallation {
     }
 
     synchronized void flush() {
-        if (scheduledPatchCallDelayedTask != null) {
-            scheduledPatchCallDelayedTask.cancel(false);
-            scheduledPatchCallDelayedTask = null;
+        synchronized (sScheduledPatchCallDelayedTaskPerUserId) {
+            ScheduledFuture<Void> future = sScheduledPatchCallDelayedTaskPerUserId.get(userId);
+            if (future != null) {
+                future.cancel(false);
+                sScheduledPatchCallDelayedTaskPerUserId.remove(userId);
+            }
         }
         _performScheduledPatchCall();
     }
@@ -207,8 +210,11 @@ public class JSONSyncInstallation {
 
     private synchronized void _schedulePatchCall() {
         WonderPush.logDebug("Scheduling patch call for installation custom state for userId " + userId);
-        if (scheduledPatchCallDelayedTask != null) {
-            scheduledPatchCallDelayedTask.cancel(false);
+        synchronized (sScheduledPatchCallDelayedTaskPerUserId) {
+            ScheduledFuture<Void> future = sScheduledPatchCallDelayedTaskPerUserId.get(userId);
+            if (future != null) {
+                future.cancel(false);
+            }
         }
         long nowRT = SystemClock.elapsedRealtime();
         if (firstDelayedWriteDate == 0) firstDelayedWriteDate = nowRT;
@@ -230,21 +236,21 @@ public class JSONSyncInstallation {
             });
             return;
         }
-        scheduledPatchCallDelayedTask = WonderPush.sScheduledExecutor.schedule(
-                new Callable<Void>() {
-                    @Override
-                    public Void call() {
-                        try {
-                            _performScheduledPatchCall();
-                        } catch (Exception ex) {
-                            Log.e(WonderPush.TAG, "Unexpected error on scheduled task", ex);
+        synchronized (sScheduledPatchCallDelayedTaskPerUserId) {
+            sScheduledPatchCallDelayedTaskPerUserId.put(userId,  WonderPush.sScheduledExecutor.schedule(
+                    new Callable<Void>() {
+                        @Override
+                        public Void call() {
+                            try {
+                                _performScheduledPatchCall();
+                            } catch (Exception ex) {
+                                Log.e(WonderPush.TAG, "Unexpected error on scheduled task", ex);
+                            }
+                            return null;
                         }
-                        return null;
-                    }
-                },
-                Math.min(InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY,
-                        firstDelayedWriteDate + InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY - nowRT),
-                TimeUnit.MILLISECONDS);
+                    }, Math.min(InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY,
+                            firstDelayedWriteDate + InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY - nowRT), TimeUnit.MILLISECONDS));
+        }
     }
 
     private synchronized void _performScheduledPatchCall() {
