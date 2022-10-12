@@ -115,13 +115,22 @@ abstract class JSONSync {
         upgrade(upgradeMeta, sdkState, serverState,putAccumulator, inflightDiff, inflightPutAccumulator);
     }
 
+    // Easier unit-testing
+    protected boolean putAndFlushSynchronously() {
+        return false;
+    }
+
     public synchronized void put(JSONObject diff) throws JSONException {
         if (diff == null) diff = new JSONObject();
         JSONUtil.merge(sdkState, diff);
         JSONUtil.merge(putAccumulator, diff, false);
-        WonderPush.safeDefer(() -> {
+        if (putAndFlushSynchronously()) {
             schedulePatchCallAndSave();
-        }, 0);
+        } else {
+            WonderPush.safeDefer(() -> {
+                schedulePatchCallAndSave();
+            }, 0);
+        }
     }
 
     public synchronized void receiveServerState(JSONObject srvState) throws JSONException {

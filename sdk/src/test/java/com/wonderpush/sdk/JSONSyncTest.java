@@ -14,6 +14,11 @@ public class JSONSyncTest {
     private static class JSONSyncMock extends JSONSync {
         private MockServer server;
 
+        @Override
+        protected boolean putAndFlushSynchronously() {
+            return true;
+        }
+
         void setServer(MockServer server) {
             this.server = server;
         }
