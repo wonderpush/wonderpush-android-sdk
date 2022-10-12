@@ -158,6 +158,7 @@ public class JSONSyncInstallation extends JSONSync {
     synchronized void flush() {
         if (scheduledPatchCallDelayedTask != null) {
             scheduledPatchCallDelayedTask.cancel(false);
+            scheduledPatchCallDelayedTask = null;
         }
         if (putAndFlushSynchronously()) {
             performScheduledPatchCall();
