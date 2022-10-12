@@ -1,6 +1,6 @@
 package com.wonderpush.sdk;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,9 +9,9 @@ import org.junit.Test;
 
 public class JSONSyncTest {
 
-    private JSONSync sync;
+    private JSONSyncMock sync;
 
-    private static class MockCallbacks implements JSONSync.Callbacks {
+    private static class JSONSyncMock extends JSONSync {
         private MockServer server;
 
         void setServer(MockServer server) {
@@ -19,7 +19,7 @@ public class JSONSyncTest {
         }
 
         @Override
-        public void save(JSONObject state) {}
+        public void persist(JSONObject state) {}
 
         @Override
         public void schedulePatchCall() {}
@@ -60,7 +60,7 @@ public class JSONSyncTest {
         protected void _serverPatchInstallation_handler(JSONSync.ResponseHandler handler) {}
     }
 
-    private class ServerManualCall extends MockServer {
+    private static class ServerManualCall extends MockServer {
         private JSONSync.ResponseHandler handler;
         @Override
         protected void _serverPatchInstallation_handler(JSONSync.ResponseHandler handler) {
@@ -82,8 +82,8 @@ public class JSONSyncTest {
 
     private static class ServerAssertDiffAndSuccess extends MockServer {
 
-        private String message;
-        private JSONObject expectedDiff;
+        private final String message;
+        private final JSONObject expectedDiff;
 
         ServerAssertDiffAndSuccess(final String message, final JSONObject expectedDiff) {
             this.message = message;
@@ -123,29 +123,26 @@ public class JSONSyncTest {
 
     }
 
-    private MockCallbacks callbacks;
-
     @Before
     public void setup() {
-        callbacks = new MockCallbacks();
-        sync = new JSONSync(callbacks);
+        sync = new JSONSyncMock();
     }
 
-    private void assertSynced() throws JSONException {
+    private void assertSynced() {
         Assert.assertFalse(sync.hasInflightPatchCall());
         Assert.assertFalse(sync.hasScheduledPatchCall());
         MockServer server = new ServerAssertNotCalled();
-        callbacks.setServer(server);
+        sync.setServer(server);
         Assert.assertFalse(sync.performScheduledPatchCall());
         Assert.assertFalse(server.isCalled());
     }
 
-    private void assertSyncedPotentialNoopScheduledPatchCall() throws JSONException {
+    private void assertSyncedPotentialNoopScheduledPatchCall() {
         assertPotentialNoopScheduledPatchCall();
         assertSynced();
     }
 
-    private void assertPotentialNoopScheduledPatchCall() throws JSONException {
+    private void assertPotentialNoopScheduledPatchCall() {
         if (sync.hasScheduledPatchCall()) {
             assertNoopScheduledPatchCall();
         } else {
@@ -153,16 +150,16 @@ public class JSONSyncTest {
         }
     }
 
-    private void assertNoopScheduledPatchCall() throws JSONException {
+    private void assertNoopScheduledPatchCall() {
         Assert.assertFalse(sync.hasInflightPatchCall());
         MockServer server = new ServerAssertNotCalled();
-        callbacks.setServer(server);
+        sync.setServer(server);
         Assert.assertTrue(sync.performScheduledPatchCall());
         Assert.assertFalse(server.isCalled());
     }
 
-    private void assertPerformScheduledPatchCallWith(MockServer server) throws JSONException {
-        callbacks.setServer(server);
+    private void assertPerformScheduledPatchCallWith(MockServer server) {
+        sync.setServer(server);
         Assert.assertTrue(sync.performScheduledPatchCall());
         Assert.assertTrue(server.isCalled());
     }
@@ -245,7 +242,7 @@ public class JSONSyncTest {
     @Test
     public void receiveStateKeepsDiffs() throws JSONException {
         ServerManualCall server = new ServerManualCall();
-        callbacks.setServer(server);
+        sync.setServer(server);
         sync.put(new JSONObject("{\"A\":1}"));
         JSONUtilTest.assertEquals(new JSONObject("{\"A\":1}"), sync.getSdkState());
         sync.performScheduledPatchCall();
@@ -367,7 +364,7 @@ public class JSONSyncTest {
      * Test receiveDiff() behavior wrt server patch calls *
      * ************************************************** */
 
-    private void assertSyncedAfterRecvDiff() throws JSONException {
+    private void assertSyncedAfterRecvDiff() {
         // Be laxer with this final state check
         //assertNoopScheduledPatchCall();
         //assertSynced();
@@ -528,7 +525,7 @@ public class JSONSyncTest {
      * Test receiveState(, false) behavior wrt server patch calls *
      * ********************************************************** */
 
-    private void assertSyncedAfterRecvState() throws JSONException {
+    private void assertSyncedAfterRecvState() {
         // Be laxer with this final state check
         //assertNoopScheduledPatchCall();
         //assertSynced();
@@ -709,7 +706,7 @@ public class JSONSyncTest {
      * Test receiveState(, true) behavior wrt server patch calls *
      * ********************************************************* */
 
-    private void assertSyncedAfterRecvStateReset() throws JSONException {
+    private void assertSyncedAfterRecvStateReset() {
         // Be laxer with this final state check
         //assertNoopScheduledPatchCall();
         //assertSynced();
@@ -834,7 +831,7 @@ public class JSONSyncTest {
      * Test receiveServerState() behavior wrt server patch calls *
      * ********************************************************* */
 
-    private void assertSyncedAfterRecvSrvState() throws JSONException {
+    private void assertSyncedAfterRecvSrvState() {
         // Be laxer with this final state check
         //assertNoopScheduledPatchCall();
         //assertSynced();

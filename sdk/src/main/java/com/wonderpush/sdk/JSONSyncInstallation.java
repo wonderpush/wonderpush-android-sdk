@@ -7,81 +7,19 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class JSONSyncInstallation {
-
-    private static final String UPGRADE_META_VERSION_KEY = "version";
-    private static final Long UPGRADE_META_VERSION_0_INITIAL = 0l;
-    private static final Long UPGRADE_META_VERSION_1_IMPORTED_CUSTOM = 1l;
-    private static final Long UPGRADE_META_VERSION_LATEST = UPGRADE_META_VERSION_1_IMPORTED_CUSTOM;
+public class JSONSyncInstallation extends JSONSync {
 
     private static final Map<String, JSONSyncInstallation> sInstancePerUserId = new HashMap<>();
     private static boolean initialized = false;
 
     private final String userId;
-    private final JSONSync sync;
     private long firstDelayedWriteDate;
     private static boolean disabled = false;
 
     private static final Map<String, ScheduledFuture<Void>> sScheduledPatchCallDelayedTaskPerUserId = new HashMap<>();
-
-    private class Callbacks implements JSONSync.Callbacks {
-        @Override
-        public void save(JSONObject state) {
-            _save(state);
-        }
-
-        @Override
-        public void schedulePatchCall() {
-            _schedulePatchCall();
-        }
-
-        @Override
-        public void serverPatchInstallation(JSONObject diff, JSONSync.ResponseHandler handler) {
-            _serverPatchInstallation(diff, handler);
-        }
-
-        @Override
-        public void upgrade(JSONObject upgradeMeta, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator) {
-            Long currentVersion = upgradeMeta.optLong(UPGRADE_META_VERSION_KEY, 0);
-
-            // Do not alter latest, or future versions we don't understand
-            if (currentVersion >= UPGRADE_META_VERSION_LATEST) {
-                return;
-            }
-
-            // VERSION 1: puts everything inside a key called "custom".
-            if (currentVersion < UPGRADE_META_VERSION_1_IMPORTED_CUSTOM) {
-                try {
-                    moveInsideCustom(sdkState);
-                    moveInsideCustom(serverState);
-                    moveInsideCustom(putAccumulator);
-                    moveInsideCustom(inflightDiff);
-                    moveInsideCustom(inflightPutAccumulator);
-                } catch (JSONException e) {
-                    Log.e(WonderPush.TAG, "Could not upgrade custom properties", e);
-                }
-            }
-
-            // Set to the latest version
-            try {
-                upgradeMeta.put(UPGRADE_META_VERSION_KEY, UPGRADE_META_VERSION_LATEST);
-            } catch (JSONException e) {
-                Log.e(WonderPush.TAG, "Could not set json sync version", e);
-            }
-        }
-        private void moveInsideCustom(JSONObject input) throws JSONException {
-            JSONObject tmp = new JSONObject(input.toString());
-            List<String> keys = new ArrayList<>();
-            Iterator<String> iterator = input.keys();
-            while(iterator.hasNext()) keys.add(iterator.next());
-            for (String key : keys) input.remove(key);
-            input.put("custom", tmp);
-        }
-    }
 
     public static void initialize() {
         synchronized (sInstancePerUserId) {
@@ -97,7 +35,14 @@ public class JSONSyncInstallation {
                 String userId = it.next();
                 JSONObject state = installationCustomSyncStatePerUserId.optJSONObject(userId);
                 if (userId != null && userId.length() == 0) userId = null;
-                sInstancePerUserId.put(userId, new JSONSyncInstallation(userId, state));
+                JSONSyncInstallation sync;
+                try {
+                    sync = new JSONSyncInstallation(userId, state);
+                } catch (JSONException e) {
+                    Log.e(WonderPush.TAG, "Failed to restore installation custom from saved state for user " + userId + " and state " + (state != null ? state : "null"), e);
+                    sync = new JSONSyncInstallation(userId);
+                }
+                sInstancePerUserId.put(userId, sync);
             }
             String oldUserId = WonderPushConfiguration.getUserId();
             try {
@@ -119,12 +64,9 @@ public class JSONSyncInstallation {
 
             // Adding the listener here will catch the an initial call triggered after this function is called, all during SDK initialization.
             // It also flushes any scheduled call that was dropped when the user withdrew consent.
-            WonderPush.addUserConsentListener(new WonderPush.UserConsentListener() {
-                @Override
-                public void onUserConsentChanged(boolean hasUserConsent) {
-                    if (hasUserConsent) {
-                        flushAll();
-                    }
+            WonderPush.addUserConsentListener(hasUserConsent -> {
+                if (hasUserConsent) {
+                    flushAll();
                 }
             });
         }
@@ -139,7 +81,12 @@ public class JSONSyncInstallation {
         synchronized (sInstancePerUserId) {
             JSONSyncInstallation rtn = sInstancePerUserId.get(userId);
             if (rtn == null) {
-                rtn = new JSONSyncInstallation(userId, null);
+                try {
+                    rtn = new JSONSyncInstallation(userId, null);
+                } catch (JSONException e) {
+                    Log.e(WonderPush.TAG, "Failed to restore installation custom from saved state for user " + userId + " and null state", e);
+                    rtn = new JSONSyncInstallation(userId);
+                }
                 sInstancePerUserId.put(userId, rtn);
             }
             return rtn;
@@ -163,25 +110,49 @@ public class JSONSyncInstallation {
         return disabled;
     }
 
-    private JSONSyncInstallation(String userId, JSONObject sdkState, JSONObject serverState) {
-        if (userId != null && userId.length() == 0) userId = null;
-        this.userId = userId;
-
-        sync = JSONSync.fromSdkStateAndServerState(new Callbacks(), sdkState, serverState);
+    private static JSONObject _initDiffServerAndSdkState(JSONObject serverState, JSONObject sdkState) {
+        if (serverState == null) serverState = new JSONObject();
+        if (sdkState == null) sdkState = new JSONObject();
+        JSONObject diff;
+        try {
+            diff = JSONUtil.diff(serverState, sdkState);
+        } catch (JSONException ex) {
+            WonderPush.logError("Error while diffing serverState " + serverState + " with sdkState " + sdkState + ". Falling back to full sdkState", ex);
+            try {
+                diff = JSONUtil.deepCopy(sdkState);
+            } catch (JSONException ex2) {
+                WonderPush.logError("Error while cloning sdkState " + sdkState + ". Falling back to empty diff", ex2);
+                diff = new JSONObject();
+            }
+        }
+        return diff;
     }
 
-    private JSONSyncInstallation(String userId, JSONObject savedState) {
+    private JSONSyncInstallation(String userId) {
+        super();
         if (userId != null && userId.length() == 0) userId = null;
         this.userId = userId;
+    }
 
-        JSONSync sync;
-        try {
-            sync = JSONSync.fromSavedState(new Callbacks(), savedState);
-        } catch (JSONException ex) {
-            Log.e(WonderPush.TAG, "Failed to restore installation custom from saved state for user " + userId + " and state " + savedState, ex);
-            sync = new JSONSync(new Callbacks());
-        }
-        this.sync = sync;
+    private JSONSyncInstallation(String userId, JSONObject sdkState, JSONObject serverState) {
+        super(sdkState, serverState, _initDiffServerAndSdkState(serverState, sdkState), null, null, null, true /*schedule a patch call*/, false);
+        if (userId != null && userId.length() == 0) userId = null;
+        this.userId = userId;
+    }
+
+    private JSONSyncInstallation(String userId, JSONObject savedState) throws JSONException {
+        super(
+                savedState != null && savedState.has(SAVED_STATE_FIELD_SDK_STATE)                ? savedState.getJSONObject(SAVED_STATE_FIELD_SDK_STATE)                : null,
+                savedState != null && savedState.has(SAVED_STATE_FIELD_SERVER_STATE)             ? savedState.getJSONObject(SAVED_STATE_FIELD_SERVER_STATE)             : null,
+                savedState != null && savedState.has(SAVED_STATE_FIELD_PUT_ACCUMULATOR)          ? savedState.getJSONObject(SAVED_STATE_FIELD_PUT_ACCUMULATOR)          : null,
+                savedState != null && savedState.has(SAVED_STATE_FIELD_INFLIGHT_DIFF)            ? savedState.getJSONObject(SAVED_STATE_FIELD_INFLIGHT_DIFF)            : null,
+                savedState != null && savedState.has(SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR) ? savedState.getJSONObject(SAVED_STATE_FIELD_INFLIGHT_PUT_ACCUMULATOR) : null,
+                savedState != null && savedState.has(SAVED_STATE_FIELD_UPGRADE_META)             ? savedState.getJSONObject(SAVED_STATE_FIELD_UPGRADE_META)             : null,
+                savedState != null && savedState.has(SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL)     ? savedState.getBoolean(SAVED_STATE_FIELD_SCHEDULED_PATCH_CALL)        : true,
+                savedState != null && savedState.has(SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL)      ? savedState.getBoolean(SAVED_STATE_FIELD_INFLIGHT_PATCH_CALL)         : false
+        );
+        if (userId != null && userId.length() == 0) userId = null;
+        this.userId = userId;
     }
 
     synchronized void flush() {
@@ -192,10 +163,11 @@ public class JSONSyncInstallation {
                 sScheduledPatchCallDelayedTaskPerUserId.remove(userId);
             }
         }
-        _performScheduledPatchCall();
+        performScheduledPatchCall();
     }
 
-    private synchronized void _save(JSONObject state) {
+    @Override
+    protected void persist(JSONObject state) {
         String key = userId == null ? "" : userId;
         JSONObject installationCustomSyncStatePerUserId = WonderPushConfiguration.getInstallationCustomSyncStatePerUserId();
         if (installationCustomSyncStatePerUserId == null) installationCustomSyncStatePerUserId = new JSONObject();
@@ -208,7 +180,8 @@ public class JSONSyncInstallation {
         WonderPushConfiguration.setInstallationCustomSyncStatePerUserId(installationCustomSyncStatePerUserId);
     }
 
-    private synchronized void _schedulePatchCall() {
+    @Override
+    protected void schedulePatchCall() {
         WonderPush.logDebug("Scheduling patch call for installation custom state for userId " + userId);
         synchronized (sScheduledPatchCallDelayedTaskPerUserId) {
             ScheduledFuture<Void> future = sScheduledPatchCallDelayedTaskPerUserId.get(userId);
@@ -227,7 +200,7 @@ public class JSONSyncInstallation {
                         try {
                             WonderPush.removeUserConsentListener(this);
                             WonderPush.logDebug("Now scheduling user consent delayed patch call for installation custom state for userId " + userId);
-                            _schedulePatchCall(); // NOTE: imposes this function to be somewhat reentrant
+                            schedulePatchCall(); // NOTE: imposes this function to be somewhat reentrant
                         } catch (Exception ex) {
                             Log.e(WonderPush.TAG, "Unexpected error on user consent changed.", ex);
                         }
@@ -238,31 +211,29 @@ public class JSONSyncInstallation {
         }
         synchronized (sScheduledPatchCallDelayedTaskPerUserId) {
             sScheduledPatchCallDelayedTaskPerUserId.put(userId,  WonderPush.sScheduledExecutor.schedule(
-                    new Callable<Void>() {
-                        @Override
-                        public Void call() {
-                            try {
-                                _performScheduledPatchCall();
-                            } catch (Exception ex) {
-                                Log.e(WonderPush.TAG, "Unexpected error on scheduled task", ex);
-                            }
-                            return null;
+                    () -> {
+                        try {
+                            performScheduledPatchCall();
+                        } catch (Exception ex) {
+                            Log.e(WonderPush.TAG, "Unexpected error on scheduled task", ex);
                         }
+                        return null;
                     }, Math.min(InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY,
                             firstDelayedWriteDate + InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY - nowRT), TimeUnit.MILLISECONDS));
         }
     }
 
-    private synchronized void _performScheduledPatchCall() {
+    synchronized boolean performScheduledPatchCall() {
         if (!WonderPush.hasUserConsent()) {
             WonderPush.logDebug("Need consent, not performing scheduled patch call for user " + userId);
-            return;
+            return false;
         }
         firstDelayedWriteDate = 0;
-        sync.performScheduledPatchCall();
+        return super.performScheduledPatchCall();
     }
 
-    private synchronized void _serverPatchInstallation(final JSONObject diff, final JSONSync.ResponseHandler handler) {
+    @Override
+    protected void serverPatchInstallation(JSONObject diff, JSONSync.ResponseHandler handler) {
         if (!WonderPush.hasUserConsent()) {
             WonderPush.logDebug("Need consent, not sending installation custom diff " + diff + " for user " + userId);
             handler.onFailure();
@@ -276,7 +247,7 @@ public class JSONSyncInstallation {
         WonderPush.logDebug("Sending installation custom diff " + diff + " for user " + userId);
         Request.Params parameters = new Request.Params();
         parameters.put("body", diff.toString());
-        ApiClient.getInstance().requestForUser(userId, HttpMethod.PATCH, "/installation", parameters, new ResponseHandler() {
+        ApiClient.getInstance().requestForUser(userId, HttpMethod.PATCH, "/installation", parameters, new com.wonderpush.sdk.ResponseHandler() {
             @Override
             public void onFailure(Throwable ex, Response errorResponse) {
 
@@ -310,31 +281,8 @@ public class JSONSyncInstallation {
     public synchronized String toString() {
         return "JSONSyncInstallationCustom"
                 + "{userId=" + userId
-                + ",sync=" + sync
+                + ",sync=" + super.toString()
                 + "}";
     }
 
-    ///
-    /// Forward JSONSync methods
-    ///
-
-    public synchronized JSONObject getSdkState() throws JSONException {
-        return sync.getSdkState();
-    }
-
-    public synchronized void put(JSONObject diff) throws JSONException {
-        sync.put(diff);
-    }
-
-    public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
-        sync.receiveServerState(srvState);
-    }
-
-    public synchronized void receiveState(JSONObject receivedState, boolean resetSdkState) throws JSONException {
-        sync.receiveState(receivedState, resetSdkState);
-    }
-
-    public synchronized void receiveDiff(JSONObject diff) throws JSONException {
-        sync.receiveDiff(diff);
-    }
 }
