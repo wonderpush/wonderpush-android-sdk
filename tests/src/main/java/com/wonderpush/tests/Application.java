@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -94,6 +95,7 @@ public class Application extends android.app.Application {
                     } else if ("notification".equals(display)) {
                         int localNotificationId = Math.round((float) Math.random() * Integer.MAX_VALUE);
                         Intent manuallyStartApp = new Intent(getApplicationContext(), MainActivity.class);
+                        manuallyStartApp.setData(Uri.parse("fakeScheme://manuallyDisplayed?intentFilterEqualsBuster=" + Math.random()));
                         manuallyStartApp.putExtras(intent); // inherit the local broadcast intent extras so that click tracking works when opening the Activity
                         manuallyStartApp.putExtra("closeNotificationTag", (String) null);
                         manuallyStartApp.putExtra("closeNotificationId", localNotificationId);
