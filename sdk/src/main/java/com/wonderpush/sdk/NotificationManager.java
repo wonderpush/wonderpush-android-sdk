@@ -448,11 +448,7 @@ public class NotificationManager {
                 TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
                 stackBuilder.addNextIntentWithParentStack(destinationIntent);
                 if (destinationIntent.getPackage() == null) {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                        Log.w(TAG, "Before Android 23 there is a known bug preventing from tracking opens when the deeplink opens an external application. Contact us if needed.");
-                    } else {
-                        wpTrackingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); // avoid bringing the background app to the front
-                    }
+                    wpTrackingIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT); // avoid bringing the background app to the front
                 } else {
                     if (stackBuilder.getIntentCount() == 1) {
                         // The target activity has no parent
