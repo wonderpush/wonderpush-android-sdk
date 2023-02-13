@@ -14,8 +14,10 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -268,13 +270,27 @@ class DataManager {
     }
 
     private static void clearInstallation(String userId) {
-        ApiClient.getInstance().requestForUser(userId, HttpMethod.DELETE, "/installation", null, null);
-        WonderPushConfiguration.clearForUserId(userId);
-        try {
-            JSONSyncInstallation.forUser(userId).receiveState(null, true);
-        } catch (JSONException ex) {
-            Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId, ex);
-        }
+        clearInstallation(userId, null);
+    }
+    private static void clearInstallation(String userId, ResponseHandler responseHandler) {
+        ApiClient.getInstance().requestForUser(userId, HttpMethod.DELETE, "/installation", null, new ResponseHandler() {
+            @Override
+            public void onFailure(Throwable e, Response errorResponse) {
+                Log.e(WonderPush.TAG, "Unexpected error while deleting remote installation for userId " + userId, e);
+                if (responseHandler != null) responseHandler.onFailure(e, errorResponse);
+            }
+
+            @Override
+            public void onSuccess(Response response) {
+                WonderPushConfiguration.clearForUserId(userId);
+                try {
+                    JSONSyncInstallation.forUser(userId).receiveState(null, true);
+                } catch (JSONException ex) {
+                    Log.e(WonderPush.TAG, "Unexpected error while clearing installation data for userId " + userId, ex);
+                }
+                if (responseHandler != null) responseHandler.onSuccess(response);
+            }
+        });
     }
 
     private static void clearLocalStorage() {
@@ -282,10 +298,37 @@ class DataManager {
     }
 
     static void clearAllData() {
+        Set<String> remainingUserIds = new HashSet<>();
+        Runnable onDone = new Runnable() {
+            @Override
+            public void run() {
+                clearLocalStorage();
+            }
+        };
         for (String userId : WonderPushConfiguration.listKnownUserIds()) {
-            clearInstallation(userId);
+            String key = userId == null ? "" : userId;
+            remainingUserIds.add(key);
         }
-        clearLocalStorage();
+        for (String key : remainingUserIds) {
+            String userId = key.equals("") ? null : key;
+            clearInstallation(userId, new ResponseHandler() {
+                @Override
+                public void onFailure(Throwable e, Response errorResponse) {
+                    remainingUserIds.remove(key);
+                    if (remainingUserIds.size() == 0) {
+                        onDone.run();
+                    }
+                }
+
+                @Override
+                public void onSuccess(Response response) {
+                    remainingUserIds.remove(key);
+                    if (remainingUserIds.size() == 0) {
+                        onDone.run();
+                    }
+                }
+            });
+        }
     }
 
 }
