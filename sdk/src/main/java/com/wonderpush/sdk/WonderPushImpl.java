@@ -123,7 +123,9 @@ class WonderPushImpl implements IWonderPush {
         WonderPush.logDebug("Set notification enabled: " + status);
         WonderPushConfiguration.setNotificationEnabled(status);
         refreshSubscriptionStatus();
-        NotificationPromptController.getInstance().prompt(fallbackToSetting, null);
+        if (status) {
+            NotificationPromptController.getInstance().prompt(fallbackToSetting, null);
+        }
     }
 
     public void refreshSubscriptionStatus() {
