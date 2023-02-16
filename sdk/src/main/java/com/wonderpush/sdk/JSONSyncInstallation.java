@@ -143,10 +143,14 @@ public class JSONSyncInstallation extends JSONSync {
     }
 
     public static void flushAll() {
+        flushAll(false);
+    }
+
+    public static void flushAll(boolean sync) {
         WonderPush.logDebug("Flushing delayed updates of custom properties for all known users");
         synchronized (sInstancePerUserId) {
-            for (JSONSyncInstallation sync : sInstancePerUserId.values()) {
-                sync.flush();
+            for (JSONSyncInstallation jsonSync : sInstancePerUserId.values()) {
+                jsonSync.flush(sync);
             }
         }
     }
@@ -172,11 +176,15 @@ public class JSONSyncInstallation extends JSONSync {
     }
 
     synchronized void flush() {
+        flush(false);
+    }
+
+    synchronized void flush(boolean sync) {
         if (scheduledPatchCallDelayedTask != null) {
             scheduledPatchCallDelayedTask.cancel(false);
             scheduledPatchCallDelayedTask = null;
         }
-        if (putAndFlushSynchronously()) {
+        if (sync || putAndFlushSynchronously()) {
             performScheduledPatchCall();
         } else {
             WonderPush.safeDefer(() -> {

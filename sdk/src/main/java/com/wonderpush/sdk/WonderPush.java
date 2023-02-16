@@ -2159,7 +2159,7 @@ public class WonderPush {
         try {
             boolean hadUserConsent = hasUserConsent();
             if (hadUserConsent && !value) {
-                JSONSyncInstallation.flushAll();
+                JSONSyncInstallation.flushAll(true); // when disabling, we use a sync flow to ensure we can withdraw user consent synchronously right after we return
             }
             WonderPushConfiguration.setUserConsent(value);
             boolean nowHasUserConsent = hasUserConsent();
