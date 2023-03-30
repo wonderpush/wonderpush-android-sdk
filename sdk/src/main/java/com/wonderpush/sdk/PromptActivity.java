@@ -15,6 +15,8 @@ import java.util.HashMap;
 
 public class PromptActivity extends Activity {
 
+    private static final String TAG = "WonderPush." + PromptActivity.class.getSimpleName();
+
     interface Callback {
         void onAccept();
         void onReject(boolean fallbackToSettings);
@@ -61,11 +63,29 @@ public class PromptActivity extends Activity {
             return;
         }
 
-        registerCallbacks(extras);
+        if (extras == null) {
+            Log.w(TAG, getClass().getName() + " is not supposed to be started directly, only using the WonderPushSDK");
+            finish();
+            return;
+        }
 
-        permissionRequestType = extras.getString(INTENT_EXTRA_PERMISSION_TYPE);
-        androidPermissionString = extras.getString(INTENT_EXTRA_ANDROID_PERMISSION_STRING);
-        requestPermission(androidPermissionString);
+        try {
+            registerCallbacks(extras);
+
+            permissionRequestType = extras.getString(INTENT_EXTRA_PERMISSION_TYPE);
+            androidPermissionString = extras.getString(INTENT_EXTRA_ANDROID_PERMISSION_STRING);
+            requestPermission(androidPermissionString);
+        } catch (Exception e) {
+            String extrasToString;
+            try {
+                extrasToString = extras.toString();
+            } catch (Exception e2) {
+                // This catch is not so much about protecting against NullPointerException but rather unparcelation errors, like not having access to a class during deserialization
+                extrasToString = e2.getClass().getName() + ": " + e2.getMessage();
+            }
+            Log.e(TAG, "Unexpected exception caught in PromptActivity. extras=" + extrasToString, e);
+            finish();
+        }
     }
 
     // Required if the app was killed while this prompt was showing
@@ -98,8 +118,10 @@ public class PromptActivity extends Activity {
                     boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
                     Callback callback = callbackMap.get(permissionRequestType);
-                    if (callback == null)
-                        throw new RuntimeException("Missing handler for request type: " + permissionRequestType);
+                    if (callback == null) {
+                        Log.e(TAG, "PromptActivity Missing handler for request type: " + permissionRequestType);
+                        return;
+                    }
 
                     if (granted)
                         callback.onAccept();
@@ -140,7 +162,7 @@ public class PromptActivity extends Activity {
             activity.startActivity(intent);
             activity.overridePendingTransition(R.anim.wonderpush_fade_in, R.anim.wonderpush_fade_out);
         } else {
-            Log.w(WonderPush.TAG, "Could not start permission activity, probably because you are calling subscribeToNotifications too early, like the onCreate() method of your Application class. You must wait to have an activity resumed before calling this method.");
+            Log.w(TAG, "Could not start permission activity, probably because you are calling subscribeToNotifications too early, like the onCreate() method of your Application class. You must wait to have an activity resumed before calling this method.");
         }
     }
 }
