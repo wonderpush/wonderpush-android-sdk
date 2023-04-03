@@ -1477,7 +1477,10 @@ public class WonderPush {
             // which can be wrong in case of network problems
             Location location = getLocation();
             if (location != null) {
-                event.put("location", "" + location.getLatitude() + "," + location.getLongitude());
+                JSONObject locationJson = new JSONObject();
+                locationJson.put("lat", location.getLatitude());
+                locationJson.put("lon", location.getLongitude());
+                event.put("location", locationJson);
             }
             if (!event.has("actionDate")) {
                 event.put("actionDate", TimeSync.getTime());
