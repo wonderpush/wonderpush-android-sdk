@@ -112,7 +112,7 @@ public class PromptActivity extends Activity {
         waiting = false;
 
         if (requestCode == WONDERPUSH_PERMISSION_REQUEST_CODE) {
-            new Handler().postDelayed(new Runnable() {
+            new Handler(getMainLooper()).postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
