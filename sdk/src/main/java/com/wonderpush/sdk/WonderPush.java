@@ -2361,7 +2361,7 @@ public class WonderPush {
      * </p>
      *
      * <p>
-     *   Changing the user ID is akin to loading a new profile. A new installation will be created and no tags,
+     *   Changing the user id is akin to loading a new profile. A new installation will be created and no tags,
      *   properties or events will be kept.
      *   For more information, see <a href="https://docs.wonderpush.com/docs/user-ids" target="_blank">our documentation</a>.
      * </p>
