@@ -2356,8 +2356,14 @@ public class WonderPush {
      * <p>Prefer calling this method just before calling {@link #initialize(Context)}, rather than just after.</p>
      *
      * <p>
-     *   Upon changing userId, the access token is wiped, so avoid unnecessary calls, like calling with {@code null}
-     *   just before calling with a user id.
+     *   Upon changing userId, the push token is wiped, so avoid unnecessary calls, like calling with {@code null}
+     *   just before calling with a user id. Successive calls with the same userId are fine.
+     * </p>
+     *
+     * <p>
+     *   Changing the user ID is akin to loading a new profile. A new installation will be created and no tags,
+     *   properties or events will be kept.
+     *   For more information, see <a href="https://docs.wonderpush.com/docs/user-ids" target="_blank">our documentation</a>.
      * </p>
      *
      * @param userId
