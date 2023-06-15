@@ -109,14 +109,16 @@ public class WonderPushUserPreferences {
             }
         }
 
-        WonderPush.logDebug("UserPreferences: default channel id: " + sDefaultChannelId);
-        WonderPush.logDebug("UserPreferences: channel groups:");
-        for (WonderPushChannelGroup group : sChannelGroups.values()) {
-            WonderPush.logDebug("- " + group.getId() + ": " + group);
-        }
-        WonderPush.logDebug("UserPreferences: channels:");
-        for (WonderPushChannel channel : sChannels.values()) {
-            WonderPush.logDebug("- " + channel.getId() + ": " + channel);
+        if (WonderPush.getLogging()) {
+            WonderPush.logDebug("UserPreferences: default channel id: " + sDefaultChannelId);
+            WonderPush.logDebug("UserPreferences: channel groups:");
+            for (WonderPushChannelGroup group : sChannelGroups.values()) {
+                WonderPush.logDebug("- " + group.getId() + ": " + group);
+            }
+            WonderPush.logDebug("UserPreferences: channels:");
+            for (WonderPushChannel channel : sChannels.values()) {
+                WonderPush.logDebug("- " + channel.getId() + ": " + channel);
+            }
         }
     }
 
