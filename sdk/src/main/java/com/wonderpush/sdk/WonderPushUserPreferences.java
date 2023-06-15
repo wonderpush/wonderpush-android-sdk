@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Manage Android notification channel and user preferences.
@@ -57,12 +58,38 @@ public class WonderPushUserPreferences {
     private static String sDefaultChannelId;
     private static Map<String, WonderPushChannelGroup> sChannelGroups;
     private static Map<String, WonderPushChannel> sChannels;
+    private static DeferredFuture<Void> sInitializedDeferred = new DeferredFuture<>();
+    private static boolean sInitializing = false;
+    private static boolean sInitialized = false;
 
-    static void initialize() {
+    static synchronized void initialize() {
+        if (sInitializing) {
+            waitForInitialization();
+            return;
+        }
+        sInitializing = true;
         try {
-            load();
+            WonderPush.safeDefer(WonderPushUserPreferences::load, 0);
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while initializing WonderPushUserPreferences", ex);
+        }
+        sInitialized = true;
+        sInitializedDeferred.set(null); // settle the deferred
+        sInitializing = false;
+    }
+
+    private static synchronized void waitForInitialization() {
+        if (!sInitialized) {
+            try {
+                sInitializedDeferred.getFuture().get();
+            } catch (ExecutionException ex) {
+                // This is thrown if the deferred is settled to an exception, which we don't do
+                Log.e(WonderPush.TAG, "Unexpected error while waiting for WonderPushUserPreferences initialization", ex);
+                throw new RuntimeException(ex);
+            } catch (InterruptedException ex) {
+                Log.e(WonderPush.TAG, "Unexpected error while waiting for WonderPushUserPreferences initialization", ex);
+                throw new RuntimeException(ex);
+            }
         }
     }
 
@@ -169,7 +196,13 @@ public class WonderPushUserPreferences {
      * @return The default channel id.
      */
     public static synchronized String getDefaultChannelId() {
-        return sDefaultChannelId;
+        try {
+            waitForInitialization();
+            return sDefaultChannelId;
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while getting default channel id. We are not initialized and will return the factory default to avoid null.", ex);
+            return DEFAULT_CHANNEL_NAME;
+        }
     }
 
     /**
@@ -186,6 +219,7 @@ public class WonderPushUserPreferences {
      */
     public static synchronized void setDefaultChannelId(String id) {
         try {
+            waitForInitialization();
             if (_setDefaultChannelId(id)) {
                 save();
             }
@@ -204,6 +238,7 @@ public class WonderPushUserPreferences {
     }
 
     static synchronized WonderPushChannel channelToUseForNotification(String desiredChannelId) {
+        waitForInitialization();
         if (desiredChannelId == null) {
             // If no channel is set, use the default one
             desiredChannelId = WonderPushUserPreferences.getDefaultChannelId();
@@ -236,6 +271,7 @@ public class WonderPushUserPreferences {
 
     static synchronized void ensureDefaultAndroidNotificationChannelExists() {
         try {
+            waitForInitialization();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
                 NotificationChannel existingChannel = notificationManager.getNotificationChannel(getDefaultChannelId());
@@ -260,6 +296,7 @@ public class WonderPushUserPreferences {
      */
     public static synchronized WonderPushChannelGroup getChannelGroup(String groupId) {
         try {
+            waitForInitialization();
             WonderPushChannelGroup rtn = sChannelGroups.get(groupId);
             if (rtn != null) {
                 try {
@@ -285,6 +322,7 @@ public class WonderPushUserPreferences {
      */
     public static synchronized void removeChannelGroup(String groupId) {
         try {
+            waitForInitialization();
             if (_removeChannelGroup(groupId)) {
                 save();
             }
@@ -311,6 +349,7 @@ public class WonderPushUserPreferences {
      */
     public static synchronized void putChannelGroup(WonderPushChannelGroup channelGroup) {
         try {
+            waitForInitialization();
             if (_putChannelGroup(channelGroup)) {
                 save();
             }
@@ -349,6 +388,12 @@ public class WonderPushUserPreferences {
         if (channelGroups == null) return;
         boolean save = false;
         try {
+            waitForInitialization();
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while setting channel groups " + channelGroups, ex);
+            return;
+        }
+        try {
             Set<String> groupIdsToRemove = new HashSet<>(sChannelGroups.keySet());
             for (WonderPushChannelGroup channelGroup : channelGroups) {
                 if (channelGroup == null) continue;
@@ -380,6 +425,7 @@ public class WonderPushUserPreferences {
      */
     public static synchronized WonderPushChannel getChannel(String channelId) {
         try {
+            waitForInitialization();
             WonderPushChannel rtn = sChannels.get(channelId);
             if (rtn != null) {
                 try {
@@ -405,6 +451,7 @@ public class WonderPushUserPreferences {
      */
     public static synchronized void removeChannel(String channelId) {
         try {
+            waitForInitialization();
             if (_removeChannel(channelId)) {
                 save();
             }
@@ -431,6 +478,7 @@ public class WonderPushUserPreferences {
      */
     public static synchronized void putChannel(WonderPushChannel channel) {
         try {
+            waitForInitialization();
             if (_putChannel(channel)) {
                 save();
             }
@@ -514,6 +562,12 @@ public class WonderPushUserPreferences {
         if (channels == null) return;
         boolean save = false;
         try {
+            waitForInitialization();
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while setting channels " + channels, ex);
+            return;
+        }
+        try {
             Set<String> channelIdsToRemove = new HashSet<>(sChannels.keySet());
             for (WonderPushChannel channel : channels) {
                 if (channel == null) continue;
@@ -544,28 +598,33 @@ public class WonderPushUserPreferences {
     static synchronized Set<String> getDisabledChannelIds() {
         TreeSet<String> rtn = new TreeSet<>();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
-            android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-            Map<String, NotificationChannelGroup> groups = new HashMap<>();
-            for (NotificationChannelGroup group : notificationManager.getNotificationChannelGroups()) {
-                groups.put(group.getId(), group);
-            }
-            for (NotificationChannel channel : notificationManager.getNotificationChannels()) {
-                NotificationChannelGroup group = groups.get(channel.getGroup());
-                if (channel.getImportance() == NotificationManager.IMPORTANCE_NONE || WonderPushCompatibilityHelper.isNotificationChannelGroupBlocked(group)) {
-                    rtn.add(channel.getId());
+                android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                Map<String, NotificationChannelGroup> groups = new HashMap<>();
+                for (NotificationChannelGroup group : notificationManager.getNotificationChannelGroups()) {
+                    groups.put(group.getId(), group);
                 }
-            }
-
-        } else {
-
-            for (WonderPushChannel channel : sChannels.values()) {
-                if (channel.getImportance() != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
-                    rtn.add(channel.getId());
+                for (NotificationChannel channel : notificationManager.getNotificationChannels()) {
+                    NotificationChannelGroup group = groups.get(channel.getGroup());
+                    if (channel.getImportance() == NotificationManager.IMPORTANCE_NONE || WonderPushCompatibilityHelper.isNotificationChannelGroupBlocked(group)) {
+                        rtn.add(channel.getId());
+                    }
                 }
-            }
 
+            } else {
+
+                waitForInitialization(); // if this throws, we'll return an empty set on purpose
+                for (WonderPushChannel channel : sChannels.values()) {
+                    if (channel.getImportance() != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                        rtn.add(channel.getId());
+                    }
+                }
+
+            }
+        } catch (Exception ex) {
+            Log.e(WonderPush.TAG, "Unexpected error while getting disabled channel ids, returning an empty set", ex);
         }
 
         return rtn;
