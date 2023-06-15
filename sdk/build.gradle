@@ -8,9 +8,6 @@ android {
     compileSdkVersion 31
     buildToolsVersion "31.0.0"
 
-    lintOptions {
-        abortOnError false
-    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -34,6 +31,10 @@ android {
     useLibrary 'android.test.mock'
 
     resourcePrefix 'wonderpush_android_sdk_'
+    namespace 'com.wonderpush.sdk'
+    lint {
+        abortOnError false
+    }
 }
 
 dependencies {

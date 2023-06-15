@@ -23,6 +23,7 @@ android {
     }
 
     resourcePrefix 'wonderpush_android_sdk_fcm_'
+    namespace 'com.wonderpush.sdk.push.fcm'
 }
 
 dependencies {
