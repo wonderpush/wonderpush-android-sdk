@@ -147,13 +147,15 @@ class ActivityLifecycleMonitor {
                 resumeFirstDate = now;
             }
             lastResumedActivityRef = new WeakReference<>(activity);
-            WonderPush.injectAppOpenIfNecessary();
-            updatePresence(true);
-            WonderPush.showPotentialNotification(activity, activity.getIntent());
-            WonderPushConfiguration.setLastInteractionDate(now);
-            NotificationPromptController.getInstance().onAppForeground();
-            WonderPush.refreshSubscriptionStatus();
-            callOnNextResumeListeners(activity);
+            WonderPush.safeDefer(() -> {
+                WonderPush.injectAppOpenIfNecessary();
+                updatePresence(true);
+                WonderPush.showPotentialNotification(activity, activity.getIntent());
+                WonderPushConfiguration.setLastInteractionDate(now);
+                NotificationPromptController.getInstance().onAppForeground();
+                WonderPush.refreshSubscriptionStatus();
+                callOnNextResumeListeners(activity);
+            }, 0);
         }
 
         @Override
@@ -163,7 +165,9 @@ class ActivityLifecycleMonitor {
             if (!hasResumedActivities()) {
                 pausedLastDate = now;
             }
-            WonderPushConfiguration.setLastInteractionDate(now);
+            WonderPush.safeDefer(() -> {
+                WonderPushConfiguration.setLastInteractionDate(now);
+            }, 0);
         }
 
         @Override
@@ -172,11 +176,13 @@ class ActivityLifecycleMonitor {
             ++stopCount;
             if (!hasStartedActivities()) {
                 stopLastDate = now;
-                try {
-                    updatePresence(false);
-                } catch (Exception e) {
-                    Log.d(WonderPush.TAG, "Unexpected error while updating presence", e);
-                }
+                WonderPush.safeDefer(() -> {
+                    try {
+                        updatePresence(false);
+                    } catch (Exception e) {
+                        Log.d(WonderPush.TAG, "Unexpected error while updating presence", e);
+                    }
+                }, 0);
             }
             if (!activity.isFinishing()) {
                 lastStoppedActivityRef = new WeakReference<>(activity);
