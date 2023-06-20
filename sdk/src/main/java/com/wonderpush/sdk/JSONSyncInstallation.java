@@ -8,8 +8,7 @@ import org.json.JSONObject;
 
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 
 public class JSONSyncInstallation extends JSONSync {
 
@@ -25,7 +24,7 @@ public class JSONSyncInstallation extends JSONSync {
     private long firstDelayedWriteDate;
     private static boolean disabled = false;
 
-    private ScheduledFuture<Void> scheduledPatchCallDelayedTask;
+    private Future<Void> scheduledPatchCallDelayedTask;
 
     @Override
     public void doUpgrade(JSONObject upgradeMeta, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator) {
@@ -233,21 +232,17 @@ public class JSONSyncInstallation extends JSONSync {
             });
             return;
         }
-        scheduledPatchCallDelayedTask = WonderPush.sScheduledExecutor.schedule(
-                new Callable<Void>() {
-                    @Override
-                    public Void call() {
-                        try {
-                            performScheduledPatchCall();
-                        } catch (Exception ex) {
-                            Log.e(WonderPush.TAG, "Unexpected error on scheduled task", ex);
-                        }
-                        return null;
+        scheduledPatchCallDelayedTask = WonderPush.safeDefer(
+                () -> {
+                    try {
+                        performScheduledPatchCall();
+                    } catch (Exception ex) {
+                        Log.e(WonderPush.TAG, "Unexpected error on scheduled task", ex);
                     }
+                    return null;
                 },
                 Math.min(InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MIN_DELAY,
-                        firstDelayedWriteDate + InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY - nowRT),
-                TimeUnit.MILLISECONDS);
+                        firstDelayedWriteDate + InstallationManager.CACHED_INSTALLATION_CUSTOM_PROPERTIES_MAX_DELAY - nowRT));
     }
 
     @Override
