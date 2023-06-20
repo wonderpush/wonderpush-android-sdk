@@ -119,10 +119,11 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-            if (!hasCreatedActivities()) {
-                createFirstDate = TimeSync.getTime();
-            }
+            final long now = TimeSync.getTime();
             ++createCount;
+            if (!hasCreatedActivities()) {
+                createFirstDate = now;
+            }
         }
 
         @Override
@@ -131,23 +132,25 @@ class ActivityLifecycleMonitor {
                 // The monitor was probably setup inside a Activity.onCreate() call
                 this.onActivityCreated(activity, null);
             }
-            if (!hasStartedActivities()) {
-                startFirstDate = TimeSync.getTime();
-            }
+            final long now = TimeSync.getTime();
             ++startCount;
+            if (!hasStartedActivities()) {
+                startFirstDate = now;
+            }
         }
 
         @Override
         public void onActivityResumed(Activity activity) {
+            final long now = TimeSync.getTime();
+            ++resumeCount;
             if (!hasResumedActivities()) {
-                resumeFirstDate = TimeSync.getTime();
+                resumeFirstDate = now;
             }
             lastResumedActivityRef = new WeakReference<>(activity);
-            ++resumeCount;
             WonderPush.injectAppOpenIfNecessary();
             updatePresence(true);
             WonderPush.showPotentialNotification(activity, activity.getIntent());
-            WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
+            WonderPushConfiguration.setLastInteractionDate(now);
             NotificationPromptController.getInstance().onAppForeground();
             WonderPush.refreshSubscriptionStatus();
             callOnNextResumeListeners(activity);
@@ -155,18 +158,20 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityPaused(Activity activity) {
+            final long now = TimeSync.getTime();
             ++pausedCount;
             if (!hasResumedActivities()) {
-                pausedLastDate = TimeSync.getTime();
+                pausedLastDate = now;
             }
-            WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
+            WonderPushConfiguration.setLastInteractionDate(now);
         }
 
         @Override
         public void onActivityStopped(Activity activity) {
+            final long now = TimeSync.getTime();
             ++stopCount;
             if (!hasStartedActivities()) {
-                stopLastDate = TimeSync.getTime();
+                stopLastDate = now;
                 try {
                     updatePresence(false);
                 } catch (Exception e) {
@@ -184,9 +189,10 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityDestroyed(Activity activity) {
+            final long now = TimeSync.getTime();
             ++destroyCount;
             if (!hasCreatedActivities()) {
-                destroyLastDate = TimeSync.getTime();
+                destroyLastDate = now;
             }
         }
 
