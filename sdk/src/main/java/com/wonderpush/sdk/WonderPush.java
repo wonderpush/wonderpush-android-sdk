@@ -1820,7 +1820,9 @@ public class WonderPush {
 
             initializeForApplication(context);
             initializeForActivity(context);
-            refreshPreferencesAndConfiguration(false);
+            safeDefer(() -> {
+                refreshPreferencesAndConfiguration(false);
+            }, 0);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while initializing the SDK", e);
         }
