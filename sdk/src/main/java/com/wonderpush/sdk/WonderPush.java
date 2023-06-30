@@ -1782,9 +1782,14 @@ public class WonderPush {
                     }
                 }, new IntentFilter(Constants.INTENT_REMOTE_CONFIG_UPDATED));
 
-                initForNewUser(sBeforeInitializationUserIdSet
-                        ? sBeforeInitializationUserId
-                        : WonderPushConfiguration.getUserId());
+                if (sBeforeInitializationUserIdSet) {
+                    initForNewUser(sBeforeInitializationUserId);
+                } else {
+                    // Initializing using the same userId won't change WonderPushConfiguration storage, so it's safe to defer
+                    safeDefer(() -> {
+                        initForNewUser(WonderPushConfiguration.getUserId());
+                    }, 0);
+                }
 
                 sIsInitialized = true;
                 hasUserConsentChanged(hasUserConsent()); // make sure to set sIsInitialized=true before
