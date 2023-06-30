@@ -69,7 +69,7 @@ public class WonderPushUserPreferences {
         }
         sInitializing = true;
         try {
-            WonderPush.safeDefer(WonderPushUserPreferences::load, 0);
+            WonderPushUserPreferences.load();
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while initializing WonderPushUserPreferences", ex);
         }
