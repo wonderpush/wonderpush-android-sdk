@@ -58,18 +58,21 @@ public class WonderPushUserPreferences {
     private static String sDefaultChannelId;
     private static Map<String, WonderPushChannelGroup> sChannelGroups;
     private static Map<String, WonderPushChannel> sChannels;
-    private static DeferredFuture<Void> sInitializedDeferred = new DeferredFuture<>();
+    private static final DeferredFuture<Void> sInitializedDeferred = new DeferredFuture<>();
     private static boolean sInitializing = false;
     private static boolean sInitialized = false;
 
-    static synchronized void initialize() {
+    // This method is not synchronized so that it can be called asynchronously even if other methods
+    // have been called concurrently, in order to unblock them once the class is initialized.
+    // For the same reason, only the public methods of this class are synchronized.
+    static void initialize() {
         if (sInitializing) {
             waitForInitialization();
             return;
         }
         sInitializing = true;
         try {
-            WonderPushUserPreferences.load();
+            WonderPushUserPreferences._load();
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while initializing WonderPushUserPreferences", ex);
         }
@@ -78,7 +81,7 @@ public class WonderPushUserPreferences {
         sInitializing = false;
     }
 
-    private static synchronized void waitForInitialization() {
+    private static void waitForInitialization() {
         if (!sInitialized) {
             try {
                 sInitializedDeferred.getFuture().get();
@@ -93,7 +96,7 @@ public class WonderPushUserPreferences {
         }
     }
 
-    private static synchronized void load() {
+    private static void _load() {
         JSONObject inChannelPreferences = WonderPushConfiguration.getChannelPreferences();
         if (inChannelPreferences == null) inChannelPreferences = new JSONObject();
 
@@ -149,7 +152,7 @@ public class WonderPushUserPreferences {
         }
     }
 
-    private static synchronized void save() {
+    private static void _save() {
         try {
             JSONObject outChannelPreferences = new JSONObject();
 
@@ -221,14 +224,14 @@ public class WonderPushUserPreferences {
         try {
             waitForInitialization();
             if (_setDefaultChannelId(id)) {
-                save();
+                _save();
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while setting default channel id to " + id, ex);
         }
     }
 
-    private static synchronized boolean _setDefaultChannelId(String id) {
+    private static boolean _setDefaultChannelId(String id) {
         if (id == null || "".equals(id)) id = DEFAULT_CHANNEL_NAME; // FIXME "" too?
         if (!id.equals(sDefaultChannelId)) {
             sDefaultChannelId = id;
@@ -324,14 +327,14 @@ public class WonderPushUserPreferences {
         try {
             waitForInitialization();
             if (_removeChannelGroup(groupId)) {
-                save();
+                _save();
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while removing channel group " + groupId, ex);
         }
     }
 
-    private static synchronized boolean _removeChannelGroup(String groupId) {
+    private static boolean _removeChannelGroup(String groupId) {
         WonderPushChannelGroup prev = sChannelGroups.remove(groupId);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -351,14 +354,14 @@ public class WonderPushUserPreferences {
         try {
             waitForInitialization();
             if (_putChannelGroup(channelGroup)) {
-                save();
+                _save();
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while putting channel group " + channelGroup, ex);
         }
     }
 
-    private static synchronized boolean _putChannelGroup(WonderPushChannelGroup channelGroup) {
+    private static boolean _putChannelGroup(WonderPushChannelGroup channelGroup) {
         if (channelGroup == null) return false;
         WonderPushChannelGroup prev = sChannelGroups.put(channelGroup.getId(), channelGroup);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -408,7 +411,7 @@ public class WonderPushUserPreferences {
         } finally {
             try {
                 if (save) {
-                    save();
+                    _save();
                 }
             } catch (Exception ex) {
                 Log.e(WonderPush.TAG, "Unexpected error while setting channel groups " + channelGroups, ex);
@@ -453,14 +456,14 @@ public class WonderPushUserPreferences {
         try {
             waitForInitialization();
             if (_removeChannel(channelId)) {
-                save();
+                _save();
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while removing channel " + channelId, ex);
         }
     }
 
-    private static synchronized boolean _removeChannel(String channelId) {
+    private static boolean _removeChannel(String channelId) {
         WonderPushChannel prev = sChannels.remove(channelId);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             android.app.NotificationManager notificationManager = (android.app.NotificationManager) WonderPush.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -480,14 +483,14 @@ public class WonderPushUserPreferences {
         try {
             waitForInitialization();
             if (_putChannel(channel)) {
-                save();
+                _save();
             }
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while putting channel " + channel, ex);
         }
     }
 
-    private static synchronized boolean _putChannel(WonderPushChannel channel) {
+    private static boolean _putChannel(WonderPushChannel channel) {
         if (channel == null) return false;
         WonderPushChannel prev = sChannels.put(channel.getId(), channel);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -582,7 +585,7 @@ public class WonderPushUserPreferences {
         } finally {
             try {
                 if (save) {
-                    save();
+                    _save();
                 }
             } catch (Exception ex) {
                 Log.e(WonderPush.TAG, "Unexpected error while setting channels " + channels, ex);
