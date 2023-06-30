@@ -126,10 +126,12 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityResumed(Activity activity) {
-            final long now = TimeSync.getTime();
+            final long unadjustedSystemCurrentTimeMillis = TimeSync.getUnadjustedSystemCurrentTimeMillis();
+            final long unadjustedSystemClockElapsedRealtime = TimeSync.getUnadjustedSystemClockElapsedRealtime();
             ++resumeCount;
             lastResumedActivityRef = new WeakReference<>(activity);
             WonderPush.safeDefer(() -> {
+                long now = TimeSync.adjustTime(unadjustedSystemCurrentTimeMillis, unadjustedSystemClockElapsedRealtime);
                 WonderPush.injectAppOpenIfNecessary();
                 updatePresence(true);
                 WonderPush.showPotentialNotification(activity, activity.getIntent());
@@ -142,9 +144,11 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityPaused(Activity activity) {
-            final long now = TimeSync.getTime();
+            final long unadjustedSystemCurrentTimeMillis = TimeSync.getUnadjustedSystemCurrentTimeMillis();
+            final long unadjustedSystemClockElapsedRealtime = TimeSync.getUnadjustedSystemClockElapsedRealtime();
             ++pausedCount;
             WonderPush.safeDefer(() -> {
+                long now = TimeSync.adjustTime(unadjustedSystemCurrentTimeMillis, unadjustedSystemClockElapsedRealtime);
                 WonderPushConfiguration.setLastInteractionDate(now);
             }, 0);
         }

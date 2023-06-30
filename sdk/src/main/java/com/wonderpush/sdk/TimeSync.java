@@ -10,26 +10,36 @@ public class TimeSync {
     private static long deviceDateToServerDateUncertainty = Long.MAX_VALUE;
     private static long startupDateToDeviceDateOffset = Long.MAX_VALUE;
 
+    public static long getUnadjustedSystemCurrentTimeMillis() {
+        return System.currentTimeMillis();
+    }
+
+    public static long getUnadjustedSystemClockElapsedRealtime() {
+        return SystemClock.elapsedRealtime();
+    }
+
     /**
      * Get the current timestamp in milliseconds, UTC.
      * @return A timestamp in milliseconds
      */
     public synchronized static long getTime() {
+        return adjustTime(getUnadjustedSystemCurrentTimeMillis(), getUnadjustedSystemClockElapsedRealtime());
+    }
+
+    public synchronized static long adjustTime(long unadjustedSystemCurrentTimeMillis, long unadjustedSystemClockElapsedRealtime) {
         // Initialization
         if (deviceDateToServerDateUncertainty == Long.MAX_VALUE) {
             deviceDateToServerDateUncertainty = WonderPushConfiguration.getDeviceDateSyncUncertainty();
             deviceDateToServerDateOffset = WonderPushConfiguration.getDeviceDateSyncOffset();
         }
-        long currentTimeMillis = System.currentTimeMillis();
-        long elapsedRealtime = SystemClock.elapsedRealtime();
-        long startupToDeviceOffset = currentTimeMillis - elapsedRealtime;
+        long startupToDeviceOffset = unadjustedSystemCurrentTimeMillis - unadjustedSystemClockElapsedRealtime;
         if (startupDateToDeviceDateOffset == Long.MAX_VALUE) {
             startupDateToDeviceDateOffset = startupToDeviceOffset;
         }
 
         // Check device date consistency with startup date
         if (Math.abs(startupToDeviceOffset - startupDateToDeviceDateOffset) > 1000) {
-            // System time has jumped (by at least 1 second), or has drifted with regards to elapsedRealtime.
+            // System time has jumped (by at least 1 second), or has drifted with regards to unadjustedSystemClockElapsedRealtime.
             // Apply the offset difference to resynchronize the "device" sync offset onto the new system date.
             deviceDateToServerDateOffset -= startupToDeviceOffset - startupDateToDeviceDateOffset;
             WonderPushConfiguration.setDeviceDateSyncOffset(deviceDateToServerDateOffset);
@@ -39,9 +49,9 @@ public class TimeSync {
         if (startupDateToServerDateUncertainty <= deviceDateToServerDateUncertainty
                 // Don't use the startup date if it has not been synced, use and trust last device date sync
                 && startupDateToServerDateUncertainty != Long.MAX_VALUE) {
-            return elapsedRealtime + startupDateToServerDateOffset;
+            return unadjustedSystemClockElapsedRealtime + startupDateToServerDateOffset;
         } else {
-            return currentTimeMillis + deviceDateToServerDateOffset;
+            return unadjustedSystemCurrentTimeMillis + deviceDateToServerDateOffset;
         }
     }
 
