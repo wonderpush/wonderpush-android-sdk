@@ -73,7 +73,7 @@ class WonderPushJobQueue {
                 return (int) diff;
             }
         });
-        restore();
+        WonderPush.safeDefer(this::restore, 0);
     }
 
     /**
