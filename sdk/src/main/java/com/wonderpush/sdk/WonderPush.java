@@ -1730,8 +1730,10 @@ public class WonderPush {
                 SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
                 sRemoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
 
-                PushServiceManager.initialize(getApplicationContext());
                 WonderPushConfiguration.initialize(getApplicationContext());
+                safeDefer(() -> {
+                    PushServiceManager.initialize(getApplicationContext());
+                }, 0);
                 RateLimiter.initialize(WonderPushConfiguration.getSharedPreferences());
                 safeDefer(WonderPushUserPreferences::initialize, 0);
                 applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
