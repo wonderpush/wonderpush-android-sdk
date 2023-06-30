@@ -94,13 +94,6 @@ class ActivityLifecycleMonitor {
         private int stopCount;
         private int destroyCount;
 
-        private long createFirstDate;
-        private long startFirstDate;
-        private long resumeFirstDate;
-        private long pausedLastDate;
-        private long stopLastDate;
-        private long destroyLastDate;
-
         private WeakReference<Activity> lastResumedActivityRef = new WeakReference<>(null);
         private WeakReference<Activity> lastStoppedActivityRef = new WeakReference<>(null);
 
@@ -119,11 +112,7 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-            final long now = TimeSync.getTime();
             ++createCount;
-            if (!hasCreatedActivities()) {
-                createFirstDate = now;
-            }
         }
 
         @Override
@@ -132,20 +121,13 @@ class ActivityLifecycleMonitor {
                 // The monitor was probably setup inside a Activity.onCreate() call
                 this.onActivityCreated(activity, null);
             }
-            final long now = TimeSync.getTime();
             ++startCount;
-            if (!hasStartedActivities()) {
-                startFirstDate = now;
-            }
         }
 
         @Override
         public void onActivityResumed(Activity activity) {
             final long now = TimeSync.getTime();
             ++resumeCount;
-            if (!hasResumedActivities()) {
-                resumeFirstDate = now;
-            }
             lastResumedActivityRef = new WeakReference<>(activity);
             WonderPush.safeDefer(() -> {
                 WonderPush.injectAppOpenIfNecessary();
@@ -162,9 +144,6 @@ class ActivityLifecycleMonitor {
         public void onActivityPaused(Activity activity) {
             final long now = TimeSync.getTime();
             ++pausedCount;
-            if (!hasResumedActivities()) {
-                pausedLastDate = now;
-            }
             WonderPush.safeDefer(() -> {
                 WonderPushConfiguration.setLastInteractionDate(now);
             }, 0);
@@ -172,10 +151,8 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityStopped(Activity activity) {
-            final long now = TimeSync.getTime();
             ++stopCount;
             if (!hasStartedActivities()) {
-                stopLastDate = now;
                 WonderPush.safeDefer(() -> {
                     try {
                         updatePresence(false);
@@ -195,11 +172,7 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityDestroyed(Activity activity) {
-            final long now = TimeSync.getTime();
             ++destroyCount;
-            if (!hasCreatedActivities()) {
-                destroyLastDate = now;
-            }
         }
 
         protected boolean hasResumedActivities() {
@@ -220,30 +193,6 @@ class ActivityLifecycleMonitor {
 
         protected Activity getLastStoppedActivity() {
             return lastStoppedActivityRef.get();
-        }
-
-        protected long getCreateFirstDate() {
-            return createFirstDate;
-        }
-
-        protected long getStartFirstDate() {
-            return startFirstDate;
-        }
-
-        protected long getResumeFirstDate() {
-            return resumeFirstDate;
-        }
-
-        protected long getPausedLastDate() {
-            return pausedLastDate;
-        }
-
-        protected long getStopLastDate() {
-            return stopLastDate;
-        }
-
-        protected long getDestroyLastDate() {
-            return destroyLastDate;
         }
 
     }
