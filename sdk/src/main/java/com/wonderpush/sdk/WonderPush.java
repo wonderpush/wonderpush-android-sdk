@@ -1732,11 +1732,13 @@ public class WonderPush {
 
                 WonderPushConfiguration.initialize(getApplicationContext());
                 safeDefer(() -> {
+                    applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
+                }, 0);
+                safeDefer(() -> {
                     PushServiceManager.initialize(getApplicationContext());
                 }, 0);
                 RateLimiter.initialize(WonderPushConfiguration.getSharedPreferences());
                 safeDefer(WonderPushUserPreferences::initialize, 0);
-                applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
                 JSONSyncInstallation.setDisabled(true);
                 ApiClient.getInstance().setDisabled(true);
                 MeasurementsApiClient.setDisabled(true);
