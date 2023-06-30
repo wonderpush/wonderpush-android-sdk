@@ -7,7 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class JSONSyncInstallation extends JSONSync {
@@ -18,6 +18,8 @@ public class JSONSyncInstallation extends JSONSync {
     private static final Long UPGRADE_META_VERSION_LATEST = UPGRADE_META_VERSION_1_IMPORTED_CUSTOM;
 
     private static final Map<String, JSONSyncInstallation> sInstancePerUserId = new HashMap<>();
+    private static DeferredFuture<Void> initializedDeferred = new DeferredFuture<>();
+    private static boolean initializing = false;
     private static boolean initialized = false;
 
     private final String userId;
@@ -64,12 +66,30 @@ public class JSONSyncInstallation extends JSONSync {
         input.put("custom", tmp);
     }
 
+    private static synchronized void waitForInitialization() {
+        if (!initialized) {
+            try {
+                initializedDeferred.getFuture().get();
+            } catch (ExecutionException ex) {
+                // This is thrown if the deferred is settled to an exception, which we don't do
+                Log.e(WonderPush.TAG, "Unexpected error while waiting for JSONSyncInstallation initialization", ex);
+                throw new RuntimeException(ex);
+            } catch (InterruptedException ex) {
+                Log.e(WonderPush.TAG, "Unexpected error while waiting for JSONSyncInstallation initialization", ex);
+                throw new RuntimeException(ex);
+            }
+        }
+    }
+
     public static void initialize() {
         synchronized (sInstancePerUserId) {
             if (initialized) {
                 return;
+            } else if (initializing) {
+                waitForInitialization();
+                return;
             }
-            initialized = true;
+            initializing = true;
 
             JSONObject installationCustomSyncStatePerUserId = WonderPushConfiguration.getInstallationCustomSyncStatePerUserId();
             if (installationCustomSyncStatePerUserId == null) installationCustomSyncStatePerUserId = new JSONObject();
@@ -118,6 +138,10 @@ public class JSONSyncInstallation extends JSONSync {
                     }
                 }
             });
+
+            initialized = true;
+            initializedDeferred.set(null); // settle the deferred
+            initializing = false;
         }
     }
 
@@ -126,6 +150,7 @@ public class JSONSyncInstallation extends JSONSync {
     }
 
     static JSONSyncInstallation forUser(String userId) {
+        waitForInitialization();
         if (userId != null && userId.length() == 0) userId = null;
         synchronized (sInstancePerUserId) {
             JSONSyncInstallation rtn = sInstancePerUserId.get(userId);
@@ -146,6 +171,7 @@ public class JSONSyncInstallation extends JSONSync {
     }
 
     public static void flushAll(boolean sync) {
+        waitForInitialization();
         WonderPush.logDebug("Flushing delayed updates of custom properties for all known users");
         synchronized (sInstancePerUserId) {
             for (JSONSyncInstallation jsonSync : sInstancePerUserId.values()) {

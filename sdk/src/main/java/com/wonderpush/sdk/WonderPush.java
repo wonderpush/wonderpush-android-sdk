@@ -1738,7 +1738,7 @@ public class WonderPush {
                 JSONSyncInstallation.setDisabled(true);
                 ApiClient.getInstance().setDisabled(true);
                 MeasurementsApiClient.setDisabled(true);
-                JSONSyncInstallation.initialize();
+                safeDefer(JSONSyncInstallation::initialize, 0);
                 initializeInAppMessaging(context);
 
                 // Setup a remote config handler to execute as soon as we get the config
