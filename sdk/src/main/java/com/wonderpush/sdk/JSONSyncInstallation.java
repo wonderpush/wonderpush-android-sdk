@@ -66,7 +66,7 @@ public class JSONSyncInstallation extends JSONSync {
         input.put("custom", tmp);
     }
 
-    private static synchronized void waitForInitialization() {
+    private static void waitForInitialization() {
         if (!initialized) {
             try {
                 initializedDeferred.getFuture().get();
