@@ -2,8 +2,8 @@ package com.wonderpush.sdk.segmentation.parser;
 
 public class SegmentationFactory {
 
-    private static SegmentationDSLParser defaultParser = null;
-    private static SegmentationDSLParser defaultThrowingParser = null;
+    private static volatile SegmentationDSLParser defaultParser = null;
+    private static volatile SegmentationDSLParser defaultThrowingParser = null;
 
     public static SegmentationDSLParser getDefaultParser() {
         if (defaultParser == null) {
