@@ -24,6 +24,8 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InApp
 
 import javax.inject.Inject;
 
+import dagger.Lazy;
+
 /**
  * Image loader abstraction around the Picasso singleton to facilitate testing and injection
  *
@@ -31,19 +33,19 @@ import javax.inject.Inject;
  */
 @InAppMessagingScope
 public class IamImageLoader {
-  private final Picasso picasso;
+  private final Lazy<Picasso> picasso;
 
   @Inject
-  IamImageLoader(Picasso picasso) {
+  IamImageLoader(Lazy<Picasso> picasso) {
     this.picasso = picasso;
   }
 
   public IamImageRequestCreator load(@Nullable String imageUrl) {
-    return new IamImageRequestCreator(picasso.load(imageUrl));
+    return new IamImageRequestCreator(picasso.get().load(imageUrl));
   }
 
   public void cancelTag(Class c) {
-    picasso.cancelTag(c);
+    picasso.get().cancelTag(c);
   }
 
   public static class IamImageRequestCreator {
