@@ -15,24 +15,36 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.Date;
 import java.util.Locale;
 
 public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
-    @Nonnull
-    OkHttpClient client = new OkHttpClient.Builder().eventListener(new EventListener() {
-        @Override
-        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
-            TrafficStats.setThreadStatsTag(Process.myTid());
-        }
-    }).build();
+
+    @Nullable
+    private volatile OkHttpClient _client = null; // lazily initialized to avoid the cost during SDK's synchronous initialization
     @Nonnull
     String clientId;
     @Nonnull
     final private SafeDeferProvider safeDeferProvider;
+
     public OkHttpRemoteConfigFetcher(String clientId, SafeDeferProvider safeDeferProvider) {
         this.clientId = clientId;
         this.safeDeferProvider = safeDeferProvider;
+    }
+
+    private @Nonnull OkHttpClient getClient() {
+        if (_client == null) {
+            synchronized (this) {
+                if (_client == null) {
+                    _client = new OkHttpClient.Builder().eventListener(new EventListener() {
+                        @Override
+                        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                            TrafficStats.setThreadStatsTag(Process.myTid());
+                        }
+                    }).build();
+                }
+            }
+        }
+        return _client;
     }
 
     @Override
@@ -40,7 +52,7 @@ public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
         String url = String.format(Locale.ENGLISH, "%s%s%s?_=%d",Constants.REMOTE_CONFIG_BASE_URL, clientId, Constants.REMOTE_CONFIG_SUFFIX, System.currentTimeMillis());
         this.safeDeferProvider.safeDefer(() -> {
             Request request = new Request.Builder().url(url).get().build();
-            client.newCall(request).enqueue(new SafeOkHttpCallback() {
+            getClient().newCall(request).enqueue(new SafeOkHttpCallback() {
                 @Override
                 public void onFailureSafe(Call call, IOException e) {
                     handler.handle(null, e);
