@@ -13,9 +13,9 @@ import java.util.concurrent.Future;
 public class JSONSyncInstallation extends JSONSync {
 
     private static final String UPGRADE_META_VERSION_KEY = "version";
-    private static final Long UPGRADE_META_VERSION_0_INITIAL = 0l;
-    private static final Long UPGRADE_META_VERSION_1_IMPORTED_CUSTOM = 1l;
-    private static final Long UPGRADE_META_VERSION_LATEST = UPGRADE_META_VERSION_1_IMPORTED_CUSTOM;
+    private static final long UPGRADE_META_VERSION_0_INITIAL = 0L;
+    private static final long UPGRADE_META_VERSION_1_IMPORTED_CUSTOM = 1L;
+    private static final long UPGRADE_META_VERSION_LATEST = UPGRADE_META_VERSION_1_IMPORTED_CUSTOM;
 
     private static final Map<String, JSONSyncInstallation> sInstancePerUserId = new HashMap<>();
     private static DeferredFuture<Void> initializedDeferred = new DeferredFuture<>();
@@ -30,7 +30,7 @@ public class JSONSyncInstallation extends JSONSync {
 
     @Override
     public void doUpgrade(JSONObject upgradeMeta, JSONObject sdkState, JSONObject serverState, JSONObject putAccumulator, JSONObject inflightDiff, JSONObject inflightPutAccumulator) {
-        Long currentVersion = upgradeMeta.optLong(UPGRADE_META_VERSION_KEY, 0);
+        long currentVersion = upgradeMeta.optLong(UPGRADE_META_VERSION_KEY, 0);
 
         // Do not alter latest, or future versions we don't understand
         if (currentVersion >= UPGRADE_META_VERSION_LATEST) {
