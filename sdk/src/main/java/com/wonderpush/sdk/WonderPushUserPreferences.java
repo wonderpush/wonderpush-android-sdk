@@ -66,16 +66,28 @@ public class WonderPushUserPreferences {
     // have been called concurrently, in order to unblock them once the class is initialized.
     // For the same reason, only the public methods of this class are synchronized.
     static void initialize() {
-        if (sInitializing) {
+        // Let's avoid double initialization by synchronizing instead on an object only synchronized on in this method
+        boolean alreadyInitializing = false;
+        synchronized (sInitializedDeferred) {
+            if (sInitialized) {
+                return;
+            } else if (sInitializing) {
+                alreadyInitializing = true; // we need to wait, but get out of the synchronized section first
+            } else {
+                sInitializing = true;
+            }
+        }
+        if (alreadyInitializing) {
             waitForInitialization();
             return;
         }
-        sInitializing = true;
+
         try {
             WonderPushUserPreferences._load();
         } catch (Exception ex) {
             Log.e(WonderPush.TAG, "Unexpected error while initializing WonderPushUserPreferences", ex);
         }
+
         sInitialized = true;
         sInitializedDeferred.set(null); // settle the deferred
         sInitializing = false;
