@@ -29,12 +29,10 @@ import javax.inject.Inject;
  */
 public class TestDeviceHelper {
 
-  /*@VisibleForTesting*/ static final String TEST_DEVICE_PREFERENCES = "test_device";
   /*@VisibleForTesting*/ static final String FRESH_INSTALL_PREFERENCES = "fresh_install";
   /*@VisibleForTesting*/ static final int MAX_FETCH_COUNT = 5;
 
   private final SharedPreferencesUtils sharedPreferencesUtils;
-  private boolean isTestDevice;
   private boolean isFreshInstall;
   private int fetchCount = 0;
 
@@ -42,16 +40,6 @@ public class TestDeviceHelper {
   public TestDeviceHelper(SharedPreferencesUtils sharedPreferencesUtils) {
     this.sharedPreferencesUtils = sharedPreferencesUtils;
     this.isFreshInstall = readFreshInstallStatusFromPreferences();
-    this.isTestDevice = readTestDeviceStatusFromPreferences();
-  }
-
-  /**
-   * Determine whether device is set as a test device.
-   *
-   * @return true if device is in test mode
-   */
-  public boolean isDeviceInTestMode() {
-    return isTestDevice;
   }
 
   /**
@@ -69,17 +57,7 @@ public class TestDeviceHelper {
    * @param campaigns campaign fetch response from the IAM server.
    */
   public void processCampaignFetch(List<Campaign> campaigns) {
-    // We only care about this logic if we are not already a test device.
-    if (!isTestDevice) {
-      updateFreshInstallStatus();
-      for (Campaign campaign : campaigns) {
-        if (campaign.isTestCampaign()) {
-          setTestDeviceStatus(true);
-          Logging.logi("Setting this device as a test device");
-          return;
-        }
-      }
-    }
+    updateFreshInstallStatus();
   }
 
   /** Increments the fetch count which is used to determine if an app install is fresh. */
@@ -94,17 +72,6 @@ public class TestDeviceHelper {
   }
 
   /**
-   * Sets the test device status and saves it into the app stored preferences.
-   *
-   * @param isEnabled whether or not the device should be a test device
-   */
-  private void setTestDeviceStatus(boolean isEnabled) {
-    isTestDevice = isEnabled;
-    // Update SharedPreferences, so that we preserve state across app restarts
-    sharedPreferencesUtils.setBooleanPreference(TEST_DEVICE_PREFERENCES, isEnabled);
-  }
-
-  /**
    * Sets the app fresh install state and saves it into the app stored preferences
    *
    * @param isEnabled whether or not the app is a fresh install.
@@ -113,16 +80,6 @@ public class TestDeviceHelper {
     isFreshInstall = isEnabled;
     // Update SharedPreferences, so that we preserve state across app restarts
     sharedPreferencesUtils.setBooleanPreference(FRESH_INSTALL_PREFERENCES, isEnabled);
-  }
-
-  /**
-   * Reads the test device status from the apps stored preferences. Defaults to false because apps
-   * do not start in test mode.
-   *
-   * @return true if device is in test mode.
-   */
-  private boolean readTestDeviceStatusFromPreferences() {
-    return sharedPreferencesUtils.getAndSetBooleanPreference(TEST_DEVICE_PREFERENCES, false);
   }
 
   /**
