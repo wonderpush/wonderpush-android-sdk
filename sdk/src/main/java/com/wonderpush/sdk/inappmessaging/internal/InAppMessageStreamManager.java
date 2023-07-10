@@ -63,7 +63,6 @@ public class InAppMessageStreamManager {
   private final ImpressionStorageClient impressionStorageClient;
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
-  private final TestDeviceHelper testDeviceHelper;
   private final InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate;
 
   @Inject
@@ -75,7 +74,6 @@ public class InAppMessageStreamManager {
           Schedulers schedulers,
           ImpressionStorageClient impressionStorageClient,
           @AppForeground RateLimit appForegroundRateLimit,
-          TestDeviceHelper testDeviceHelper,
           InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
@@ -84,7 +82,6 @@ public class InAppMessageStreamManager {
     this.schedulers = schedulers;
     this.impressionStorageClient = impressionStorageClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
-    this.testDeviceHelper = testDeviceHelper;
     this.inAppMessagingDelegate = inAppMessagingDelegate;
   }
 
@@ -235,7 +232,6 @@ public class InAppMessageStreamManager {
                                                               resp.size())))
                               .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
                               //.doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
-                              .doOnSuccess(testDeviceHelper::processCampaignFetch)
                               .doOnError(e -> Logging.loge("Service fetch error: ", e))
                               .onErrorResumeNext(Maybe.empty()); // Absorb service failures
 
