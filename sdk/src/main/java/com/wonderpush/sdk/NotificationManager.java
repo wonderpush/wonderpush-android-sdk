@@ -91,7 +91,7 @@ public class NotificationManager {
         try {
             JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
             if (installation != null) {
-                long lastReceivedNotificationCheckDate = installation.getSdkState().optLong(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, -1);
+                long lastReceivedNotificationCheckDate = installation.optSdkStateLongForPath(-1, LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY);
                 long now = TimeSync.getTime();
                 boolean reportLastReceivedNotificationCheckDate =
                         lastReceivedNotificationCheckDate == -1

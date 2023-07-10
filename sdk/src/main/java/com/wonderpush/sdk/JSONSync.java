@@ -1,5 +1,6 @@
 package com.wonderpush.sdk;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -119,6 +120,41 @@ abstract class JSONSync {
 
     public synchronized JSONObject getSdkState() throws JSONException {
         return JSONUtil.deepCopy(sdkState);
+    }
+
+    synchronized JSONObject walkSdkStateJSONObjectExceptLast(String... path) throws JSONException {
+        JSONObject rtn = sdkState;
+        for (int i = 0; rtn != null && i < path.length - 1; i++) {
+            rtn = sdkState.optJSONObject(path[i]);
+        }
+        return rtn;
+    }
+
+    public synchronized JSONObject optSdkStateJSONObjectForPath(String... path) throws JSONException {
+        JSONObject rtn = walkSdkStateJSONObjectExceptLast(path);
+        if (rtn != null) rtn = rtn.optJSONObject(path[path.length-1]);
+        if (rtn == null) return null;
+        return JSONUtil.deepCopy(rtn);
+    }
+
+    public synchronized JSONArray optSdkStateJSONArrayForPath(String... path) throws JSONException {
+        JSONObject walked = walkSdkStateJSONObjectExceptLast(path);
+        if (walked == null) return null;
+        JSONArray rtn = walked.optJSONArray(path[path.length-1]);
+        if (rtn == null) return null;
+        return JSONUtil.deepCopy(rtn);
+    }
+
+    public synchronized long optSdkStateLongForPath(long fallback, String... path) throws JSONException {
+        JSONObject walked = walkSdkStateJSONObjectExceptLast(path);
+        if (walked == null) return fallback;
+        return walked.optLong(path[path.length-1], fallback);
+    }
+
+    public synchronized String optSdkStateStringForPath(String fallback, String... path) throws JSONException {
+        JSONObject walked = walkSdkStateJSONObjectExceptLast(path);
+        if (walked == null) return fallback;
+        return JSONUtil.optString(walked, path[path.length-1], fallback);
     }
 
     private synchronized void save() {

@@ -2786,8 +2786,7 @@ public class WonderPush {
     static SubscriptionStatus getSubscriptionStatus() {
         JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
         try {
-            JSONObject preferences = installation != null ? installation.getSdkState().optJSONObject("preferences") : null;
-            String subscriptionStatus = preferences != null ? preferences.optString("subscriptionStatus") : null;
+            String subscriptionStatus = installation.optSdkStateStringForPath(null, "preferences", "subscriptionStatus");
             if (subscriptionStatus == null) return null;
 
             if (subscriptionStatus.equals(SubscriptionStatus.OPT_OUT.slug)) {

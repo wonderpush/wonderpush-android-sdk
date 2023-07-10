@@ -41,8 +41,7 @@ public class InstallationManager {
 
     public static JSONObject getInstallationCustomProperties() {
         try {
-            JSONObject sync = JSONSyncInstallation.forCurrentUser().getSdkState();
-            JSONObject custom = sync == null ? null : sync.optJSONObject("custom");
+            JSONObject custom = JSONSyncInstallation.forCurrentUser().optSdkStateJSONObjectForPath("custom");
             if (custom == null) return new JSONObject();
             Iterator<String> it = custom.keys();
             while (it.hasNext()) {
@@ -216,23 +215,14 @@ public class InstallationManager {
     }
 
     public static synchronized Set<String> getTags() {
-        JSONObject custom;
+        JSONArray tags = null;
         try {
-            JSONObject sync = JSONSyncInstallation.forCurrentUser().getSdkState();
-            custom = sync != null ? sync.optJSONObject("custom") : null;
-            if (custom == null) custom = new JSONObject();
+            tags = JSONSyncInstallation.forCurrentUser().optSdkStateJSONArrayForPath("custom", "tags");
         } catch (JSONException ex) {
-            Log.e(WonderPush.TAG, "Failed to read installation custom properties", ex);
-            custom = new JSONObject();
+            Log.e(WonderPush.TAG, "Failed to read installation custom.tags", ex);
         }
-        JSONArray tags = custom.optJSONArray("tags");
         if (tags == null) {
             tags = new JSONArray();
-            // Recover from a potential scalar string value
-            String val = JSONUtil.optString(custom, "tags");
-            if (val != null) {
-                tags.put(val);
-            }
         }
         TreeSet<String> rtn = new TreeSet<>(); // use a sorted implementation to avoid useless diffs later on
         for (int i = 0, l = tags.length(); i < l; ++i) {

@@ -200,6 +200,13 @@ public class JSONUtil {
         return new JSONObject(from.toString());
     }
 
+    public static JSONArray deepCopy(JSONArray from) throws JSONException {
+        if (from == null) {
+            return null;
+        }
+        return new JSONArray(from.toString());
+    }
+
     public static Object parseAllJSONStrings(Object base) {
         if (base instanceof JSONObject) {
             JSONObject rtn = new JSONObject();
