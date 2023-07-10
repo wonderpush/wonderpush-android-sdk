@@ -1737,7 +1737,7 @@ public class WonderPush {
                 safeDefer(() -> {
                     PushServiceManager.initialize(getApplicationContext());
                 }, 0);
-                RateLimiter.initialize(WonderPushConfiguration.getSharedPreferences());
+                RateLimiter.initialize(WonderPushConfiguration::getSharedPreferences);
                 safeDefer(WonderPushUserPreferences::initialize, 0);
                 JSONSyncInstallation.setDisabled(true);
                 ApiClient.getInstance().setDisabled(true);
