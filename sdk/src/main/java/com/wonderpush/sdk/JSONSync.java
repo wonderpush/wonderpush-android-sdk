@@ -34,6 +34,7 @@ abstract class JSONSync {
     private JSONObject inflightDiff;
     private JSONObject inflightPutAccumulator;
     private JSONObject upgradeMeta;
+    private boolean schedulingPatchCall;
     private boolean scheduledPatchCall;
     private boolean inflightPatchCall;
 
@@ -190,11 +191,10 @@ abstract class JSONSync {
         JSONUtil.merge(putAccumulator, diff, false);
         if (putAndFlushSynchronously()) {
             schedulePatchCallAndSave();
-        } else {
-            WonderPush.safeDefer(() -> {
-                schedulePatchCallAndSave();
-            }, 0);
-        }
+        } else if (!schedulingPatchCall) {
+            schedulingPatchCall = true;
+            WonderPush.safeDefer(this::schedulePatchCallAndSave, 0);
+        } // else a call to schedulePatchCallAndSave() has already been deferred
     }
 
     public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
@@ -226,6 +226,7 @@ abstract class JSONSync {
     }
 
     private synchronized void schedulePatchCallAndSave() {
+        schedulingPatchCall = false;
         scheduledPatchCall = true;
         save();
         doSchedulePatchCall();
