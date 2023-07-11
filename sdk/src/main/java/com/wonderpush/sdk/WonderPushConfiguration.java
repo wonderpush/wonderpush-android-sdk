@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -91,6 +92,7 @@ public class WonderPushConfiguration {
     private static int maximumCollapsedOtherTrackedEventsCount = DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT;
     private static int maximumUncollapsedTrackedEventsCount = DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_COUNT;
     private static long maximumUncollapsedTrackedEventsAgeMs = DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS;
+    private static WeakReference<List<JSONObject>> cachedTrackedEvents = new WeakReference<>(null);
 
     public static void initialize(Context context) {
         sContext = context.getApplicationContext();
@@ -191,7 +193,7 @@ public class WonderPushConfiguration {
             if (trackedEventsJson != null) {
                 trackedEvents = new JSONArray(trackedEventsJson);
             }
-            setTrackedEvents(trackedEvents);
+            setTrackedEvents(getTrackedEventsFromStoredJSONArray(trackedEvents));
         } catch (JSONException e) {
             setTrackedEvents(null);
         }
@@ -1186,13 +1188,13 @@ public class WonderPushConfiguration {
         Long last1days=0l, last3days=0l, last7days=0l, last15days=0l, last30days=0l, last60days=0l, last90days=0l;
 
         // Reconstruct the whole list
-        JSONArray storeTrackedEvents = new JSONArray();
-        for (JSONObject trackedEvent : collapsedLastBuiltinEvents) storeTrackedEvents.put(trackedEvent);
-        for (JSONObject trackedEvent : collapsedLastCustomEvents) storeTrackedEvents.put(trackedEvent);
-        for (JSONObject trackedEvent : collapsedOtherEvents) storeTrackedEvents.put(trackedEvent);
+        List<JSONObject> storeTrackedEvents = new ArrayList<>(collapsedLastBuiltinEvents.size() + collapsedLastCustomEvents.size() + collapsedOtherEvents.size() + uncollapsedEvents.size());
+        storeTrackedEvents.addAll(collapsedLastBuiltinEvents);
+        storeTrackedEvents.addAll(collapsedLastCustomEvents);
+        storeTrackedEvents.addAll(collapsedOtherEvents);
+        storeTrackedEvents.addAll(uncollapsedEvents);
         Long uncollapsedCount = 0L;
         for (JSONObject trackedEvent : uncollapsedEvents) {
-            storeTrackedEvents.put(trackedEvent);
             String trackedEventType = trackedEvent.optString("type");
             if (type.equals(trackedEventType)) {
                 ++uncollapsedCount;
@@ -1279,13 +1281,21 @@ public class WonderPushConfiguration {
         maximumUncollapsedTrackedEventsAgeMs = value;
     }
 
-    static void setTrackedEvents(JSONArray trackedEvents) {
-        putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, trackedEvents);
+    static void setTrackedEvents(List<JSONObject> trackedEvents) {
+        JSONArray storedTrackedEvents = trackedEvents == null ? null : new JSONArray(trackedEvents);
+        putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, storedTrackedEvents);
     }
 
     public static List<JSONObject> getTrackedEvents() {
+        List<JSONObject> result = cachedTrackedEvents.get();
+        if (result == null) {
+            result = getTrackedEventsFromStoredJSONArray(getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME));
+        }
+        return result;
+    }
+
+    static List<JSONObject> getTrackedEventsFromStoredJSONArray(JSONArray storedTrackedEvents) {
         List<JSONObject> result = new ArrayList<>();
-        JSONArray storedTrackedEvents = getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME);
         for (int i = 0; storedTrackedEvents != null && i < storedTrackedEvents.length(); i++) {
             JSONObject event = storedTrackedEvents.optJSONObject(i);
             if (event == null) continue;
