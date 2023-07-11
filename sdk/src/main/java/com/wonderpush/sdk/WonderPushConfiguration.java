@@ -1084,7 +1084,7 @@ public class WonderPushConfiguration {
         String type = JSONUtil.getString(eventData, "type");
         if (type == null) return null;
         Occurrences occurrences = new Occurrences();
-        Long allTime = 0l;
+        long allTime = 0L;
 
         String campaignId = JSONUtil.optString(eventData, "campaignId");
         String collapsing = JSONUtil.optString(eventData, "collapsing");
@@ -1103,14 +1103,14 @@ public class WonderPushConfiguration {
             // Filter out the collapsing=last event of the same type as the new event we want to add
             if ((collapsing == null || "last".equals(collapsing)) && "last".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType)) {
                 JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
-                Long occsAllTime = occs != null ? occs.optLong("allTime", 1l) : 1;
+                long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
                 allTime = Math.max(1, occsAllTime);
                 continue;
             }
             // Filter out the collapsing=campaign event of the same type and campaign as the new event we want to add
             if (campaignId != null && "campaign".equals(collapsing) && "campaign".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType) && campaignId.equals(oldTrackedEvent.optString("campaignId"))) {
                 JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
-                Long occsAllTime = occs != null ? occs.optLong("allTime", 1l) : 1;
+                long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
                 allTime = Math.max(1, occsAllTime);
                 continue;
             }
@@ -1185,7 +1185,7 @@ public class WonderPushConfiguration {
         collapsedLastCustomEvents = removeExcessEventsFromStart(collapsedLastCustomEvents, getMaximumCollapsedLastCustomTrackedEventsCount());
         collapsedOtherEvents = removeExcessEventsFromStart(collapsedOtherEvents, getMaximumCollapsedOtherTrackedEventsCount());
 
-        Long last1days=0l, last3days=0l, last7days=0l, last15days=0l, last30days=0l, last60days=0l, last90days=0l;
+        long last1days=0L, last3days=0L, last7days=0L, last15days=0L, last30days=0L, last60days=0L, last90days=0L;
 
         // Reconstruct the whole list
         List<JSONObject> storeTrackedEvents = new ArrayList<>(collapsedLastBuiltinEvents.size() + collapsedLastCustomEvents.size() + collapsedOtherEvents.size() + uncollapsedEvents.size());
@@ -1193,13 +1193,13 @@ public class WonderPushConfiguration {
         storeTrackedEvents.addAll(collapsedLastCustomEvents);
         storeTrackedEvents.addAll(collapsedOtherEvents);
         storeTrackedEvents.addAll(uncollapsedEvents);
-        Long uncollapsedCount = 0L;
+        long uncollapsedCount = 0L;
         for (JSONObject trackedEvent : uncollapsedEvents) {
             String trackedEventType = trackedEvent.optString("type");
             if (type.equals(trackedEventType)) {
                 ++uncollapsedCount;
-                Long actionDate = trackedEvent.optLong("actionDate", now);
-                Long numberOfDaysSinceNow = (long)Math.floor((double)(now - actionDate) / 86400000d);
+                long actionDate = trackedEvent.optLong("actionDate", now);
+                long numberOfDaysSinceNow = (long)Math.floor((double)(now - actionDate) / 86400000d);
                 if (numberOfDaysSinceNow <= 1) ++last1days;
                 if (numberOfDaysSinceNow <= 3) ++last3days;
                 if (numberOfDaysSinceNow <= 7) ++last7days;
