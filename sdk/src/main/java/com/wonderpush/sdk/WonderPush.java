@@ -1737,6 +1737,24 @@ public class WonderPush {
                 safeDefer(() -> {
                     PushServiceManager.initialize(getApplicationContext());
                 }, 0);
+                safeDefer(() -> {
+                    String className = WonderPushSettings.getString("WONDERPUSH_DELEGATE_CLASS", "wonderpush_delegateClass", "com.wonderpush.sdk.delegateClass");
+                    if (className == null) {
+                        WonderPush.logDebug("No delegate class found in manifest, build config or resources");
+                        return;
+                    }
+                    try {
+                        Class<?> cls = Class.forName(className);
+                        Object instance = cls.newInstance();
+                        // Make sure a OSRemoteNotificationReceivedHandler exists and remoteNotificationReceivedHandler has not been set yet
+                        if (instance instanceof WonderPushDelegate && sDelegate == null) {
+                            setDelegate((WonderPushDelegate) instance);
+                        }
+                    } catch (IllegalAccessException | InstantiationException |
+                             ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }, 0);
                 RateLimiter.initialize(WonderPushConfiguration::getSharedPreferences);
                 safeDefer(WonderPushUserPreferences::initialize, 0);
                 JSONSyncInstallation.setDisabled(true);
