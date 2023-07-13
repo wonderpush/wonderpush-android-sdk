@@ -23,6 +23,17 @@ public interface WonderPushDelegate {
      */
     String urlForDeepLink(DeepLinkEvent event);
 
+    /**
+     * Hook called when a notification is clicked.
+     * @param notif The clicked notification
+     * @param buttonIndex The index of the button clicked in the notification, or -1 when the notification itself was clicked
+     */
     void onNotificationOpened(NotificationModel notif, int buttonIndex);
+
+    /**
+     * Hook called when a notification is received
+     * @param notif The received notification
+     */
     void onNotificationReceived(NotificationModel notif);
+
 }
