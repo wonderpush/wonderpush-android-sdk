@@ -106,6 +106,14 @@ public class NotificationManager {
         } catch (JSONException e) {
             Log.e(TAG, "Error getting _wp data from notification", e);
         }
+        WonderPushDelegate delegate = WonderPush.getDelegate();
+        if (delegate != null) {
+            try {
+                delegate.onNotificationReceived(notif);
+            } catch (Exception e) {
+                WonderPush.logError("onNotificationReceived threw", e);
+            }
+        }
 
         boolean automaticallyHandled = false;
         Activity currentActivity = ActivityLifecycleMonitor.getCurrentActivity();
@@ -1009,6 +1017,15 @@ public class NotificationManager {
         notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_NOTIFICATION_MODEL, notif);
         notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX, buttonIndex);
         LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
+
+        WonderPushDelegate delegate = WonderPush.getDelegate();
+        if (delegate != null) {
+            try {
+                delegate.onNotificationOpened(notif, buttonIndex);
+            } catch (Exception e) {
+                WonderPush.logError("onNotificationOpened threw", e);
+            }
+        }
     }
 
     private static void handleOpenedNotification(Context context, Intent intent, NotificationModel notif) {

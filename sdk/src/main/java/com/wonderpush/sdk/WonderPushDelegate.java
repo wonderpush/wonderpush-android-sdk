@@ -23,4 +23,6 @@ public interface WonderPushDelegate {
      */
     String urlForDeepLink(DeepLinkEvent event);
 
+    void onNotificationOpened(NotificationModel notif, int buttonIndex);
+    void onNotificationReceived(NotificationModel notif);
 }

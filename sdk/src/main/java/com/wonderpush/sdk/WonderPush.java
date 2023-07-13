@@ -1737,24 +1737,7 @@ public class WonderPush {
                 safeDefer(() -> {
                     PushServiceManager.initialize(getApplicationContext());
                 }, 0);
-                safeDefer(() -> {
-                    String className = WonderPushSettings.getString("WONDERPUSH_DELEGATE_CLASS", "wonderpush_delegateClass", "com.wonderpush.sdk.delegateClass");
-                    if (className == null) {
-                        WonderPush.logDebug("No delegate class found in manifest, build config or resources");
-                        return;
-                    }
-                    try {
-                        Class<?> cls = Class.forName(className);
-                        Object instance = cls.newInstance();
-                        // Make sure a OSRemoteNotificationReceivedHandler exists and remoteNotificationReceivedHandler has not been set yet
-                        if (instance instanceof WonderPushDelegate && sDelegate == null) {
-                            setDelegate((WonderPushDelegate) instance);
-                        }
-                    } catch (IllegalAccessException | InstantiationException |
-                             ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }, 0);
+                setupDelegate();
                 RateLimiter.initialize(WonderPushConfiguration::getSharedPreferences);
                 safeDefer(WonderPushUserPreferences::initialize, 0);
                 JSONSyncInstallation.setDisabled(true);
@@ -1850,6 +1833,29 @@ public class WonderPush {
             }, 0);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while initializing the SDK", e);
+        }
+    }
+
+    private static void setupDelegate() {
+        String className = WonderPushSettings.getString("WONDERPUSH_DELEGATE_CLASS", "wonderpush_delegateClass", "com.wonderpush.sdk.delegateClass");
+        if (className == null) {
+            WonderPush.logDebug("No delegate class found in manifest, build config or resources");
+            return;
+        }
+        try {
+            Class<?> cls = Class.forName(className);
+            Object instance = cls.newInstance();
+            // Make sure a OSRemoteNotificationReceivedHandler exists and remoteNotificationReceivedHandler has not been set yet
+            if (!(instance instanceof WonderPushDelegate)) {
+                WonderPush.logError("Delegate class '"+ className +"' is not an instance of WonderPushDelegate");
+            } else if (sDelegate != null) {
+                WonderPush.logError("Delegate class '"+ className +"' specified in build config / manifest / resources will not be used because there already is a delegate set up.");
+            } else {
+                setDelegate((WonderPushDelegate) instance);
+            }
+        } catch (IllegalAccessException | InstantiationException |
+                 ClassNotFoundException e) {
+            WonderPush.logError("Could not instantiate delegate of class '" + className + "'", e);
         }
     }
 
