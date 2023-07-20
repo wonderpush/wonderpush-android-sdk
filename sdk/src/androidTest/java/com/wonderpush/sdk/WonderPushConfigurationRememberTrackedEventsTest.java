@@ -21,7 +21,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 public class WonderPushConfigurationRememberTrackedEventsTest {
@@ -669,12 +671,12 @@ public class WonderPushConfigurationRememberTrackedEventsTest {
       // This is useful when the collapsed event doesn't hold the allTime info,
       // which is most likely when people will upgrade to the new SDK that counts occurrences
 
-      JSONArray trackedEvents = new JSONArray();
-      trackedEvents.put(new JSONObject("{\"type\":\"test\", \"collapsing\": \"last\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
-      trackedEvents.put(new JSONObject("{\"type\":\"another\", \"collapsing\": \"last\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+      List<JSONObject> trackedEvents = new ArrayList<>();
+      trackedEvents.add(new JSONObject("{\"type\":\"test\", \"collapsing\": \"last\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+      trackedEvents.add(new JSONObject("{\"type\":\"another\", \"collapsing\": \"last\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
       for (int i = 0; i < 20; i++) {
-         trackedEvents.put(new JSONObject("{\"type\":\"test\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
-         trackedEvents.put(new JSONObject("{\"type\":\"another\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+         trackedEvents.add(new JSONObject("{\"type\":\"test\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
+         trackedEvents.add(new JSONObject("{\"type\":\"another\", \"actionDate\": 1000000000000, \"creationDate\":1000000000000}"));
       }
       WonderPushConfiguration.setTrackedEvents(trackedEvents);
 
