@@ -1845,7 +1845,9 @@ public class WonderPush {
         try {
             Class<?> cls = Class.forName(className);
             Object instance = cls.newInstance();
-            // Make sure a OSRemoteNotificationReceivedHandler exists and remoteNotificationReceivedHandler has not been set yet
+            if (instance instanceof ContextReceiver) {
+                ((ContextReceiver) instance).setContext(getApplicationContext());
+            }
             if (!(instance instanceof WonderPushDelegate)) {
                 WonderPush.logError("Delegate class '"+ className +"' is not an instance of WonderPushDelegate");
             } else if (sDelegate != null) {

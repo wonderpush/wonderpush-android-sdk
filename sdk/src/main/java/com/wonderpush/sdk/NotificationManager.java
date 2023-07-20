@@ -107,11 +107,15 @@ public class NotificationManager {
             Log.e(TAG, "Error getting _wp data from notification", e);
         }
         WonderPushDelegate delegate = WonderPush.getDelegate();
-        if (delegate != null) {
-            try {
-                delegate.onNotificationReceived(notif);
-            } catch (Exception e) {
-                WonderPush.logError("onNotificationReceived threw", e);
+        if (delegate != null && intent != null) {
+            JSONObject notificationPayload = notificationPayloadFromBundle(intent.getExtras());
+            if (notificationPayload != null) {
+                try {
+                    WonderPush.logDebug("Calling delegate.onNotificationReceived");
+                    delegate.onNotificationReceived(notificationPayload);
+                } catch (Exception e) {
+                    WonderPush.logError("onNotificationReceived threw", e);
+                }
             }
         }
 
@@ -1005,6 +1009,43 @@ public class NotificationManager {
         }
     }
 
+    protected static JSONObject notificationPayloadFromBundle(Bundle bundle) {
+        if (bundle == null) return null;
+        // Turn the bundle into a Map
+        final JSONObject notificationData = new JSONObject();
+        Set<String> keys = bundle.keySet();
+        KEYS: for (String key : keys) {
+            Object val = bundle.get(key);
+            if (val instanceof String) {
+                String string = (String) val;
+                if (string.startsWith("{") && string.endsWith("}")) {
+                    try {
+                        JSONObject obj = new JSONObject(string);
+                        notificationData.put(key, obj);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                } else if (string.startsWith("[") && string.endsWith("]")) {
+                    try {
+                        JSONArray arr = new JSONArray(string);
+                        notificationData.put(key, arr);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                } else if (string == "null") {
+                    try {
+                        notificationData.put(key, JSONObject.NULL);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                }
+            }
+            try {
+                notificationData.put(key, bundle.get(key));
+            } catch (JSONException e) {
+                WonderPush.logError("Could not serialize notification payload key " + key, e);
+            }
+        }
+        return notificationData;
+    }
+
     private static void notifyNotificationOpened(Intent intent, NotificationModel notif) {
         boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION, true);
         Intent receivedPushNotificationIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
@@ -1019,11 +1060,15 @@ public class NotificationManager {
         LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
 
         WonderPushDelegate delegate = WonderPush.getDelegate();
-        if (delegate != null) {
-            try {
-                delegate.onNotificationOpened(notif, buttonIndex);
-            } catch (Exception e) {
-                WonderPush.logError("onNotificationOpened threw", e);
+        if (delegate != null && receivedPushNotificationIntent != null) {
+            JSONObject notificationPayload = notificationPayloadFromBundle(receivedPushNotificationIntent.getExtras());
+            if (notificationPayload != null) {
+                try {
+                    WonderPush.logDebug("Calling delegate.onNotificationOpened");
+                    delegate.onNotificationOpened(notificationPayload, buttonIndex);
+                } catch (Exception e) {
+                    WonderPush.logError("onNotificationOpened threw", e);
+                }
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.wonderpush.sdk;
 
+import org.json.JSONObject;
+
 /**
  * The interface of the WonderPush SDK delegate you can implement for a tighter integration.
  *
@@ -28,12 +30,12 @@ public interface WonderPushDelegate {
      * @param notif The clicked notification
      * @param buttonIndex The index of the button clicked in the notification, or -1 when the notification itself was clicked
      */
-    void onNotificationOpened(NotificationModel notif, int buttonIndex);
+    default void onNotificationOpened(JSONObject notif, int buttonIndex) {};
 
     /**
      * Hook called when a notification is received
      * @param notif The received notification
      */
-    void onNotificationReceived(NotificationModel notif);
+    default void onNotificationReceived(JSONObject notif) {};
 
 }
