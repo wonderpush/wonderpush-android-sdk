@@ -1030,17 +1030,17 @@ public class NotificationManager {
                         notificationData.put(key, arr);
                         continue KEYS;
                     } catch (JSONException e) {}
-                } else if (string == "null") {
+                } else if (string.equals("null")) {
                     try {
                         notificationData.put(key, JSONObject.NULL);
                         continue KEYS;
                     } catch (JSONException e) {}
-                } else if (string == "true") {
+                } else if (string.equals("true")) {
                     try {
                         notificationData.put(key, true);
                         continue KEYS;
                     } catch (JSONException e) {}
-                } else if (string == "false") {
+                } else if (string.equals("false")) {
                     try {
                         notificationData.put(key, false);
                         continue KEYS;
