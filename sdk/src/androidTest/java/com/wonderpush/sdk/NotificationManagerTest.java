@@ -40,6 +40,18 @@ public class NotificationManagerTest {
         result = NotificationManager.notificationPayloadFromBundle(bundle);
         assertEquals(JSONObject.NULL, result.get("someNull"));
 
+        // trues do get transformed
+        bundle = new Bundle();
+        bundle.putString("someTrue", "true");
+        result = NotificationManager.notificationPayloadFromBundle(bundle);
+        assertEquals(Boolean.TRUE, result.get("someTrue"));
+
+        // falses do get transformed
+        bundle = new Bundle();
+        bundle.putString("someFalse", "false");
+        result = NotificationManager.notificationPayloadFromBundle(bundle);
+        assertEquals(Boolean.FALSE, result.get("someFalse"));
+
         // Stuff that looks like JSONObjects might get transformed
         // If valid JSON
         bundle = new Bundle();
