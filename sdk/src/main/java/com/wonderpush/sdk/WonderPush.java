@@ -2006,6 +2006,16 @@ public class WonderPush {
             WonderPush.setLogging(logging);
             if (logging) logDebug("Applying configuration: logging: " + logging);
         }
+
+        String deviceBrand = InstallationManager.getDeviceBrand();
+        if (deviceBrand != null && deviceBrand.toLowerCase().equals("huawei")) {
+            try {
+                Class.forName("com.wonderpush.sdk.push.hcm.HCMPushService");
+            } catch (ClassNotFoundException e) {
+                logError("Huawei device detected, but HCM support missing. Push notifications will likely NOT WORK on this device. Please follow this guide: https://docs.wonderpush.com/docs/huawei-mobile-services-hms-push-notification-support");
+            }
+        }
+
         if (geolocation != null) {
             logDebug("Applying configuration: geolocation: " + geolocation);
             if (geolocation) {
