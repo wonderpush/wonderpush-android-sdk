@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 project.group = 'com.wonderpush'
 project.archivesBaseName = 'wonderpush-android-sdk-hcm'
-project.version = "1.0.3"
+project.version = "1.0.4-SNAPSHOT"
 
 repositories {
     maven {
