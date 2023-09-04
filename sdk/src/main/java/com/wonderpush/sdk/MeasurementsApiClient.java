@@ -15,15 +15,26 @@ public class MeasurementsApiClient {
 
     private static final String TAG = "WonderPush." + MeasurementsApiClient.class.getSimpleName();
 
-    private static final okhttp3.OkHttpClient sClient = new okhttp3.OkHttpClient.Builder().eventListener(new okhttp3.EventListener() {
-        @Override
-        public void connectStart(okhttp3.Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
-            TrafficStats.setThreadStatsTag(Process.myTid());
-        }
-    }).build();
+    private static volatile okhttp3.OkHttpClient _client = null; // lazy-initialized and retrieved using getClient()
     private static boolean disabled;
 
-    public static void execute(Request request) {
+    private static okhttp3.OkHttpClient getClient() {
+        if (_client == null) {
+            synchronized (MeasurementsApiClient.class) {
+                if (_client == null) {
+                    _client = new okhttp3.OkHttpClient.Builder().eventListener(new okhttp3.EventListener() {
+                        @Override
+                        public void connectStart(okhttp3.Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                            TrafficStats.setThreadStatsTag(Process.myTid());
+                        }
+                    }).build();
+                }
+            }
+        }
+        return _client;
+    }
+
+   public static void execute(Request request) {
         if (isDisabled()) {
             if (request.getHandler() != null) request.getHandler().onFailure(new Request.ClientDisabledException(), new Response("Client disabled"));
             return;
@@ -55,7 +66,7 @@ public class MeasurementsApiClient {
             }
 
             WonderPush.logDebug(TAG, "Requesting: " + humanReadableRequest(method, resource, params));
-            sClient.newCall(requestBuilder.build())
+            getClient().newCall(requestBuilder.build())
                     .enqueue(new SafeOkHttpCallback() {
                         @Override
                         public void onFailureSafe(okhttp3.Call call, IOException e) {

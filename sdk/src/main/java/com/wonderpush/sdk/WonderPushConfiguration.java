@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -91,6 +92,7 @@ public class WonderPushConfiguration {
     private static int maximumCollapsedOtherTrackedEventsCount = DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT;
     private static int maximumUncollapsedTrackedEventsCount = DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_COUNT;
     private static long maximumUncollapsedTrackedEventsAgeMs = DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS;
+    private static WeakReference<List<JSONObject>> cachedTrackedEvents = new WeakReference<>(null);
 
     public static void initialize(Context context) {
         sContext = context.getApplicationContext();
@@ -191,7 +193,7 @@ public class WonderPushConfiguration {
             if (trackedEventsJson != null) {
                 trackedEvents = new JSONArray(trackedEventsJson);
             }
-            setTrackedEvents(trackedEvents);
+            setTrackedEvents(getTrackedEventsFromStoredJSONArray(trackedEvents));
         } catch (JSONException e) {
             setTrackedEvents(null);
         }
@@ -1082,7 +1084,7 @@ public class WonderPushConfiguration {
         String type = JSONUtil.getString(eventData, "type");
         if (type == null) return null;
         Occurrences occurrences = new Occurrences();
-        Long allTime = 0l;
+        long allTime = 0L;
 
         String campaignId = JSONUtil.optString(eventData, "campaignId");
         String collapsing = JSONUtil.optString(eventData, "collapsing");
@@ -1101,14 +1103,14 @@ public class WonderPushConfiguration {
             // Filter out the collapsing=last event of the same type as the new event we want to add
             if ((collapsing == null || "last".equals(collapsing)) && "last".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType)) {
                 JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
-                Long occsAllTime = occs != null ? occs.optLong("allTime", 1l) : 1;
+                long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
                 allTime = Math.max(1, occsAllTime);
                 continue;
             }
             // Filter out the collapsing=campaign event of the same type and campaign as the new event we want to add
             if (campaignId != null && "campaign".equals(collapsing) && "campaign".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType) && campaignId.equals(oldTrackedEvent.optString("campaignId"))) {
                 JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
-                Long occsAllTime = occs != null ? occs.optLong("allTime", 1l) : 1;
+                long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
                 allTime = Math.max(1, occsAllTime);
                 continue;
             }
@@ -1183,21 +1185,21 @@ public class WonderPushConfiguration {
         collapsedLastCustomEvents = removeExcessEventsFromStart(collapsedLastCustomEvents, getMaximumCollapsedLastCustomTrackedEventsCount());
         collapsedOtherEvents = removeExcessEventsFromStart(collapsedOtherEvents, getMaximumCollapsedOtherTrackedEventsCount());
 
-        Long last1days=0l, last3days=0l, last7days=0l, last15days=0l, last30days=0l, last60days=0l, last90days=0l;
+        long last1days=0L, last3days=0L, last7days=0L, last15days=0L, last30days=0L, last60days=0L, last90days=0L;
 
         // Reconstruct the whole list
-        JSONArray storeTrackedEvents = new JSONArray();
-        for (JSONObject trackedEvent : collapsedLastBuiltinEvents) storeTrackedEvents.put(trackedEvent);
-        for (JSONObject trackedEvent : collapsedLastCustomEvents) storeTrackedEvents.put(trackedEvent);
-        for (JSONObject trackedEvent : collapsedOtherEvents) storeTrackedEvents.put(trackedEvent);
-        Long uncollapsedCount = 0L;
+        List<JSONObject> storeTrackedEvents = new ArrayList<>(collapsedLastBuiltinEvents.size() + collapsedLastCustomEvents.size() + collapsedOtherEvents.size() + uncollapsedEvents.size());
+        storeTrackedEvents.addAll(collapsedLastBuiltinEvents);
+        storeTrackedEvents.addAll(collapsedLastCustomEvents);
+        storeTrackedEvents.addAll(collapsedOtherEvents);
+        storeTrackedEvents.addAll(uncollapsedEvents);
+        long uncollapsedCount = 0L;
         for (JSONObject trackedEvent : uncollapsedEvents) {
-            storeTrackedEvents.put(trackedEvent);
             String trackedEventType = trackedEvent.optString("type");
             if (type.equals(trackedEventType)) {
                 ++uncollapsedCount;
-                Long actionDate = trackedEvent.optLong("actionDate", now);
-                Long numberOfDaysSinceNow = (long)Math.floor((double)(now - actionDate) / 86400000d);
+                long actionDate = trackedEvent.optLong("actionDate", now);
+                long numberOfDaysSinceNow = (long)Math.floor((double)(now - actionDate) / 86400000d);
                 if (numberOfDaysSinceNow <= 1) ++last1days;
                 if (numberOfDaysSinceNow <= 3) ++last3days;
                 if (numberOfDaysSinceNow <= 7) ++last7days;
@@ -1279,13 +1281,21 @@ public class WonderPushConfiguration {
         maximumUncollapsedTrackedEventsAgeMs = value;
     }
 
-    static void setTrackedEvents(JSONArray trackedEvents) {
-        putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, trackedEvents);
+    static void setTrackedEvents(List<JSONObject> trackedEvents) {
+        JSONArray storedTrackedEvents = trackedEvents == null ? null : new JSONArray(trackedEvents);
+        putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, storedTrackedEvents);
     }
 
     public static List<JSONObject> getTrackedEvents() {
+        List<JSONObject> result = cachedTrackedEvents.get();
+        if (result == null) {
+            result = getTrackedEventsFromStoredJSONArray(getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME));
+        }
+        return result;
+    }
+
+    static List<JSONObject> getTrackedEventsFromStoredJSONArray(JSONArray storedTrackedEvents) {
         List<JSONObject> result = new ArrayList<>();
-        JSONArray storedTrackedEvents = getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME);
         for (int i = 0; storedTrackedEvents != null && i < storedTrackedEvents.length(); i++) {
             JSONObject event = storedTrackedEvents.optJSONObject(i);
             if (event == null) continue;

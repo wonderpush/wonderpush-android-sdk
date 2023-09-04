@@ -1730,15 +1730,20 @@ public class WonderPush {
                 SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
                 sRemoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
 
-                PushServiceManager.initialize(getApplicationContext());
                 WonderPushConfiguration.initialize(getApplicationContext());
-                RateLimiter.initialize(WonderPushConfiguration.getSharedPreferences());
-                WonderPushUserPreferences.initialize();
-                applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
+                safeDefer(() -> {
+                    applyOverrideLogging(WonderPushConfiguration.getOverrideSetLogging());
+                }, 0);
+                safeDefer(() -> {
+                    PushServiceManager.initialize(getApplicationContext());
+                }, 0);
+                setupDelegate();
+                RateLimiter.initialize(WonderPushConfiguration::getSharedPreferences);
+                safeDefer(WonderPushUserPreferences::initialize, 0);
                 JSONSyncInstallation.setDisabled(true);
                 ApiClient.getInstance().setDisabled(true);
                 MeasurementsApiClient.setDisabled(true);
-                JSONSyncInstallation.initialize();
+                safeDefer(JSONSyncInstallation::initialize, 0);
                 initializeInAppMessaging(context);
 
                 // Setup a remote config handler to execute as soon as we get the config
@@ -1778,9 +1783,14 @@ public class WonderPush {
                     }
                 }, new IntentFilter(Constants.INTENT_REMOTE_CONFIG_UPDATED));
 
-                initForNewUser(sBeforeInitializationUserIdSet
-                        ? sBeforeInitializationUserId
-                        : WonderPushConfiguration.getUserId());
+                if (sBeforeInitializationUserIdSet) {
+                    initForNewUser(sBeforeInitializationUserId);
+                } else {
+                    // Initializing using the same userId won't change WonderPushConfiguration storage, so it's safe to defer
+                    safeDefer(() -> {
+                        initForNewUser(WonderPushConfiguration.getUserId());
+                    }, 0);
+                }
 
                 sIsInitialized = true;
                 hasUserConsentChanged(hasUserConsent()); // make sure to set sIsInitialized=true before
@@ -1796,29 +1806,59 @@ public class WonderPush {
                     });
                 }
 
-                // Permission checks
-                if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-                    Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
-                }
-                if (sLocationOverride == null) {
-                    if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED
-                            && context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            Log.w(TAG, "Permissions ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION have not been declared or granted yet. Make sure you declare <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both), and call ActivityCompat.requestPermissions() to request the permission at runtime");
-                        } else {
-                            Log.w(TAG, "Missing ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION permission. Add <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both)");
-                        }
-                    } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
-                        Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
+                safeDefer(() -> {
+                    // Permission checks
+                    if (context.getPackageManager().checkPermission(android.Manifest.permission.INTERNET, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                        Log.w(TAG, "Missing INTERNET permission. Add <uses-permission android:name=\"android.permission.INTERNET\" /> under <manifest> in your AndroidManifest.xml");
                     }
-                }
+                    if (sLocationOverride == null) {
+                        if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED
+                                && context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                Log.w(TAG, "Permissions ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION have not been declared or granted yet. Make sure you declare <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both), and call ActivityCompat.requestPermissions() to request the permission at runtime");
+                            } else {
+                                Log.w(TAG, "Missing ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION permission. Add <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml (you can add either or both)");
+                            }
+                        } else if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {
+                            Log.d(TAG, "Only ACCESS_COARSE_LOCATION permission is granted. For more precision, you should strongly consider adding <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" /> under <manifest> in your AndroidManifest.xml");
+                        }
+                    }
+                }, 0);
             }
 
             initializeForApplication(context);
             initializeForActivity(context);
-            refreshPreferencesAndConfiguration(false);
+            safeDefer(() -> {
+                refreshPreferencesAndConfiguration(false);
+            }, 0);
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while initializing the SDK", e);
+        }
+    }
+
+    private static void setupDelegate() {
+        String className = WonderPushSettings.getString("WONDERPUSH_DELEGATE_CLASS", "wonderpush_delegateClass", "com.wonderpush.sdk.delegateClass");
+        if (className == null) {
+            WonderPush.logDebug("No delegate class found in manifest, build config or resources");
+            return;
+        }
+        try {
+            Class<?> cls = Class.forName(className);
+            Object instance = cls.newInstance();
+            if (!(instance instanceof WonderPushDelegate)) {
+                WonderPush.logError("Delegate class '"+ className +"' is not an instance of WonderPushDelegate");
+            } else if (sDelegate != null) {
+                WonderPush.logError("Delegate class '"+ className +"' specified in build config / manifest / resources will not be used because there already is a delegate set up.");
+            } else {
+                WonderPushDelegate delegateInstance = (WonderPushDelegate) instance;
+                delegateInstance.setContext(getApplicationContext());
+                setDelegate(delegateInstance);
+            }
+        } catch (IllegalAccessException | InstantiationException |
+                 ClassNotFoundException e) {
+            WonderPush.logError("Could not instantiate delegate of class '" + className + "'", e);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while instantiating delegate of class '" + className + "'", e);
         }
     }
 
@@ -2099,7 +2139,7 @@ public class WonderPush {
         // Create the notification channel we if are running on Android 12- or if we target Android 12-
         // A fresh install on Android 13 for an app targeting less will trigger a prompt on app start
         if (!NotificationPromptController.supportsPrompt()) {
-            WonderPushUserPreferences.ensureDefaultAndroidNotificationChannelExists();
+            safeDefer(WonderPushUserPreferences::ensureDefaultAndroidNotificationChannelExists, 0);
         }
 
         return isInitialized();
@@ -2783,8 +2823,7 @@ public class WonderPush {
     static SubscriptionStatus getSubscriptionStatus() {
         JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
         try {
-            JSONObject preferences = installation != null ? installation.getSdkState().optJSONObject("preferences") : null;
-            String subscriptionStatus = preferences != null ? preferences.optString("subscriptionStatus") : null;
+            String subscriptionStatus = installation.optSdkStateStringForPath(null, "preferences", "subscriptionStatus");
             if (subscriptionStatus == null) return null;
 
             if (subscriptionStatus.equals(SubscriptionStatus.OPT_OUT.slug)) {

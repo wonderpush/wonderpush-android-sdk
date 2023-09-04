@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -65,9 +67,11 @@ public class Application extends android.app.Application {
             }
         }, new IntentFilter(WonderPush.INTENT_NOTIFICATION_WILL_OPEN));
 
-        // Example data notification handled by application logic
-        WonderPushUserPreferences.putChannel(new WonderPushChannel("data-push-manually-display", null)
-            .setDescription("Data push manually displayed"));
+        new Thread(() -> {
+            // Example data notification handled by application logic
+            WonderPushUserPreferences.putChannel(new WonderPushChannel("data-push-manually-display", null)
+                    .setDescription("Data push manually displayed"));
+        }).start();
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {

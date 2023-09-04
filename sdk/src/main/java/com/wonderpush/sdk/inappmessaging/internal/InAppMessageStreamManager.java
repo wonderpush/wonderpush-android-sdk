@@ -63,7 +63,6 @@ public class InAppMessageStreamManager {
   private final ImpressionStorageClient impressionStorageClient;
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
-  private final TestDeviceHelper testDeviceHelper;
   private final InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate;
 
   @Inject
@@ -75,7 +74,6 @@ public class InAppMessageStreamManager {
           Schedulers schedulers,
           ImpressionStorageClient impressionStorageClient,
           @AppForeground RateLimit appForegroundRateLimit,
-          TestDeviceHelper testDeviceHelper,
           InAppMessaging.InAppMessagingDelegate inAppMessagingDelegate) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
@@ -84,14 +82,10 @@ public class InAppMessageStreamManager {
     this.schedulers = schedulers;
     this.impressionStorageClient = impressionStorageClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
-    this.testDeviceHelper = testDeviceHelper;
     this.inAppMessagingDelegate = inAppMessagingDelegate;
   }
 
   private static boolean containsTriggeringCondition(EventOccurrence event, Campaign campaign) {
-    if (isAppForegroundEvent(event.eventType) && campaign.isTestCampaign()) {
-      return true; // the triggering condition for test campaigns is always 'app foreground'
-    }
     for (TriggeringCondition condition : campaign.getTriggeringConditions()) {
       if (hasIamTrigger(condition, event.eventType)) {
         // Min occurences are not supported for system events on Android
@@ -152,12 +146,6 @@ public class InAppMessageStreamManager {
   // If one campaign is a test campaign it is of higher priority.
   // Example: P1 > P2. P2(test) > P1. P1(test) > P2(test)
   private static int compareByPriority(Campaign campaign1, Campaign campaign2) {
-    if (campaign1.isTestCampaign() && !campaign2.isTestCampaign()) {
-      return -1;
-    }
-    if (campaign2.isTestCampaign() && !campaign1.isTestCampaign()) {
-      return 1;
-    }
     return 0;
   }
 
@@ -181,18 +169,16 @@ public class InAppMessageStreamManager {
 
               Function<Campaign, Maybe<Campaign>> filterTooImpressed =
                   campaign ->
-                          campaign.isTestCampaign()
-                          ? Maybe.just(campaign)
-                          : impressionStorageClient
-                              .isCapped(campaign)
-                              .doOnError(
-                                  e ->
-                                      Logging.logw("Impression store read fail: " + e.getMessage()))
-                              .onErrorResumeNext(
-                                  Single.just(false)) // Absorb impression read errors
-                              .doOnSuccess(isCapped -> logCappedStatus(campaign, isCapped))
-                              .filter(isCapped -> !isCapped)
-                              .map(isCapped -> campaign);
+                          impressionStorageClient
+                            .isCapped(campaign)
+                            .doOnError(
+                                e ->
+                                    Logging.logw("Impression store read fail: " + e.getMessage()))
+                            .onErrorResumeNext(
+                                Single.just(false)) // Absorb impression read errors
+                            .doOnSuccess(isCapped -> logCappedStatus(campaign, isCapped))
+                            .filter(isCapped -> !isCapped)
+                            .map(isCapped -> campaign);
 
               Function<Campaign, Maybe<Campaign>> appForegroundRateLimitFilter =
                   content -> getContentIfNotRateLimited(event.eventType, content);
@@ -246,7 +232,6 @@ public class InAppMessageStreamManager {
                                                               resp.size())))
                               .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
                               //.doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
-                              .doOnSuccess(testDeviceHelper::processCampaignFetch)
                               .doOnError(e -> Logging.loge("Service fetch error: ", e))
                               .onErrorResumeNext(Maybe.empty()); // Absorb service failures
 
@@ -258,7 +243,7 @@ public class InAppMessageStreamManager {
   }
 
   private Maybe<Campaign> getContentIfNotRateLimited(String event, Campaign campaign) {
-    if (!campaign.isTestCampaign() && (isAppForegroundEvent(event) || isAppLaunchEvent(event))) {
+    if (isAppForegroundEvent(event) || isAppLaunchEvent(event)) {
         try {
             RateLimiter limiter = RateLimiter.getInstance();
             if (limiter.isRateLimited(appForegroundRateLimit)) {
@@ -303,7 +288,7 @@ public class InAppMessageStreamManager {
     }
     final Segmenter segmenter = segmenterData == null ? null : new Segmenter(segmenterData);
     return Flowable.fromIterable(campaigns)
-        .filter(campaign -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, campaign))
+        .filter(campaign -> isActive(clock, campaign))
         .filter(campaign -> containsTriggeringCondition(event, campaign))
         .filter(campaign -> matchesSegment(segmenter, campaign))
         .flatMapMaybe(filterAlreadyImpressed)

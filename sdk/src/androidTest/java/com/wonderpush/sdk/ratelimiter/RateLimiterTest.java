@@ -17,7 +17,7 @@ public class RateLimiterTest {
 
     @Before
     public void setUp() {
-        RateLimiter.initialize(getSharedPreferences());
+        RateLimiter.initialize(this::getSharedPreferences);
     }
 
     private SharedPreferences getSharedPreferences() {

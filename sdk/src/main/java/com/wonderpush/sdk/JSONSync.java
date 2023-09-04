@@ -1,5 +1,6 @@
 package com.wonderpush.sdk;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -33,6 +34,7 @@ abstract class JSONSync {
     private JSONObject inflightDiff;
     private JSONObject inflightPutAccumulator;
     private JSONObject upgradeMeta;
+    private boolean schedulingPatchCall;
     private boolean scheduledPatchCall;
     private boolean inflightPatchCall;
 
@@ -121,6 +123,41 @@ abstract class JSONSync {
         return JSONUtil.deepCopy(sdkState);
     }
 
+    synchronized JSONObject walkSdkStateJSONObjectExceptLast(String... path) throws JSONException {
+        JSONObject rtn = sdkState;
+        for (int i = 0; rtn != null && i < path.length - 1; i++) {
+            rtn = sdkState.optJSONObject(path[i]);
+        }
+        return rtn;
+    }
+
+    public synchronized JSONObject optSdkStateJSONObjectForPath(String... path) throws JSONException {
+        JSONObject rtn = walkSdkStateJSONObjectExceptLast(path);
+        if (rtn != null) rtn = rtn.optJSONObject(path[path.length-1]);
+        if (rtn == null) return null;
+        return JSONUtil.deepCopy(rtn);
+    }
+
+    public synchronized JSONArray optSdkStateJSONArrayForPath(String... path) throws JSONException {
+        JSONObject walked = walkSdkStateJSONObjectExceptLast(path);
+        if (walked == null) return null;
+        JSONArray rtn = walked.optJSONArray(path[path.length-1]);
+        if (rtn == null) return null;
+        return JSONUtil.deepCopy(rtn);
+    }
+
+    public synchronized long optSdkStateLongForPath(long fallback, String... path) throws JSONException {
+        JSONObject walked = walkSdkStateJSONObjectExceptLast(path);
+        if (walked == null) return fallback;
+        return walked.optLong(path[path.length-1], fallback);
+    }
+
+    public synchronized String optSdkStateStringForPath(String fallback, String... path) throws JSONException {
+        JSONObject walked = walkSdkStateJSONObjectExceptLast(path);
+        if (walked == null) return fallback;
+        return JSONUtil.optString(walked, path[path.length-1], fallback);
+    }
+
     private synchronized void save() {
         try {
             JSONObject state = new JSONObject();
@@ -154,11 +191,10 @@ abstract class JSONSync {
         JSONUtil.merge(putAccumulator, diff, false);
         if (putAndFlushSynchronously()) {
             schedulePatchCallAndSave();
-        } else {
-            WonderPush.safeDefer(() -> {
-                schedulePatchCallAndSave();
-            }, 0);
-        }
+        } else if (!schedulingPatchCall) {
+            schedulingPatchCall = true;
+            WonderPush.safeDefer(this::schedulePatchCallAndSave, 0);
+        } // else a call to schedulePatchCallAndSave() has already been deferred
     }
 
     public synchronized void receiveServerState(JSONObject srvState) throws JSONException {
@@ -190,6 +226,7 @@ abstract class JSONSync {
     }
 
     private synchronized void schedulePatchCallAndSave() {
+        schedulingPatchCall = false;
         scheduledPatchCall = true;
         save();
         doSchedulePatchCall();

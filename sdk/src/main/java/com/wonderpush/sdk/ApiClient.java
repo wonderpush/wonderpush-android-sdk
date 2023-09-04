@@ -14,8 +14,11 @@ class ApiClient extends BaseApiClient {
     private static final String TAG = "WonderPush." + ApiClient.class.getSimpleName();
     private static final int RETRY_INTERVAL_ACCESS_TOKEN = 30 * 1000; // in milliseconds
 
-    private static final ApiClient sInstance = new ApiClient();
-    public static ApiClient getInstance() {
+    private static ApiClient sInstance = null;
+    public synchronized static ApiClient getInstance() {
+        if (sInstance == null) {
+            sInstance = new ApiClient();
+        }
         return sInstance;
     }
 

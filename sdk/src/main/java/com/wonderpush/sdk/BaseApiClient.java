@@ -27,12 +27,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
     protected static final int ERROR_INVALID_ACCESS_TOKEN = 11003;
 
     private final WonderPushRequestVault requestVault = new WonderPushRequestVault(WonderPushJobQueue.getDefaultQueue(), this);
-    private final OkHttpClient client = new OkHttpClient.Builder().eventListener(new EventListener() {
-        @Override
-        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
-            TrafficStats.setThreadStatsTag(Process.myTid());
-        }
-    }).build();
+    private volatile OkHttpClient _client = null; // lazy-initialized and retrieved using getClient()
     private boolean disabled = false;
 
     protected abstract void decorate(Request request);
@@ -197,6 +192,22 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
         request(wrapperRequest);
     }
 
+    private OkHttpClient getClient() {
+        if (_client == null) {
+            synchronized (this) {
+                if (_client == null) {
+                    _client = new OkHttpClient.Builder().eventListener(new EventListener() {
+                        @Override
+                        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                            TrafficStats.setThreadStatsTag(Process.myTid());
+                        }
+                    }).build();
+                }
+            }
+        }
+        return _client;
+    }
+
     /**
      * Thin wrapper to the network library.
      */
@@ -357,7 +368,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
                 return;
             }
             if (requestBuilder != null) {
-                client.newCall(requestBuilder.build()).enqueue(jsonHandler);
+                getClient().newCall(requestBuilder.build()).enqueue(jsonHandler);
             }
 
         }, 0);

@@ -1,5 +1,9 @@
 package com.wonderpush.sdk;
 
+import android.content.Context;
+
+import org.json.JSONObject;
+
 /**
  * The interface of the WonderPush SDK delegate you can implement for a tighter integration.
  *
@@ -22,5 +26,24 @@ public interface WonderPushDelegate {
      * @return The URL the SDK should open, or {@code null} if it should stop normal processing.
      */
     String urlForDeepLink(DeepLinkEvent event);
+
+    /**
+     * Hook called when a notification is clicked.
+     * @param notif The clicked notification
+     * @param buttonIndex The index of the button clicked in the notification, or -1 when the notification itself was clicked
+     */
+    default void onNotificationOpened(JSONObject notif, int buttonIndex) {}
+
+    /**
+     * Hook called when a notification is received
+     * @param notif The received notification
+     */
+    default void onNotificationReceived(JSONObject notif) {}
+
+    /**
+     * Override this method to store the context in your implementation if needed.
+     * @param context The context.
+     */
+    default void setContext(Context context) {}
 
 }

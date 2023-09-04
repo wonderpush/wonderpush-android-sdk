@@ -91,7 +91,7 @@ public class NotificationManager {
         try {
             JSONSyncInstallation installation = JSONSyncInstallation.forCurrentUser();
             if (installation != null) {
-                long lastReceivedNotificationCheckDate = installation.getSdkState().optLong(LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY, -1);
+                long lastReceivedNotificationCheckDate = installation.optSdkStateLongForPath(-1, LAST_RECEIVED_NOTIFICATION_CHECK_DATE_PROPERTY);
                 long now = TimeSync.getTime();
                 boolean reportLastReceivedNotificationCheckDate =
                         lastReceivedNotificationCheckDate == -1
@@ -105,6 +105,18 @@ public class NotificationManager {
             }
         } catch (JSONException e) {
             Log.e(TAG, "Error getting _wp data from notification", e);
+        }
+        WonderPushDelegate delegate = WonderPush.getDelegate();
+        if (delegate != null && intent != null) {
+            JSONObject notificationPayload = notificationPayloadFromBundle(intent.getExtras());
+            if (notificationPayload != null) {
+                try {
+                    WonderPush.logDebug("Calling delegate.onNotificationReceived");
+                    delegate.onNotificationReceived(notificationPayload);
+                } catch (Exception e) {
+                    Log.e(WonderPush.TAG, "Unexpected error while calling the delegate onNotificationReceived method", e);
+                }
+            }
         }
 
         boolean automaticallyHandled = false;
@@ -997,6 +1009,53 @@ public class NotificationManager {
         }
     }
 
+    protected static JSONObject notificationPayloadFromBundle(Bundle bundle) {
+        if (bundle == null) return null;
+        // Turn the bundle into a Map
+        final JSONObject notificationData = new JSONObject();
+        Set<String> keys = bundle.keySet();
+        KEYS: for (String key : keys) {
+            Object val = bundle.get(key);
+            if (val instanceof String) {
+                String string = (String) val;
+                if (string.startsWith("{") && string.endsWith("}")) {
+                    try {
+                        JSONObject obj = new JSONObject(string);
+                        notificationData.put(key, obj);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                } else if (string.startsWith("[") && string.endsWith("]")) {
+                    try {
+                        JSONArray arr = new JSONArray(string);
+                        notificationData.put(key, arr);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                } else if (string.equals("null")) {
+                    try {
+                        notificationData.put(key, JSONObject.NULL);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                } else if (string.equals("true")) {
+                    try {
+                        notificationData.put(key, true);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                } else if (string.equals("false")) {
+                    try {
+                        notificationData.put(key, false);
+                        continue KEYS;
+                    } catch (JSONException e) {}
+                }
+            }
+            try {
+                notificationData.put(key, bundle.get(key));
+            } catch (JSONException e) {
+                WonderPush.logError("Could not serialize notification payload key " + key, e);
+            }
+        }
+        return notificationData;
+    }
+
     private static void notifyNotificationOpened(Intent intent, NotificationModel notif) {
         boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION, true);
         Intent receivedPushNotificationIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
@@ -1009,6 +1068,19 @@ public class NotificationManager {
         notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_NOTIFICATION_MODEL, notif);
         notificationOpenedIntent.putExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_BUTTON_INDEX, buttonIndex);
         LocalBroadcastManager.getInstance(WonderPush.getApplicationContext()).sendBroadcast(notificationOpenedIntent);
+
+        WonderPushDelegate delegate = WonderPush.getDelegate();
+        if (delegate != null && receivedPushNotificationIntent != null) {
+            JSONObject notificationPayload = notificationPayloadFromBundle(receivedPushNotificationIntent.getExtras());
+            if (notificationPayload != null) {
+                try {
+                    WonderPush.logDebug("Calling delegate.onNotificationOpened");
+                    delegate.onNotificationOpened(notificationPayload, buttonIndex);
+                } catch (Exception e) {
+                    Log.e(WonderPush.TAG, "Unexpected error while calling the delegate onNotificationOpened method", e);
+                }
+            }
+        }
     }
 
     private static void handleOpenedNotification(Context context, Intent intent, NotificationModel notif) {

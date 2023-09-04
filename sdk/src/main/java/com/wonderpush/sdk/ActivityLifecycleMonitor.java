@@ -94,13 +94,6 @@ class ActivityLifecycleMonitor {
         private int stopCount;
         private int destroyCount;
 
-        private long createFirstDate;
-        private long startFirstDate;
-        private long resumeFirstDate;
-        private long pausedLastDate;
-        private long stopLastDate;
-        private long destroyLastDate;
-
         private WeakReference<Activity> lastResumedActivityRef = new WeakReference<>(null);
         private WeakReference<Activity> lastStoppedActivityRef = new WeakReference<>(null);
 
@@ -119,9 +112,6 @@ class ActivityLifecycleMonitor {
 
         @Override
         public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-            if (!hasCreatedActivities()) {
-                createFirstDate = TimeSync.getTime();
-            }
             ++createCount;
         }
 
@@ -131,47 +121,49 @@ class ActivityLifecycleMonitor {
                 // The monitor was probably setup inside a Activity.onCreate() call
                 this.onActivityCreated(activity, null);
             }
-            if (!hasStartedActivities()) {
-                startFirstDate = TimeSync.getTime();
-            }
             ++startCount;
         }
 
         @Override
         public void onActivityResumed(Activity activity) {
-            if (!hasResumedActivities()) {
-                resumeFirstDate = TimeSync.getTime();
-            }
-            lastResumedActivityRef = new WeakReference<>(activity);
+            final long unadjustedSystemCurrentTimeMillis = TimeSync.getUnadjustedSystemCurrentTimeMillis();
+            final long unadjustedSystemClockElapsedRealtime = TimeSync.getUnadjustedSystemClockElapsedRealtime();
             ++resumeCount;
-            WonderPush.injectAppOpenIfNecessary();
-            updatePresence(true);
-            WonderPush.showPotentialNotification(activity, activity.getIntent());
-            WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
-            NotificationPromptController.getInstance().onAppForeground();
-            WonderPush.refreshSubscriptionStatus();
-            callOnNextResumeListeners(activity);
+            lastResumedActivityRef = new WeakReference<>(activity);
+            WonderPush.safeDefer(() -> {
+                long now = TimeSync.adjustTime(unadjustedSystemCurrentTimeMillis, unadjustedSystemClockElapsedRealtime);
+                WonderPush.injectAppOpenIfNecessary();
+                updatePresence(true);
+                WonderPush.showPotentialNotification(activity, activity.getIntent());
+                WonderPushConfiguration.setLastInteractionDate(now);
+                NotificationPromptController.getInstance().onAppForeground();
+                WonderPush.refreshSubscriptionStatus();
+                callOnNextResumeListeners(activity);
+            }, 0);
         }
 
         @Override
         public void onActivityPaused(Activity activity) {
+            final long unadjustedSystemCurrentTimeMillis = TimeSync.getUnadjustedSystemCurrentTimeMillis();
+            final long unadjustedSystemClockElapsedRealtime = TimeSync.getUnadjustedSystemClockElapsedRealtime();
             ++pausedCount;
-            if (!hasResumedActivities()) {
-                pausedLastDate = TimeSync.getTime();
-            }
-            WonderPushConfiguration.setLastInteractionDate(TimeSync.getTime());
+            WonderPush.safeDefer(() -> {
+                long now = TimeSync.adjustTime(unadjustedSystemCurrentTimeMillis, unadjustedSystemClockElapsedRealtime);
+                WonderPushConfiguration.setLastInteractionDate(now);
+            }, 0);
         }
 
         @Override
         public void onActivityStopped(Activity activity) {
             ++stopCount;
             if (!hasStartedActivities()) {
-                stopLastDate = TimeSync.getTime();
-                try {
-                    updatePresence(false);
-                } catch (Exception e) {
-                    Log.d(WonderPush.TAG, "Unexpected error while updating presence", e);
-                }
+                WonderPush.safeDefer(() -> {
+                    try {
+                        updatePresence(false);
+                    } catch (Exception e) {
+                        Log.d(WonderPush.TAG, "Unexpected error while updating presence", e);
+                    }
+                }, 0);
             }
             if (!activity.isFinishing()) {
                 lastStoppedActivityRef = new WeakReference<>(activity);
@@ -185,9 +177,6 @@ class ActivityLifecycleMonitor {
         @Override
         public void onActivityDestroyed(Activity activity) {
             ++destroyCount;
-            if (!hasCreatedActivities()) {
-                destroyLastDate = TimeSync.getTime();
-            }
         }
 
         protected boolean hasResumedActivities() {
@@ -208,30 +197,6 @@ class ActivityLifecycleMonitor {
 
         protected Activity getLastStoppedActivity() {
             return lastStoppedActivityRef.get();
-        }
-
-        protected long getCreateFirstDate() {
-            return createFirstDate;
-        }
-
-        protected long getStartFirstDate() {
-            return startFirstDate;
-        }
-
-        protected long getResumeFirstDate() {
-            return resumeFirstDate;
-        }
-
-        protected long getPausedLastDate() {
-            return pausedLastDate;
-        }
-
-        protected long getStopLastDate() {
-            return stopLastDate;
-        }
-
-        protected long getDestroyLastDate() {
-            return destroyLastDate;
         }
 
     }

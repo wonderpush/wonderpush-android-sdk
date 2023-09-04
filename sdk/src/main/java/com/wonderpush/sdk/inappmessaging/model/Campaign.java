@@ -20,7 +20,6 @@ public final class Campaign implements JSONSerializable {
   final private JSONObject segment;
   final private Capping capping;
   final private List<CommonTypesProto.TriggeringCondition> triggeringConditions = new ArrayList<>();
-  final private boolean isTestCampaign;
 
 
   public static Campaign fromJSON(JSONObject campaignJson) {
@@ -40,7 +39,6 @@ public final class Campaign implements JSONSerializable {
 
   private Campaign(JSONObject campaignJson) throws InvalidJsonException {
     json = campaignJson;
-    isTestCampaign = false;
 
     JSONObject schedulingJson = campaignJson.optJSONObject("scheduling");
 
@@ -134,10 +132,6 @@ public final class Campaign implements JSONSerializable {
       return WebViewMessage.create(notificationMetadata, payloadJson, webViewJson);
     }
     return null;
-  }
-
-  public boolean isTestCampaign() {
-    return isTestCampaign;
   }
 
   /**

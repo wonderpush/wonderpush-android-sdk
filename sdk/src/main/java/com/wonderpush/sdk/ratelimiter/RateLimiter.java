@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class RateLimiter {
     protected static final String TAG = "WonderPushRateLimiter";
@@ -42,15 +43,19 @@ public class RateLimiter {
     }
 
     private static RateLimiter sInstance;
-    private static SharedPreferences sSharedPreferences;
+    private static Callable<SharedPreferences> sSharedPreferencesProvider;
 
-    public static void initialize(SharedPreferences sharedPreferences) {
-        sSharedPreferences = sharedPreferences;
+    public static void initialize(Callable<SharedPreferences> sharedPreferencesProvider) {
+        sSharedPreferencesProvider = sharedPreferencesProvider;
     }
 
     public static RateLimiter getInstance() throws MissingSharedPreferencesException {
         if (sInstance == null) {
-            sInstance = new RateLimiter(sSharedPreferences);
+            try {
+                sInstance = new RateLimiter(sSharedPreferencesProvider.call());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         return sInstance;
     }
