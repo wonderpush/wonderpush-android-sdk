@@ -114,7 +114,7 @@ public class NotificationManager {
                     WonderPush.logDebug("Calling delegate.onNotificationReceived");
                     delegate.onNotificationReceived(notificationPayload);
                 } catch (Exception e) {
-                    WonderPush.logError("onNotificationReceived threw", e);
+                    Log.e(WonderPush.TAG, "Unexpected error while calling the delegate onNotificationReceived method", e);
                 }
             }
         }
@@ -1077,7 +1077,7 @@ public class NotificationManager {
                     WonderPush.logDebug("Calling delegate.onNotificationOpened");
                     delegate.onNotificationOpened(notificationPayload, buttonIndex);
                 } catch (Exception e) {
-                    WonderPush.logError("onNotificationOpened threw", e);
+                    Log.e(WonderPush.TAG, "Unexpected error while calling the delegate onNotificationOpened method", e);
                 }
             }
         }
