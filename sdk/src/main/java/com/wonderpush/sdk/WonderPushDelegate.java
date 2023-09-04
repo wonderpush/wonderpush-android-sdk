@@ -1,5 +1,7 @@
 package com.wonderpush.sdk;
 
+import android.content.Context;
+
 import org.json.JSONObject;
 
 /**
@@ -30,12 +32,18 @@ public interface WonderPushDelegate {
      * @param notif The clicked notification
      * @param buttonIndex The index of the button clicked in the notification, or -1 when the notification itself was clicked
      */
-    default void onNotificationOpened(JSONObject notif, int buttonIndex) {};
+    default void onNotificationOpened(JSONObject notif, int buttonIndex) {}
 
     /**
      * Hook called when a notification is received
      * @param notif The received notification
      */
-    default void onNotificationReceived(JSONObject notif) {};
+    default void onNotificationReceived(JSONObject notif) {}
+
+    /**
+     * Override this method to store the context in your implementation if needed.
+     * @param context The context.
+     */
+    default void setContext(Context context) {}
 
 }

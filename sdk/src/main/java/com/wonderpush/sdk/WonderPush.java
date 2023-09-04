@@ -1845,19 +1845,20 @@ public class WonderPush {
         try {
             Class<?> cls = Class.forName(className);
             Object instance = cls.newInstance();
-            if (instance instanceof ContextReceiver) {
-                ((ContextReceiver) instance).setContext(getApplicationContext());
-            }
             if (!(instance instanceof WonderPushDelegate)) {
                 WonderPush.logError("Delegate class '"+ className +"' is not an instance of WonderPushDelegate");
             } else if (sDelegate != null) {
                 WonderPush.logError("Delegate class '"+ className +"' specified in build config / manifest / resources will not be used because there already is a delegate set up.");
             } else {
-                setDelegate((WonderPushDelegate) instance);
+                WonderPushDelegate delegateInstance = (WonderPushDelegate) instance;
+                delegateInstance.setContext(getApplicationContext());
+                setDelegate(delegateInstance);
             }
         } catch (IllegalAccessException | InstantiationException |
                  ClassNotFoundException e) {
             WonderPush.logError("Could not instantiate delegate of class '" + className + "'", e);
+        } catch (Exception e) {
+            Log.e(WonderPush.TAG, "Unexpected error while instantiating delegate of class '" + className + "'", e);
         }
     }
 
