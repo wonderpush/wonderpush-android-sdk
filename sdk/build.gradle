@@ -5,15 +5,13 @@ project.archivesBaseName = 'wonderpush-android-sdk'
 project.version = "4.3.6-SNAPSHOT"
 
 android {
-    compileSdk 33
-    buildToolsVersion = "33.0.0"
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
+        compileSdk 33
         minSdkVersion 21
         consumerProguardFiles 'proguard-exported.pro'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'

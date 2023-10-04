@@ -3,13 +3,11 @@ plugins {
 }
 
 android {
-    compileSdk 33
-    buildToolsVersion = '33.0.0'
-
     defaultConfig {
         applicationId "com.wonderpush.tests"
+        compileSdk 33
         minSdkVersion 21
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
 

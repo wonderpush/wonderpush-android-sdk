@@ -11,10 +11,8 @@ repositories {
 }
 
 android {
-    compileSdk 31
-    buildToolsVersion = "31.0.0"
-
     defaultConfig {
+        compileSdk 33
         minSdkVersion 19
         buildConfigField 'String', 'WONDERPUSH_HCM_VERSION', '"' + project.version + '"'
 
