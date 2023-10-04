@@ -5,8 +5,8 @@ project.archivesBaseName = 'wonderpush-android-sdk-fcm'
 project.version = "1.0.7-SNAPSHOT"
 
 android {
-    compileSdkVersion 31
-    buildToolsVersion "31.0.0"
+    compileSdk 31
+    buildToolsVersion = "31.0.0"
 
     defaultConfig {
         minSdkVersion 19
