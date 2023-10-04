@@ -18,8 +18,7 @@ import android.app.Application;
 import android.net.TrafficStats;
 import android.os.Process;
 
-import com.squareup.picasso.OkHttp3Downloader;
-import com.squareup.picasso.Picasso;
+import com.squareup.picasso3.Picasso;
 import com.wonderpush.sdk.inappmessaging.display.internal.PicassoErrorListener;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
 
@@ -62,7 +61,7 @@ public class PicassoModule {
             .build();
 
     Picasso.Builder builder = new Picasso.Builder(application);
-    builder.listener(picassoErrorListener).downloader(new OkHttp3Downloader(client));
+    builder.listener(picassoErrorListener).client(client);
     return builder.build();
   }
 }

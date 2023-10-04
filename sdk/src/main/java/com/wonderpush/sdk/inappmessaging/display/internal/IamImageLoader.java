@@ -17,9 +17,9 @@ package com.wonderpush.sdk.inappmessaging.display.internal;
 import androidx.annotation.Nullable;
 import android.widget.ImageView;
 
-import com.squareup.picasso.Callback;
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.RequestCreator;
+import com.squareup.picasso3.Callback;
+import com.squareup.picasso3.Picasso;
+import com.squareup.picasso3.RequestCreator;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
 
 import javax.inject.Inject;

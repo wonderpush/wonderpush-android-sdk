@@ -408,7 +408,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     }
 
     // onError loading resources
-    Consumer<Exception> onError = (Exception e) -> {
+    Consumer<Throwable> onError = (Throwable e) -> {
       Logging.loge("Could not load media", e);
 
       if (layoutListener != null) {

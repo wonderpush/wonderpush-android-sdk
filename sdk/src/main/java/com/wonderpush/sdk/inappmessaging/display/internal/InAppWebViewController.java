@@ -81,7 +81,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
         this.onClick = c;
     }
 
-    public void load(String url, Runnable onSuccess, Consumer<Exception> onError) {
+    public void load(String url, Runnable onSuccess, Consumer<Throwable> onError) {
         WebView webView = webViewRef.get();
         if (url == null || webView == null) {
             onSuccess.run();
@@ -325,10 +325,10 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
     private class BaseClient extends WebViewClient {
 
         final private Runnable onSuccess;
-        final private Consumer<Exception> onError;
+        final private Consumer<Throwable> onError;
         final private Resources resources;
 
-        BaseClient(Runnable onSuccess, Consumer<Exception> onError, Resources resources) {
+        BaseClient(Runnable onSuccess, Consumer<Throwable> onError, Resources resources) {
             this.onError = onError;
             this.onSuccess = onSuccess;
             this.resources = resources;
@@ -410,7 +410,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
 
     private class ModernClient extends BaseClient {
 
-        ModernClient(Runnable onSuccess, Consumer<Exception> onError, Resources resources) {
+        ModernClient(Runnable onSuccess, Consumer<Throwable> onError, Resources resources) {
             super(onSuccess, onError, resources);
         }
 
@@ -473,7 +473,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
 
     private class LegacyClient extends BaseClient {
 
-        LegacyClient(Runnable onSuccess, Consumer<Exception> onError, Resources resources) {
+        LegacyClient(Runnable onSuccess, Consumer<Throwable> onError, Resources resources) {
             super(onSuccess, onError, resources);
         }
 

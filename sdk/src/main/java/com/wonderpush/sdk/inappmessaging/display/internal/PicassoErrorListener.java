@@ -22,7 +22,7 @@ package com.wonderpush.sdk.inappmessaging.display.internal;
 
 import android.net.Uri;
 
-import com.squareup.picasso.Picasso;
+import com.squareup.picasso3.Picasso;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;

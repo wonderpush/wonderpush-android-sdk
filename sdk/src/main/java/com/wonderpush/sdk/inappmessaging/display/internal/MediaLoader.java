@@ -1,8 +1,7 @@
 package com.wonderpush.sdk.inappmessaging.display.internal;
 
 import android.app.Activity;
-import com.squareup.picasso.Callback;
-import com.wonderpush.sdk.SafeDeferProvider;
+import com.squareup.picasso3.Callback;
 import com.wonderpush.sdk.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 
 public class MediaLoader {
@@ -19,7 +18,7 @@ public class MediaLoader {
             BindingWrapper iam,
             String imageUrl,
             Runnable onSuccess,
-            Consumer<Exception> onError) {
+            Consumer<Throwable> onError) {
         if (imageUrl != null)  {
             imageLoader
                     .load(imageUrl)
@@ -31,7 +30,7 @@ public class MediaLoader {
                         }
 
                         @Override
-                        public void onError(Exception e) {
+                        public void onError(Throwable e) {
                             if (onError != null) onError.accept(e);
                         }
                     });
