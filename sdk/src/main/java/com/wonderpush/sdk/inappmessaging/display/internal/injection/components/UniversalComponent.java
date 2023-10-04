@@ -16,11 +16,13 @@ package com.wonderpush.sdk.inappmessaging.display.internal.injection.components;
 
 import android.app.Application;
 
+import com.wonderpush.sdk.UserAgentProvider;
 import com.wonderpush.sdk.inappmessaging.display.internal.BindingWrapperFactory;
 import com.wonderpush.sdk.inappmessaging.display.internal.IamWindowManager;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.ApplicationModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
+import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.UserAgentModule;
 
 import java.util.Map;
 
@@ -31,7 +33,7 @@ import dagger.Component;
 
 /** @hide */
 @Singleton
-@Component(modules = {ApplicationModule.class, InflaterConfigModule.class})
+@Component(modules = {ApplicationModule.class, InflaterConfigModule.class, UserAgentModule.class})
 public interface UniversalComponent {
   Application providesApplication();
 
@@ -40,4 +42,6 @@ public interface UniversalComponent {
   BindingWrapperFactory inflaterClient();
 
   Map<String, Provider<InAppMessageLayoutConfig>> myKeyStringMap();
+
+  UserAgentProvider providesUserAgent();
 }

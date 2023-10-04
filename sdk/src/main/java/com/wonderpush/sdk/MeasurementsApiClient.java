@@ -22,12 +22,18 @@ public class MeasurementsApiClient {
         if (_client == null) {
             synchronized (MeasurementsApiClient.class) {
                 if (_client == null) {
-                    _client = new okhttp3.OkHttpClient.Builder().eventListener(new okhttp3.EventListener() {
-                        @Override
-                        public void connectStart(okhttp3.Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
-                            TrafficStats.setThreadStatsTag(Process.myTid());
-                        }
-                    }).build();
+                    _client = new okhttp3.OkHttpClient.Builder()
+                            .addInterceptor(chain ->
+                                    chain.proceed(chain.request().newBuilder()
+                                            .header("User-Agent", WonderPush.getUserAgent())
+                                            .build())
+                            )
+                            .eventListener(new okhttp3.EventListener() {
+                                @Override
+                                public void connectStart(okhttp3.Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                                    TrafficStats.setThreadStatsTag(Process.myTid());
+                                }
+                            }).build();
                 }
             }
         }

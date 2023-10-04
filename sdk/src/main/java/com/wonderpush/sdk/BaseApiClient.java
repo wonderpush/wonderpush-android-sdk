@@ -196,12 +196,18 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
         if (_client == null) {
             synchronized (this) {
                 if (_client == null) {
-                    _client = new OkHttpClient.Builder().eventListener(new EventListener() {
-                        @Override
-                        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
-                            TrafficStats.setThreadStatsTag(Process.myTid());
-                        }
-                    }).build();
+                    _client = new OkHttpClient.Builder()
+                            .addInterceptor(chain ->
+                                    chain.proceed(chain.request().newBuilder()
+                                            .header("User-Agent", WonderPush.getUserAgent())
+                                            .build())
+                            )
+                            .eventListener(new EventListener() {
+                                @Override
+                                public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                                    TrafficStats.setThreadStatsTag(Process.myTid());
+                                }
+                            }).build();
                 }
             }
         }

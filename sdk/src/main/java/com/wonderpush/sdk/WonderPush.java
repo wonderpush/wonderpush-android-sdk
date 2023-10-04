@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -40,6 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.wonderpush.sdk.remoteconfig.Constants.REMOTE_CONFIG_EVENTS_BLACK_WHITE_LIST_KEY;
+
+import okhttp3.OkHttp;
 
 /**
  * Main class of the WonderPush SDK.
@@ -1726,7 +1729,7 @@ public class WonderPush {
                 sClientId = clientId;
                 sClientSecret = clientSecret;
                 sBaseURL = PRODUCTION_API_URL;
-                OkHttpRemoteConfigFetcher fetcher = new OkHttpRemoteConfigFetcher(clientId, WonderPush::safeDefer);
+                OkHttpRemoteConfigFetcher fetcher = new OkHttpRemoteConfigFetcher(clientId, WonderPush::safeDefer, WonderPush::getUserAgent);
                 SharedPreferencesRemoteConfigStorage storage = new SharedPreferencesRemoteConfigStorage(clientId, context);
                 sRemoteConfigManager = new RemoteConfigManager(fetcher, storage, context);
 
@@ -2000,7 +2003,7 @@ public class WonderPush {
                 }
             });
         }
-        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::trackInAppEvent);
+        InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::trackInAppEvent, WonderPush::getUserAgent);
     }
     /**
      * @see #ensureInitialized(Context, boolean)
@@ -2839,6 +2842,24 @@ public class WonderPush {
 
     static boolean isSubscriptionStatusOptIn() {
         return getSubscriptionStatus() == SubscriptionStatus.OPT_IN;
+    }
+
+    protected static String getUserAgent() {
+        String packageName = WonderPush.getApplicationContext().getPackageName();
+        String versionName = null;
+        long versionCode = 0;
+        try {
+            PackageInfo packageInfo = WonderPush.getApplicationContext().getPackageManager().getPackageInfo(packageName, 0);
+            versionName = packageInfo.versionName;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                versionCode = packageInfo.getLongVersionCode();
+            } else {
+                versionCode = packageInfo.versionCode;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            WonderPush.logDebug("Could not retrieve version name");
+        }
+        return "WonderPushSDK/" + WonderPush.SDK_VERSION + " (package:" + packageName + "; appVersion:" + versionName + "; appVersionCode:" + versionCode + "; clientId:" + WonderPush.getClientId() + ") okhttp/" + OkHttp.VERSION + " Android/" + Build.VERSION.RELEASE + " AndroidAPILevel/" + Build.VERSION.SDK_INT + " " + System.getProperty("http.agent");
     }
 
 }

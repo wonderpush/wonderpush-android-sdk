@@ -28,6 +28,7 @@ import com.wonderpush.sdk.ActionModel;
 import com.wonderpush.sdk.NotificationManager;
 import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.SafeDeferProvider;
+import com.wonderpush.sdk.UserAgentProvider;
 import com.wonderpush.sdk.inappmessaging.InAppMessaging;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks;
 import com.wonderpush.sdk.inappmessaging.InAppMessagingDisplayCallbacks.InAppMessagingDismissType;
@@ -40,6 +41,7 @@ import com.wonderpush.sdk.inappmessaging.display.internal.injection.components.U
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.ApplicationModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
+import com.wonderpush.sdk.inappmessaging.display.internal.injection.modules.UserAgentModule;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
 import com.wonderpush.sdk.inappmessaging.model.BannerMessage;
 import com.wonderpush.sdk.inappmessaging.model.CardMessage;
@@ -140,11 +142,13 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   public static void initialize(Application application,
                                 InAppMessaging inAppMessaging,
                                 SafeDeferProvider safeDeferProvider,
-                                TrackEventProvider trackEventProvider) {
+                                TrackEventProvider trackEventProvider,
+                                UserAgentProvider userAgentProvider) {
     if (instance == null) {
       UniversalComponent universalComponent =
               DaggerUniversalComponent.builder()
                       .applicationModule(new ApplicationModule(application))
+                      .userAgentModule(new UserAgentModule(userAgentProvider))
                       .build();
       AppComponent appComponent =
               DaggerAppComponent.builder()

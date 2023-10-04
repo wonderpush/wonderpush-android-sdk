@@ -5,6 +5,7 @@ import android.os.Process;
 
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.SafeOkHttpCallback;
+import com.wonderpush.sdk.UserAgentProvider;
 
 import okhttp3.*;
 import org.json.JSONException;
@@ -25,22 +26,31 @@ public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
     String clientId;
     @Nonnull
     final private SafeDeferProvider safeDeferProvider;
+    @Nonnull
+    final private UserAgentProvider userAgentProvider;
 
-    public OkHttpRemoteConfigFetcher(String clientId, SafeDeferProvider safeDeferProvider) {
+    public OkHttpRemoteConfigFetcher(@Nonnull String clientId, @Nonnull SafeDeferProvider safeDeferProvider, @Nonnull UserAgentProvider userAgentProvider) {
         this.clientId = clientId;
         this.safeDeferProvider = safeDeferProvider;
+        this.userAgentProvider = userAgentProvider;
     }
 
     private @Nonnull OkHttpClient getClient() {
         if (_client == null) {
             synchronized (this) {
                 if (_client == null) {
-                    _client = new OkHttpClient.Builder().eventListener(new EventListener() {
-                        @Override
-                        public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
-                            TrafficStats.setThreadStatsTag(Process.myTid());
-                        }
-                    }).build();
+                    _client = new OkHttpClient.Builder()
+                            .addInterceptor(chain ->
+                                    chain.proceed(chain.request().newBuilder()
+                                            .header("User-Agent", this.userAgentProvider.getUserAgent())
+                                            .build())
+                            )
+                            .eventListener(new EventListener() {
+                                @Override
+                                public void connectStart(Call call, InetSocketAddress inetSocketAddress, Proxy proxy) {
+                                    TrafficStats.setThreadStatsTag(Process.myTid());
+                                }
+                            }).build();
                 }
             }
         }

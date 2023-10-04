@@ -19,6 +19,7 @@ import android.net.TrafficStats;
 import android.os.Process;
 
 import com.squareup.picasso3.Picasso;
+import com.wonderpush.sdk.UserAgentProvider;
 import com.wonderpush.sdk.inappmessaging.display.internal.PicassoErrorListener;
 import com.wonderpush.sdk.inappmessaging.display.internal.injection.scopes.InAppMessagingScope;
 
@@ -40,7 +41,10 @@ public class PicassoModule {
   @Provides
   @InAppMessagingScope
   Picasso providesIamController(
-      Application application, PicassoErrorListener picassoErrorListener) {
+      Application application,
+      PicassoErrorListener picassoErrorListener,
+      UserAgentProvider userAgentProvider
+  ) {
     OkHttpClient client =
         new OkHttpClient.Builder()
             .addInterceptor(
@@ -48,7 +52,10 @@ public class PicassoModule {
                   @Override
                   public Response intercept(Chain chain) throws IOException {
                     return chain.proceed(
-                        chain.request().newBuilder().addHeader("Accept", "image/*").build());
+                        chain.request().newBuilder()
+                                .header("User-Agent", userAgentProvider.getUserAgent())
+                                .addHeader("Accept", "image/*")
+                                .build());
                   }
                 }
             )
