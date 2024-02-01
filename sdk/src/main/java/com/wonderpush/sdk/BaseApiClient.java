@@ -166,7 +166,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
                 WonderPush.logError(getTag(), "Request failed: " + errorResponse + " (for " + request.toHumanReadableString() + ")", e);
                 if (errorResponse != null && ERROR_INVALID_ACCESS_TOKEN == errorResponse.getErrorCode()) {
                     // null out the access token
-                    WonderPushConfiguration.invalidateCredentials();
+                    WonderPushConfiguration.invalidateCredentials(request.getUserId());
 
                     // retry later now
                     WonderPush.safeDefer(() -> execute(request), RETRY_INTERVAL_BAD_AUTH);

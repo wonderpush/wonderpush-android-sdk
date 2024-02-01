@@ -468,10 +468,27 @@ public class WonderPushConfiguration {
      * For instance when the user id changes, the device will get a new identity, so we must clear the old one.
      * When we face an invalid access token or SID error, we must also clear the stored information.
      */
-    static void invalidateCredentials() {
-        setAccessToken(null);
-        setInstallationId(null);
-        setSID(null);
+    static void invalidateCredentials(String userId) {
+        if (userId == null && getUserId() == null
+                || userId != null && userId.equals(getUserId())) {
+            setAccessToken(null);
+            setInstallationId(null);
+            setSID(null);
+        } else {
+            JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
+            if (usersArchive == null) usersArchive = new JSONObject();
+            JSONObject userArchive = usersArchive.optJSONObject(userId == null ? "" : userId);
+            if (userArchive == null) userArchive = new JSONObject();
+            userArchive.remove(ACCESS_TOKEN_PREF_NAME);
+            userArchive.remove(INSTALLATION_ID_PREF_NAME);
+            userArchive.remove(SID_PREF_NAME);
+            try {
+                usersArchive.put(userId == null ? "" : userId, userArchive);
+                putJSONObject(PER_USER_ARCHIVE_PREF_NAME, usersArchive);
+            } catch (JSONException e) {
+                WonderPush.logError("Failed to invalidateCredentials for " + userId, e);
+            }
+        }
     }
 
     /**
