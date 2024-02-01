@@ -463,48 +463,58 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                         });
       }
 
-      // Setup impression timer
-      impressionTimer.start(
-              new RenewableTimer.Callback() {
-                @Override
-                public void onFinish() {
-                  if (inAppMessage != null && callbacks != null && !impressionDetected) {
-                    Logging.logi(
-                            "Impression timer onFinish for: "
-                                    + inAppMessage.getNotificationMetadata().getCampaignId());
-                    impressionDetected = true;
-                    callbacks.impressionDetected();
-                  }
-                }
-              },
-              IMPRESSION_THRESHOLD_MILLIS,
-              INTERVAL_MILLIS);
-
-      // Setup auto dismiss timer
-      if (bindingWrapper.getConfig().autoDismiss()) {
-        autoDismissTimer.start(
-                new RenewableTimer.Callback() {
-                  @Override
-                  public void onFinish() {
-                    if (inAppMessage != null && callbacks != null) {
-                      callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
-                    }
-
-                    dismissIam(activity);
-                  }
-                },
-                DISMISS_THRESHOLD_MILLIS,
-                INTERVAL_MILLIS);
-      }
-
       // Show the message
       activity.runOnUiThread(
               new Runnable() {
                 @Override
                 public void run() {
-                  windowManager.show(bindingWrapper, activity);
+                  try {
+                    windowManager.show(bindingWrapper, activity);
+                  } catch (Throwable ex) {
+                    Logging.loge("Failed to show the in-app", ex);
+                    return;
+                  }
+
+                  // Setup impression timer
+                  impressionTimer.start(
+                          new RenewableTimer.Callback() {
+                            @Override
+                            public void onFinish() {
+                              if (inAppMessage != null && callbacks != null && !impressionDetected) {
+                                Logging.logi(
+                                        "Impression timer onFinish for: "
+                                                + inAppMessage.getNotificationMetadata().getCampaignId());
+                                impressionDetected = true;
+                                callbacks.impressionDetected();
+                              }
+                            }
+                          },
+                          IMPRESSION_THRESHOLD_MILLIS,
+                          INTERVAL_MILLIS);
+
+                  // Setup auto dismiss timer
+                  if (bindingWrapper.getConfig().autoDismiss()) {
+                    autoDismissTimer.start(
+                            new RenewableTimer.Callback() {
+                              @Override
+                              public void onFinish() {
+                                if (inAppMessage != null && callbacks != null) {
+                                  callbacks.messageDismissed(InAppMessagingDismissType.AUTO);
+                                }
+
+                                dismissIam(activity);
+                              }
+                            },
+                            DISMISS_THRESHOLD_MILLIS,
+                            INTERVAL_MILLIS);
+                  }
+
                   if (bindingWrapper.getEntryAnimation() != null) {
-                    animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
+                    try {
+                      animator.executeEntryAnimation(bindingWrapper.getEntryAnimation(), application, bindingWrapper.getRootView(), null);
+                    } catch (Throwable ex) {
+                      Logging.loge("Failed to execute the entry animation", ex);
+                    }
                   }
                 }
               });
