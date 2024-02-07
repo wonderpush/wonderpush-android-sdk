@@ -472,6 +472,10 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                     windowManager.show(bindingWrapper, activity);
                   } catch (Throwable ex) {
                     Logging.loge("Failed to show the in-app", ex);
+                    inAppMessage = null;
+                    impressionDetected = false;
+                    callbacks = null;
+                    bindingWrapper = null;
                     return;
                   }
 
