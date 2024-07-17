@@ -1671,7 +1671,7 @@ public class WonderPush {
      * Whether {@link #initialize(Context, String, String)} has been called.
      * @return {@code true} if the SDK is initialized, {@code false} otherwise.
      */
-    static boolean isInitialized() {
+    public static boolean isInitialized() {
         return sIsInitialized;
     }
 
