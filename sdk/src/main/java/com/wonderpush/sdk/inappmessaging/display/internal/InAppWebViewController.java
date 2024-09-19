@@ -106,7 +106,8 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
                     public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
                         if (!isDialog && isUserGesture) {
                             WebView.HitTestResult hitTestResult = view.getHitTestResult();
-                            if (hitTestResult.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
+                            if (hitTestResult.getType() == WebView.HitTestResult.SRC_ANCHOR_TYPE
+                                || hitTestResult.getType() == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE) {
                                 String url = hitTestResult.getExtra();
                                 openExternalUrl(url);
                                 return true;
