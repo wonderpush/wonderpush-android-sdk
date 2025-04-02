@@ -1107,10 +1107,29 @@ public class WonderPushConfiguration {
         String collapsing = JSONUtil.optString(eventData, "collapsing");
 
         List<JSONObject> oldTrackedEvents = getTrackedEvents();
-        List<JSONObject> uncollapsedEvents = new ArrayList<>(oldTrackedEvents.size() + 1); // collapsing == null
-        List<JSONObject> collapsedLastBuiltinEvents = new ArrayList<>(); // collapsing.equals("last") && type.startsWith("@")
-        List<JSONObject> collapsedLastCustomEvents = new ArrayList<>(); // collapsing.equals("last") && !type.startsWith("@")
-        List<JSONObject> collapsedOtherEvents = new ArrayList<>(); // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
+        int uncollapsedEventsCountEstimate = 0; // collapsing == null
+        int collapsedLastBuiltinEventsCountEstimate = 0; // collapsing.equals("last") && type.startsWith("@")
+        int collapsedLastCustomEventsCountEstimate = 0; // collapsing.equals("last") && !type.startsWith("@")
+        int collapsedOtherEventsCountEstimate = 0; // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
+        for (JSONObject oldTrackedEvent : oldTrackedEvents) {
+            String oldTrackedEventCollapsing = JSONUtil.optString(oldTrackedEvent, "collapsing");
+            String oldTrackedEventType = oldTrackedEvent.optString("type");
+            if (oldTrackedEventCollapsing == null) {
+                uncollapsedEventsCountEstimate++;
+            } else if ("last".equals(oldTrackedEventCollapsing)) {
+                if (oldTrackedEventType.startsWith("@")) {
+                    collapsedLastBuiltinEventsCountEstimate++;
+                } else {
+                    collapsedLastCustomEventsCountEstimate++;
+                }
+            } else {
+                collapsedOtherEventsCountEstimate++;
+            }
+        }
+        List<JSONObject> uncollapsedEvents = new ArrayList<>(uncollapsedEventsCountEstimate+1); // collapsing == null
+        List<JSONObject> collapsedLastBuiltinEvents = new ArrayList<>(collapsedLastBuiltinEventsCountEstimate+1); // collapsing.equals("last") && type.startsWith("@")
+        List<JSONObject> collapsedLastCustomEvents = new ArrayList<>(collapsedLastCustomEventsCountEstimate+1); // collapsing.equals("last") && !type.startsWith("@")
+        List<JSONObject> collapsedOtherEvents = new ArrayList<>(collapsedOtherEventsCountEstimate+1); // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
 
         long now = TimeSync.getTime();
         long getMaximumUncollapsedTrackedEventsAgeMs = getMaximumUncollapsedTrackedEventsAgeMs();
@@ -1149,6 +1168,7 @@ public class WonderPushConfiguration {
                 collapsedOtherEvents.add(oldTrackedEvent);
             }
         }
+        oldTrackedEvents = null; // let GC collect this
 
         // Add the new event, uncollapsed
         JSONObject collapsedEventData = null;
@@ -1225,8 +1245,11 @@ public class WonderPushConfiguration {
                 if (numberOfDaysSinceNow <= 60) ++last60days;
                 if (numberOfDaysSinceNow <= 90) ++last90days;
             }
-
         }
+        collapsedLastBuiltinEvents = null; // let GC collect this
+        collapsedLastCustomEvents = null; // let GC collect this
+        collapsedOtherEvents = null; // let GC collect this
+        uncollapsedEvents = null; // let GC collect this
 
         occurrences.allTime = Math.max(allTime, uncollapsedCount);
         occurrences.last1days = last1days;
