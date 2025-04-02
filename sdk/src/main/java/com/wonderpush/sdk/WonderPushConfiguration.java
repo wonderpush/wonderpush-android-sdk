@@ -83,9 +83,9 @@ public class WonderPushConfiguration {
     private static Context sContext;
 
     public static final int DEFAULT_MAXIMUM_COLLAPSED_LAST_BUILTIN_TRACKED_EVENTS_COUNT = 100;
-    public static final int DEFAULT_MAXIMUM_COLLAPSED_LAST_CUSTOM_TRACKED_EVENTS_COUNT = 1000;
-    public static final int DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT = 1000;
-    public static final int DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_COUNT = 10000;
+    public static final int DEFAULT_MAXIMUM_COLLAPSED_LAST_CUSTOM_TRACKED_EVENTS_COUNT = 100;
+    public static final int DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT = 100;
+    public static final int DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_COUNT = 1000;
     public static final long DEFAULT_MAXIMUM_UNCOLLAPSED_TRACKED_EVENTS_AGE_MS = 90L * 24 * 60 * 60 * 1000;
     private static int maximumCollapsedLastBuiltinTrackedEventsCount = DEFAULT_MAXIMUM_COLLAPSED_LAST_BUILTIN_TRACKED_EVENTS_COUNT;
     private static int maximumCollapsedLastCustomTrackedEventsCount = DEFAULT_MAXIMUM_COLLAPSED_LAST_CUSTOM_TRACKED_EVENTS_COUNT;
