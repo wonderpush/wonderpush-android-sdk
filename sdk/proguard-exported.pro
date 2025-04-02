@@ -16,6 +16,10 @@
     *** WONDERPUSH_*;
 }
 
+# Keep implementations of the WonderPushDelegate so they can be loaded using:
+#     <meta-data android:name="com.wonderpush.sdk.delegateClass" android:value="com.package.myapp.MyDelegate" />
+-keep public class * implements com.wonderpush.sdk.WonderPushDelegate
+
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn javax.annotation.**
