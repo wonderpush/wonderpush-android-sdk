@@ -1,6 +1,5 @@
 package com.wonderpush.sdk;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
