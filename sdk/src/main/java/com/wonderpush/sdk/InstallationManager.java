@@ -255,6 +255,10 @@ public class InstallationManager {
                     application.put("integrator", WonderPush.getIntegrator() == null ? JSONObject.NULL : WonderPush.getIntegrator());
                     diff.put("application", application);
 
+                    JSONObject android = new JSONObject();
+                    android.put("applicationId", getAndroidApplicationId());
+                    application.put("android", android);
+
                     JSONObject device = new JSONObject();
                     device.put("id", WonderPush.getDeviceId());
                     device.put("platform", "Android");
@@ -285,6 +289,10 @@ public class InstallationManager {
                 }
             }
         }, 0);
+    }
+
+    protected static String getAndroidApplicationId() {
+        return WonderPush.getApplicationContext().getPackageName();
     }
 
     protected static String getApplicationVersion() {
