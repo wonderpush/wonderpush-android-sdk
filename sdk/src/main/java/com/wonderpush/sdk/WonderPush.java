@@ -135,12 +135,13 @@ public class WonderPush {
             @Override
             public void onUserConsentChanged(boolean hasUserConsent) {
                 if (hasUserConsent) {
+                    List<Runnable> runnables;
                     synchronized (sUserConsentDeferred) {
-                        List<Runnable> runnables = new ArrayList<>(sUserConsentDeferred.values());
+                        runnables = new ArrayList<>(sUserConsentDeferred.values());
                         sUserConsentDeferred.clear();
-                        for (Runnable runnable : runnables) {
-                            WonderPush.safeDefer(runnable, 0);
-                        }
+                    }
+                    for (Runnable runnable : runnables) {
+                        WonderPush.safeDefer(runnable, 0);
                     }
                 }
             }
@@ -150,12 +151,13 @@ public class WonderPush {
             @Override
             public void onSubscriptionStatusChanged(SubscriptionStatus subscriptionStatus) {
                 if (isSubscriptionStatusOptIn()) {
+                    List<Runnable> runnables;
                     synchronized (sSubscriptionDeferred) {
-                        List<Runnable> runnables = new ArrayList<>(sSubscriptionDeferred.values());
+                        runnables = new ArrayList<>(sSubscriptionDeferred.values());
                         sSubscriptionDeferred.clear();
-                        for (Runnable runnable : runnables) {
-                            WonderPush.safeDefer(runnable, 0);
-                        }
+                    }
+                    for (Runnable runnable : runnables) {
+                        WonderPush.safeDefer(runnable, 0);
                     }
                 }
             }
@@ -2300,18 +2302,19 @@ public class WonderPush {
     }
 
     static void subscriptionStatusChanged() {
+        Set<SubscriptionStatusListener> iterationSet;
         synchronized (sSubscriptionStatusListeners) {
             if (!sIsInitialized) logError("subscriptionStatusChanged called before SDK is initialized");
             // Iterate on a copy to let listeners de-register themselves
             // during iteration without triggering a java.util.ConcurrentModificationException
-            Set<SubscriptionStatusListener> iterationSet = new HashSet<>(sSubscriptionStatusListeners);
-            SubscriptionStatus subscriptionStatus = getSubscriptionStatus();
-            for (SubscriptionStatusListener listener : iterationSet) {
-                try {
-                    listener.onSubscriptionStatusChanged(subscriptionStatus);
-                } catch (Exception ex) {
-                    Log.e(TAG, "Unexpected error while processing user consent changed listeners", ex);
-                }
+            iterationSet = new HashSet<>(sSubscriptionStatusListeners);
+        }
+        SubscriptionStatus subscriptionStatus = getSubscriptionStatus();
+        for (SubscriptionStatusListener listener : iterationSet) {
+            try {
+                listener.onSubscriptionStatusChanged(subscriptionStatus);
+            } catch (Exception ex) {
+                Log.e(TAG, "Unexpected error while processing user consent changed listeners", ex);
             }
         }
     }
