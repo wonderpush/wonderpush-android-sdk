@@ -345,7 +345,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
   // it is safe to ignore this warning
   @SuppressLint("ClickableViewAccessibility")
   private void inflateBinding(final Activity activity) {
-    if (bindingWrapper == null) return;
+    if (bindingWrapper == null || inAppMessage == null) return;
 
     // On click listener when X button or collapse button is clicked
     final View.OnClickListener dismissListener =
@@ -555,7 +555,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
    * @param message
    * @return
    */
-  private List<List<ActionModel>> extractActions(InAppMessage message) {
+  private List<List<ActionModel>> extractActions(@NonNull InAppMessage message) {
     List<List<ActionModel>> result = new ArrayList<>();
     switch (message.getMessageType()) {
       case BANNER:
