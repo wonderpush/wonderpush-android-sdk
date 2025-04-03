@@ -252,11 +252,8 @@ class ApiClient extends BaseApiClient {
     private ResponseHandler dequeueHandler() {
         ResponseHandler handler = null;
         synchronized (pendingHandlers) {
-            if (pendingHandlers.size() > 0) {
-                handler = pendingHandlers.get(0);
-                if (null != handler) {
-                    pendingHandlers.remove(0);
-                }
+            if (!pendingHandlers.isEmpty()) {
+                handler = pendingHandlers.remove(0);
             }
         }
         return handler;
