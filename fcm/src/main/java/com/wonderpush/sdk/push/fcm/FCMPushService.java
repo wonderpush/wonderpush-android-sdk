@@ -275,7 +275,7 @@ public class FCMPushService implements PushService {
         }
         if (iconId == 0) {
             // Default to an embedded icon
-            iconId = R.drawable.ic_notifications_white_24dp;
+            iconId = com.wonderpush.sdk.R.drawable.ic_notifications_white_24dp;
         }
         return iconId;
     }

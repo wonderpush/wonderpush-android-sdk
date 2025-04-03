@@ -105,7 +105,7 @@ public class Application extends android.app.Application {
                         manuallyStartApp.putExtra("closeNotificationId", localNotificationId);
                         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, manuallyStartApp, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_UPDATE_CURRENT);
                         Notification notification = new NotificationCompat.Builder(getApplicationContext(), "data-push-manually-display")
-                                .setSmallIcon(R.drawable.ic_notifications_white_24dp)
+                                .setSmallIcon(com.wonderpush.sdk.R.drawable.ic_notifications_white_24dp)
                                 .setContentTitle(pushNotificationIntent.getStringExtra("title"))
                                 .setContentText(pushNotificationIntent.getStringExtra("text"))
                                 .setContentIntent(pendingIntent)
