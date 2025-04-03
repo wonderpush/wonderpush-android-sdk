@@ -2282,7 +2282,11 @@ public class WonderPush {
                     runnable.run();
                 } else {
                     synchronized (sUserConsentDeferred) {
-                        sUserConsentDeferred.put(id != null ? id : UUID.randomUUID().toString(), runnable);
+                        if (hasUserConsent()) { // we need a double check because things could have changed in the meantime
+                            runnable.run();
+                        } else {
+                            sUserConsentDeferred.put(id != null ? id : UUID.randomUUID().toString(), runnable);
+                        }
                     }
                 }
             }
@@ -2334,7 +2338,11 @@ public class WonderPush {
                     runnable.run();
                 } else {
                     synchronized (sSubscriptionDeferred) {
-                        sSubscriptionDeferred.put(id != null ? id : UUID.randomUUID().toString(), runnable);
+                        if (isSubscriptionStatusOptIn()) { // we need a double check because things could have changed in the meantime
+                            runnable.run();
+                        } else {
+                            sSubscriptionDeferred.put(id != null ? id : UUID.randomUUID().toString(), runnable);
+                        }
                     }
                 }
             }
