@@ -1946,12 +1946,13 @@ public class WonderPush {
         }
 
         // Refresh preferences
-        boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();
         if (force) {
+            boolean notificationEnabled = WonderPushConfiguration.getNotificationEnabled();
             WonderPushConfiguration.setNotificationEnabled(!notificationEnabled);
+            WonderPush.setNotificationEnabled(notificationEnabled); // already calls refreshSubscriptionStatus()
+        } else {
+            WonderPush.refreshSubscriptionStatus();
         }
-
-        WonderPush.refreshSubscriptionStatus();
     }
 
     static void initializeInAppMessaging(Context context) {
