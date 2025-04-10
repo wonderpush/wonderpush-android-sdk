@@ -1794,15 +1794,10 @@ public class WonderPush {
 
                 if (sBeforeInitializationUserIdSet) {
                     WonderPushConfiguration.changeUserId(sBeforeInitializationUserId);
-                    deferInitForNewUser(sBeforeInitializationUserId);
-                } else {
-                    // Initializing using the previously used userId (which we defer reading to avoid synchronous IO during initialization)
-                    safeDefer(() -> {
-                        deferInitForNewUser(WonderPushConfiguration.getUserId());
-                    }, 0);
                 }
 
                 sIsInitialized = true;
+
                 hasUserConsentChanged(hasUserConsent()); // make sure to set sIsInitialized=true before
                 // Ensure we get an @APP_OPEN with deferred initialization
                 if (!hasUserConsent()) {
@@ -1815,6 +1810,10 @@ public class WonderPush {
                         }
                     });
                 }
+
+                safeDefer(() -> { // avoid synchronous IO reading the userId
+                    deferInitForNewUser(WonderPushConfiguration.getUserId());
+                }, 0);
 
                 safeDefer(() -> {
                     // Permission checks
