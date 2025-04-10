@@ -259,7 +259,7 @@ public class InstallationManager {
                     application.put("android", android);
 
                     JSONObject device = new JSONObject();
-                    device.put("id", WonderPush.getDeviceId());
+                    device.put("id", getDeviceId());
                     device.put("platform", "Android");
                     device.put("category", "mobile");
                     device.put("osVersion", getOsVersion());
@@ -303,6 +303,13 @@ public class InstallationManager {
             WonderPush.logDebug("Could not retreive version name");
         }
         return versionName;
+    }
+
+
+    protected static String getDeviceId() {
+        // Do not call WonderPush.getDeviceId() as we may run before the end of the SDK initialization.
+        // Instead, directly call the final code that would run after initialization.
+        return new WonderPushImpl().getDeviceId();
     }
 
     protected static String getOsVersion() {
