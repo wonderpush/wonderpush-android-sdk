@@ -75,7 +75,7 @@ public class WonderPush {
     private static Context sApplicationContext;
     protected static Application sApplication;
 
-    protected static final ScheduledExecutorService sScheduledExecutor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+    protected static final ScheduledExecutorService sScheduledExecutor = Executors.newScheduledThreadPool(4, new ThreadFactory() {
         // Adapted from Executors.DefaultThreadFactory to customize the thread names for better debuggability
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -1745,10 +1745,14 @@ public class WonderPush {
                 setupDelegate();
                 RateLimiter.initialize(WonderPushConfiguration::getSharedPreferences);
                 safeDefer(WonderPushUserPreferences::initialize, 0);
+                // NOTE: Do not use safeDefer on methods relying on WonderPushUserPreferences
+                //       BEFORE this point.
                 JSONSyncInstallation.setDisabled(true);
                 ApiClient.getInstance().setDisabled(true);
                 MeasurementsApiClient.setDisabled(true);
                 safeDefer(JSONSyncInstallation::initialize, 0);
+                // NOTE: Do not use safeDefer on methods relying on JSONSyncInstallation
+                //       BEFORE this point.
                 initializeInAppMessaging(context);
 
                 // Setup a remote config handler to execute as soon as we get the config
