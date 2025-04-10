@@ -49,13 +49,8 @@ class WonderPushImpl implements IWonderPush {
         try {
             deviceId = WonderPushConfiguration.getDeviceId();
             if (deviceId == null) {
-                // Read from OpenUDID storage to keep a smooth transition off using OpenUDID
-                SharedPreferences sharedPrefs =  WonderPush.getApplicationContext().getSharedPreferences("openudid_prefs", Context.MODE_PRIVATE);
-                deviceId = sharedPrefs.getString("openudid", null);
-                if (deviceId == null) {
-                    // Generate an UUIDv4
-                    deviceId = UUID.randomUUID().toString();
-                }
+                // Generate an UUIDv4
+                deviceId = UUID.randomUUID().toString();
                 // and store it for us
                 WonderPushConfiguration.setDeviceId(deviceId);
             }
