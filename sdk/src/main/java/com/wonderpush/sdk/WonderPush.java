@@ -127,7 +127,7 @@ public class WonderPush {
         void onUserConsentChanged(boolean hasUserConsent);
     }
     interface SubscriptionStatusListener {
-        void onSubscriptionStatusChanged(SubscriptionStatus subscriptionStatus);
+        void onSubscriptionStatus(SubscriptionStatus subscriptionStatus);
     }
     static {
         // Add the necessary user consent listener to dequeue sUserConsentDeferred
@@ -149,8 +149,8 @@ public class WonderPush {
 
         addSubscriptionStatusListener(new SubscriptionStatusListener() {
             @Override
-            public void onSubscriptionStatusChanged(SubscriptionStatus subscriptionStatus) {
-                if (isSubscriptionStatusOptIn()) {
+            public void onSubscriptionStatus(SubscriptionStatus subscriptionStatus) {
+                if (subscriptionStatus == SubscriptionStatus.OPT_IN) {
                     List<Runnable> runnables;
                     synchronized (sSubscriptionDeferred) {
                         runnables = new ArrayList<>(sSubscriptionDeferred.values());
@@ -2309,7 +2309,7 @@ public class WonderPush {
         }
     }
 
-    static void subscriptionStatusChanged() {
+    static void notifySubscriptionStatus() {
         Set<SubscriptionStatusListener> iterationSet;
         synchronized (sSubscriptionStatusListeners) {
             if (!sIsInitialized) logError("subscriptionStatusChanged called before SDK is initialized");
@@ -2320,7 +2320,7 @@ public class WonderPush {
         SubscriptionStatus subscriptionStatus = getSubscriptionStatus();
         for (SubscriptionStatusListener listener : iterationSet) {
             try {
-                listener.onSubscriptionStatusChanged(subscriptionStatus);
+                listener.onSubscriptionStatus(subscriptionStatus);
             } catch (Exception ex) {
                 Log.e(TAG, "Unexpected error while processing user consent changed listeners", ex);
             }

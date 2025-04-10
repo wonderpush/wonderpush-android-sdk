@@ -152,10 +152,7 @@ class WonderPushImpl implements IWonderPush {
             WonderPushConfiguration.setCachedDisabledNotificationChannelIds(disabledChannels);
             WonderPushConfiguration.setCachedDisabledNotificationChannelIdsDate(TimeSync.getTime());
 
-            if (WonderPush.getSubscriptionStatus() != previousSubscriptionStatus) {
-                WonderPush.subscriptionStatusChanged();
-            }
-
+            WonderPush.notifySubscriptionStatus();
         } catch (Exception e) {
             Log.e(WonderPush.TAG, "Unexpected error while refreshing subscription status", e);
         }
