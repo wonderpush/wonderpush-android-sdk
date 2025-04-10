@@ -1793,11 +1793,12 @@ public class WonderPush {
                 }, new IntentFilter(Constants.INTENT_REMOTE_CONFIG_UPDATED));
 
                 if (sBeforeInitializationUserIdSet) {
-                    initForNewUser(sBeforeInitializationUserId);
+                    WonderPushConfiguration.changeUserId(sBeforeInitializationUserId);
+                    deferInitForNewUser(sBeforeInitializationUserId);
                 } else {
-                    // Initializing using the same userId won't change WonderPushConfiguration storage, so it's safe to defer
+                    // Initializing using the previously used userId (which we defer reading to avoid synchronous IO during initialization)
                     safeDefer(() -> {
-                        initForNewUser(WonderPushConfiguration.getUserId());
+                        deferInitForNewUser(WonderPushConfiguration.getUserId());
                     }, 0);
                 }
 
@@ -1887,35 +1888,18 @@ public class WonderPush {
         });
     }
 
-    private static void initForNewUser(final String userId) {
-        WonderPush.logDebug("initForNewUser(" + userId + ")");
-        WonderPushConfiguration.changeUserId(userId);
-        // Wait for SDK to be initialized and fetch anonymous token if needed.
+    private static void deferInitForNewUser(final String userId) {
+        WonderPush.logDebug("deferInitForNewUser(" + userId + ")");
+        WonderPush.safeDefer(new Runnable() {
+            @Override
+            public void run() {
+                refreshPreferencesAndConfiguration(false);
+            }
+        }, 0);
         WonderPush.safeDeferWithConsent(new Runnable() {
             @Override
             public void run() {
-                if (isInitialized()) {
-                    final Runnable init = new Runnable() {
-                        @Override
-                        public void run() {
-                            refreshPreferencesAndConfiguration(false);
-                        }
-                    };
-                    boolean isFetchingToken = ApiClient.getInstance().fetchAnonymousAccessTokenIfNeeded(userId, new ResponseHandler() {
-                        @Override
-                        public void onFailure(Throwable e, Response errorResponse) {
-                        }
-                        @Override
-                        public void onSuccess(Response response) {
-                            init.run();
-                        }
-                    });
-                    if (!isFetchingToken) {
-                        init.run();
-                    }
-                } else {
-                    WonderPush.safeDefer(this, 100);
-                }
+                ApiClient.getInstance().fetchAnonymousAccessTokenIfNeeded(userId);
             }
         }, "initForNewUser"); // using this constant id we ensure we only initialize for the last used userId
     }
@@ -2465,8 +2449,11 @@ public class WonderPush {
                 JSONObject diff = new JSONObject("{\"pushToken\": {\"data\": null}}");
                 JSONSyncInstallation.forCurrentUser().receiveDiff(diff);
 
+                // We're done reading state for previous user, we can now store the new one
+                WonderPushConfiguration.changeUserId(userId);
+
                 // The user id changed, we must reset the access token
-                initForNewUser(userId);
+                deferInitForNewUser(userId);
             }
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while setting userId to \"" + userId + "\"", e);
