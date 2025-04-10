@@ -179,10 +179,13 @@ public class JSONSyncInstallation extends JSONSync {
     public static void flushAll(boolean sync) {
         waitForInitialization();
         WonderPush.logDebug("Flushing delayed updates of custom properties for all known users");
+        ArrayList<JSONSyncInstallation> jsonSyncs = null;
         synchronized (sInstancePerUserId) {
-            for (JSONSyncInstallation jsonSync : sInstancePerUserId.values()) {
-                jsonSync.flush(sync);
-            }
+            jsonSyncs = new ArrayList<>(sInstancePerUserId.size());
+            jsonSyncs.addAll(sInstancePerUserId.values());
+        }
+        for (JSONSyncInstallation jsonSync : jsonSyncs) {
+            jsonSync.flush(sync);
         }
     }
 
