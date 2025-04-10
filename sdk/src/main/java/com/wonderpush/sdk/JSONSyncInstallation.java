@@ -181,8 +181,7 @@ public class JSONSyncInstallation extends JSONSync {
         WonderPush.logDebug("Flushing delayed updates of custom properties for all known users");
         ArrayList<JSONSyncInstallation> jsonSyncs = null;
         synchronized (sInstancePerUserId) {
-            jsonSyncs = new ArrayList<>(sInstancePerUserId.size());
-            jsonSyncs.addAll(sInstancePerUserId.values());
+            jsonSyncs = new ArrayList<>(sInstancePerUserId.values());
         }
         for (JSONSyncInstallation jsonSync : jsonSyncs) {
             jsonSync.flush(sync);
