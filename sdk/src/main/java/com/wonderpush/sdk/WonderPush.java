@@ -2296,7 +2296,7 @@ public class WonderPush {
     static void notifySubscriptionStatus() {
         Set<SubscriptionStatusListener> iterationSet;
         synchronized (sSubscriptionStatusListeners) {
-            if (!sIsInitialized) logError("subscriptionStatusChanged called before SDK is initialized");
+            if (!sIsInitialized) logError("notifySubscriptionStatus() called before SDK is initialized");
             // Iterate on a copy to let listeners de-register themselves
             // during iteration without triggering a java.util.ConcurrentModificationException
             iterationSet = new HashSet<>(sSubscriptionStatusListeners);
