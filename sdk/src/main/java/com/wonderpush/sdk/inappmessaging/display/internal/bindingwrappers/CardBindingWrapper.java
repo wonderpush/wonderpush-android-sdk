@@ -164,7 +164,7 @@ public class CardBindingWrapper extends BindingWrapper {
   private void setMessage(CardMessage message) {
     // We can assume we have a title because the CardMessage model enforces it.
     messageTitle.setText(message.getTitle().getText());
-    if (!TextUtils.isEmpty(message.getTitle().getHexColor())) messageTitle.setTextColor(Color.parseColor(message.getTitle().getHexColor()));
+    setViewTextColorFromHex(messageTitle, message.getTitle().getHexColor());
 
     // Right now we need to check for null, eventually we will make an API change to have hasBody()
     // Additionally right now we have to check for getText. this will be fixed soon.
@@ -172,7 +172,7 @@ public class CardBindingWrapper extends BindingWrapper {
       bodyScroll.setVisibility(View.VISIBLE);
       messageBody.setVisibility(View.VISIBLE);
       messageBody.setText(message.getBody().getText());
-      if (!TextUtils.isEmpty(message.getBody().getHexColor())) messageBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
+      setViewTextColorFromHex(messageBody, message.getBody().getHexColor());
     } else {
       bodyScroll.setVisibility(View.GONE);
       messageBody.setVisibility(View.GONE);

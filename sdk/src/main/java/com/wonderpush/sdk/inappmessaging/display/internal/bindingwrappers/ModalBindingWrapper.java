@@ -191,16 +191,14 @@ public class ModalBindingWrapper extends BindingWrapper {
         messageTitle.setVisibility(View.GONE);
       }
 
-      if (!TextUtils.isEmpty(message.getTitle().getHexColor())) {
-        messageTitle.setTextColor(Color.parseColor(message.getTitle().getHexColor()));
-      }
+      setViewTextColorFromHex(messageTitle, message.getTitle().getHexColor());
     }
 
     // eventually we should no longer need to check for the text of the body
     if (message.getBody() != null && !TextUtils.isEmpty(message.getBody().getText())) {
       bodyScroll.setVisibility(View.VISIBLE);
       messageBody.setVisibility(View.VISIBLE);
-      if (!TextUtils.isEmpty(message.getBody().getHexColor())) messageBody.setTextColor(Color.parseColor(message.getBody().getHexColor()));
+      setViewTextColorFromHex(messageBody, message.getBody().getHexColor());
       messageBody.setText(message.getBody().getText());
     } else {
       bodyScroll.setVisibility(View.GONE);

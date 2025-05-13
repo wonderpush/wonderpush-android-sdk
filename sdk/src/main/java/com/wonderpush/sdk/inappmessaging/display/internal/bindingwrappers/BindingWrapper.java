@@ -29,6 +29,7 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.wonderpush.sdk.inappmessaging.display.internal.IamAnimator;
 import com.wonderpush.sdk.inappmessaging.display.internal.InAppMessageLayoutConfig;
@@ -101,13 +102,23 @@ public abstract class BindingWrapper {
   }
 
 
-  protected void setViewBgColorFromHex(@Nullable View view, @Nullable String hexColor) {
+  protected static void setViewBgColorFromHex(@Nullable View view, @Nullable String hexColor) {
     if (view == null || TextUtils.isEmpty(hexColor)) return;
     try {
       view.setBackgroundColor(Color.parseColor(hexColor));
     } catch (IllegalArgumentException e) {
       // If the color didnt parse correctly, fail 'open', with default background color
       Logging.loge("Error parsing background color: " + e.toString() + " color: " + hexColor);
+    }
+  }
+
+  protected static void setViewTextColorFromHex(@Nullable TextView view, @Nullable String hexColor) {
+    if (view == null || TextUtils.isEmpty(hexColor)) return;
+    try {
+      view.setTextColor(Color.parseColor(hexColor));
+    } catch (IllegalArgumentException e) {
+      // If the color didnt parse correctly, fail 'open', with default color
+      Logging.loge("Error parsing text color: " + e.toString() + " color: " + hexColor);
     }
   }
 
@@ -130,10 +141,9 @@ public abstract class BindingWrapper {
   // Worth changing the API allow for building a UI model from a data model. Future change.
   public static void setupViewButtonFromModel(
       Button viewButton, com.wonderpush.sdk.inappmessaging.model.Button modelButton) {
-    String buttonTextHexColor = modelButton.getText().getHexColor();
     setButtonBgColorFromHex(viewButton, modelButton.getButtonHexColor());
     viewButton.setText(modelButton.getText().getText());
-    if (!TextUtils.isEmpty(buttonTextHexColor)) viewButton.setTextColor(Color.parseColor(buttonTextHexColor));
+    setViewTextColorFromHex(viewButton, modelButton.getText().getHexColor());
   }
 
   protected void setButtonActionListener(
