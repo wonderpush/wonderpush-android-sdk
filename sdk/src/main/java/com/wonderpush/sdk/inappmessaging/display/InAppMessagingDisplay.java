@@ -429,7 +429,7 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
     Consumer<Throwable> onError = (Throwable e) -> {
       Logging.loge("Could not load media", e);
 
-      if (layoutListener != null) {
+      if (layoutListener != null && bindingWrapper != null) {
         bindingWrapper
                 .getImageView()
                 .getViewTreeObserver()
@@ -460,6 +460,8 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
 
     // onSuccess loading resources
     Runnable onSuccess = () -> {
+      if (bindingWrapper == null) return;
+
       // Setup dismiss on touch outside
       if (bindingWrapper.getDismissView() != null) {
         bindingWrapper
@@ -547,10 +549,13 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
       notifyIamClick();
     });
     controller.setOnDismiss(() -> {
-      callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+      if (callbacks != null) {
+        callbacks.messageDismissed(InAppMessagingDismissType.CLICK);
+      }
       dismissIam(activity);
     });
     controller.load(extractWebViewUrlOf(inAppMessage), () -> {
+      if (inAppMessage == null) return;
       // Load image
       new MediaLoader(this.imageLoader)
               .loadImage(
