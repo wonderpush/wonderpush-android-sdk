@@ -131,9 +131,13 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
         final WebView webView = webViewRef.get();
         if (webView != null) {
             webView.post(() -> {
-                String js = String.format(Locale.ENGLISH, "console.error(%s)", JSONObject.quote(msg));
-                String console = "javascript:" + Uri.encode(js);
-                webView.loadUrl(console);
+                try {
+                    String js = String.format(Locale.ENGLISH, "console.error(%s)", JSONObject.quote(msg));
+                    String console = "javascript:" + Uri.encode(js);
+                    webView.loadUrl(console);
+                } catch (Exception ex) {
+                    Logging.loge("Failed to send error to web view", ex);
+                }
             });
         }
     }
@@ -145,20 +149,24 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
         if (webView != null && url != null) {
             Uri uri = Uri.parse(url);
             webView.post(() -> {
-                dismiss();
-                Intent intent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER);
-                intent.setData(uri);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 try {
-                    webView.getContext().startActivity(intent);
-                } catch (ActivityNotFoundException e) {
+                    dismiss();
+                    Intent intent = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_BROWSER);
+                    intent.setData(uri);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     try {
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-                        browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        webView.getContext().startActivity(browserIntent);
-                    } catch (ActivityNotFoundException e1) {
-                        Logging.loge("No activity for intent " + intent, e1);
+                        webView.getContext().startActivity(intent);
+                    } catch (ActivityNotFoundException e) {
+                        try {
+                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+                            browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            webView.getContext().startActivity(browserIntent);
+                        } catch (ActivityNotFoundException e1) {
+                            Logging.loge("No activity for intent " + intent, e1);
+                        }
                     }
+                } catch (Exception ex) {
+                    Logging.loge("Failed to open external url " + uri, ex);
                 }
             });
         }
@@ -171,12 +179,16 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
             Uri uri = Uri.parse(url);
             if (uri == null) return;
             webView.post(() -> {
-                dismiss();
-                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 try {
-                    webView.getContext().startActivity(intent);
-                } catch (ActivityNotFoundException e) {
-                    Logging.loge("No activity for intent " + intent, e);
+                    dismiss();
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    try {
+                        webView.getContext().startActivity(intent);
+                    } catch (ActivityNotFoundException e) {
+                        Logging.loge("No activity for intent " + intent, e);
+                    }
+                } catch (Exception ex) {
+                    Logging.loge("Failed to open deep link " + uri, ex);
                 }
             });
         }

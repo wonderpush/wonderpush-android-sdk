@@ -251,8 +251,12 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
         activity.findViewById(android.R.id.content).postDelayed(
                 new Runnable() {
                   public void run() {
-                    if (activityForeground) {
-                      showActiveIam(activity);
+                    try {
+                      if (activityForeground) {
+                        showActiveIam(activity);
+                      }
+                    } catch (Exception ex) {
+                      Logging.loge("Failed to show active iam on activity resume", ex);
                     }
                   }
                 },
@@ -336,7 +340,17 @@ public class InAppMessagingDisplay extends InAppMessagingDisplayImpl {
                     new Runnable() {
                       @Override
                       public void run() {
-                        inflateBinding(activity);
+                        try {
+                          inflateBinding(activity);
+                        } catch (Exception ex) {
+                          Logging.loge("Failed to inflate binding", ex);
+                          Logging.loge("Will attempt to dismiss");
+                          try {
+                            dismissIam(activity);
+                          } catch (Exception ex2) {
+                            Logging.loge("Failed to dismiss iam that failed to inflate, ignoring", ex2);
+                          }
+                        }
                       }
                     });
   }
