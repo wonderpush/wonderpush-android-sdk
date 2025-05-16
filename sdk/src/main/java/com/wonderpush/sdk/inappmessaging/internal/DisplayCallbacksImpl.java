@@ -72,7 +72,10 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
               logToImpressionStore()
                       .andThen(logImpressionToMetricsLogger)
                       .andThen(updateWasImpressed());
-      logImpressionCompletable.subscribeOn(Schedulers.io()).subscribe();
+      logImpressionCompletable.subscribeOn(Schedulers.io()).subscribe(
+              () -> {},
+              ex -> Logging.loge("impressionDetected logImpressionCompletable errored", ex)
+      );
       return;
     }
 
@@ -167,7 +170,9 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
       logToImpressionStore()
               .andThen(completable)
               .andThen(updateWasImpressed())
-              .subscribeOn(Schedulers.io()).subscribe();
+              .subscribeOn(Schedulers.io()).subscribe(
+                      () -> {},
+                      ex -> Logging.loge("displayErrorEncountered logToImpressionStore errored", ex));
       return;
     }
 
@@ -184,7 +189,9 @@ public class DisplayCallbacksImpl implements InAppMessagingDisplayCallbacks {
       impressionDetected();
     }
 
-    actionToTake.subscribe();
+    actionToTake.subscribe(
+            () -> {},
+            ex -> Logging.loge("logImpressionIfNeeded actionToTake errored", ex));
   }
 
   /**

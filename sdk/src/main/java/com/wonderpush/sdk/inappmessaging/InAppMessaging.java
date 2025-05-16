@@ -98,7 +98,10 @@ public class InAppMessaging {
         inAppMessageStreamManager
             .createInAppMessageStream()
             .filter(inAppMessage -> !InAppMessaging.this.isPaused)
-            .subscribe(InAppMessaging.this::triggerInAppMessage);
+            .subscribe(
+                    InAppMessaging.this::triggerInAppMessage,
+                    ex -> Logging.loge("InAppMessageStream error", ex)
+            );
   }
 
   private static UniversalComponent initializeUniversalComponent(Application application, InternalEventTracker internalEventTracker) {
