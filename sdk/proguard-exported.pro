@@ -20,6 +20,11 @@
 #     <meta-data android:name="com.wonderpush.sdk.delegateClass" android:value="com.package.myapp.MyDelegate" />
 -keep public class * implements com.wonderpush.sdk.WonderPushDelegate
 
+# Keep no-argument constructor of JSONDeserializable classes, called using reflection
+-keepclassmembers public class * implements com.wonderpush.sdk.JSONDeserializable {
+    public <init>();
+}
+
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn javax.annotation.**
