@@ -23,6 +23,7 @@
 # Keep no-argument constructor of JSONDeserializable classes, called using reflection
 -keepclassmembers public class * implements com.wonderpush.sdk.JSONDeserializable {
     public <init>();
+    public void fromJSON(org.json.JSONObject);
 }
 
 -dontwarn okhttp3.**
