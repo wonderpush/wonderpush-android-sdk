@@ -10,7 +10,6 @@ import com.google.firebase.messaging.RemoteMessage;
 import com.wonderpush.sdk.NotificationManager;
 import com.wonderpush.sdk.NotificationModel;
 import com.wonderpush.sdk.WonderPush;
-import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.WonderPushConfiguration;
 
 import org.json.JSONException;
@@ -167,7 +166,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             if (WonderPush.getLogging()) Log.d(TAG, "Received broadcasted intent: " + intent);
             if (WonderPush.getLogging()) Log.d(TAG, "Received broadcasted intent extras: " + extras.toString());
             for (String key : extras.keySet()) {
-                if (WonderPush.getLogging()) Log.d(TAG, "Received broadcasted intent extras " + key + ": " + WonderPushCompatibilityHelper.bundleGetTypeUnsafe(extras, key));
+                if (WonderPush.getLogging()) Log.d(TAG, "Received broadcasted intent extras " + key + ": " + bundleGetTypeUnsafe(extras, key));
             }
 
             try {
@@ -181,6 +180,11 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             Log.e(TAG, "Unexpected error while receiving a notification with intent " + intent, e);
         }
         return null;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static Object bundleGetTypeUnsafe(Bundle bundle, String key) {
+        return bundle.get(key);
     }
 
 }
