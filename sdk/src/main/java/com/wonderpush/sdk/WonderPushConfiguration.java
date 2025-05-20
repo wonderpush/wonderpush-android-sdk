@@ -1356,8 +1356,12 @@ public class WonderPushConfiguration {
     }
 
     static List<JSONObject> getTrackedEventsFromStoredJSONArray(JSONArray storedTrackedEvents) {
-        List<JSONObject> result = new ArrayList<>();
-        for (int i = 0; storedTrackedEvents != null && i < storedTrackedEvents.length(); i++) {
+        if (storedTrackedEvents == null) {
+            return Collections.emptyList();
+        }
+        int length = storedTrackedEvents.length();
+        List<JSONObject> result = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
             JSONObject event = storedTrackedEvents.optJSONObject(i);
             if (event == null) continue;
             if (!event.has("creationDate") && event.has("actionDate")) {
