@@ -10,6 +10,7 @@ import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -1325,6 +1326,8 @@ public class WonderPushConfiguration {
     }
 
     static void setTrackedEvents(List<JSONObject> trackedEvents) {
+        if (trackedEvents != null) trackedEvents = Collections.unmodifiableList(trackedEvents);
+        cachedTrackedEvents = new WeakReference<>(trackedEvents);
         JSONArray storedTrackedEvents = trackedEvents == null ? null : new JSONArray(trackedEvents);
         putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, storedTrackedEvents);
     }
@@ -1333,6 +1336,7 @@ public class WonderPushConfiguration {
         List<JSONObject> result = cachedTrackedEvents.get();
         if (result == null) {
             result = getTrackedEventsFromStoredJSONArray(getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME));
+            cachedTrackedEvents = new WeakReference<>(result);
         }
         return result;
     }
@@ -1351,7 +1355,7 @@ public class WonderPushConfiguration {
             }
             result.add(event);
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
     public static class Occurrences {
