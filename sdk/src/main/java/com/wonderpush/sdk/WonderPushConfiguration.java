@@ -148,7 +148,7 @@ public class WonderPushConfiguration {
             currentUserArchive.putOpt(CURRENCY_PREF_NAME, getCurrency());
             currentUserArchive.putOpt(LOCALE_PREF_NAME, getLocale());
             currentUserArchive.putOpt(TIME_ZONE_PREF_NAME, getTimeZone());
-            currentUserArchive.putOpt(STORED_TRACKED_EVENTS_PREF_NAME, getTrackedEvents());
+            currentUserArchive.putOpt(STORED_TRACKED_EVENTS_PREF_NAME, new JSONArray(getTrackedEvents()));
             JSONObject usersArchive = getJSONObject(PER_USER_ARCHIVE_PREF_NAME);
             if (usersArchive == null) {
                 usersArchive = new JSONObject();
@@ -187,16 +187,19 @@ public class WonderPushConfiguration {
         setCurrency(JSONUtil.optString(newUserArchive, CURRENCY_PREF_NAME));
         setLocale(JSONUtil.optString(newUserArchive, LOCALE_PREF_NAME));
         setTimeZone(JSONUtil.optString(newUserArchive, TIME_ZONE_PREF_NAME));
-        try {
-            String trackedEventsJson = JSONUtil.optString(newUserArchive, STORED_TRACKED_EVENTS_PREF_NAME);
-            JSONArray trackedEvents = null;
-            if (trackedEventsJson != null) {
-                trackedEvents = new JSONArray(trackedEventsJson);
+        JSONArray trackedEvents = newUserArchive.optJSONArray(STORED_TRACKED_EVENTS_PREF_NAME);
+        if (trackedEvents == null) {
+            try {
+                // Not already a JSONArray, read from previous storage as a JSON string
+                String trackedEventsJson = JSONUtil.optString(newUserArchive, STORED_TRACKED_EVENTS_PREF_NAME);
+                if (trackedEventsJson != null) {
+                    trackedEvents = new JSONArray(trackedEventsJson);
+                }
+            } catch (JSONException e) {
+                setTrackedEvents(null);
             }
-            setTrackedEvents(getTrackedEventsFromStoredJSONArray(trackedEvents));
-        } catch (JSONException e) {
-            setTrackedEvents(null);
         }
+        setTrackedEvents(getTrackedEventsFromStoredJSONArray(trackedEvents));
     }
 
     static void clearForUserId(String userId) {
