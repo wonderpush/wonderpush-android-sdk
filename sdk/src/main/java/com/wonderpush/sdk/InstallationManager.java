@@ -296,11 +296,9 @@ public class InstallationManager {
 
     protected static String getApplicationVersion() {
         String versionName = null;
-        try {
-            PackageInfo packageInfo = WonderPush.getApplicationContext().getPackageManager().getPackageInfo(WonderPush.getApplicationContext().getPackageName(), 0);
+        PackageInfo packageInfo = WonderPushCompatibilityHelper.getPackageInfo(WonderPush.getApplicationContext());
+        if (packageInfo != null) {
             versionName = packageInfo.versionName;
-        } catch (PackageManager.NameNotFoundException e) {
-            WonderPush.logDebug("Could not retreive version name");
         }
         return versionName;
     }

@@ -2850,15 +2850,15 @@ public class WonderPush {
         String packageName = WonderPush.getApplicationContext().getPackageName();
         String versionName = null;
         long versionCode = 0;
-        try {
-            PackageInfo packageInfo = WonderPush.getApplicationContext().getPackageManager().getPackageInfo(packageName, 0);
+        PackageInfo packageInfo = WonderPushCompatibilityHelper.getPackageInfo(WonderPush.getApplicationContext());
+        if (packageInfo != null) {
             versionName = packageInfo.versionName;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 versionCode = packageInfo.getLongVersionCode();
             } else {
                 versionCode = packageInfo.versionCode;
             }
-        } catch (PackageManager.NameNotFoundException e) {
+        } else {
             WonderPush.logDebug("Could not retrieve version name");
         }
         return "WonderPushSDK/" + WonderPush.SDK_VERSION + " (package:" + packageName + "; appVersion:" + versionName + "; appVersionCode:" + versionCode + "; clientId:" + WonderPush.getClientId() + ") okhttp/" + OkHttp.VERSION + " Android/" + Build.VERSION.RELEASE + " AndroidAPILevel/" + Build.VERSION.SDK_INT + " " + System.getProperty("http.agent");

@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -150,6 +151,34 @@ public class WonderPushCompatibilityHelper {
             }
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(WonderPush.TAG, "Failed to get PackageManager.getApplicationInfo("+context.getPackageName()+", 0)", e);
+            return null;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static PackageInfo getPackageInfo(Context context) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
+            } else {
+                return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(WonderPush.TAG, "Failed to get PackageManager.getPackageInfo("+context.getPackageName()+", 0)", e);
+            return null;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static PackageInfo getPackageInfoPermissions(Context context) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS));
+            } else {
+                return context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(WonderPush.TAG, "Failed to get PackageManager.getPackageInfo("+context.getPackageName()+", PackageManager.GET_PERMISSIONS)", e);
             return null;
         }
     }

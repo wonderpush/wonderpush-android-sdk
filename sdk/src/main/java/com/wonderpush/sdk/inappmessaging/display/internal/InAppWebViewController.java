@@ -30,6 +30,7 @@ import com.wonderpush.sdk.NotificationMetadata;
 import com.wonderpush.sdk.R;
 import com.wonderpush.sdk.SafeDeferProvider;
 import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.display.InAppMessagingDisplay;
 import com.wonderpush.sdk.inappmessaging.model.InAppMessage;
 import com.wonderpush.sdk.inappmessaging.model.WebViewMessage;
@@ -229,16 +230,14 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
         }
 
         List<String> permissionsToRequest = new ArrayList<>();
-        try {
-            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_PERMISSIONS);
+        PackageInfo packageInfo = WonderPushCompatibilityHelper.getPackageInfoPermissions(context);
+        if (packageInfo != null) {
             List<String> permissionList = Arrays.asList(packageInfo.requestedPermissions);
             if (permissionList.contains("android.permission.ACCESS_FINE_LOCATION")) {
                 permissionsToRequest.add("android.permission.ACCESS_FINE_LOCATION");
             } else if (permissionList.contains("android.permission.ACCESS_COARSE_LOCATION")) {
                 permissionsToRequest.add("android.permission.ACCESS_COARSE_LOCATION");
             }
-        } catch (PackageManager.NameNotFoundException e) {
-            throw new Exception("Error: " + e.getMessage());
         }
         if (permissionsToRequest.size() > 0) {
             activity.requestPermissions(permissionsToRequest.toArray(new String[0]), 123);
