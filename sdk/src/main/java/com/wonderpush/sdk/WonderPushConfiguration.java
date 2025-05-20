@@ -198,9 +198,7 @@ public class WonderPushConfiguration {
                 if (trackedEventsJson != null) {
                     trackedEvents = new JSONArray(trackedEventsJson);
                 }
-            } catch (JSONException e) {
-                setTrackedEvents(null);
-            }
+            } catch (JSONException e) {}
         }
         setTrackedEvents(getTrackedEventsFromStoredJSONArray(trackedEvents));
     }
