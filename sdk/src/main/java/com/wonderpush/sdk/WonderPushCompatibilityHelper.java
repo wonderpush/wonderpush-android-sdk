@@ -183,4 +183,13 @@ public class WonderPushCompatibilityHelper {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    public static long getPackageInfoVersionCode(PackageInfo packageInfo) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return packageInfo.getLongVersionCode();
+        } else {
+            return packageInfo.versionCode;
+        }
+    }
+
 }

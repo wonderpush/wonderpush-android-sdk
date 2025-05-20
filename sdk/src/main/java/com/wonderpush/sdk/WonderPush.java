@@ -2853,11 +2853,7 @@ public class WonderPush {
         PackageInfo packageInfo = WonderPushCompatibilityHelper.getPackageInfo(WonderPush.getApplicationContext());
         if (packageInfo != null) {
             versionName = packageInfo.versionName;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                versionCode = packageInfo.getLongVersionCode();
-            } else {
-                versionCode = packageInfo.versionCode;
-            }
+            versionCode = WonderPushCompatibilityHelper.getPackageInfoVersionCode(packageInfo);
         } else {
             WonderPush.logDebug("Could not retrieve version name");
         }
