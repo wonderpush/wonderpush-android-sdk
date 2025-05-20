@@ -19,6 +19,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
+
+import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 
 import javax.inject.Inject;
 
@@ -113,12 +116,9 @@ public class SharedPreferencesUtils {
     try {
       PackageManager packageManager = application.getPackageManager();
       if (packageManager != null) {
-        ApplicationInfo applicationInfo =
-            packageManager.getApplicationInfo(
-                application.getPackageName(), PackageManager.GET_META_DATA);
-        return applicationInfo != null
-            && applicationInfo.metaData != null
-            && applicationInfo.metaData.containsKey(preference);
+        Bundle applicationInfoMetaData = WonderPushCompatibilityHelper.getApplicationInfoMetaData(application);
+        return applicationInfoMetaData != null
+            && applicationInfoMetaData.containsKey(preference);
       }
     } catch (PackageManager.NameNotFoundException e) {
       // This shouldn't happen since it's this app's package. However, if it does, we want to fall
@@ -141,13 +141,10 @@ public class SharedPreferencesUtils {
     try {
       PackageManager packageManager = application.getPackageManager();
       if (packageManager != null) {
-        ApplicationInfo applicationInfo =
-            packageManager.getApplicationInfo(
-                application.getPackageName(), PackageManager.GET_META_DATA);
-        if (applicationInfo != null
-            && applicationInfo.metaData != null
-            && applicationInfo.metaData.containsKey(preference)) {
-          return applicationInfo.metaData.getBoolean(preference);
+        Bundle applicationInfoMetaData = WonderPushCompatibilityHelper.getApplicationInfoMetaData(application);
+        if (applicationInfoMetaData != null
+            && applicationInfoMetaData.containsKey(preference)) {
+          return applicationInfoMetaData.getBoolean(preference);
         }
       }
     } catch (PackageManager.NameNotFoundException e) {

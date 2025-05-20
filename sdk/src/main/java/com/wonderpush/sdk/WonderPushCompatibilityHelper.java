@@ -4,7 +4,9 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.NotificationChannelGroup;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -115,6 +117,15 @@ public class WonderPushCompatibilityHelper {
     @SuppressWarnings("deprecation")
     public static Object bundleGetTypeUnsafe(Bundle bundle, String key) {
         return bundle.get(key);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static Bundle getApplicationInfoMetaData(Context context) throws PackageManager.NameNotFoundException {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA)).metaData;
+        } else {
+            return context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+        }
     }
 
 }

@@ -2084,7 +2084,7 @@ public class WonderPush {
         if (!isInitialized()) {
             String initializerClassName = null;
             try {
-                Bundle metaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+                Bundle metaData = WonderPushCompatibilityHelper.getApplicationInfoMetaData(context);
                 if (metaData == null) {
                     metaData = new Bundle();
                 }

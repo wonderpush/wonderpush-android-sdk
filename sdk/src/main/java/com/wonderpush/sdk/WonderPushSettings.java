@@ -28,7 +28,7 @@ public class WonderPushSettings {
         sResources = context.getResources();
 
         try {
-            sMetaData = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            sMetaData = WonderPushCompatibilityHelper.getApplicationInfoMetaData(context);
             if (sMetaData == null) {
                 sMetaData = new Bundle();
             }

@@ -79,7 +79,7 @@ public class HCMPushService implements PushService {
     public int getNotificationIcon() {
         int iconId = 0;
         try {
-            Bundle metaData = sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            Bundle metaData = getApplicationInfoMetaData();
             if (metaData == null) {
                 metaData = new Bundle();
             }
@@ -98,7 +98,7 @@ public class HCMPushService implements PushService {
     public int getNotificationColor() {
         int color = 0;
         try {
-            Bundle metaData = sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            Bundle metaData = getApplicationInfoMetaData();
             if (metaData == null) {
                 metaData = new Bundle();
             }
@@ -157,6 +157,15 @@ public class HCMPushService implements PushService {
 
     static String getHCMAppId() {
         return sHCMAppId;
+    }
+
+    @SuppressWarnings("deprecation")
+    static Bundle getApplicationInfoMetaData() throws PackageManager.NameNotFoundException {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA)).metaData;
+        } else {
+            return sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
+        }
     }
 
 }
