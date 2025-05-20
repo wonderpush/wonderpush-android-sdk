@@ -10,6 +10,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.wonderpush.sdk.WonderPush;
+import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.WonderPushInitializer;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ public class DiscoveryService extends Service {
         try {
             // Note: Using the class' name programmatically requires the matching ProGuard rule
             ComponentName myService = new ComponentName(context, DiscoveryService.class);
-            metaData = context.getPackageManager().getServiceInfo(myService, PackageManager.GET_META_DATA).metaData;
+            metaData = WonderPushCompatibilityHelper.getServiceInfoMetaData(context, myService);
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Failed to read " + DiscoveryService.class.getCanonicalName() + " meta-data", e);
         }
