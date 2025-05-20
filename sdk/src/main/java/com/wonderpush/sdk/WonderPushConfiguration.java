@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import androidx.arch.core.util.Function;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -1099,184 +1101,186 @@ public class WonderPushConfiguration {
         putString(TIME_ZONE_PREF_NAME, value);
     }
 
-    static @Nullable Occurrences rememberTrackedEvent(JSONObject eventData) {
+    static @Nullable Occurrences rememberTrackedEvent(final JSONObject eventData) {
         // Note: It is assumed that the given event is more recent than any other already stored events
 
-        String type = JSONUtil.getString(eventData, "type");
+        final String type = JSONUtil.getString(eventData, "type");
         if (type == null) return null;
         Occurrences occurrences = new Occurrences();
-        long allTime = 0L;
 
-        String campaignId = JSONUtil.optString(eventData, "campaignId");
-        String collapsing = JSONUtil.optString(eventData, "collapsing");
+        updateTrackedEvents(oldTrackedEvents -> {
+            long allTime = 0L;
 
-        List<JSONObject> oldTrackedEvents = getTrackedEvents();
-        int uncollapsedEventsCountEstimate = 0; // collapsing == null
-        int collapsedLastBuiltinEventsCountEstimate = 0; // collapsing.equals("last") && type.startsWith("@")
-        int collapsedLastCustomEventsCountEstimate = 0; // collapsing.equals("last") && !type.startsWith("@")
-        int collapsedOtherEventsCountEstimate = 0; // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
-        for (JSONObject oldTrackedEvent : oldTrackedEvents) {
-            String oldTrackedEventCollapsing = JSONUtil.optString(oldTrackedEvent, "collapsing");
-            String oldTrackedEventType = oldTrackedEvent.optString("type");
-            if (oldTrackedEventCollapsing == null) {
-                uncollapsedEventsCountEstimate++;
-            } else if ("last".equals(oldTrackedEventCollapsing)) {
-                if (oldTrackedEventType.startsWith("@")) {
-                    collapsedLastBuiltinEventsCountEstimate++;
+            String campaignId = JSONUtil.optString(eventData, "campaignId");
+            String collapsing = JSONUtil.optString(eventData, "collapsing");
+
+            int uncollapsedEventsCountEstimate = 0; // collapsing == null
+            int collapsedLastBuiltinEventsCountEstimate = 0; // collapsing.equals("last") && type.startsWith("@")
+            int collapsedLastCustomEventsCountEstimate = 0; // collapsing.equals("last") && !type.startsWith("@")
+            int collapsedOtherEventsCountEstimate = 0; // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
+            for (JSONObject oldTrackedEvent : oldTrackedEvents) {
+                String oldTrackedEventCollapsing = JSONUtil.optString(oldTrackedEvent, "collapsing");
+                String oldTrackedEventType = oldTrackedEvent.optString("type");
+                if (oldTrackedEventCollapsing == null) {
+                    uncollapsedEventsCountEstimate++;
+                } else if ("last".equals(oldTrackedEventCollapsing)) {
+                    if (oldTrackedEventType.startsWith("@")) {
+                        collapsedLastBuiltinEventsCountEstimate++;
+                    } else {
+                        collapsedLastCustomEventsCountEstimate++;
+                    }
                 } else {
-                    collapsedLastCustomEventsCountEstimate++;
+                    collapsedOtherEventsCountEstimate++;
                 }
-            } else {
-                collapsedOtherEventsCountEstimate++;
             }
-        }
-        List<JSONObject> uncollapsedEvents = new ArrayList<>(uncollapsedEventsCountEstimate+1); // collapsing == null
-        List<JSONObject> collapsedLastBuiltinEvents = new ArrayList<>(collapsedLastBuiltinEventsCountEstimate+1); // collapsing.equals("last") && type.startsWith("@")
-        List<JSONObject> collapsedLastCustomEvents = new ArrayList<>(collapsedLastCustomEventsCountEstimate+1); // collapsing.equals("last") && !type.startsWith("@")
-        List<JSONObject> collapsedOtherEvents = new ArrayList<>(collapsedOtherEventsCountEstimate+1); // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
+            List<JSONObject> uncollapsedEvents = new ArrayList<>(uncollapsedEventsCountEstimate + 1); // collapsing == null
+            List<JSONObject> collapsedLastBuiltinEvents = new ArrayList<>(collapsedLastBuiltinEventsCountEstimate + 1); // collapsing.equals("last") && type.startsWith("@")
+            List<JSONObject> collapsedLastCustomEvents = new ArrayList<>(collapsedLastCustomEventsCountEstimate + 1); // collapsing.equals("last") && !type.startsWith("@")
+            List<JSONObject> collapsedOtherEvents = new ArrayList<>(collapsedOtherEventsCountEstimate + 1); // collapsing != null && !collapsing.equals("last") // ie. collapsing.equals("campaign"), as of this writing
 
-        long now = TimeSync.getTime();
-        long getMaximumUncollapsedTrackedEventsAgeMs = getMaximumUncollapsedTrackedEventsAgeMs();
-        for (JSONObject oldTrackedEvent : oldTrackedEvents) {
-            String oldTrackedEventCollapsing = JSONUtil.optString(oldTrackedEvent, "collapsing");
-            String oldTrackedEventType = oldTrackedEvent.optString("type");
-            // Filter out the collapsing=last event of the same type as the new event we want to add
-            if ((collapsing == null || "last".equals(collapsing)) && "last".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType)) {
-                JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
-                long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
-                allTime = Math.max(1, occsAllTime);
-                continue;
-            }
-            // Filter out the collapsing=campaign event of the same type and campaign as the new event we want to add
-            if (campaignId != null && "campaign".equals(collapsing) && "campaign".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType) && campaignId.equals(oldTrackedEvent.optString("campaignId"))) {
-                JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
-                long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
-                allTime = Math.max(1, occsAllTime);
-                continue;
-            }
-            // Filter out old uncollapsed events
-            if (oldTrackedEventCollapsing == null && now - oldTrackedEvent.optLong("actionDate", now) >= getMaximumUncollapsedTrackedEventsAgeMs) {
-                continue;
-            }
-            // TODO We may want to filter out old collapsing=campaign (or any non-null value other than "last") events too
-            // Store the event in the proper, per-collapsing list
-            if (oldTrackedEventCollapsing == null) {
-                uncollapsedEvents.add(oldTrackedEvent);
-            } else if ("last".equals(oldTrackedEventCollapsing)) {
-                if (oldTrackedEventType.startsWith("@")) {
-                    collapsedLastBuiltinEvents.add(oldTrackedEvent);
+            long now = TimeSync.getTime();
+            long getMaximumUncollapsedTrackedEventsAgeMs = getMaximumUncollapsedTrackedEventsAgeMs();
+            for (JSONObject oldTrackedEvent : oldTrackedEvents) {
+                String oldTrackedEventCollapsing = JSONUtil.optString(oldTrackedEvent, "collapsing");
+                String oldTrackedEventType = oldTrackedEvent.optString("type");
+                // Filter out the collapsing=last event of the same type as the new event we want to add
+                if ((collapsing == null || "last".equals(collapsing)) && "last".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType)) {
+                    JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
+                    long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
+                    allTime = Math.max(1, occsAllTime);
+                    continue;
+                }
+                // Filter out the collapsing=campaign event of the same type and campaign as the new event we want to add
+                if (campaignId != null && "campaign".equals(collapsing) && "campaign".equals(oldTrackedEventCollapsing) && type.equals(oldTrackedEventType) && campaignId.equals(oldTrackedEvent.optString("campaignId"))) {
+                    JSONObject occs = oldTrackedEvent.optJSONObject("occurrences");
+                    long occsAllTime = occs != null ? occs.optLong("allTime", 1L) : 1;
+                    allTime = Math.max(1, occsAllTime);
+                    continue;
+                }
+                // Filter out old uncollapsed events
+                if (oldTrackedEventCollapsing == null && now - oldTrackedEvent.optLong("actionDate", now) >= getMaximumUncollapsedTrackedEventsAgeMs) {
+                    continue;
+                }
+                // TODO We may want to filter out old collapsing=campaign (or any non-null value other than "last") events too
+                // Store the event in the proper, per-collapsing list
+                if (oldTrackedEventCollapsing == null) {
+                    uncollapsedEvents.add(oldTrackedEvent);
+                } else if ("last".equals(oldTrackedEventCollapsing)) {
+                    if (oldTrackedEventType.startsWith("@")) {
+                        collapsedLastBuiltinEvents.add(oldTrackedEvent);
+                    } else {
+                        collapsedLastCustomEvents.add(oldTrackedEvent);
+                    }
                 } else {
-                    collapsedLastCustomEvents.add(oldTrackedEvent);
+                    collapsedOtherEvents.add(oldTrackedEvent);
                 }
-            } else {
-                collapsedOtherEvents.add(oldTrackedEvent);
             }
-        }
-        oldTrackedEvents = null; // let GC collect this
+            oldTrackedEvents = null; // let GC collect this
 
-        // Add the new event, uncollapsed
-        JSONObject collapsedEventData = null;
-        JSONObject uncollapsedEventData = null;
-        if (collapsing == null) {
-            try {
-                uncollapsedEventData = new JSONObject(eventData.toString());
-                uncollapsedEvents.add(uncollapsedEventData);
-            } catch (JSONException e) {
-                Log.e(WonderPush.TAG, "Could not store uncollapsed tracked event", e);
-            }
-        }
-
-        // Add the new event with collapsing
-        // We default to collapsing=last, but we otherwise keep any existing collapsing
-        try {
-            allTime += 1;
-            collapsedEventData = new JSONObject(eventData.toString());
+            // Add the new event, uncollapsed
+            JSONObject collapsedEventData = null;
+            JSONObject uncollapsedEventData = null;
             if (collapsing == null) {
-                collapsedEventData.put("collapsing", "last");
-                collapsing = "last";
-            }
-            if ("last".equals(collapsing)) {
-                if (type.startsWith("@")) {
-                    collapsedLastBuiltinEvents.add(collapsedEventData);
-                } else {
-                    collapsedLastCustomEvents.add(collapsedEventData);
+                try {
+                    uncollapsedEventData = new JSONObject(eventData.toString());
+                    uncollapsedEvents.add(uncollapsedEventData);
+                } catch (JSONException e) {
+                    Log.e(WonderPush.TAG, "Could not store uncollapsed tracked event", e);
                 }
-            } else {
-                collapsedOtherEvents.add(collapsedEventData);
             }
-        } catch (JSONException e) {
-            Log.e(WonderPush.TAG, "Could not store collapsed tracked event", e);
-        }
 
-        // Sort events by date
-        Comparator<? super JSONObject> eventActionDateComparator = (o1, o2) -> {
-            long delta = o1.optLong("actionDate", -1) - o2.optLong("actionDate", -1);
-            if (delta < 0) return -1;
-            if (delta > 0) return 1;
-            return 0;
-        };
-        WonderPushCompatibilityHelper.sort(uncollapsedEvents, eventActionDateComparator);
-        WonderPushCompatibilityHelper.sort(collapsedLastBuiltinEvents, eventActionDateComparator);
-        WonderPushCompatibilityHelper.sort(collapsedLastCustomEvents, eventActionDateComparator);
-        WonderPushCompatibilityHelper.sort(collapsedOtherEvents, eventActionDateComparator);
-
-        // Impose a limit on the maximum number of tracked events
-        uncollapsedEvents = removeExcessEventsFromStart(uncollapsedEvents, getMaximumUncollapsedTrackedEventsCount());
-        collapsedLastBuiltinEvents = removeExcessEventsFromStart(collapsedLastBuiltinEvents, getMaximumCollapsedLastBuiltinTrackedEventsCount());
-        collapsedLastCustomEvents = removeExcessEventsFromStart(collapsedLastCustomEvents, getMaximumCollapsedLastCustomTrackedEventsCount());
-        collapsedOtherEvents = removeExcessEventsFromStart(collapsedOtherEvents, getMaximumCollapsedOtherTrackedEventsCount());
-
-        long last1days=0L, last3days=0L, last7days=0L, last15days=0L, last30days=0L, last60days=0L, last90days=0L;
-
-        // Reconstruct the whole list
-        List<JSONObject> storeTrackedEvents = new ArrayList<>(collapsedLastBuiltinEvents.size() + collapsedLastCustomEvents.size() + collapsedOtherEvents.size() + uncollapsedEvents.size());
-        storeTrackedEvents.addAll(collapsedLastBuiltinEvents);
-        storeTrackedEvents.addAll(collapsedLastCustomEvents);
-        storeTrackedEvents.addAll(collapsedOtherEvents);
-        storeTrackedEvents.addAll(uncollapsedEvents);
-        long uncollapsedCount = 0L;
-        for (JSONObject trackedEvent : uncollapsedEvents) {
-            String trackedEventType = trackedEvent.optString("type");
-            if (type.equals(trackedEventType)) {
-                ++uncollapsedCount;
-                long actionDate = trackedEvent.optLong("actionDate", now);
-                long numberOfDaysSinceNow = (long)Math.floor((double)(now - actionDate) / 86400000d);
-                if (numberOfDaysSinceNow <= 1) ++last1days;
-                if (numberOfDaysSinceNow <= 3) ++last3days;
-                if (numberOfDaysSinceNow <= 7) ++last7days;
-                if (numberOfDaysSinceNow <= 15) ++last15days;
-                if (numberOfDaysSinceNow <= 30) ++last30days;
-                if (numberOfDaysSinceNow <= 60) ++last60days;
-                if (numberOfDaysSinceNow <= 90) ++last90days;
+            // Add the new event with collapsing
+            // We default to collapsing=last, but we otherwise keep any existing collapsing
+            try {
+                allTime += 1;
+                collapsedEventData = new JSONObject(eventData.toString());
+                if (collapsing == null) {
+                    collapsedEventData.put("collapsing", "last");
+                    collapsing = "last";
+                }
+                if ("last".equals(collapsing)) {
+                    if (type.startsWith("@")) {
+                        collapsedLastBuiltinEvents.add(collapsedEventData);
+                    } else {
+                        collapsedLastCustomEvents.add(collapsedEventData);
+                    }
+                } else {
+                    collapsedOtherEvents.add(collapsedEventData);
+                }
+            } catch (JSONException e) {
+                Log.e(WonderPush.TAG, "Could not store collapsed tracked event", e);
             }
-        }
-        collapsedLastBuiltinEvents = null; // let GC collect this
-        collapsedLastCustomEvents = null; // let GC collect this
-        collapsedOtherEvents = null; // let GC collect this
-        uncollapsedEvents = null; // let GC collect this
 
-        occurrences.allTime = Math.max(allTime, uncollapsedCount);
-        occurrences.last1days = last1days;
-        occurrences.last3days = last3days;
-        occurrences.last7days = last7days;
-        occurrences.last15days = last15days;
-        occurrences.last30days = last30days;
-        occurrences.last60days = last60days;
-        occurrences.last90days = last90days;
+            // Sort events by date
+            Comparator<? super JSONObject> eventActionDateComparator = (o1, o2) -> {
+                long delta = o1.optLong("actionDate", -1) - o2.optLong("actionDate", -1);
+                if (delta < 0) return -1;
+                if (delta > 0) return 1;
+                return 0;
+            };
+            WonderPushCompatibilityHelper.sort(uncollapsedEvents, eventActionDateComparator);
+            WonderPushCompatibilityHelper.sort(collapsedLastBuiltinEvents, eventActionDateComparator);
+            WonderPushCompatibilityHelper.sort(collapsedLastCustomEvents, eventActionDateComparator);
+            WonderPushCompatibilityHelper.sort(collapsedOtherEvents, eventActionDateComparator);
 
-        try {
-            if (collapsedEventData != null) {
-                collapsedEventData.put("occurrences", occurrences.toJSON());
+            // Impose a limit on the maximum number of tracked events
+            uncollapsedEvents = removeExcessEventsFromStart(uncollapsedEvents, getMaximumUncollapsedTrackedEventsCount());
+            collapsedLastBuiltinEvents = removeExcessEventsFromStart(collapsedLastBuiltinEvents, getMaximumCollapsedLastBuiltinTrackedEventsCount());
+            collapsedLastCustomEvents = removeExcessEventsFromStart(collapsedLastCustomEvents, getMaximumCollapsedLastCustomTrackedEventsCount());
+            collapsedOtherEvents = removeExcessEventsFromStart(collapsedOtherEvents, getMaximumCollapsedOtherTrackedEventsCount());
+
+            long last1days = 0L, last3days = 0L, last7days = 0L, last15days = 0L, last30days = 0L, last60days = 0L, last90days = 0L;
+
+            // Reconstruct the whole list
+            List<JSONObject> storeTrackedEvents = new ArrayList<>(collapsedLastBuiltinEvents.size() + collapsedLastCustomEvents.size() + collapsedOtherEvents.size() + uncollapsedEvents.size());
+            storeTrackedEvents.addAll(collapsedLastBuiltinEvents);
+            storeTrackedEvents.addAll(collapsedLastCustomEvents);
+            storeTrackedEvents.addAll(collapsedOtherEvents);
+            storeTrackedEvents.addAll(uncollapsedEvents);
+            long uncollapsedCount = 0L;
+            for (JSONObject trackedEvent : uncollapsedEvents) {
+                String trackedEventType = trackedEvent.optString("type");
+                if (type.equals(trackedEventType)) {
+                    ++uncollapsedCount;
+                    long actionDate = trackedEvent.optLong("actionDate", now);
+                    long numberOfDaysSinceNow = (long) Math.floor((double) (now - actionDate) / 86400000d);
+                    if (numberOfDaysSinceNow <= 1) ++last1days;
+                    if (numberOfDaysSinceNow <= 3) ++last3days;
+                    if (numberOfDaysSinceNow <= 7) ++last7days;
+                    if (numberOfDaysSinceNow <= 15) ++last15days;
+                    if (numberOfDaysSinceNow <= 30) ++last30days;
+                    if (numberOfDaysSinceNow <= 60) ++last60days;
+                    if (numberOfDaysSinceNow <= 90) ++last90days;
+                }
             }
-            if (uncollapsedEventData != null) {
-                uncollapsedEventData.put("occurrences", occurrences.toJSON());
-            }
-        } catch (JSONException e) {
-            Log.w(WonderPush.TAG, "Could not store occurrences", e);
-        }
+            collapsedLastBuiltinEvents = null; // let GC collect this
+            collapsedLastCustomEvents = null; // let GC collect this
+            collapsedOtherEvents = null; // let GC collect this
+            uncollapsedEvents = null; // let GC collect this
 
-        // Store the new list
-        setTrackedEvents(storeTrackedEvents);
+            occurrences.allTime = Math.max(allTime, uncollapsedCount);
+            occurrences.last1days = last1days;
+            occurrences.last3days = last3days;
+            occurrences.last7days = last7days;
+            occurrences.last15days = last15days;
+            occurrences.last30days = last30days;
+            occurrences.last60days = last60days;
+            occurrences.last90days = last90days;
+
+            try {
+                if (collapsedEventData != null) {
+                    collapsedEventData.put("occurrences", occurrences.toJSON());
+                }
+                if (uncollapsedEventData != null) {
+                    uncollapsedEventData.put("occurrences", occurrences.toJSON());
+                }
+            } catch (JSONException e) {
+                Log.w(WonderPush.TAG, "Could not store occurrences", e);
+            }
+
+            // Store the new list
+            return storeTrackedEvents;
+        });
         return occurrences;
     }
 
@@ -1326,19 +1330,29 @@ public class WonderPushConfiguration {
     }
 
     static void setTrackedEvents(List<JSONObject> trackedEvents) {
-        if (trackedEvents != null) trackedEvents = Collections.unmodifiableList(trackedEvents);
-        cachedTrackedEvents = new WeakReference<>(trackedEvents);
-        JSONArray storedTrackedEvents = trackedEvents == null ? null : new JSONArray(trackedEvents);
-        putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, storedTrackedEvents);
+        synchronized (STORED_TRACKED_EVENTS_PREF_NAME) {
+            if (trackedEvents != null) trackedEvents = Collections.unmodifiableList(trackedEvents);
+            cachedTrackedEvents = new WeakReference<>(trackedEvents);
+            JSONArray storedTrackedEvents = trackedEvents == null ? null : new JSONArray(trackedEvents);
+            putJSONArray(STORED_TRACKED_EVENTS_PREF_NAME, storedTrackedEvents);
+        }
+    }
+
+    static void updateTrackedEvents(Function<List<JSONObject>, List<JSONObject>> updater) {
+        synchronized (STORED_TRACKED_EVENTS_PREF_NAME) {
+            setTrackedEvents(updater.apply(getTrackedEvents()));
+        }
     }
 
     public static List<JSONObject> getTrackedEvents() {
-        List<JSONObject> result = cachedTrackedEvents.get();
-        if (result == null) {
-            result = getTrackedEventsFromStoredJSONArray(getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME));
-            cachedTrackedEvents = new WeakReference<>(result);
+        synchronized (STORED_TRACKED_EVENTS_PREF_NAME) {
+            List<JSONObject> result = cachedTrackedEvents.get();
+            if (result == null) {
+                result = getTrackedEventsFromStoredJSONArray(getJSONArray(STORED_TRACKED_EVENTS_PREF_NAME));
+                cachedTrackedEvents = new WeakReference<>(result);
+            }
+            return result;
         }
-        return result;
     }
 
     static List<JSONObject> getTrackedEventsFromStoredJSONArray(JSONArray storedTrackedEvents) {
