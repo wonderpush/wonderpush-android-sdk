@@ -1058,7 +1058,7 @@ public class NotificationManager {
 
     private static void notifyNotificationOpened(Intent intent, NotificationModel notif) {
         boolean fromUserInteraction = intent.getBooleanExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_FROM_USER_INTERACTION, true);
-        Intent receivedPushNotificationIntent = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION);
+        Intent receivedPushNotificationIntent = WonderPushCompatibilityHelper.intentGetParcelableExtra(intent, WonderPush.INTENT_NOTIFICATION_OPENED_EXTRA_RECEIVED_PUSH_NOTIFICATION, Intent.class);
         int buttonIndex = intent.getIntExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_BUTTON_INDEX, -1);
 
         // Notify the application that the notification has been opened

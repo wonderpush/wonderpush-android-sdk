@@ -28,7 +28,7 @@ public class WonderPushResourcesService extends WonderPushJobIntentService {
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
         try {
-            Work work = intent.getParcelableExtra("work");
+            Work work = WonderPushCompatibilityHelper.intentGetParcelableExtra(intent, "work", Work.class);
             NotificationManager.fetchResourcesAndDisplay(this, work, TIMEOUT_MS);
         } catch (Exception ex) {
             Log.e(TAG, "Unexpected error while handling intent " + intent, ex);
@@ -67,10 +67,10 @@ public class WonderPushResourcesService extends WonderPushJobIntentService {
         }
 
         protected Work(Parcel in) {
-            notif = in.readParcelable(getClass().getClassLoader());
+            notif = WonderPushCompatibilityHelper.parcelReadParcelable(in, getClass().getClassLoader(), NotificationModel.class);
             tag = in.readString();
             localNotificationId = in.readInt();
-            pushIntent = in.readParcelable(getClass().getClassLoader());
+            pushIntent = WonderPushCompatibilityHelper.parcelReadParcelable(in, getClass().getClassLoader(), Intent.class);
         }
 
         @Override

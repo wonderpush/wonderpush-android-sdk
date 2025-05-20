@@ -175,7 +175,7 @@ public abstract class NotificationModel implements Parcelable {
 
         } else if (NotificationManager.containsWillOpenNotification(intent)) {
 
-            NotificationModel notif = intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL);
+            NotificationModel notif = WonderPushCompatibilityHelper.intentGetParcelableExtra(intent, WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL, NotificationModel.class);
             return notif;
 
         }

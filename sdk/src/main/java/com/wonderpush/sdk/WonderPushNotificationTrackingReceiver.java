@@ -67,7 +67,7 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
                     notificationWillOpenIntent.setPackage(getApplicationContext().getPackageName());
                     notificationWillOpenIntent.setAction(WonderPush.INTENT_NOTIFICATION_WILL_OPEN);
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION,
-                            (Parcelable) intent.getParcelableExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION));
+                            WonderPushCompatibilityHelper.intentGetParcelableExtra(intent, WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_RECEIVED_PUSH_NOTIFICATION, Intent.class));
                     notificationWillOpenIntent.putExtra(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_EXTRA_NOTIFICATION_MODEL,
                             // this extra must be removed if handled outside the app,
                             // or we'll get ClassNotFoundException: E/Parcel: Class not found when unmarshalling: com.wonderpush.sdk.Notification*Model
@@ -88,18 +88,9 @@ public class WonderPushNotificationTrackingReceiver extends Activity {
 
     private void jumpToDestination(Intent intent) {
         if (intent != null) {
-            Parcelable[] destinationIntentsParcelables = intent.getParcelableArrayExtra("destinationIntents");
-            if (destinationIntentsParcelables != null) {
-                ArrayList<Intent> destinationIntents = new ArrayList<>(destinationIntentsParcelables.length);
-                for (Parcelable destinationIntentsParcelable : destinationIntentsParcelables) {
-                    if (destinationIntentsParcelable instanceof Intent) {
-                        destinationIntents.add((Intent) destinationIntentsParcelable);
-                    }
-                }
-                if (!destinationIntents.isEmpty()) {
-                    Intent[] intents = destinationIntents.toArray(new Intent[0]);
-                    this.startActivities(intents);
-                }
+            Intent[] intents = WonderPushCompatibilityHelper.intentGetParcelableArrayExtra(intent, "destinationIntents", Intent.class, new Intent[0]);
+            if (intents != null && intents.length > 0) {
+                this.startActivities(intents);
             }
         }
     }

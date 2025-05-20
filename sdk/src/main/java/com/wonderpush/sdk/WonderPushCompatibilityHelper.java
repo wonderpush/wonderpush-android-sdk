@@ -8,11 +8,14 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.text.Html;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -70,6 +73,41 @@ public class WonderPushCompatibilityHelper {
                 i.next();
                 i.set((E) e);
             }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static <T extends Parcelable> T intentGetParcelableExtra(Intent intent, String name, Class<T> clazz) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return intent.getParcelableExtra(name, clazz);
+        } else {
+            return intent.getParcelableExtra(name);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static <T extends Parcelable> T parcelReadParcelable(Parcel parcel, ClassLoader loader, Class<T> clazz) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return parcel.readParcelable(loader, clazz);
+        } else {
+            return parcel.readParcelable(loader);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static <T extends Parcelable> T[] intentGetParcelableArrayExtra(Intent intent, String name, Class<T> clazz, T[] into) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return intent.getParcelableArrayExtra(name, clazz);
+        } else {
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(name);
+            if (parcelables == null) return null;
+            ArrayList<T> typedList = new ArrayList<>(parcelables.length);
+            for (Parcelable parcelable : parcelables) {
+                if (clazz.isInstance(parcelable)) {
+                    typedList.add(clazz.cast(parcelable));
+                }
+            }
+            return typedList.toArray(into);
         }
     }
 
