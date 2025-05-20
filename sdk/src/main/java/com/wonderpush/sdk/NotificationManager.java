@@ -536,16 +536,8 @@ public class NotificationManager {
         }
         // Apply defaults
         if (alert.getTitle() == null && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            final PackageManager pm = context.getApplicationContext().getPackageManager();
-            ApplicationInfo ai;
-            try {
-                ai = pm.getApplicationInfo(context.getPackageName(), 0);
-            } catch (PackageManager.NameNotFoundException e) {
-                ai = null;
-            } catch (NullPointerException e) {
-                ai = null;
-            }
-            alert.setTitle(ai != null ? pm.getApplicationLabel(ai) : null);
+            ApplicationInfo ai = WonderPushCompatibilityHelper.getApplicationInfo(context);
+            alert.setTitle(ai != null ? context.getApplicationContext().getPackageManager().getApplicationLabel(ai) : null);
         }
         int defaultIconResource = PushServiceManager.getNotificationIcon();
         int defaultColor = PushServiceManager.getNotificationColor();

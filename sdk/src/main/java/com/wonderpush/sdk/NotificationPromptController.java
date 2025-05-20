@@ -34,8 +34,7 @@ public class NotificationPromptController implements PromptActivity.Callback {
     private boolean awaitingForReturnFromSystemSettings = false;
 
     /**
-     * Returns true when running on Android 13+ with targetSdkVersion >= 33
-     * @return
+     * @return true when running on Android 13+ with targetSdkVersion >= 33
      */
     protected static boolean supportsPrompt() {
         if (Build.VERSION.SDK_INT <= 32) return false;
@@ -43,15 +42,8 @@ public class NotificationPromptController implements PromptActivity.Callback {
         Context context = WonderPush.getApplicationContext();
         if (context == null) return false;
 
-        String packageName = context.getPackageName();
-        PackageManager packageManager = context.getPackageManager();
-        try {
-            ApplicationInfo applicationInfo = packageManager.getApplicationInfo(packageName, 0);
-            return applicationInfo.targetSdkVersion > 32;
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(WonderPush.TAG, "Could not determine targetSdkVersion", e);
-        }
-        return false;
+        ApplicationInfo applicationInfo = WonderPushCompatibilityHelper.getApplicationInfo(context);
+        return applicationInfo != null && applicationInfo.targetSdkVersion > 32;
     }
 
     private boolean areNotificationsEnabled() {

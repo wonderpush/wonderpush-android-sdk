@@ -7,6 +7,7 @@ import android.app.NotificationChannelGroup;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -15,6 +16,7 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Html;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
@@ -135,6 +137,20 @@ public class WonderPushCompatibilityHelper {
             return activity.getPackageManager().getActivityInfo(activity.getComponentName(), PackageManager.ComponentInfoFlags.of(PackageManager.GET_META_DATA)).metaData;
         } else {
             return activity.getPackageManager().getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA).metaData;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static ApplicationInfo getApplicationInfo(Context context) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.ApplicationInfoFlags.of(0));
+            } else {
+                return context.getPackageManager().getApplicationInfo(context.getPackageName(), 0);
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(WonderPush.TAG, "Failed to get PackageManager.getApplicationInfo("+context.getPackageName()+", 0)", e);
+            return null;
         }
     }
 
