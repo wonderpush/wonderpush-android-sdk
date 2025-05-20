@@ -12,13 +12,6 @@ public class ConfigurationChangedReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         try {
             Log.i(WonderPush.TAG, getClass().getSimpleName() + ".onReceive() intent: " + intent);
-            Bundle extras = intent.getExtras();
-            if (extras != null) {
-                Log.i(WonderPush.TAG, getClass().getSimpleName() + ".onReceive() extras: " + extras);
-                for (String key : extras.keySet()) {
-                    Log.i(WonderPush.TAG, getClass().getSimpleName() + ".onReceive() extra " + key + ": " + extras.get(key));
-                }
-            }
 
             // Initialize the SDK, it will take care of refreshing relevant properties
             WonderPush.ensureInitialized(context);

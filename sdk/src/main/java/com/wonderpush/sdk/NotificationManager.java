@@ -1015,7 +1015,7 @@ public class NotificationManager {
         final JSONObject notificationData = new JSONObject();
         Set<String> keys = bundle.keySet();
         KEYS: for (String key : keys) {
-            Object val = bundle.get(key);
+            Object val = WonderPushCompatibilityHelper.bundleGetTypeUnsafe(bundle, key);
             if (val instanceof String) {
                 String string = (String) val;
                 if (string.startsWith("{") && string.endsWith("}")) {
@@ -1048,7 +1048,7 @@ public class NotificationManager {
                 }
             }
             try {
-                notificationData.put(key, bundle.get(key));
+                notificationData.put(key, val);
             } catch (JSONException e) {
                 WonderPush.logError("Could not serialize notification payload key " + key, e);
             }
@@ -1561,11 +1561,12 @@ public class NotificationManager {
                     }
                     boolean remove = true;
                     for (String key : extras.keySet()) {
-                        Object value = extras.get(key);
-                        if (value == null && (notification.extras.containsKey(key) || notification.extras.get(key) != null)) {
+                        Object value = WonderPushCompatibilityHelper.bundleGetTypeUnsafe(extras, key);
+                        Object notificationValue = WonderPushCompatibilityHelper.bundleGetTypeUnsafe(notification.extras, key);
+                        if (value == null && (notification.extras.containsKey(key) || notificationValue != null)) {
                             remove = false;
                         // TODO Proper per-type comparison
-                        } else if (value != null && (notification.extras.get(key) == null || !value.toString().equals(notification.extras.get(key).toString()))) {
+                        } else if (value != null && (notificationValue == null || !value.toString().equals(notificationValue.toString()))) {
                             remove = false;
                         }
                         if (!remove) {

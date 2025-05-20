@@ -31,6 +31,7 @@ import static com.wonderpush.sdk.inappmessaging.internal.InAppMessageStreamManag
 
 import androidx.annotation.NonNull;
 
+import com.wonderpush.sdk.WonderPushCompatibilityHelper;
 import com.wonderpush.sdk.inappmessaging.model.EventOccurrence;
 
 /**
@@ -99,7 +100,7 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
     boolean holdBack = false;
     try {
       ActivityInfo ai = activity.getPackageManager().getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA);
-      Object resValue = ai.metaData == null ? null : ai.metaData.get("com.wonderpush.sdk.iam.ignoreForeground");
+      Object resValue = ai.metaData == null ? null : WonderPushCompatibilityHelper.bundleGetTypeUnsafe(ai.metaData, "com.wonderpush.sdk.iam.ignoreForeground");
       if (resValue instanceof Boolean) {
         holdBack = (Boolean) resValue;
       } else if ("true".equals(resValue) || "false".equals(resValue)) {

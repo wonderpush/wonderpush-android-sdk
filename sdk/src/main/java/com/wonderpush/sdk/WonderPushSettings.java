@@ -61,9 +61,9 @@ public class WonderPushSettings {
                 Log.e(TAG, "Could not get a WonderPush configuration resource", e);
             }
             // Try using the manifest <application><meta-data>
-            Object resValue = sMetaData.get("com.wonderpush.sdk.buildConfigPackage");
-            if (resValue instanceof String && ((String) resValue).length() > 0) {
-                buildConfigPackageGiven = (String) resValue;
+            String resValue = sMetaData.getString("com.wonderpush.sdk.buildConfigPackage");
+            if (resValue != null && !resValue.isEmpty()) {
+                buildConfigPackageGiven = resValue;
                 if (WonderPush.getLogging())
                     Log.d(TAG, "com.wonderpush.sdk.buildConfigPackage metadata: " + buildConfigPackageGiven);
             }
@@ -124,10 +124,9 @@ public class WonderPushSettings {
         if (sMetaData != null) {
             // Try loading configuration using the manifest <application><meta-data>
             // Metadata are last because they are easily viewable with tools like Dexplorer, hence it feels more natural that they override previous sources
-            Object resValue;
-            resValue = sMetaData.get(metaDataName);
-            if (resValue instanceof String && ((String) resValue).length() > 0) {
-                rtn = (String) resValue;
+            String resValue = sMetaData.getString(metaDataName);
+            if (resValue != null && !resValue.isEmpty()) {
+                rtn = resValue;
             }
         }
 
@@ -157,8 +156,7 @@ public class WonderPushSettings {
         if (sMetaData != null) {
             // Try loading configuration using the manifest <application><meta-data>
             // Metadata are last because they are easily viewable with tools like Dexplorer, hence it feels more natural that they override previous sources
-            Object resValue;
-            resValue = sMetaData.get(metaDataName);
+            Object resValue = WonderPushCompatibilityHelper.bundleGetTypeUnsafe(sMetaData, metaDataName);
             if (resValue instanceof Boolean) {
                 rtn = (Boolean) resValue;
             } else if ("true".equals(resValue) || "false".equals(resValue)) {

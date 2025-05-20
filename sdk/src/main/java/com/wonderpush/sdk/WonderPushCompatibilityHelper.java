@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Html;
@@ -111,5 +112,9 @@ public class WonderPushCompatibilityHelper {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    public static Object bundleGetTypeUnsafe(Bundle bundle, String key) {
+        return bundle.get(key);
+    }
 
 }
