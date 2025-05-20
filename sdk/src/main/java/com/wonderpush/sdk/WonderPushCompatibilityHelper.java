@@ -2,6 +2,7 @@ package com.wonderpush.sdk;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.NotificationChannelGroup;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -125,6 +126,15 @@ public class WonderPushCompatibilityHelper {
             return context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA)).metaData;
         } else {
             return context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static Bundle getActivityInfoMetaData(Activity activity) throws PackageManager.NameNotFoundException {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return activity.getPackageManager().getActivityInfo(activity.getComponentName(), PackageManager.ComponentInfoFlags.of(PackageManager.GET_META_DATA)).metaData;
+        } else {
+            return activity.getPackageManager().getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA).metaData;
         }
     }
 

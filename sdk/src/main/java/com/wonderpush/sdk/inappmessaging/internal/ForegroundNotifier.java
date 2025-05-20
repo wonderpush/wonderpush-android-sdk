@@ -99,8 +99,8 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
 
     boolean holdBack = false;
     try {
-      ActivityInfo ai = activity.getPackageManager().getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA);
-      Object resValue = ai.metaData == null ? null : WonderPushCompatibilityHelper.bundleGetTypeUnsafe(ai.metaData, "com.wonderpush.sdk.iam.ignoreForeground");
+      Bundle activityInfoMetaData = WonderPushCompatibilityHelper.getActivityInfoMetaData(activity);
+      Object resValue = activityInfoMetaData == null ? null : WonderPushCompatibilityHelper.bundleGetTypeUnsafe(activityInfoMetaData, "com.wonderpush.sdk.iam.ignoreForeground");
       if (resValue instanceof Boolean) {
         holdBack = (Boolean) resValue;
       } else if ("true".equals(resValue) || "false".equals(resValue)) {
