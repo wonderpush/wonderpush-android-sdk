@@ -205,7 +205,7 @@ public class FCMPushService implements PushService {
         if (firebaseMessagingServiceCheck) {
             Intent intentToFilter = new Intent("com.google.firebase.MESSAGING_EVENT")
                     .setPackage(context.getPackageName());
-            List<ResolveInfo> services = context.getPackageManager().queryIntentServices(intentToFilter, 0);
+            List<ResolveInfo> services = queryIntentServices(context, intentToFilter);
             // The list of services is sorted by decreasing priority. Only the first service will ever receive anything.
             if (services.isEmpty()) {
                 // There is always Firebase Cloud Messaging module's own service, normally
@@ -362,6 +362,15 @@ public class FCMPushService implements PushService {
             return sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA)).metaData;
         } else {
             return sContext.getPackageManager().getApplicationInfo(sContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    static List<ResolveInfo> queryIntentServices(Context context, Intent intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return context.getPackageManager().queryIntentServices(intent, PackageManager.ResolveInfoFlags.of(0));
+        } else {
+            return context.getPackageManager().queryIntentServices(intent, 0);
         }
     }
 
