@@ -13,6 +13,17 @@ android {
         consumerProguardFiles 'consumer-rules.pro'
     }
 
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+            withJavadocJar()
+        }
+        singleVariant('debug') {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -22,6 +33,7 @@ android {
 
     resourcePrefix 'wonderpush_android_sdk_fcm_'
     namespace 'com.wonderpush.sdk.push.fcm'
+
 }
 
 dependencies {
@@ -48,8 +60,6 @@ publishing {
         release(MavenPublication) {
             afterEvaluate {
                 from components.release // identical to artifact bundleReleaseAar
-                artifact androidSourcesJar
-                artifact androidJavadocsJar
             }
             groupId = project.group
             artifactId = project.archivesBaseName

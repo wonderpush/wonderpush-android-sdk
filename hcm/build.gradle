@@ -19,6 +19,17 @@ android {
         consumerProguardFiles 'consumer-rules.pro'
     }
 
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+            withJavadocJar()
+        }
+        singleVariant('debug') {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -53,8 +64,6 @@ publishing {
         release(MavenPublication) {
             afterEvaluate {
                 from components.release // identical to artifact bundleReleaseAar
-                artifact androidSourcesJar
-                artifact androidJavadocsJar
             }
             groupId = project.group
             artifactId = project.archivesBaseName
