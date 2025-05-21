@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
+base.archivesName = 'wonderpush-android-sdk-hcm'
 project.group = 'com.wonderpush'
-project.archivesBaseName = 'wonderpush-android-sdk-hcm'
 project.version = "1.0.4-SNAPSHOT"
 
 repositories {
@@ -69,7 +69,7 @@ publishing {
                 from components.release // identical to artifact bundleReleaseAar
             }
             groupId = project.group
-            artifactId = project.archivesBaseName
+            artifactId = base.archivesName
             version = project.version
             pom {
                 packaging = 'aar'
