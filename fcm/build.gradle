@@ -7,7 +7,7 @@ project.version = "1.0.8-SNAPSHOT"
 android {
     defaultConfig {
         compileSdk 33
-        minSdkVersion 19
+        minSdkVersion 21
         buildConfigField 'String', 'WONDERPUSH_FCM_VERSION', '"' + project.version + '"'
 
         consumerProguardFiles 'consumer-rules.pro'
