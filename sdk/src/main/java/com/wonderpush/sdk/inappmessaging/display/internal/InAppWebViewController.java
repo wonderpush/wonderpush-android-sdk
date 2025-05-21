@@ -389,6 +389,7 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
             return this.resources.openRawResource(R.raw.wonderpush_inapp_sdk);
         }
 
+        @SuppressWarnings("deprecation") // NOTE: Once minSdkVersion is >= 24, switch to overriding: public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request)
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             // On subsequent page loads, set the Javascript interface if the origin is the same
@@ -491,13 +492,14 @@ public class InAppWebViewController implements InAppWebViewBridge.Controller {
 
         @Nullable
         @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            if (url != null && url.startsWith(HTML_INAPP_SDK_URL)) {
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            if (request != null && request.getUrl() != null && request.getUrl().toString().startsWith(HTML_INAPP_SDK_URL)) {
                 return new WebResourceResponse("text/javascript", "utf-8", getJavascriptSDKInputStream());
             }
-            return super.shouldInterceptRequest(view, url);
+            return super.shouldInterceptRequest(view, request);
         }
 
+        @SuppressWarnings("deprecation") // NOTE: Once minSdkVersion is >= 23, switch to overriding: public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error)
         @Override
         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
             try {
