@@ -604,7 +604,7 @@ public class NotificationManager {
         }
         if (alert.getPersons() != null) {
             for (String person : alert.getPersons()) {
-                builder.addPerson(person);
+                WonderPushCompatibilityHelper.notificationCompatBuilderAddPersonString(builder, person);
             }
         }
         if (alert.hasProgress()) {

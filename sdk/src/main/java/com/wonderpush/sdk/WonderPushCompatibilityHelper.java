@@ -23,6 +23,10 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -200,6 +204,11 @@ public class WonderPushCompatibilityHelper {
         } else {
             return packageInfo.versionCode;
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static @NonNull NotificationCompat.Builder notificationCompatBuilderAddPersonString(@NonNull NotificationCompat.Builder builder, @Nullable String person) {
+        return builder.addPerson(person);
     }
 
 }
