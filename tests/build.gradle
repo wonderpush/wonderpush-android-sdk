@@ -22,6 +22,9 @@ android {
         buildConfigField 'String', 'WONDERPUSH_HCM_APP_ID', '"102131397"'
         buildConfigField 'boolean', 'WONDERPUSH_LOGGING', 'true'
         buildConfigField 'boolean', 'WONDERPUSH_REQUIRES_USER_CONSENT', 'false'
+        buildFeatures {
+            buildConfig = true
+        }
     }
 
     publishing {

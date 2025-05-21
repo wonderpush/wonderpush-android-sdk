@@ -16,6 +16,9 @@ android {
         consumerProguardFiles 'proguard-exported.pro'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         buildConfigField 'String', 'WONDERPUSH_SDK_VERSION', '"' + project.version + '"'
+        buildFeatures {
+            buildConfig = true
+        }
     }
 
     publishing {

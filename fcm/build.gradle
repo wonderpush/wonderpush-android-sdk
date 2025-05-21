@@ -9,6 +9,9 @@ android {
         compileSdk 33
         minSdkVersion 21
         buildConfigField 'String', 'WONDERPUSH_FCM_VERSION', '"' + project.version + '"'
+        buildFeatures {
+            buildConfig = true
+        }
 
         consumerProguardFiles 'consumer-rules.pro'
     }
