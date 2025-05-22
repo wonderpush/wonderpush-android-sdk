@@ -120,12 +120,10 @@ publishing {
     }
 }
 
-afterEvaluate {
-    signing {
-        useGpgCmd()
-        sign publishing.publications
-        sign configurations.archives
-    }
+signing {
+    useGpgCmd()
+    sign publishing.publications
+    sign configurations.archives
 }
 
 //
