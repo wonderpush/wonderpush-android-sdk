@@ -6,7 +6,7 @@ plugins {
 
 base.archivesName = 'wonderpush-android-sdk'
 project.group = 'com.wonderpush'
-project.version = "4.4.2-SNAPSHOT"
+project.version = "4.5.0"
 
 android {
     compileOptions {
