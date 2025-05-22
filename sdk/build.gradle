@@ -1,4 +1,8 @@
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+    id 'signing'
+}
 
 base.archivesName = 'wonderpush-android-sdk'
 project.group = 'com.wonderpush'
@@ -100,9 +104,6 @@ if (file('local.gradle').exists()) {
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xdiags:verbose"
 }
-
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
 
 publishing {
     publications {
