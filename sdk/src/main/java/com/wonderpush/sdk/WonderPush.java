@@ -7,12 +7,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -66,6 +69,7 @@ import okhttp3.OkHttp;
 public class WonderPush {
 
     static final String TAG = "WonderPush";
+    private static final String REMEMBERED_CREDENTIALS_PREF_FILE = "wonderpush_remembered_credentials"; // should be different from WonderPushConfiguration.PREF_FILE to avoid inadvertently exporting stored values
     protected static boolean SHOW_DEBUG = false;
     private static boolean SHOW_DEBUG_OVERRIDDEN = false;
 
@@ -2114,8 +2118,29 @@ public class WonderPush {
         // Try to initializing WonderPush using collected credentials
         if (!isInitialized()) {
             if (!TextUtils.isEmpty(clientId) && !TextUtils.isEmpty(clientSecret)) {
-                logDebug("Initializing WonderPush using collected credentials");
-                WonderPush.initialize(context, clientId, clientSecret);
+                if (clientId.equals("USE_REMEMBERED") && clientSecret.equals("USE_REMEMBERED")) {
+                    logDebug("Asked explicitly to use remembered credentials");
+                } else {
+                    logDebug("Initializing WonderPush using collected credentials");
+                    WonderPush.initialize(context, clientId, clientSecret);
+                }
+            }
+        }
+
+        // As last resort, try to find remembered credentials
+        // This way we avoid sync IO for the other ways of initialization
+        if (!isInitialized()) {
+            SharedPreferences credentialsSharedPrefs = context.getSharedPreferences(REMEMBERED_CREDENTIALS_PREF_FILE, Context.MODE_PRIVATE);
+            if (credentialsSharedPrefs != null) {
+                boolean explicitlyUseRememberedCredentials = "USE_REMEMBERED".equals(clientId) && "USE_REMEMBERED".equals(clientSecret);
+                clientId = credentialsSharedPrefs.getString("rememberedClientId", null);
+                clientSecret = credentialsSharedPrefs.getString("rememberedClientSecret", null);
+                if (!TextUtils.isEmpty(clientId) && !TextUtils.isEmpty(clientSecret)) {
+                    logDebug("Initializing WonderPush using remembered credentials");
+                    WonderPush.initialize(context, clientId, clientSecret);
+                } else if (explicitlyUseRememberedCredentials) {
+                    Log.w(TAG, "No remembered credentials are available");
+                }
             }
         }
 
@@ -2134,6 +2159,60 @@ public class WonderPush {
         }
 
         return isInitialized();
+    }
+
+    /**
+     * Remembers the given Client ID and Client Secret, and initializes the SDK.
+     * If a value is `null`, it will be removed from storage, and the SDK won't be initialized.
+     *
+     * @param context
+     *            The main {@link Activity} of your application, or failing that, the {@link Application} context.
+     * @param clientId
+     *            The clientId of your application to store and use, or `null` to forget it.
+     * @param clientSecret
+     *            The clientSecret of your application to store and use, or `null` to forget it.
+     */
+    public static void initializeAndRememberCredentials(@NonNull Context context, @Nullable String clientId, @Nullable String clientSecret) {
+        if (TextUtils.isEmpty(clientId)) {
+            clientId = null;
+        }
+        if (TextUtils.isEmpty(clientSecret)) {
+            clientSecret = null;
+        }
+        SharedPreferences credentialsSharedPrefs = context.getSharedPreferences(REMEMBERED_CREDENTIALS_PREF_FILE, Context.MODE_PRIVATE);
+        if (credentialsSharedPrefs != null) {
+            SharedPreferences.Editor editor = credentialsSharedPrefs.edit();
+            if (editor != null) {
+                editor.putString("rememberedClientId", clientId);
+                editor.putString("rememberedClientSecret", clientSecret);
+                WonderPush.logDebug("Remembering credentials: clientId=" + (clientId == null ? "<cleared>" : clientId) + " clientSecret=" + (clientSecret == null ? "<cleared>" : "<redacted>"));
+                editor.apply();
+            }
+        }
+        if (clientId != null && clientSecret != null) {
+            WonderPush.initialize(context, clientId, clientSecret);
+        }
+    }
+
+    /**
+     * Returns the remembered Client ID given to {@link #initializeAndRememberCredentials(Context, String, String)}.
+     * There is no similar getter for the Client Secret.
+     *
+     * @param context
+     *            The application context used for accessing storage like an {@link Activity} or the {@link Application} context.
+     * @return
+     *            The remembered Client ID if both a non-empty Client ID and Client Secret were last remembered, `null` otherwise.
+     */
+    public static @Nullable String getRememberedClientId(@NonNull Context context) {
+        SharedPreferences credentialsSharedPrefs = context.getSharedPreferences(REMEMBERED_CREDENTIALS_PREF_FILE, Context.MODE_PRIVATE);
+        if (credentialsSharedPrefs != null) {
+            String clientId = credentialsSharedPrefs.getString("rememberedClientId", null);
+            String clientSecret = credentialsSharedPrefs.getString("rememberedClientSecret", null);
+            if (!TextUtils.isEmpty(clientId) && !TextUtils.isEmpty(clientSecret)) {
+                return clientId;
+            }
+        }
+        return null;
     }
 
     /**
