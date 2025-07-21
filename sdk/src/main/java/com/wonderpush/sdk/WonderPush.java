@@ -2104,10 +2104,8 @@ public class WonderPush {
                 Log.e(TAG, "Failed to load initializer class", e);
             } catch (ClassNotFoundException e) {
                 Log.e(TAG, "Failed to load initializer class. Check your <meta-data android:name=\"" + METADATA_INITIALIZER_CLASS + "\" android:value=\"com.package.YourWonderPushInitializerImpl\"/> entry under <application> in your AndroidManifest.xml", e);
-            } catch (InstantiationException e) {
-                Log.e(TAG, "Failed to intantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "Failed to intantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
+            } catch (InstantiationException | IllegalAccessException e) {
+                Log.e(TAG, "Failed to instantiate the initializer class " + initializerClassName + ". Make sure it has a public default constructor with no argument.", e);
             } catch (Exception e) {
                 Log.e(TAG, "Unexpected error while ensuring SDK initialization", e);
             }
