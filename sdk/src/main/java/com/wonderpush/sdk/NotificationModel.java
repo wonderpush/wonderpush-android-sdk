@@ -229,7 +229,7 @@ public abstract class NotificationModel implements Parcelable {
                 // Fill reporting ids read from short fields if they were missing
                 if (rtn.getCampaignId() == null) rtn.setCampaignId(JSONUtil.getString(reporting, "campaignId"));
                 if (rtn.getNotificationId() == null) rtn.setNotificationId(JSONUtil.getString(reporting, "notificationId"));
-                if (rtn.getViewId() == null) rtn.setViewId(JSONUtil.getString(reporting, "viewid"));
+                if (rtn.getViewId() == null) rtn.setViewId(JSONUtil.getString(reporting, "viewId"));
             }
             rtn.setTargetUrl(JSONUtil.getString(wpData, "targetUrl"));
             rtn.setReceipt(wpData.optBoolean("receipt", false));
