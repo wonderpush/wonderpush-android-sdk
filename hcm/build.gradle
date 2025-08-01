@@ -10,13 +10,13 @@ project.version = "1.0.4-SNAPSHOT"
 
 repositories {
     maven {
-        url 'https://developer.huawei.com/repo/'
+        url = 'https://developer.huawei.com/repo/'
     }
 }
 
 android {
     defaultConfig {
-        compileSdk 33
+        compileSdk = 33
         minSdkVersion 21
         buildConfigField 'String', 'WONDERPUSH_HCM_VERSION', '"' + project.version + '"'
         buildFeatures {
@@ -45,7 +45,7 @@ android {
     }
 
     resourcePrefix 'wonderpush_android_sdk_hcm_'
-    namespace 'com.wonderpush.sdk.push.hcm'
+    namespace = 'com.wonderpush.sdk.push.hcm'
 }
 
 dependencies {

@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "com.wonderpush.tests"
-        compileSdk 33
+        compileSdk = 33
         minSdkVersion 21
         targetSdkVersion 33
         versionCode 1
@@ -45,7 +45,7 @@ android {
         }
     }
 
-    namespace 'com.wonderpush.tests'
+    namespace = 'com.wonderpush.tests'
 }
 
 dependencies {

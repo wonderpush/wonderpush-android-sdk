@@ -10,7 +10,7 @@ project.version = "1.0.8-SNAPSHOT"
 
 android {
     defaultConfig {
-        compileSdk 33
+        compileSdk = 33
         minSdkVersion 21
         buildConfigField 'String', 'WONDERPUSH_FCM_VERSION', '"' + project.version + '"'
         buildFeatures {
@@ -39,7 +39,7 @@ android {
     }
 
     resourcePrefix 'wonderpush_android_sdk_fcm_'
-    namespace 'com.wonderpush.sdk.push.fcm'
+    namespace = 'com.wonderpush.sdk.push.fcm'
 
 }
 
