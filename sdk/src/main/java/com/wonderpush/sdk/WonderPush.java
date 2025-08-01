@@ -1722,11 +1722,33 @@ public class WonderPush {
      * @param clientSecret
      *            The clientSecret of your application.
      */
-    public static void initialize(final Context context, final String clientId, String clientSecret) {
+    public static void initialize(final Context context, String clientId, String clientSecret) {
         try {
             WonderPush.logDebug("initialize(" + context.getClass().getSimpleName() + ", " + clientId + ", <redacted clientSecret>)");
+
+            if ((clientId == null) != (clientSecret == null)) {
+                Log.e(TAG, "Please set both 'clientId' and 'clientSecret' arguments of WonderPush.initialize(Context, String, String), or leave both null to use remembered credentials.");
+                return;
+            }
+            if (clientId == null || "USE_REMEMBERED".equals(clientId) || clientSecret == null || "USE_REMEMBERED".equals(clientSecret)) {
+                SharedPreferences credentialsSharedPrefs = context.getSharedPreferences(REMEMBERED_CREDENTIALS_PREF_FILE, Context.MODE_PRIVATE);
+                if (credentialsSharedPrefs != null) {
+                    if (clientId == null || "USE_REMEMBERED".equals(clientId)) {
+                        clientId = credentialsSharedPrefs.getString("rememberedClientId", null);
+                        Log.i(TAG, "Using remembered clientId:" + clientId);
+                    }
+                    if (clientSecret == null || "USE_REMEMBERED".equals(clientSecret)) {
+                        clientSecret = credentialsSharedPrefs.getString("rememberedClientSecret", null);
+                    }
+                    if (TextUtils.isEmpty(clientId) || TextUtils.isEmpty(clientSecret)) {
+                        Log.w(TAG, "No remembered credentials are available to initialize. You need to call WonderPush.initializeAndRememberCredentials() at some point.");
+                        return;
+                    }
+                }
+            }
+
             if (!sIsInitialized || (
-                    clientId != null && clientSecret != null && (!clientId.equals(sClientId) || !clientSecret.equals(sClientSecret))
+                    !TextUtils.isEmpty(clientId) && !TextUtils.isEmpty(clientSecret) && (!clientId.equals(sClientId) || !clientSecret.equals(sClientSecret))
             )) {
 
                 sIsInitialized = false;
@@ -1837,13 +1859,13 @@ public class WonderPush {
                         }
                     }
                 }, 0);
-            }
 
-            initializeForApplication(context);
-            initializeForActivity(context);
-            safeDefer(() -> {
-                refreshPreferencesAndConfiguration(false);
-            }, 0);
+                initializeForApplication(context);
+                initializeForActivity(context);
+                safeDefer(() -> {
+                    refreshPreferencesAndConfiguration(false);
+                }, 0);
+            }
         } catch (Exception e) {
             Log.e(TAG, "Unexpected error while initializing the SDK", e);
         }
@@ -2122,25 +2144,8 @@ public class WonderPush {
                     logDebug("Asked explicitly to use remembered credentials");
                 } else {
                     logDebug("Initializing WonderPush using collected credentials");
-                    WonderPush.initialize(context, clientId, clientSecret);
                 }
-            }
-        }
-
-        // As last resort, try to find remembered credentials
-        // This way we avoid sync IO for the other ways of initialization
-        if (!isInitialized()) {
-            SharedPreferences credentialsSharedPrefs = context.getSharedPreferences(REMEMBERED_CREDENTIALS_PREF_FILE, Context.MODE_PRIVATE);
-            if (credentialsSharedPrefs != null) {
-                boolean explicitlyUseRememberedCredentials = "USE_REMEMBERED".equals(clientId) && "USE_REMEMBERED".equals(clientSecret);
-                clientId = credentialsSharedPrefs.getString("rememberedClientId", null);
-                clientSecret = credentialsSharedPrefs.getString("rememberedClientSecret", null);
-                if (!TextUtils.isEmpty(clientId) && !TextUtils.isEmpty(clientSecret)) {
-                    logDebug("Initializing WonderPush using remembered credentials");
-                    WonderPush.initialize(context, clientId, clientSecret);
-                } else if (explicitlyUseRememberedCredentials) {
-                    Log.w(TAG, "No remembered credentials are available");
-                }
+                WonderPush.initialize(context, clientId, clientSecret);
             }
         }
 
