@@ -2592,7 +2592,16 @@ public class WonderPush {
      *
      * <p>Returns {@code null} if called without required user consent.</p>
      *
-     * @return The device id, or {@code null} if the SDK is not initialized.
+     * <p>
+     *   Note: The Installation ID is obtained asynchronously after the WonderPush SDK
+     *   is initialized and has contacted the WonderPush servers.
+     *   Changing the User ID will make the SDK use a new installation
+     *   and this asynchronous process starts anew.
+     *   Once the SDK has obtained an Installation ID, it will remember it
+     *   for subsequent use and it will be available right away.
+     * </p>
+     *
+     * @return The Installation ID, or {@code null} if it is not available yet.
      */
     @SuppressWarnings("unused")
     public static String getInstallationId() {
