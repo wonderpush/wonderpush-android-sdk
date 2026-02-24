@@ -23,6 +23,7 @@ public class MeasurementsApiClient {
             synchronized (MeasurementsApiClient.class) {
                 if (_client == null) {
                     _client = new okhttp3.OkHttpClient.Builder()
+                            .dispatcher(SafeOkHttpCallback.buildSafeDispatcher(MeasurementsApiClient.class.getSimpleName()))
                             .addInterceptor(chain ->
                                     chain.proceed(chain.request().newBuilder()
                                             .header("User-Agent", WonderPush.getUserAgent())

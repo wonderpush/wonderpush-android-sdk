@@ -40,6 +40,7 @@ public class OkHttpRemoteConfigFetcher implements RemoteConfigFetcher {
             synchronized (this) {
                 if (_client == null) {
                     _client = new OkHttpClient.Builder()
+                            .dispatcher(SafeOkHttpCallback.buildSafeDispatcher(OkHttpRemoteConfigFetcher.class.getSimpleName()))
                             .addInterceptor(chain ->
                                     chain.proceed(chain.request().newBuilder()
                                             .header("User-Agent", this.userAgentProvider.getUserAgent())

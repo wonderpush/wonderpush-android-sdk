@@ -197,6 +197,7 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
             synchronized (this) {
                 if (_client == null) {
                     _client = new OkHttpClient.Builder()
+                            .dispatcher(SafeOkHttpCallback.buildSafeDispatcher(this.getClass().getSimpleName()))
                             .addInterceptor(chain ->
                                     chain.proceed(chain.request().newBuilder()
                                             .header("User-Agent", WonderPush.getUserAgent())
