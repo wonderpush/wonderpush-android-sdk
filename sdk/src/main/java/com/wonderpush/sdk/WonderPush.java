@@ -2799,11 +2799,29 @@ public class WonderPush {
     }
 
     protected static void safeDefer(final Runnable runnable, long defer) {
-        sScheduledExecutor.schedule(runnable, defer, TimeUnit.MILLISECONDS);
+        final Exception deferPointStack = new Exception("Deferred execution point");
+        sScheduledExecutor.schedule(() -> {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                t.addSuppressed(deferPointStack);
+                Log.e(TAG, "safeDefer(" + runnable + ") encountered an exception", t);
+            }
+        }, defer, TimeUnit.MILLISECONDS);
     }
 
     protected static <V> Future<V> safeDefer(final Callable<V> callable, long defer) {
-        return sScheduledExecutor.schedule(callable, defer, TimeUnit.MILLISECONDS);
+        final Exception deferPointStack = new Exception("Deferred execution point");
+        return sScheduledExecutor.schedule(() -> {
+            try {
+                return callable.call();
+            } catch (Throwable t) {
+                t.addSuppressed(deferPointStack);
+                // Log but rethrow for the Future to complete the same was as expected
+                Log.e(TAG, "safeDefer(" + callable + " encountered an exception", t);
+                throw t;
+            }
+        }, defer, TimeUnit.MILLISECONDS);
     }
 
     /**
