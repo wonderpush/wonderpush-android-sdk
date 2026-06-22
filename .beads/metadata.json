@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "wonderpush_android_sdk",
+  "project_id": "56a019e1-5e39-4ef4-9209-b0cad6bd5e2e"
+}
