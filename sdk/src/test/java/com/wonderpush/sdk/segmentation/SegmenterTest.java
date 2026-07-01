@@ -48,6 +48,16 @@ public class SegmenterTest {
         );
     }
 
+    public static Segmenter.Data dataWithContact(Segmenter.Data data, JSONObject contact) {
+        return new Segmenter.Data(
+                data.installation,
+                data.allEvents,
+                data.presenceInfo,
+                data.lastAppOpenDate,
+                contact
+        );
+    }
+
     public static Segmenter.Data dataWithAllEvents(Segmenter.Data data, List<JSONObject> allEvents) {
         return new Segmenter.Data(
                 data.installation,
@@ -124,6 +134,17 @@ public class SegmenterTest {
         Segmenter s = new Segmenter(dataEmpty);
         ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{}"));
         assertThat(s.matchesInstallation(parsedSegment), is(true));
+    }
+
+    @Test
+    public void testItShouldMatchOnSyncedContactField() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"contact\":{\".firstName\":{\"eq\":\"Alice\"}}}"));
+        // Matches when the synced contact carries the expected field value.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"firstName\":\"Alice\"}"))).matchesInstallation(parsedSegment), is(true));
+        // Does not match a different value.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"firstName\":\"Bob\"}"))).matchesInstallation(parsedSegment), is(false));
+        // Does not match when no contact is synced (contact == null).
+        assertThat(new Segmenter(dataEmpty).matchesInstallation(parsedSegment), is(false));
     }
 
     @Test

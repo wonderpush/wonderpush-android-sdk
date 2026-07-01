@@ -32,12 +32,19 @@ public class Segmenter {
         public final List<JSONObject> allEvents;
         public final PresenceInfo presenceInfo;
         public final long lastAppOpenDate;
+        /** The synced sdk-sync contact object, for `contact` segmentation criteria (null when absent). */
+        public final JSONObject contact;
 
         public Data(JSONObject installation, List<JSONObject> allEvents, PresenceInfo presenceInfo, long lastAppOpenDate) {
+            this(installation, allEvents, presenceInfo, lastAppOpenDate, null);
+        }
+
+        public Data(JSONObject installation, List<JSONObject> allEvents, PresenceInfo presenceInfo, long lastAppOpenDate, JSONObject contact) {
             this.installation = installation;
             this.allEvents = Collections.unmodifiableList(new ArrayList<>(allEvents));
             this.presenceInfo = presenceInfo;
             this.lastAppOpenDate = lastAppOpenDate;
+            this.contact = contact;
         }
     }
 

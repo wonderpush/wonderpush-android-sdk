@@ -2023,6 +2023,18 @@ public class WonderPush {
                 public PresenceManager getPresenceManager() {
                     return WonderPush.getPresenceManager();
                 }
+
+                @Override
+                public org.json.JSONArray getSyncedPopups() {
+                    Object data = SyncManager.getInstance().dataForSource("popups");
+                    return data instanceof org.json.JSONArray ? (org.json.JSONArray) data : null;
+                }
+
+                @Override
+                public JSONObject getSyncedContact() {
+                    Object data = SyncManager.getInstance().dataForSource("contact");
+                    return data instanceof JSONObject ? (JSONObject) data : null;
+                }
             });
         }
         InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::trackInAppEvent, WonderPush::getUserAgent);

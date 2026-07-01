@@ -1,5 +1,6 @@
 package com.wonderpush.sdk.segmentation.parser;
 
+import com.wonderpush.sdk.segmentation.parser.datasource.ContactSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.EventSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.FieldSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.GeoDateSource;
@@ -28,6 +29,7 @@ public class DataSourceVisitorTest {
     private enum Markers {
         UserSource,
         InstallationSource,
+        ContactSource,
         EventSource,
         FieldSource,
         LastActivityDateSource,
@@ -51,6 +53,12 @@ public class DataSourceVisitorTest {
         public Markers visitInstallationSource(InstallationSource dataSource) {
             this.seenObjects.add(dataSource);
             return Markers.InstallationSource;
+        }
+
+        @Override
+        public Markers visitContactSource(ContactSource dataSource) {
+            this.seenObjects.add(dataSource);
+            return Markers.ContactSource;
         }
 
         @Override
@@ -121,6 +129,10 @@ public class DataSourceVisitorTest {
                 {
                         new InstallationSource(),
                         Markers.InstallationSource,
+                },
+                {
+                        new ContactSource(),
+                        Markers.ContactSource,
                 },
                 {
                         new LastActivityDateSource(installationSource),

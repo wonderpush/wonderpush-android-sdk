@@ -28,6 +28,7 @@ import com.wonderpush.sdk.segmentation.parser.criteria.OrCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.criteria.PrefixCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.criteria.PresenceCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.criteria.SubscriptionStatusCriterionNode;
+import com.wonderpush.sdk.segmentation.parser.datasource.ContactSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.EventSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.FieldSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.GeoDateSource;
@@ -254,6 +255,12 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
             if (debug) Log.d(TAG, "[visitJoinCriterionNode] return " + rtn + " for installation");
             return rtn;
         }
+        if (node.context.dataSource instanceof ContactSource) {
+            ContactVisitor contactVisitor = new ContactVisitor(data);
+            Boolean rtn = node.child.accept(contactVisitor);
+            if (debug) Log.d(TAG, "[visitJoinCriterionNode] return " + rtn + " for contact");
+            return rtn;
+        }
         Log.w(TAG, "[visitJoinCriterionNode] return false for unsupported " + node.context.dataSource.getClass().getSimpleName());
         return false;
     }
@@ -439,6 +446,11 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
 
     @Override
     public List<Object> visitInstallationSource(InstallationSource dataSource) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<Object> visitContactSource(ContactSource dataSource) {
         return Collections.emptyList();
     }
 
