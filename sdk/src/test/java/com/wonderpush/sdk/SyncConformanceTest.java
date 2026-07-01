@@ -23,8 +23,6 @@ import java.io.InputStream;
  * The "Infinity"/"-Infinity"/"NaN" JSON string sentinels are mapped back to doubles inside
  * {@link SyncKnobs#fromJSON} (org.json cannot hold non-finite doubles), so no global pre-pass is
  * needed. JSON {@code null} is the null-missing sentinel.
- *
- * NOTE: contact-store.vectors.json is exercised by the contact-source tests (issue p0b), not here.
  */
 public class SyncConformanceTest {
 
@@ -164,6 +162,29 @@ public class SyncConformanceTest {
             SyncDecision decision = SyncProcessor.processSourceBlock(
                     block, serverTime, state, in.optString("mode", null));
             assertDeepEquals(c.getString("name"), c.getJSONObject("expected"), decision.toJSON());
+        }
+    }
+
+    @Test
+    public void testContactStore() throws Exception {
+        JSONArray cases = casesOf("contact-store.vectors.json");
+        for (int i = 0; i < cases.length(); i++) {
+            JSONObject c = cases.getJSONObject(i);
+            JSONObject in = c.getJSONObject("input");
+            String op = in.getString("op");
+            JSONObject current = in.optJSONObject("current");   // null if absent / JSON null
+            Object arg = orNull(in.opt("arg"));
+            JSONObject actual;
+            switch (op) {
+                case "applyContactData": actual = SyncContactStore.applyContactData(current, arg); break;
+                case "applyContactDelta": actual = SyncContactStore.applyContactDelta(current, arg); break;
+                case "clearContact": actual = SyncContactStore.clearContact(); break;
+                default: throw new IllegalStateException("unknown op: " + op);
+            }
+            JSONObject expected = c.isNull("expected") ? null : c.optJSONObject("expected");
+            if (!JSONUtil.equals(expected, actual)) {
+                fail(c.getString("name") + "\n  expected: " + expected + "\n  actual:   " + actual);
+            }
         }
     }
 

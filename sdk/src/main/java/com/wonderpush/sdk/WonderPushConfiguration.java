@@ -54,6 +54,7 @@ public class WonderPushConfiguration {
     private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_UPDATED_DATE_PREF_NAME = "__cached_installation_custom_properties_updated_date";
     private static final String CACHED_INSTALLATION_CUSTOM_PROPERTIES_FIRST_DELAYED_WRITE_DATE_PREF_NAME = "__cached_installation_custom_properties_first_delayed_write_date";
     private static final String INSTALLATION_CUSTOM_SYNC_STATE_PER_USER_ID_PREF_NAME = "__installation_sync_state_per_user_id";
+    private static final String SDK_SYNC_STATE_PER_PROFILE_PREF_NAME = "__wonderpush_syncStatePerProfile";
 
     private static final String GCM_REGISTRATION_ID_PREF_NAME = "__wonderpush_gcm_registration_id";
     private static final String CACHED_GCM_REGISTRATION_ID_PREF_DATE_NAME = "__wonderpush_gcm_registration_id_date";
@@ -784,6 +785,26 @@ public class WonderPushConfiguration {
      */
     static void setInstallationCustomSyncStatePerUserId(JSONObject installationCustomSyncStatePerUserId) {
         putJSONObject(INSTALLATION_CUSTOM_SYNC_STATE_PER_USER_ID_PREF_NAME, installationCustomSyncStatePerUserId);
+    }
+
+    /**
+     * Get the saved sdk-sync state for all (source, profile) slots.
+     * This is the new backend→SDK sync channel, distinct from the legacy installation-custom sync.
+     *
+     * @return The saved sync state blob, keyed {@code sync:<source>:<userId or "">:<deviceId>}.
+     */
+    static JSONObject getSdkSyncStatePerProfile() {
+        return getJSONObject(SDK_SYNC_STATE_PER_PROFILE_PREF_NAME);
+    }
+
+    /**
+     * Set the saved sdk-sync state for all (source, profile) slots.
+     *
+     * @param syncStatePerProfile
+     *            The sync state blob to store.
+     */
+    static void setSdkSyncStatePerProfile(JSONObject syncStatePerProfile) {
+        putJSONObject(SDK_SYNC_STATE_PER_PROFILE_PREF_NAME, syncStatePerProfile);
     }
 
 
