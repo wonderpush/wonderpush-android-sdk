@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -229,6 +230,29 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
             WonderPushRequestParamsDecorator.decorate(request.getResource(), request.getParams());
             decorate(request);
 
+            // sdk-sync: opportunistic outgoing param injection. Nil-safe — the hook is inert until an
+            // observer is installed (only when the syncEnabled remote-config flag is on). Covers both
+            // this SDK API client and the Measurements API client (both extend BaseApiClient).
+            SyncRequestObserver syncOutObserver = SyncHook.observer();
+            if (syncOutObserver != null) {
+                try {
+                    Map<String, Object> syncParams = syncOutObserver.prepareOutgoingParams(
+                            normalizeSyncPath(request.getResource()), request.getMethod().name());
+                    if (!syncParams.isEmpty()) {
+                        Request.Params syncTargetParams = request.getParams();
+                        if (syncTargetParams == null) {
+                            syncTargetParams = new Request.Params();
+                            request.setParams(syncTargetParams);
+                        }
+                        for (Map.Entry<String, Object> entry : syncParams.entrySet()) {
+                            syncTargetParams.put(entry.getKey(), String.valueOf(entry.getValue()));
+                        }
+                    }
+                } catch (Throwable t) {
+                    WonderPush.logError(getTag(), "sdk-sync outgoing injection failed", t);
+                }
+            }
+
             // Generate signature
             Request.BasicNameValuePair authorizationHeader = request.getAuthorizationHeader();
 
@@ -284,6 +308,19 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
 
                     syncTime(responseJson);
                     declareConfigVersion(responseJson);
+
+                    // sdk-sync: incoming response interception (both success and error branches, like iOS).
+                    // Fire-and-forget and best-effort — never breaks the host callback chain.
+                    SyncRequestObserver syncInObserver = SyncHook.observer();
+                    if (syncInObserver != null) {
+                        try {
+                            syncInObserver.consumeIncomingResponse(
+                                    normalizeSyncPath(request.getResource()), request.getMethod().name(), responseJson);
+                        } catch (Throwable t) {
+                            // best-effort: never break the host callback chain
+                        }
+                    }
+
                     if (!response.isSuccessful()) {
                         if (WonderPush.getLogging()) {
                             Log.e(getTag(), "Error answer: " + response.code() + " headers: " + response.headers() + " response: " + responseString + " (for " + request.toHumanReadableString() + ")");
@@ -381,6 +418,17 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
         }, 0);
     }
 
+
+    /**
+     * Strip a single trailing slash so a resource like {@code "/events/"} matches the sdk-sync
+     * classifier's {@code "/events"} suffix (the conformance vectors use the un-slashed form).
+     */
+    private static String normalizeSyncPath(String resource) {
+        if (resource != null && resource.length() > 1 && resource.endsWith("/")) {
+            return resource.substring(0, resource.length() - 1);
+        }
+        return resource;
+    }
 
     void setDisabled(boolean disabled) {
         this.disabled = disabled;
