@@ -230,9 +230,10 @@ public abstract class BaseApiClient implements WonderPushRequestVault.RequestExe
             WonderPushRequestParamsDecorator.decorate(request.getResource(), request.getParams());
             decorate(request);
 
-            // sdk-sync: opportunistic outgoing param injection. Nil-safe — the hook is inert until an
-            // observer is installed (only when the syncEnabled remote-config flag is on). Covers both
-            // this SDK API client and the Measurements API client (both extend BaseApiClient).
+            // sdk-sync: opportunistic outgoing param injection. Nil-safe — the hook is inert unless an
+            // observer is installed (installed by default; uninstalled if the syncDisabled remote-config
+            // flag is on). Covers both this SDK API client and the Measurements API client (both extend
+            // BaseApiClient).
             SyncRequestObserver syncOutObserver = SyncHook.observer();
             if (syncOutObserver != null) {
                 try {

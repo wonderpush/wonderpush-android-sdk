@@ -1800,7 +1800,7 @@ public class WonderPush {
                         WonderPushConfiguration.setMaximumCollapsedOtherTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_OTHER_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT));
 
                         // sdk-sync: refresh knobs + the enable gate from remote config. Builds the sync
-                        // stack once, then installs/uninstalls the request hook based on syncEnabled.
+                        // stack once, then installs/uninstalls the request hook based on syncDisabled.
                         if (sRemoteConfigManager != null) {
                             SyncManager.getInstance().refresh(sRemoteConfigManager, buildSyncIdentifiersProvider(), buildSyncApiRequestSender());
                         }

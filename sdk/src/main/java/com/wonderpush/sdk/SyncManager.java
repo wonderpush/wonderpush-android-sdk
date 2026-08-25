@@ -6,9 +6,9 @@ import com.wonderpush.sdk.remoteconfig.RemoteConfigManager;
 /**
  * SDK-init lifecycle manager for the sdk-sync channel. Ported from wonderpush-ios-sdk
  * {@code WPSyncManager}. Lazily builds the stack on first {@link #refresh}, and gates the whole
- * feature on the {@code syncEnabled} remote-config flag (default off -> inert). Only when enabled is
- * the request observer installed into {@link SyncHook}, so {@link BaseApiClient} stays a no-op until
- * the server opts a project in.
+ * feature on the {@code syncDisabled} remote-config flag (default off -> active). Only when disabled
+ * is the request observer uninstalled from {@link SyncHook}, so {@link BaseApiClient} runs the sync
+ * channel by default, unless the server opts a project out.
  */
 class SyncManager {
 
@@ -27,7 +27,7 @@ class SyncManager {
     /**
      * Refresh knobs + the enable gate from remote config, building the stack if needed.
      *
-     * @param remoteConfigManager source of the {@code sync*} knobs and {@code syncEnabled} flag
+     * @param remoteConfigManager source of the {@code sync*} knobs and {@code syncDisabled} flag
      * @param identifiersProvider supplies the current userId/deviceId/installationId/visitorId
      * @param sender              issues the explicit-fetch GET (wraps {@link ApiClient})
      */
@@ -39,9 +39,9 @@ class SyncManager {
             RemoteConfig effective = error != null ? null : config;
             cachedKnobs = SyncKnobs.mergeKnobs(SyncKnobs.defaultKnobs(),
                     effective != null ? effective.getData() : null);
-            // Master gate: only go live when the server explicitly enables sync (default off -> inert).
-            boolean enabled = effective != null && effective.getData() != null
-                    && effective.getData().optBoolean("syncEnabled");
+            // Master gate: go live unless the server explicitly disables sync (default off -> active).
+            boolean enabled = effective == null || effective.getData() == null
+                    || !effective.getData().optBoolean("syncDisabled");
             if (enabled && !installed) {
                 SyncHook.installObserver(sync);
                 installed = true;
