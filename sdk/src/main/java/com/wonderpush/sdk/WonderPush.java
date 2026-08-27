@@ -2039,6 +2039,21 @@ public class WonderPush {
         }
         InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::trackInAppEvent, WonderPush::getUserAgent);
     }
+
+    /**
+     * Returns the synced contact object last received from the server through the SDK-sync channel,
+     * or {@code null} if sync isn't active yet or nothing has been synced for the current profile.
+     *
+     * <p>The shape of this object (contact id, attributes, etc.) is entirely server-defined — this
+     * method makes no assumption about its keys and returns it as received. It may be an empty
+     * object ({@code {}}) when the profile has no synced contact data yet; that is a valid state,
+     * not an error.</p>
+     */
+    @SuppressWarnings("unused")
+    public static JSONObject _contact() {
+        Object data = SyncManager.getInstance().dataForSource("contact");
+        return data instanceof JSONObject ? (JSONObject) data : null;
+    }
     /**
      * @see #ensureInitialized(Context, boolean)
      * @param context
