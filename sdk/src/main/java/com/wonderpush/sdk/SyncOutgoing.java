@@ -11,9 +11,9 @@ import java.util.Map;
  * Ported from wonderpush-ios-sdk {@code WPSyncOutgoing} /
  * wonderpush-javascript-sdk {@code src/wonderpush/sync-outgoing.ts}. Spec: algorithm.md:84-91.
  *
- * The SDK piggybacks per-source sync state onto the opportunistic API calls (POST /events and
- * PATCH /installation). Path matching is host-agnostic by suffix (via the shared classifier), so it
- * covers both the SDK API and the Measurements API.
+ * The SDK piggybacks per-source sync state onto the opportunistic API calls (POST /events,
+ * POST/PUT/PATCH /installation, and POST/PUT/PATCH /user). Path matching is host-agnostic by suffix
+ * (via the shared classifier), so it covers both the SDK API and the Measurements API.
  */
 class SyncOutgoing {
 

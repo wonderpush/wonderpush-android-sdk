@@ -36,8 +36,9 @@ class SyncProcessor {
     private static final Map<String, String> EXPLICIT_SOURCE_BY_PATH = new HashMap<>();
 
     static {
-        OPPORTUNISTIC_PATHS_BY_METHOD.put("POST", new String[]{"/events"});
-        OPPORTUNISTIC_PATHS_BY_METHOD.put("PATCH", new String[]{"/installation"});
+        OPPORTUNISTIC_PATHS_BY_METHOD.put("POST", new String[]{"/events", "/installation", "/user"});
+        OPPORTUNISTIC_PATHS_BY_METHOD.put("PUT", new String[]{"/installation", "/user"});
+        OPPORTUNISTIC_PATHS_BY_METHOD.put("PATCH", new String[]{"/installation", "/user"});
         // Explicit sync fetches: GET /v1/sync/{source}. The dedicated `/sync/` namespace keeps these
         // distinct from opportunistic resource paths — so GET /v1/installation (no /sync) classifies
         // as none, removing the old GET-vs-PATCH ambiguity on /installation.
