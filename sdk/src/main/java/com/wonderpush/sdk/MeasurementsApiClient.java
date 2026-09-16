@@ -56,6 +56,7 @@ public class MeasurementsApiClient {
         params.add("clientId", WonderPush.getClientId());
         params.add("devicePlatform", "Android");
         params.add("sdkVersion", WonderPush.SDK_VERSION);
+        params.add("_reachability", WonderPushRequestParamsDecorator.computeReachability());
         if (WonderPushConfiguration.getUserId() != null) {
             params.add("userId", WonderPushConfiguration.getUserId());
         }
