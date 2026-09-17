@@ -380,6 +380,84 @@ public class SegmenterTest {
         assertThat(new Segmenter(dataWithInstallation(dataEmpty, new JSONObject("{\"custom\":{\"date_foo\":\"2020Z\"}}"))).matchesInstallation(parsedSegment), is(true));
     }
 
+    private static String isoUtc(long timeMillis) {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.ROOT);
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        return sdf.format(new java.util.Date(timeMillis));
+    }
+
+
+    @Test
+    public void testItShouldMatchContactAttributeDateEqWithoutNamingConvention() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        // Unlike installation custom fields, contact attributes have no "date_" naming convention to
+        // signal a date. A `date` value node on the criterion is enough: the raw attribute value (string
+        // or number) is coerced to a timestamp before comparing, regardless of its field name.
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"contact\":{\".attributes.subscribedAt\":{\"eq\":{\"date\":\"2020-01-01T00:00:00.000Z\"}}}}"));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"2020-01-01T00:00:00.000Z\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":1577836800000}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"2020-01-01\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"2029-09-09T09:09:09.009+09:09\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"not a date\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":null}}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchContactAttributeDateComparisonWithoutNamingConvention() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"contact\":{\".attributes.subscribedAt\":{\"gt\":{\"date\":\"2020-01-01T00:00:00.000Z\"}}}}"));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"2020-06-01\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":1577836800001}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"2019-01-01\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":1577836799999}}"))).matchesInstallation(parsedSegment), is(false));
+        // Non-date-parseable values never satisfy the comparison.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"not a date\"}}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchUserAttributeDateAnyWithoutNamingConvention() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"contact\":{\".attributes.subscribedAt\":{\"any\":[{\"date\":\"2020-01-01T00:00:00.000Z\"}]}}}"));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"2020-01-01T00:00:00.000Z\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":1577836800000}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"2020-06-01\"}}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchContactAttributeDateAllWithoutNamingConvention() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        // `all` requires every listed date value to be found among the field's raw values, each coerced
+        // to a timestamp on its own (the field itself, e.g. a history of dates, has no naming convention).
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"contact\":{\".attributes.dates\":{\"all\":[{\"date\":\"2020-01-01\"},{\"date\":\"2020-06-01\"}]}}}"));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"dates\":[\"2020-01-01T00:00:00.000Z\",\"2020-06-01T00:00:00.000Z\"]}}"))).matchesInstallation(parsedSegment), is(true));
+        // Mixed representations (string and number) of the same instants still both count.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"dates\":[\"2020-01-01\",1590969600000]}}"))).matchesInstallation(parsedSegment), is(true));
+        // Extra unrelated values don't prevent a match.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"dates\":[\"2020-01-01\",\"2020-06-01\",\"2021-01-01\"]}}"))).matchesInstallation(parsedSegment), is(true));
+        // Missing one of the two required dates → no match.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"dates\":[\"2020-01-01\"]}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"dates\":[]}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"dates\":null}}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    @Test
+    public void testItShouldMatchContactAttributeRelativeDateGt() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
+        // "-P1Y" resolves to "one year before now". Uses a wide margin around the real clock (no fake
+        // timers on this platform) so the test isn't flaky.
+        ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\"contact\":{\".attributes.subscribedAt\":{\"gt\":{\"date\":\"-P1Y\"}}}}"));
+        long now = TimeSync.getTime();
+        long twoYearsAgo = now - 2L * 365 * 24 * 60 * 60 * 1000;
+        // More recent than a year ago (as a string and as a ms number) → matches.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"" + isoUtc(now) + "\"}}"))).matchesInstallation(parsedSegment), is(true));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":" + now + "}}"))).matchesInstallation(parsedSegment), is(true));
+        // Older than a year ago → no match.
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":\"" + isoUtc(twoYearsAgo) + "\"}}"))).matchesInstallation(parsedSegment), is(false));
+        assertThat(new Segmenter(dataWithContact(dataEmpty, new JSONObject("{\"attributes\":{\"subscribedAt\":" + twoYearsAgo + "}}"))).matchesInstallation(parsedSegment), is(false));
+    }
+
+    // Note: `any`/`all` require exact millisecond equality against the field value, which combined
+    // with a relative date (re-resolved against the real clock at match time, with no fake-timer
+    // seam on this platform) would make an exact-equality assertion inherently flaky. That coupling
+    // (isDateComparison triggered by RelativeDateValueNode) is instead covered by
+    // testItShouldMatchContactAttributeRelativeDateGt above, while the equality coercion itself for
+    // `any`/`all` is covered by the absolute-date tests above.
+
     @Test
     public void testItShouldMatchFieldFooComparisonLong() throws JSONException, BadInputError, UnknownValueError, UnknownCriterionError {
         ASTCriterionNode parsedSegment = Segmenter.parseInstallationSegment(new JSONObject("{\".foo\":{\"gt\":9223372036854775806}}"));

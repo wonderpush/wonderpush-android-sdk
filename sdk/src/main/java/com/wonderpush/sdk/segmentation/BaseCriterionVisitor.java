@@ -269,12 +269,14 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
     public Boolean visitEqualityCriterionNode(EqualityCriterionNode node) {
         List<Object> dataSourceValues = node.context.dataSource.accept(this);
         Object actualValue = node.value.accept(this);
+        boolean isDateComparison = ((Object) node.value) instanceof DateValueNode || ((Object) node.value) instanceof RelativeDateValueNode;
         boolean result;
         if (actualValue == null || actualValue == JSONObject.NULL) {
             result = dataSourceValues.isEmpty();
         } else {
             result = false;
-            for (Object dataSourceValue : dataSourceValues) {
+            for (Object rawDataSourceValue : dataSourceValues) {
+                Object dataSourceValue = isDateComparison ? Segmenter.coerceToDateValue(node.context, rawDataSourceValue) : rawDataSourceValue;
                 if (actualValue instanceof Number) {
                     if (!(dataSourceValue instanceof Number)) {
                         result = false;
@@ -299,13 +301,15 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
         List<Object> dataSourceValues = node.context.dataSource.accept(this);
         for (ASTValueNode<Object> value : node.values) {
             Object actualValue = value.accept(this);
+            boolean isDateComparison = ((Object) value) instanceof DateValueNode || ((Object) value) instanceof RelativeDateValueNode;
             if (actualValue == null || actualValue == JSONObject.NULL) {
                 if (dataSourceValues.isEmpty()) {
                     if (debug) Log.d(TAG, "[visitAnyCriterionNode] return true for " + dataSourceValues);
                     return true;
                 }
             }
-            for (Object dataSourceValue : dataSourceValues) {
+            for (Object rawDataSourceValue : dataSourceValues) {
+                Object dataSourceValue = isDateComparison ? Segmenter.coerceToDateValue(node.context, rawDataSourceValue) : rawDataSourceValue;
                 if (actualValue.equals(dataSourceValue)) {
                     if (debug) Log.d(TAG, "[visitAnyCriterionNode] return true for " + dataSourceValues);
                     return true;
@@ -322,12 +326,14 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
         for (ASTValueNode<Object> value : node.values) {
             boolean found = false;
             Object actualValue = value.accept(this);
+            boolean isDateComparison = ((Object) value) instanceof DateValueNode || ((Object) value) instanceof RelativeDateValueNode;
             if (actualValue == null || actualValue == JSONObject.NULL) {
                 if (dataSourceValues.isEmpty()) {
                     found = true;
                 }
             } else {
-                for (Object dataSourceValue : dataSourceValues) {
+                for (Object rawDataSourceValue : dataSourceValues) {
+                    Object dataSourceValue = isDateComparison ? Segmenter.coerceToDateValue(node.context, rawDataSourceValue) : rawDataSourceValue;
                     if (actualValue.equals(dataSourceValue)) {
                         found = true;
                         break;
@@ -377,7 +383,9 @@ abstract class BaseCriterionVisitor implements ASTValueVisitor<Object>, ASTCrite
         List<Object> dataSourceValues = node.context.dataSource.accept(this);
         boolean result = false;
         Object actualValue = node.value.accept(this);
-        for (Object dataSourceValue : dataSourceValues) {
+        boolean isDateComparison = ((Object) node.value) instanceof DateValueNode || ((Object) node.value) instanceof RelativeDateValueNode;
+        for (Object rawDataSourceValue : dataSourceValues) {
+            Object dataSourceValue = isDateComparison ? Segmenter.coerceToDateValue(node.context, rawDataSourceValue) : rawDataSourceValue;
             try {
                 switch (node.comparator) {
                     case gt:

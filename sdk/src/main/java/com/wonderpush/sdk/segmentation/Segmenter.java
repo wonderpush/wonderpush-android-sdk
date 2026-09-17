@@ -2,6 +2,8 @@ package com.wonderpush.sdk.segmentation;
 
 import com.wonderpush.sdk.segmentation.parser.ASTCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.BadInputError;
+import com.wonderpush.sdk.segmentation.parser.DefaultValueNodeParser;
+import com.wonderpush.sdk.segmentation.parser.ParsingContext;
 import com.wonderpush.sdk.segmentation.parser.SegmentationFactory;
 import com.wonderpush.sdk.segmentation.parser.UnknownValueError;
 import com.wonderpush.sdk.segmentation.parser.criteria.UnknownCriterionError;
@@ -60,6 +62,19 @@ public class Segmenter {
 
     public boolean matchesInstallation(ASTCriterionNode parsedInstallationSegment) {
         return parsedInstallationSegment.accept(new InstallationVisitor(data));
+    }
+
+    // Coerces a raw field value (number, ISO8601/RFC3339 string, or anything else) to a unix
+    // timestamp in ms, the same way DefaultValueNodeParser.parseDate does for `date` value nodes.
+    // Lets any field be compared against an explicit date value regardless of how it was stored,
+    // without relying on a naming convention. Values that can't be parsed as dates are returned
+    // unchanged, so the comparison simply won't match.
+    public static Object coerceToDateValue(ParsingContext context, Object input) {
+        try {
+            return DefaultValueNodeParser.parseDate(context, "value", input).getValue();
+        } catch (BadInputError ex) {
+            return input;
+        }
     }
 
 }
