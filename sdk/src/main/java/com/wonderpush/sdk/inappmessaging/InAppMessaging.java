@@ -133,6 +133,10 @@ public class InAppMessaging {
     void fetchInAppConfig(JSONObjectHandler handler);
     void onReady(PrivateController privateController);
     PresenceManager getPresenceManager();
+    /** The sdk-sync `popups` payload (a JSONArray of popup items), or null when sync is off/absent. */
+    org.json.JSONArray getSyncedPopups();
+    /** The sdk-sync `contact` object, or null when sync is off/absent. */
+    JSONObject getSyncedContact();
   }
 
   /**

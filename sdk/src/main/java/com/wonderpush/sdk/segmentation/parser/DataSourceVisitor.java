@@ -1,5 +1,6 @@
 package com.wonderpush.sdk.segmentation.parser;
 
+import com.wonderpush.sdk.segmentation.parser.datasource.ContactSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.EventSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.FieldSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.GeoDateSource;
@@ -15,6 +16,8 @@ public interface DataSourceVisitor<T> {
     public T visitUserSource(UserSource dataSource);
 
     public T visitInstallationSource(InstallationSource dataSource);
+
+    public T visitContactSource(ContactSource dataSource);
 
     public T visitEventSource(EventSource dataSource);
 

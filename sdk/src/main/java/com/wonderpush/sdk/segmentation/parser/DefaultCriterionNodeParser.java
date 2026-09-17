@@ -15,6 +15,7 @@ import com.wonderpush.sdk.segmentation.parser.criteria.PrefixCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.criteria.PresenceCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.criteria.SubscriptionStatusCriterionNode;
 import com.wonderpush.sdk.segmentation.parser.criteria.UnknownCriterionError;
+import com.wonderpush.sdk.segmentation.parser.datasource.ContactSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.EventSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.FieldSource;
 import com.wonderpush.sdk.segmentation.parser.datasource.GeoDateSource;
@@ -50,6 +51,7 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         this.registerExactNameParser("subscriptionStatus", DefaultCriterionNodeParser::parseSubscriptionStatus);
         this.registerExactNameParser("user", DefaultCriterionNodeParser::parseUser);
         this.registerExactNameParser("installation", DefaultCriterionNodeParser::parseInstallation);
+        this.registerExactNameParser("contact", DefaultCriterionNodeParser::parseContact);
         this.registerExactNameParser("event", DefaultCriterionNodeParser::parseEvent);
         // Available only on non-root data source
         this.registerExactNameParser("eq", DefaultCriterionNodeParser::parseEq);
@@ -171,6 +173,18 @@ public class DefaultCriterionNodeParser extends ConfigurableCriterionNodeParser 
         if (rootDataSource instanceof UserSource || rootDataSource instanceof EventSource) {
             return new JoinCriterionNode(newContext, context.parser.parseCriterion(newContext, checkedInputValue));
         } else if (rootDataSource instanceof InstallationSource) {
+            return context.parser.parseCriterion(newContext, checkedInputValue);
+        }
+        throw new BadInputError("\"" + key + "\" is not supported in this context");
+    }
+
+    public static ASTCriterionNode parseContact(ParsingContext context, String key, Object input) throws BadInputError, UnknownCriterionError, UnknownValueError {
+        DataSource rootDataSource = context.dataSource.getRootDataSource();
+        JSONObject checkedInputValue = ensureObject(key, input);
+        ParsingContext newContext = context.withDataSource(new ContactSource());
+        if (rootDataSource instanceof InstallationSource || rootDataSource instanceof UserSource || rootDataSource instanceof EventSource) {
+            return new JoinCriterionNode(newContext, context.parser.parseCriterion(newContext, checkedInputValue));
+        } else if (rootDataSource instanceof ContactSource) {
             return context.parser.parseCriterion(newContext, checkedInputValue);
         }
         throw new BadInputError("\"" + key + "\" is not supported in this context");

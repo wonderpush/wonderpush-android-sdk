@@ -1798,6 +1798,12 @@ public class WonderPush {
                         WonderPushConfiguration.setMaximumCollapsedLastBuiltinTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_LAST_BUILTIN_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_COLLAPSED_LAST_BUILTIN_TRACKED_EVENTS_COUNT));
                         WonderPushConfiguration.setMaximumCollapsedLastCustomTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_LAST_CUSTOM_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_COLLAPSED_LAST_CUSTOM_TRACKED_EVENTS_COUNT));
                         WonderPushConfiguration.setMaximumCollapsedOtherTrackedEventsCount(configData.optInt(Constants.REMOTE_CONFIG_TRACKED_EVENTS_COLLAPSED_OTHER_MAXIMUM_COUNT_KEY, WonderPushConfiguration.DEFAULT_MAXIMUM_COLLAPSED_OTHER_TRACKED_EVENTS_COUNT));
+
+                        // sdk-sync: refresh knobs + the enable gate from remote config. Builds the sync
+                        // stack once, then installs/uninstalls the request hook based on syncDisabled.
+                        if (sRemoteConfigManager != null) {
+                            SyncManager.getInstance().refresh(sRemoteConfigManager, buildSyncIdentifiersProvider(), buildSyncApiRequestSender());
+                        }
                     }
                 };
 
@@ -2017,9 +2023,36 @@ public class WonderPush {
                 public PresenceManager getPresenceManager() {
                     return WonderPush.getPresenceManager();
                 }
+
+                @Override
+                public org.json.JSONArray getSyncedPopups() {
+                    Object data = SyncManager.getInstance().dataForSource("popups");
+                    return data instanceof org.json.JSONArray ? (org.json.JSONArray) data : null;
+                }
+
+                @Override
+                public JSONObject getSyncedContact() {
+                    Object data = SyncManager.getInstance().dataForSource("contact");
+                    return data instanceof JSONObject ? (JSONObject) data : null;
+                }
             });
         }
         InAppMessagingDisplay.initialize(application, sInAppMessaging, WonderPush::safeDefer, WonderPush::trackInAppEvent, WonderPush::getUserAgent);
+    }
+
+    /**
+     * Returns the synced contact object last received from the server through the SDK-sync channel,
+     * or {@code null} if sync isn't active yet or nothing has been synced for the current profile.
+     *
+     * <p>The shape of this object (contact id, attributes, etc.) is entirely server-defined — this
+     * method makes no assumption about its keys and returns it as received. It may be an empty
+     * object ({@code {}}) when the profile has no synced contact data yet; that is a valid state,
+     * not an error.</p>
+     */
+    @SuppressWarnings("unused")
+    public static JSONObject _contact() {
+        Object data = SyncManager.getInstance().dataForSource("contact");
+        return data instanceof JSONObject ? (JSONObject) data : null;
     }
     /**
      * @see #ensureInitialized(Context, boolean)
@@ -2896,6 +2929,45 @@ public class WonderPush {
 
     static RemoteConfigManager getRemoteConfigManager() {
         return sRemoteConfigManager;
+    }
+
+    /** Supplies the current identifiers to the sdk-sync stack (never contactId — the server resolves it). */
+    private static Sync.IdentifiersProvider buildSyncIdentifiersProvider() {
+        return () -> {
+            JSONObject ids = new JSONObject();
+            try {
+                String userId = WonderPushConfiguration.getUserId();
+                if (userId != null) ids.put("userId", userId);
+                String deviceId = WonderPushConfiguration.getDeviceId();
+                if (deviceId != null) ids.put("deviceId", deviceId);
+                String installationId = WonderPushConfiguration.getInstallationId();
+                if (installationId != null) ids.put("installationId", installationId);
+            } catch (JSONException e) {
+                WonderPush.logError("Could not build sync identifiers", e);
+            }
+            return ids;
+        };
+    }
+
+    /** Issues the sdk-sync explicit-fetch GET via the SDK API client. */
+    private static SyncApiRequestSender buildSyncApiRequestSender() {
+        return (userId, path, params, completion) -> {
+            Request.Params p = new Request.Params();
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                p.put(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+            ApiClient.getInstance().requestForUser(userId, HttpMethod.GET, path, p, new ResponseHandler() {
+                @Override
+                public void onSuccess(Response response) {
+                    completion.onComplete(response != null && !response.isError());
+                }
+
+                @Override
+                public void onFailure(Throwable e, Response errorResponse) {
+                    completion.onComplete(false);
+                }
+            });
+        };
     }
 
     private interface EventsBlackWhiteListCallback {

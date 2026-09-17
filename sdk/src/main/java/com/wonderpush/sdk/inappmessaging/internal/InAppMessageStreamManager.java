@@ -215,6 +215,8 @@ public class InAppMessageStreamManager {
                                                   Campaign campaign = Campaign.fromJSON(campaignJson);
                                                   if (campaign != null) messages.add(campaign);
                                               }
+                                              // sdk-sync: append synced per-user popups (config first, synced appended).
+                                              mergeSyncedPopups(messages);
                                               emitter.onSuccess(messages);
                                           }
                                           emitter.onComplete();
@@ -263,6 +265,33 @@ public class InAppMessageStreamManager {
                       campaign.getNotificationMetadata().getCampaignId(), isCapped));
   }
 
+  /**
+   * sdk-sync: append campaigns from the synced per-user `popups` source to the config-delivered
+   * campaigns (config first, synced appended — no dedupe, mirroring the iOS/JS reference). Best-effort
+   * and null-safe: does nothing when sync is off/absent. Soft-delete tombstones and expired items are
+   * skipped.
+   */
+  private void mergeSyncedPopups(List<Campaign> messages) {
+    try {
+      JSONArray syncedPopups = inAppMessagingDelegate.getSyncedPopups();
+      if (syncedPopups == null) return;
+      long now = clock.now();
+      for (int i = 0; i < syncedPopups.length(); i++) {
+        JSONObject popup = syncedPopups.optJSONObject(i);
+        if (popup == null) continue;
+        if ("deleted".equals(popup.optString("status", null))) continue;
+        Object exp = popup.opt("expirationDate");
+        if (exp instanceof Number && ((Number) exp).longValue() < now) continue;
+        JSONObject campaignJson = popup.optJSONObject("data");
+        if (campaignJson == null) continue;
+        Campaign campaign = Campaign.fromJSON(campaignJson);
+        if (campaign != null) messages.add(campaign);
+      }
+    } catch (Throwable t) {
+      Logging.loge("sdk-sync: failed to merge synced popups", t);
+    }
+  }
+
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
           EventOccurrence event,
           Function<Campaign, Maybe<Campaign>> filterAlreadyImpressed,
@@ -281,8 +310,10 @@ public class InAppMessageStreamManager {
       PresenceManager.PresencePayload lastPresencePayload = inAppMessagingDelegate.getPresenceManager().getLastPresencePayload();
       Segmenter.PresenceInfo presenceInfo = lastPresencePayload == null ? null : new Segmenter.PresenceInfo(lastPresencePayload.getFromDate().getTime(), lastPresencePayload.getUntilDate().getTime(), lastPresencePayload.getElapsedTime());
 
-      // Build segmenter data
-      segmenterData = new Segmenter.Data(installation, trackedEvents, presenceInfo, WonderPushConfiguration.getLastAppOpenDate());
+      // Build segmenter data. Inject the synced contact object for `contact` segmentation criteria
+      // (null when sync is off/absent).
+      JSONObject contact = inAppMessagingDelegate.getSyncedContact();
+      segmenterData = new Segmenter.Data(installation, trackedEvents, presenceInfo, WonderPushConfiguration.getLastAppOpenDate(), contact);
     } catch (JSONException e) {
       Logging.loge("Could not create segmenter data", e);
     }
