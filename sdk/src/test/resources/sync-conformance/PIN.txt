@@ -23,5 +23,11 @@ coalesce-sync-after-time-due-date.vectors.json (new file, 7 cases) and 3 new cas
 process-source-block.vectors.json (18 total), plus the syncAfterTimeDueDate:0 field on every
 state/newState struct in that file. Applied identically on iOS (same commit) and vendored here
 byte-for-byte, per this file's "Vendored into wonderpush-android-sdk" note above. classify-response
-.vectors.json and is-state-stale.vectors.json were deliberately left untouched (unrelated,
-already-shipped accessToken-opportunistic-sync drift, out of scope here).
+.vectors.json and is-state-stale.vectors.json were deliberately left untouched at that time
+(unrelated, already-shipped accessToken-opportunistic-sync drift, out of scope then).
+
+Patched again 2026-09-18 for wonderpush-javascript-sdk commit 2a60757bb311f27abce6a1e3408026b727490a15
+("treat accessToken calls as opportunistic sync", CP-56): added 2 new cases to
+classify-response.vectors.json (9 total) for POST (/v1/)authentication/accessToken -> opportunistic.
+Vendored byte-for-byte from the wonderpush-ios-sdk reconciled set (same commit). is-state-stale
+.vectors.json is still untouched/unreconciled (unrelated drift, still out of scope).

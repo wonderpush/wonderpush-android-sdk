@@ -36,7 +36,10 @@ class SyncProcessor {
     private static final Map<String, String> EXPLICIT_SOURCE_BY_PATH = new HashMap<>();
 
     static {
-        OPPORTUNISTIC_PATHS_BY_METHOD.put("POST", new String[]{"/events", "/installation", "/user"});
+        // /authentication/accessToken is opportunistic too (CP-56 "Late identifier resolution"): its
+        // response may carry a `_contactSync` block (e.g. a `syncAfterTime` hint) when the server
+        // can't resolve a visitorId to a contactId synchronously.
+        OPPORTUNISTIC_PATHS_BY_METHOD.put("POST", new String[]{"/events", "/installation", "/user", "/authentication/accessToken"});
         OPPORTUNISTIC_PATHS_BY_METHOD.put("PUT", new String[]{"/installation", "/user"});
         OPPORTUNISTIC_PATHS_BY_METHOD.put("PATCH", new String[]{"/installation", "/user"});
         // Explicit sync fetches: GET /v1/sync/{source}. The dedicated `/sync/` namespace keeps these
