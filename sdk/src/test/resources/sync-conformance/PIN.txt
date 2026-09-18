@@ -16,3 +16,12 @@ A non-empty diff after re-vendoring means the reference behavior changed; update
 ---
 Vendored into wonderpush-android-sdk from the wonderpush-ios-sdk reconciled set on 2026-07-01
 (identical bytes), so all three SDKs run the same vectors. Keep in lockstep with iOS.
+
+Patched 2026-09-18 for CP-56 "Late identifier resolution" (syncAfterTime), ported from
+wonderpush-javascript-sdk commit 93e49c7b2ac13fcacd262306b06ed378c527e929: added
+coalesce-sync-after-time-due-date.vectors.json (new file, 7 cases) and 3 new cases to
+process-source-block.vectors.json (18 total), plus the syncAfterTimeDueDate:0 field on every
+state/newState struct in that file. Applied identically on iOS (same commit) and vendored here
+byte-for-byte, per this file's "Vendored into wonderpush-android-sdk" note above. classify-response
+.vectors.json and is-state-stale.vectors.json were deliberately left untouched (unrelated,
+already-shipped accessToken-opportunistic-sync drift, out of scope here).

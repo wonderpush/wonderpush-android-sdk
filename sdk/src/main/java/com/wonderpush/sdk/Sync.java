@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
 
 /**
  * The sdk-sync orchestrator. Ported from wonderpush-ios-sdk {@code WPSync} /
@@ -35,6 +36,19 @@ class Sync implements SyncRequestObserver {
         SyncKnobs knobs();
     }
 
+    /** Cancel handle for a scheduled block; cancel() is a no-op if it already ran. */
+    interface Cancelable {
+        void cancel();
+    }
+
+    /**
+     * Run {@code block} after {@code delayMs} (immediately if &lt;= 0), for the CP-56 "Late identifier
+     * resolution" syncAfterTime scheduling. Default: {@link WonderPush#safeDefer}. Overridable in tests.
+     */
+    interface Scheduler {
+        Cancelable schedule(double delayMs, Runnable block);
+    }
+
     /**
      * Posted (best-effort) after a source's stored DATA changes as the result of applying a response
      * (reset / delta / clear). The in-app engine observes this for source "popups".
@@ -49,6 +63,10 @@ class Sync implements SyncRequestObserver {
     private final Map<String, Object> procLocks = new HashMap<>();
     private final Object registryLock = new Object();
     private final List<SourceDataChangeListener> listeners = new CopyOnWriteArrayList<>();
+    // Live cancellable handles for the CP-56 "Late identifier resolution" syncAfterTime scheduling,
+    // keyed by source name. Kept OUT of SyncSourceState: a live timer handle isn't persistable, only
+    // the due date is (state.syncAfterTimeDueDate). Protected by registryLock.
+    private final Map<String, Cancelable> syncAfterTimeTimers = new HashMap<>();
 
     /** Current identifiers. Default: empty. */
     IdentifiersProvider identifiersProvider = JSONObject::new;
@@ -56,6 +74,12 @@ class Sync implements SyncRequestObserver {
     KnobsProvider knobsProvider = SyncKnobs::defaultKnobs;
     /** Current time in ms. Default: server-adjusted clock. */
     SyncClock nowProvider = TimeSync::getTime;
+    /** Default: {@link WonderPush#safeDefer}, cancellable via {@link Future#cancel}. */
+    Scheduler scheduler = (delayMs, block) -> {
+        if (delayMs <= 0) { block.run(); return () -> {}; }
+        final Future<Void> future = WonderPush.safeDefer(() -> { block.run(); return null; }, (long) delayMs);
+        return () -> future.cancel(false);
+    };
 
     Sync(SyncStateStore stateStore, SyncFetching fetcher) {
         this.stateStore = stateStore;
@@ -68,6 +92,22 @@ class Sync implements SyncRequestObserver {
         synchronized (registryLock) {
             sources.put(name, plugin);
             if (!procLocks.containsKey(name)) procLocks.put(name, new Object());
+        }
+
+        // Rearm any syncAfterTime due date persisted from a previous session (CP-56 — "Late
+        // identifier resolution" must not lose the one scheduled extra explicit sync across
+        // process restarts). Best-effort: no usable deviceId yet just means sync is a no-op for now.
+        try {
+            JSONObject ids = currentValidIdentifiers();
+            if (ids == null) return;
+            String userId = idString(ids, "userId");
+            String deviceId = idString(ids, "deviceId");
+            SyncSourceState state = stateStore.loadSource(name, userId, deviceId);
+            if (state.syncAfterTimeDueDate > 0) {
+                armSyncAfterTimeTimer(name, state.syncAfterTimeDueDate, ids, userId, deviceId);
+            }
+        } catch (Throwable t) {
+            Log.w(WonderPush.TAG, "Sync: registerSource syncAfterTime rearm failed for " + name, t);
         }
     }
 
@@ -208,8 +248,92 @@ class Sync implements SyncRequestObserver {
             fetcher.fetchSource(source, userId, deviceId, ids, effectiveKnobs(),
                     "weak".equals(decision.triggerFetch), decision.fetchHint, null);
         }
+        if (decision.syncAfterTime != null) {
+            // CP-56 "Late identifier resolution" — additive, never gated on the rest of this decision
+            // (in particular must still schedule even when the payload above was rejected as stale).
+            // Fire-and-forget, outside the lock, like the other triggers.
+            scheduleSyncAfterTime(source, decision.syncAfterTime.doubleValue(), ids, userId, deviceId);
+        }
         // decision.continuePaging (multi-object paging) is wired with the popups source.
     }
+
+    // region syncAfterTime (CP-56 "Late identifier resolution")
+
+    /**
+     * Schedule (or coalesce into an already-scheduled) the ONE extra explicit sync requested via
+     * {@code syncAfterTime}. Additive: never suppresses, postpones, or replaces any other sync
+     * trigger. Persists the due date so it survives a process restart; the in-memory timer is
+     * rearmed from that persisted value in {@link #registerSource}.
+     */
+    private void scheduleSyncAfterTime(String source, double delayMs, JSONObject ids, String userId, String deviceId) {
+        long dueDate;
+        try {
+            synchronized (procLockForSource(source)) {
+                SyncSourceState state = stateStore.loadSource(source, userId, deviceId);
+                long now = nowProvider.now();
+                dueDate = SyncFetchPolicy.coalesceSyncAfterTimeDueDate(now, delayMs, state.syncAfterTimeDueDate);
+                if (dueDate != state.syncAfterTimeDueDate) {
+                    state.syncAfterTimeDueDate = dueDate;
+                    stateStore.saveState(state, source, userId, deviceId);
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(WonderPush.TAG, "Sync: syncAfterTime scheduling failed for " + source, t);
+            return;
+        }
+        armSyncAfterTimeTimer(source, dueDate, ids, userId, deviceId);
+    }
+
+    /**
+     * (Re)arm the in-memory timer for a source's syncAfterTime due date, cancelling any previous
+     * timer for that source (repeated hints must not stack up parallel timers, or a
+     * superseded-but-still-live timer would fire a redundant extra fetch after an earlier-coalesced
+     * one already did).
+     */
+    private void armSyncAfterTimeTimer(String source, long dueDate, JSONObject ids, String userId, String deviceId) {
+        Cancelable previous;
+        synchronized (registryLock) {
+            previous = syncAfterTimeTimers.remove(source);
+        }
+        if (previous != null) previous.cancel();
+
+        if (dueDate <= 0) return;   // "nothing scheduled": only clears a pending timer
+
+        double delayMs = (double) (dueDate - nowProvider.now());
+        Cancelable handle = scheduler.schedule(delayMs, () -> {
+            synchronized (registryLock) {
+                syncAfterTimeTimers.remove(source);
+            }
+            fireSyncAfterTime(source, dueDate, ids, userId, deviceId);
+        });
+        synchronized (registryLock) {
+            syncAfterTimeTimers.put(source, handle);
+        }
+    }
+
+    /**
+     * The scheduled extra explicit sync fires: clear the persisted due date (only if it's still the
+     * one we armed for — a newer, earlier hint may have coalesced to an earlier time and already
+     * fired and cleared it) and trigger a normal (non-weak, no hint) explicit fetch. Still subject to
+     * the per-source rate-limit floor via the fetcher's own gating — that's intentional (algorithm.md
+     * CP-56 requirement).
+     */
+    private void fireSyncAfterTime(String source, long expectedDueDate, JSONObject ids, String userId, String deviceId) {
+        try {
+            synchronized (procLockForSource(source)) {
+                SyncSourceState state = stateStore.loadSource(source, userId, deviceId);
+                if (state.syncAfterTimeDueDate == expectedDueDate) {
+                    state.syncAfterTimeDueDate = 0;
+                    stateStore.saveState(state, source, userId, deviceId);
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(WonderPush.TAG, "Sync: syncAfterTime firing failed to clear due date for " + source, t);
+        }
+        fetcher.fetchSource(source, userId, deviceId, ids, effectiveKnobs(), false, null, null);
+    }
+
+    // endregion
 
     /**
      * Fold the decision's data transforms into the new state and persist once, under the captured

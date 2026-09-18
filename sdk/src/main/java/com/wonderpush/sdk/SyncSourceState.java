@@ -31,6 +31,12 @@ class SyncSourceState {
     long lastFetchAttemptedDate;
     /** Local: consecutive failures, drives exponential backoff. */
     int lastFetchUnsuccessfulAttemptCount;
+    /**
+     * Local: due date (ms epoch) of the one extra explicit sync requested via {@code syncAfterTime}
+     * (CP-56 — "Late identifier resolution"). 0 means none scheduled. Never sent to the server;
+     * repeated hints coalesce to the earliest due time (see SyncFetchPolicy's coalesce helper).
+     */
+    long syncAfterTimeDueDate;
     /** Source-owned payload: JSONObject (single-object), JSONArray (multi-object), or null. */
     Object data;
 
@@ -64,6 +70,7 @@ class SyncSourceState {
         state.lastReadDate = readLong(dict, "lastReadDate");
         state.lastFetchAttemptedDate = readLong(dict, "lastFetchAttemptedDate");
         state.lastFetchUnsuccessfulAttemptCount = (int) readLong(dict, "lastFetchUnsuccessfulAttemptCount");
+        state.syncAfterTimeDueDate = readLong(dict, "syncAfterTimeDueDate");
         state.data = valueOrNull(dict, "data");
         return state;
     }
@@ -78,6 +85,7 @@ class SyncSourceState {
             dict.put("lastReadDate", lastReadDate);
             dict.put("lastFetchAttemptedDate", lastFetchAttemptedDate);
             dict.put("lastFetchUnsuccessfulAttemptCount", lastFetchUnsuccessfulAttemptCount);
+            dict.put("syncAfterTimeDueDate", syncAfterTimeDueDate);
             dict.put("data", data != null ? data : JSONObject.NULL);
         } catch (JSONException e) {
             // The keys are constant and the values are JSON-safe; this cannot happen.
@@ -113,6 +121,7 @@ class SyncSourceState {
         c.lastReadDate = lastReadDate;
         c.lastFetchAttemptedDate = lastFetchAttemptedDate;
         c.lastFetchUnsuccessfulAttemptCount = lastFetchUnsuccessfulAttemptCount;
+        c.syncAfterTimeDueDate = syncAfterTimeDueDate;
         c.data = data;
         return c;
     }
@@ -133,6 +142,7 @@ class SyncSourceState {
                 && lastReadDate == o.lastReadDate
                 && lastFetchAttemptedDate == o.lastFetchAttemptedDate
                 && lastFetchUnsuccessfulAttemptCount == o.lastFetchUnsuccessfulAttemptCount
+                && syncAfterTimeDueDate == o.syncAfterTimeDueDate
                 && nilSafeEqual(lastSyncMeta, o.lastSyncMeta)
                 && nilSafeEqual(lastVersionId, o.lastVersionId)
                 && nilSafeEqual(data, o.data);
@@ -141,7 +151,7 @@ class SyncSourceState {
     @Override
     public int hashCode() {
         return (int) (lastSyncDate ^ lastVersion ^ lastReadDate
-                ^ lastFetchAttemptedDate ^ lastFetchUnsuccessfulAttemptCount);
+                ^ lastFetchAttemptedDate ^ lastFetchUnsuccessfulAttemptCount ^ syncAfterTimeDueDate);
     }
 
     @Override

@@ -123,6 +123,20 @@ public class SyncConformanceTest {
     }
 
     @Test
+    public void testCoalesceSyncAfterTimeDueDate() throws Exception {
+        JSONArray cases = casesOf("coalesce-sync-after-time-due-date.vectors.json");
+        for (int i = 0; i < cases.length(); i++) {
+            JSONObject c = cases.getJSONObject(i);
+            JSONObject in = c.getJSONObject("input");
+            Object existing = orNull(in.opt("existingDueDate"));
+            long existingDueDate = existing instanceof Number ? ((Number) existing).longValue() : 0;
+            long r = SyncFetchPolicy.coalesceSyncAfterTimeDueDate(
+                    in.getLong("now"), in.getDouble("delayMs"), existingDueDate);
+            assertEquals(c.getString("name"), c.getLong("expected"), r);
+        }
+    }
+
+    @Test
     public void testMergeKnobs() throws Exception {
         JSONArray cases = casesOf("merge-knobs.vectors.json");
         for (int i = 0; i < cases.length(); i++) {

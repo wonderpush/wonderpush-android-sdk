@@ -19,7 +19,7 @@ class SyncResponseBlock {
 
     private static final String[] RECOGNIZED = {
             "meta", "version", "versionId", "readDate", "data", "delta",
-            "knownVersion", "knownVersionId", "knownReadDate",
+            "knownVersion", "knownVersionId", "knownReadDate", "syncAfterTime",
     };
 
     private final JSONObject raw;
@@ -68,6 +68,14 @@ class SyncResponseBlock {
     Number readDate() { return numberForKey("readDate"); }
     Number knownVersion() { return numberForKey("knownVersion"); }
     Number knownReadDate() { return numberForKey("knownReadDate"); }
+    /**
+     * Duration in MILLISECONDS (CP-56 — "Late identifier resolution"): the server asks for one
+     * additional explicit sync after this delay, e.g. because an install holds a Visitor ID but no
+     * Contact ID yet and the server is retrying that lookup under its own backoff. Carries no
+     * {@code meta} and confirms nothing about the source — see SyncProcessor and
+     * SyncDecision#syncAfterTime.
+     */
+    Number syncAfterTime() { return numberForKey("syncAfterTime"); }
 
     boolean hasVersionId() { return hasKey("versionId"); }
     Object versionId() { return raw.opt("versionId"); }        // Number | String | JSONObject.NULL

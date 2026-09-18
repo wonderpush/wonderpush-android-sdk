@@ -41,6 +41,18 @@ class SyncDecision {
     boolean continuePaging;
 
     /**
+     * Duration in MILLISECONDS, echoed straight from block.syncAfterTime (CP-56 — "Late identifier
+     * resolution"). ADDITIVE: the caller must schedule one extra explicit fetch after this delay
+     * WITHOUT suppressing, postponing, or replacing anything else this decision (or any other
+     * trigger) asks for. Repeated hints (the server re-emits on every opportunistic call until the
+     * explicit call lands) must coalesce to the earliest due time already scheduled, not reset it
+     * later. The resulting fetch is still subject to the per-source rate-limit floor
+     * (minSourceFetchIntervalMs). Set independent of acceptance/state processing — never implies
+     * nextState. null means none.
+     */
+    Number syncAfterTime;
+
+    /**
      * Minimal dictionary matching the JS decision shape (omits unset fields). Used by the
      * conformance harness for deep-equality against the vectors' {@code expected}.
      */
@@ -54,6 +66,7 @@ class SyncDecision {
             if (triggerFetch != null) dict.put("triggerFetch", triggerFetch);
             if (fetchHint != null) dict.put("fetchHint", fetchHint.toJSON());
             if (continuePaging) dict.put("continuePaging", true);
+            if (syncAfterTime != null) dict.put("syncAfterTime", syncAfterTime);
         } catch (JSONException e) {
             // Constant keys, JSON-safe values; cannot happen.
         }

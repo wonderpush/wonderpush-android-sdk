@@ -47,6 +47,21 @@ class SyncFetchPolicy {
         return capped * (1 + rand * knobs.exponentialBackoffJitterRatio);
     }
 
+    /**
+     * Coalesce a freshly-received {@code syncAfterTime} hint (CP-56 — "Late identifier resolution")
+     * into the due date the SDK should schedule its one extra explicit sync for.
+     *
+     * The server re-emits the hint on every opportunistic call until the explicit call lands
+     * (expected, not a bug) — so repeated hints must coalesce to the EARLIEST due time already
+     * scheduled, never pushed later by a subsequent hint. If nothing is scheduled yet
+     * ({@code existingDueDate} is 0), or the existing due date has already passed, the fresh hint wins.
+     */
+    static long coalesceSyncAfterTimeDueDate(long now, double delayMs, long existingDueDate) {
+        long candidate = now + (long) Math.max(0.0, delayMs);
+        if (existingDueDate > now && existingDueDate <= candidate) return existingDueDate;
+        return candidate;
+    }
+
     /** True iff value is a non-empty string (mirrors JS truthiness for the identifier fields). */
     private static boolean nonEmptyString(Object value) {
         return value instanceof String && ((String) value).length() > 0;

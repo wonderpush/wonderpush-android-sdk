@@ -110,6 +110,14 @@ class SyncProcessor {
         SyncSourceState next = state.copy();
         boolean stateChanged = false;
 
+        // 2b. syncAfterTime (CP-56 — "Late identifier resolution"). Set FIRST and unconditionally so
+        // it survives every early return below (e.g. a rejected stale payload) — it's additive and
+        // independent of everything else in the block, and must never touch
+        // lastVersion/lastVersionId/lastReadDate/lastSyncMeta. The caller (fetch scheduling) owns
+        // coalescing repeated hints to the earliest due time and enforcing the per-source rate-limit
+        // floor.
+        if (block.syncAfterTime() != null) decision.syncAfterTime = block.syncAfterTime();
+
         // 3. meta is opaque — store + echo only, no acceptance gate.
         if (block.meta() != null) { next.lastSyncMeta = block.meta(); stateChanged = true; }
 
