@@ -51,6 +51,10 @@ bd close <id>         # Complete work
 <!-- END BEADS INTEGRATION -->
 
 
+## Release
+
+Release instructions (core SDK and FCM/HCM modules): [How to release wonderpush-android-sdk](https://app.notion.com/p/3fa449002dcb81f79c26ee98c870b255) (Notion, Core Push team). Signing/publishing credentials live in `~/.gradle/gradle.properties`, never in the repo.
+
 ## Build & Test
 
 _Add your build and test commands here_
