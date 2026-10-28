@@ -82,6 +82,11 @@ public class PushServiceManager {
         String registrationId = result.getData();
         String senderIds = result.getSenderIds();
         String service = result.getService();
+        if ((service == null || service.length() == 0) && sUsedPushService != null) {
+            // The service may be missing when replaying a cached result stored before the service was persisted,
+            // fallback to the push service in use rather than sending a push token without service.
+            service = sUsedPushService.getIdentifier();
+        }
         try {
             if (
                 // New registration id
