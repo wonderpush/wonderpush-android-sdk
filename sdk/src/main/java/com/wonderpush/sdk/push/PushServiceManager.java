@@ -90,6 +90,9 @@ public class PushServiceManager {
                 // New sender id
                 || senderIds == null && WonderPushConfiguration.getGCMRegistrationSenderIds() != null
                 || senderIds != null && !senderIds.equals(WonderPushConfiguration.getGCMRegistrationSenderIds())
+                // New service
+                || service == null && WonderPushConfiguration.getGCMRegistrationService() != null
+                || service != null && !service.equals(WonderPushConfiguration.getGCMRegistrationService())
                 // Last associated with an other userId?
                 || WonderPushConfiguration.getUserId() == null && WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId() != null
                 || WonderPushConfiguration.getUserId() != null && !WonderPushConfiguration.getUserId().equals(WonderPushConfiguration.getCachedGCMRegistrationIdAssociatedUserId())
