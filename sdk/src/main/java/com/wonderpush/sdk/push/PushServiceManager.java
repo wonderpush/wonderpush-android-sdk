@@ -129,6 +129,7 @@ public class PushServiceManager {
 
         WonderPushConfiguration.setGCMRegistrationId(registrationId);
         WonderPushConfiguration.setGCMRegistrationSenderIds(senderIds);
+        WonderPushConfiguration.setGCMRegistrationService(service);
 
         if (oldRegistrationId == null && registrationId != null
                 || oldRegistrationId != null && !oldRegistrationId.equals(registrationId)) {

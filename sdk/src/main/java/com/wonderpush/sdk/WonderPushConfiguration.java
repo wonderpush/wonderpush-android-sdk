@@ -896,7 +896,7 @@ public class WonderPushConfiguration {
     /**
      * Get the push service stored in the user's shared preferences.
      */
-    static String getGCMRegistrationService() {
+    public static String getGCMRegistrationService() {
         return getString(GCM_REGISTRATION_SERVICE_PREF_NAME);
     }
 
@@ -904,9 +904,9 @@ public class WonderPushConfiguration {
      * Set the push service stored in the user's shared preferences.
      *
      * @param service
-     *            The push servuce to be stored
+     *            The push service to be stored
      */
-    static void setGCMRegistrationService(String service) {
+    public static void setGCMRegistrationService(String service) {
         putString(GCM_REGISTRATION_SERVICE_PREF_NAME, service);
     }
 
