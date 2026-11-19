@@ -989,6 +989,13 @@ public class NotificationManager {
                 trackData.put("buttonLabel", button.label);
             }
             sLastClickedNotificationMetadata = metadata;
+
+            // Report the opened URL next to `buttonLabel`.
+            // It already accounts for the clicked button's own targetUrl, and we skip wonderpush:// pseudo-URLs (noop, broadcast, default).
+            String openedUrl = intent.getStringExtra("targetUrl");
+            if (openedUrl != null && !openedUrl.isEmpty() && !openedUrl.startsWith(WonderPush.INTENT_NOTIFICATION_WILL_OPEN_SCHEME + "://")) {
+                trackData.put("targetUrl", openedUrl);
+            }
             if (WonderPush.isSubscriptionStatusOptIn()) {
                 WonderPush.trackInternalEvent("@NOTIFICATION_OPENED", trackData);
             } else {
