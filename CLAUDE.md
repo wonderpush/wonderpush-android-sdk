@@ -55,6 +55,14 @@ bd close <id>         # Complete work
 
 Release instructions (core SDK and FCM/HCM modules): [How to release wonderpush-android-sdk](https://app.notion.com/p/3fa449002dcb81f79c26ee98c870b255) (Notion, Core Push team). Signing/publishing credentials live in `~/.gradle/gradle.properties`, never in the repo.
 
+Notes from the 4.7.2 release (2026-11-20):
+- The git remote is `origin` (the Notion page says `github`).
+- Signing uses the GPG key `0823F63F`, not an Android keystore. No `android-release.keystore` is needed.
+- On this Mac: `export JAVA_HOME=/opt/homebrew/opt/openjdk@17`, and `sdk.dir=/opt/homebrew/share/android-commandlinetools` in the gitignored `local.properties`.
+- The `nvd_apikey` property is only for the dependency check; publishing works without it.
+- After releasing, bump to the next `-SNAPSHOT` (`Bump to SDK vX.Y.Z-SNAPSHOT`) and push master.
+- Verify the release is live: `curl -s -o /dev/null -w '%{http_code}' https://repo1.maven.org/maven2/com/wonderpush/wonderpush-android-sdk/X.Y.Z/wonderpush-android-sdk-X.Y.Z.pom` should return 200.
+
 ## Build & Test
 
 _Add your build and test commands here_
